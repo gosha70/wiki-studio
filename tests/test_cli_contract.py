@@ -143,7 +143,15 @@ class TestCliHelp(_LayoutCase):
 
 class TestCliIngest(_LayoutCase):
     def test_check_and_dry_run_are_mutually_exclusive(self) -> None:
+        # Multi-page path (no --legacy-single-source): the check runs before dispatch.
         result = self.run_cli("ingest", str(self.sample), "--backend", "test", "--check", "--dry-run")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("mutually exclusive", result.stderr)
+
+    def test_check_and_dry_run_are_mutually_exclusive_on_legacy_path(self) -> None:
+        result = self.run_cli(
+            "ingest", "--legacy-single-source", str(self.sample), "--backend", "test", "--check", "--dry-run"
+        )
         self.assertEqual(result.returncode, 1)
         self.assertIn("mutually exclusive", result.stderr)
 

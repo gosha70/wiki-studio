@@ -1,6 +1,6 @@
 # Copyright (c) 2026 EGOGE
 # SPDX-License-Identifier: Apache-2.0
-# aiwiki.__main__ — verb-dispatching CLI entrypoint for the wiki pipeline.
+# aiwiki.cli — verb-dispatching CLI entrypoint for the wiki pipeline.
 #
 # Phase 0 ships the four-verb skeleton (ingest|promote|query|lint) and the
 # Stage-1 single-source proposal generator behind ``ingest --legacy-single-source``.
