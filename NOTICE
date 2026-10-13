@@ -1,0 +1,19 @@
+aiwiki
+Copyright (c) 2026 EGOGE
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product includes code extracted from gosha70/code-copilot-team
+(https://github.com/gosha70/code-copilot-team), licensed under the Apache
+License, Version 2.0 and copyright (c) 2026 EGOGE:
+
+  - scripts/wiki_ingest/ (the ingest, promote, query, lint and audit-flush
+    pipeline, its backends and its tests), now src/aiwiki/ and tests/
+  - knowledge/wiki/schema/ (the page schema documents), now
+    src/aiwiki/schema/
+  - the checks of knowledge/wiki/scripts/lint-wiki.sh, reimplemented in
+    src/aiwiki/lint.py
+
+at commit df2c29212e3bed8b547f47bf7976105a6a4678c0 of that repository.
+
+The page schema is shared with gosha70/memkernel (https://github.com/gosha70/memkernel).

@@ -1,0 +1,66 @@
+# Copyright (c) 2026 EGOGE
+# SPDX-License-Identifier: Apache-2.0
+name: Release to PyPI
+
+# Publishes a tagged version with PyPI trusted publishing (OpenID Connect).
+# One-time setup: on pypi.org add a pending publisher for project `aiwiki`,
+# owner `gosha70`, repository `ai-wiki`, workflow `release.yml`, environment
+# `pypi`; in this repository create the `pypi` environment.
+# Each release: bump `version` in pyproject.toml and `src/aiwiki/__init__.py`,
+# update CHANGELOG.md, merge, then
+#   git tag -a vX.Y.Z -m "aiwiki X.Y.Z" && git push origin vX.Y.Z
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build distributions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - uses: snok/install-poetry@v1
+      - name: Check that the tag matches the package version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          ver="$(poetry version -s)"
+          if [ "$tag" != "$ver" ]; then
+            echo "Tag $tag does not match pyproject.toml version $ver" >&2
+            exit 1
+          fi
+      - name: Build sdist and wheel
+        run: poetry build
+      - name: Smoke-test the wheel in a clean environment
+        run: |
+          python -m venv /tmp/smoke
+          /tmp/smoke/bin/pip install --quiet dist/*.whl
+          /tmp/smoke/bin/pip check
+          test "$(/tmp/smoke/bin/ai-wiki --version)" = "${GITHUB_REF_NAME#v}"
+          /tmp/smoke/bin/ai-wiki --help
+      - uses: actions/upload-artifact@v5
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/aiwiki/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v6
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

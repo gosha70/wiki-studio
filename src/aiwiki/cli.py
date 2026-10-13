@@ -27,7 +27,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from . import api
+from . import __version__, api
 from .audit_flush import describe_flush
 from .backends import ENV_BACKEND, ENV_BACKEND_DEPRECATED
 from .errors import (
@@ -110,6 +110,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
             "violated; working log malformed; git commit failed)."
         ),
     )
+    parser.add_argument("--version", action="version", version=__version__)
     _add_path_options(parser, suppress_defaults=False)
     common = argparse.ArgumentParser(add_help=False)
     _add_path_options(common, suppress_defaults=True)
@@ -460,7 +461,7 @@ def _inject_legacy_v1_prefix(argv: list[str]) -> list[str]:
         return argv
     # Top-level help/version: pass straight through so the parser shows
     # the verb-dispatching parser's epilog (with stable exit codes).
-    if "-h" in argv or "--help" in argv:
+    if "-h" in argv or "--help" in argv or "--version" in argv:
         # If a verb is already present, let it through — the per-verb
         # help is what the user asked for.
         for token in argv:

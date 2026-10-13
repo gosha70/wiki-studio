@@ -126,6 +126,14 @@ class TestCliHelp(_LayoutCase):
             self.assertIn(verb, result.stdout)
         self.assertIn("Exit codes", result.stdout)
 
+    def test_version_prints_the_package_version(self) -> None:
+        from aiwiki import __version__
+
+        result = self.run_cli("--version")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), __version__)
+        self.assertEqual(__version__, "0.1.0")
+
     def test_each_verb_help_exits_zero(self) -> None:
         for verb in _VERBS:
             with self.subTest(verb=verb):
