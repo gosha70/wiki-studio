@@ -5,7 +5,7 @@
 # Implements `detect_pending(paths) -> PendingState` and
 # `flush(paths, dry_run) -> int` for the `ai-wiki audit-flush` verb.
 #
-# `wiki audit-flush` is the sole pipeline command that runs `git commit`,
+# `ai-wiki audit-flush` is the sole pipeline command that runs `git commit`,
 # by design and in one place. `ingest`/`promote`/`lint` remain git-free.
 # Never auto-invoked, hooked, or scheduled — only user-driven.
 #
@@ -167,6 +167,8 @@ def flush(paths: WikiPaths, dry_run: bool) -> int:
     ------
     AuditFlushError
         For non-git-repo, divergence, malformed log, or a failed git commit.
+        A wiki outside the git work tree (``paths.root``) ends here too: git
+        rejects the pathspec, which is reported as a failed git add.
     """
     state = detect_pending(paths)
     log_rel = state.path.as_posix()

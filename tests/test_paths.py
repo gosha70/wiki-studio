@@ -123,7 +123,13 @@ class TestHelpers(unittest.TestCase):
             self.assertEqual(inside.relative_to_root(root / "a" / "b.md"), "a/b.md")
             with tempfile.TemporaryDirectory() as other:
                 outside = WikiPaths.for_root(root, wiki_dir=Path(other) / "kb")
-                self.assertEqual(outside.wiki_label, (Path(other) / "kb").as_posix())
+                self.assertEqual(outside.wiki_label, "kb")
+
+    def test_for_root_makes_relative_inputs_absolute(self) -> None:
+        paths = WikiPaths.for_root(Path("rel"), wiki_dir=Path("kb"))
+        self.assertTrue(paths.root.is_absolute())
+        self.assertTrue(paths.wiki_dir.is_absolute())
+        self.assertEqual(paths.root, Path.cwd() / "rel")
 
     def test_within_root(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

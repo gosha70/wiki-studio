@@ -188,17 +188,15 @@ def _validate_staged_tree(
     # create-clobber checks see post-apply state.
     staged = paths.with_wiki_dir(stage_dir)
     per_edit_errors: list[str] = []
-    for edit in patch.edits:
-        if edit.action == "create":
-            # The file exists in the staged tree by design (post-apply), so
-            # the create-clobber check would fire. Re-run the rest of the
-            # checks (slug==stem, page_type promotable, dir placement,
-            # sources non-empty) against an empty wiki so existence checks
-            # skip.
-            with tempfile.TemporaryDirectory(prefix="wiki-no-wiki-") as empty:
-                per_edit_errors.extend(validate_page_edit_semantics(edit, paths.with_wiki_dir(Path(empty))))
-        else:
-            per_edit_errors.extend(validate_page_edit_semantics(edit, staged))
+    with tempfile.TemporaryDirectory(prefix="wiki-no-wiki-") as empty:
+        # For ``create`` edits the file exists in the staged tree by design
+        # (post-apply), so the create-clobber check would fire. Those edits
+        # re-run the remaining checks (slug==stem, page_type promotable, dir
+        # placement, sources non-empty) against one empty wiki so existence
+        # checks skip.
+        no_wiki = paths.with_wiki_dir(Path(empty))
+        for edit in patch.edits:
+            per_edit_errors.extend(validate_page_edit_semantics(edit, no_wiki if edit.action == "create" else staged))
     if per_edit_errors:
         raise PromoteValidationError("Staged-tree per-edit validation failed:\n  - " + "\n  - ".join(per_edit_errors))
 

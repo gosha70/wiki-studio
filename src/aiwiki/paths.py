@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import os
 import subprocess
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -105,10 +105,14 @@ class WikiPaths:
         wiki_dir: Path | str | None = None,
         proposals_dir: Path | str | None = None,
     ) -> WikiPaths:
-        """Build the layout under ``root`` with the defaults, optionally overriding the two directories."""
-        root_path = Path(root)
-        wiki = Path(wiki_dir) if wiki_dir is not None else root_path / DEFAULT_WIKI_DIR
-        proposals = Path(proposals_dir) if proposals_dir is not None else root_path / DEFAULT_PROPOSALS_DIR
+        """Build the layout under ``root`` with the defaults, optionally overriding the two directories.
+
+        Relative inputs are made absolute against the current working directory (symlinks are
+        not resolved), so a layout never depends on a later working directory.
+        """
+        root_path = Path(root).absolute()
+        wiki = Path(wiki_dir).absolute() if wiki_dir is not None else root_path / DEFAULT_WIKI_DIR
+        proposals = Path(proposals_dir).absolute() if proposals_dir is not None else root_path / DEFAULT_PROPOSALS_DIR
         return cls(
             root=root_path,
             wiki_dir=wiki,
@@ -153,11 +157,9 @@ class WikiPaths:
         Used by ``promote`` to validate a staged copy of the wiki with the
         real root and proposals directory.
         """
-        return WikiPaths(
-            root=self.root,
+        return replace(
+            self,
             wiki_dir=wiki_dir,
-            proposals_dir=self.proposals_dir,
-            query_log=self.query_log,
             audit_log=wiki_dir / AUDIT_DIR_NAME / AUDIT_LOG_NAME,
             schema_dir=wiki_dir / SCHEMA_DIR_NAME,
         )
@@ -169,8 +171,15 @@ class WikiPaths:
 
     @property
     def wiki_label(self) -> str:
-        """The wiki directory as shown to humans and models: root-relative when it is under the root."""
-        return self.relative_to_root(self.wiki_dir)
+        """The wiki directory as shown to humans and models.
+
+        Root-relative (POSIX) when the wiki is under the root; otherwise only its
+        directory name, so no absolute filesystem path reaches a backend prompt.
+        """
+        try:
+            return self.wiki_dir.resolve().relative_to(self.root.resolve()).as_posix()
+        except ValueError:
+            return self.wiki_dir.name
 
     def relative_to_root(self, path: Path) -> str:
         """``path`` relative to the root as POSIX when it is under the root, else as given."""

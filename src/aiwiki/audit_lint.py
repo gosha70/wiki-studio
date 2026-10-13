@@ -7,7 +7,7 @@
 # aiwiki.lint implements lint-rules.md: the schema file is the
 # human contract, this module is the executable check. It is NOT loaded
 # via prompt.load_schema_files and is never injected into a backend
-# prompt — it is consumed directly by `wiki lint`.
+# prompt — it is consumed directly by `ai-wiki lint`.
 #
 # v1 is FORMAT-ONLY: marker, NDJSON shape, required keys/types/enums,
 # ts pattern, reason codepoint bound, archive directory contents. No

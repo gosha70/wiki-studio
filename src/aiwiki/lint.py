@@ -53,7 +53,7 @@ PAGE_TYPE_DIRS: dict[str, str] = {
 }
 
 # Page types that need no ``sources:`` block.
-_SOURCELESS_TYPES = ("index", "log")
+_SOURCELESS_TYPES: frozenset[str] = frozenset({"index", "log"})
 
 MAX_FRONTMATTER_CLOSE_LINE = 50
 INDEX_NAME = "index.md"
@@ -88,18 +88,27 @@ def _read(path: Path) -> str:
         return ""
 
 
-def _frontmatter(lines: list[str]) -> tuple[list[str] | None, int]:
-    """Return (frontmatter body lines, 1-based line of the closing ``---``) or (None, 0) when absent."""
+def _frontmatter(lines: list[str]) -> tuple[list[str] | None, int | None]:
+    """Split off the frontmatter.
+
+    Returns ``(body lines, 1-based line of the closing marker)``. Two failure shapes are
+    distinguished for the two different violations: ``(None, 0)`` when line 1 is not the
+    opening ``---``; ``(None, None)`` when the opening marker has no closing one.
+    """
     if not lines or lines[0] != "---":
         return None, 0
     for i in range(1, len(lines)):
         if _FM_CLOSE_RE.match(lines[i]):
             return lines[1:i], i + 1
-    return None, -1
+    return None, None
 
 
 def _field(fm_lines: list[str], key: str) -> str:
-    """First ``key: value`` line's value, with the key, following spaces and surrounding double quotes removed."""
+    """First ``key: value`` line's value, with the key, following spaces and surrounding double quotes removed.
+
+    Keys are matched at column 0 only, as the bash linter did: an indented ``key:`` inside a
+    nested mapping is not a required top-level key.
+    """
     prefix = key + ":"
     for line in fm_lines:
         if line.startswith(prefix):
@@ -159,7 +168,7 @@ def lint_wiki(wiki_dir: Path) -> list[str]:
         if close_line == 0:
             violations.append(f"{rel}: missing opening '---' on line 1")
             continue
-        if fm_lines is None:
+        if fm_lines is None or close_line is None:
             violations.append(f"{rel}: missing closing '---' for frontmatter")
             continue
         if close_line > MAX_FRONTMATTER_CLOSE_LINE:

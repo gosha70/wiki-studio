@@ -246,5 +246,19 @@ class TestAuditExclusion(_WikiCase):
         self.assertIn("scripts", EXCLUDED_DIRS)
 
 
+class TestSourcesInlineForm(_WikiCase):
+    def test_inline_empty_list_is_a_violation(self) -> None:
+        _clean_wiki(self.wiki)
+        _page(
+            self.wiki,
+            "concepts/alpha.md",
+            page_type="concept",
+            sources=False,
+            extra="sources: []\n",
+            body="[b](beta.md)\n",
+        )
+        self.assertViolation(lint_wiki(self.wiki), "concepts/alpha.md: missing 'sources:' frontmatter (or empty list)")
+
+
 if __name__ == "__main__":
     unittest.main()

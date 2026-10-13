@@ -18,6 +18,7 @@ from unittest.mock import patch
 
 from aiwiki.paths import ENV_WIKI_DIR
 from tests.conftest import PACKAGE_ROOT, make_repo_layout, run_cli
+from tests.test_cli_contract import _proposals_dir
 
 FORBIDDEN_STRINGS = ("code-copilot-team", "shared/", "specs/", "doc_internal", "knowledge/wiki")
 ALLOWED_FILES = {"paths.py", "cli.py"}
@@ -107,6 +108,17 @@ class TestLayoutContract(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(Path(result.stdout.strip()).parent, out)
+
+    def test_promote_with_a_wiki_dir_under_the_root_lints_the_staged_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            wiki = _wiki(root)
+            prop = _proposals_dir(root)
+            result = run_cli("promote", str(prop), "--wiki-dir", str(wiki), cwd=root)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue((wiki / "incidents" / "cli-fixture.md").is_file())
+            self.assertIn("  + kb/incidents/cli-fixture.md", result.stdout)
+            self.assertFalse((root / "knowledge").exists())
 
     def test_root_flag_confines_sources(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -797,7 +797,8 @@ def _do_lint(args: argparse.Namespace) -> int:
         print(f"  [{f.kind} / {f.severity}] {loc}: {f.description}", file=sys.stderr)
 
     if args.strict:
-        return (1 if structural_rc == 0 else structural_rc) or audit_rc
+        # Health findings are fatal under --strict whatever the structural result was.
+        return 1
     return structural_rc or audit_rc
 
 

@@ -7,6 +7,8 @@
 #   2. AIWIKI_BACKEND environment variable     — developer override
 #      (WIKI_INGEST_BACKEND is still accepted, with a deprecation warning)
 #   3. auto_detect()                            — first CLI found on PATH
+#      (AIWIKI_ENABLE_PI=1 adds pi to the probe order; explicit --backend pi
+#      needs no flag)
 #
 # Registered backends (by name):
 #   "test" — deterministic in-process backend for CI / fixture runs
