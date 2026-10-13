@@ -99,7 +99,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         description=(
             "Karpathy-pattern LLM Wiki maintainer. Five verbs: "
             "ingest|promote|query|lint|audit-flush. "
-            "``wikistudio <verb> --help`` for per-verb help."
+            "``wiki-studio <verb> --help`` for per-verb help."
         ),
         epilog=(
             "Exit codes (stable across v1): "

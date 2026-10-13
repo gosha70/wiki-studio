@@ -1,6 +1,6 @@
 # Copyright (c) 2026 EGOGE
 # SPDX-License-Identifier: Apache-2.0
-# tests/test_e2e.py — end-to-end tests for the wikistudio CLI and pipeline.
+# tests/test_e2e.py — end-to-end tests for the wiki-studio CLI and pipeline.
 #
 # CLI tests call ``wikistudio.cli.main(argv)`` in-process (see ``run_cli`` in
 # conftest) inside a temporary project layout built by ``make_repo_layout``,
