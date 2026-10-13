@@ -22,7 +22,7 @@ origin:
     code-copilot-team, memkernel and document-assistant consume. Build it
     the fastest, most automated way with code-copilot-team's build loop
     and DeepSeek as the code reviewer. The repository was created as
-    ai-wiki and renamed wikiforge because `ai-wiki` is taken on PyPI and
+    wikiforge and renamed wikiforge because `wikiforge` is taken on PyPI and
     the name should say knowledge, not memory (memkernel is the memory
     layer). 0.1.0 is the extraction with the
     paths decoupled; an MCP server and memkernel's extra come later.
@@ -90,7 +90,7 @@ release workflow. Behaviour, flags and exit codes do not change.
 
 ### ADR-5: Distribution `wikiforge`, CLI `wikiforge`
 
-**Context**: the repository started as `ai-wiki`; `ai-wiki`, `llmwiki`, `agent-wiki` and `memforge` are taken on PyPI, and a memory-flavoured name would collide with memkernel's role. `wikiforge` is free on PyPI and npm and names the knowledge layer agents build.
+**Context**: the repository started as `wikiforge`; `wikiforge`, `llmwiki`, `agent-wiki` and `memforge` are taken on PyPI, and a memory-flavoured name would collide with memkernel's role. `wikiforge` is free on PyPI and npm and names the knowledge layer agents build.
 **Decision**: repository, distribution, import name and console script are all `wikiforge`; the PyPI name is held by a `0.0.1` placeholder release until 0.1.0 replaces it.
 **Consequences**: `pip install wikiforge`, `import wikiforge`, `wikiforge <verb>`; one name everywhere.
 

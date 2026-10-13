@@ -1,0 +1,45 @@
+# Copyright (c) 2026 EGOGE
+# SPDX-License-Identifier: Apache-2.0
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: snok/install-poetry@v1
+        with:
+          virtualenvs-in-project: true
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('poetry.lock') }}
+      - name: Install
+        run: poetry install --no-interaction
+      - name: Ruff check
+        run: poetry run ruff check src/ tests/
+      - name: Ruff format check
+        run: poetry run ruff format --check src/ tests/
+      - name: Mypy
+        run: poetry run mypy src/
+      - name: Tests with coverage
+        run: poetry run pytest -q -p no:cacheprovider --cov=wikiforge --cov-fail-under=80
+      - name: Build check
+        run: poetry build
