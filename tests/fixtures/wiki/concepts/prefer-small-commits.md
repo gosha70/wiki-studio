@@ -7,7 +7,7 @@ last_reviewed: 2026-10-12
 memkernel_ref: mem-0002
 memory_type: convention
 sources:
-  - url: "memkernel://ai-wiki/mem-0002"
+  - url: "memkernel://wikiforge/mem-0002"
     retrieved: 2026-10-12
 ---
 

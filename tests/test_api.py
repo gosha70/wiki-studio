@@ -1,6 +1,6 @@
 # Copyright (c) 2026 EGOGE
 # SPDX-License-Identifier: Apache-2.0
-"""aiwiki.api — the five library functions, their typed results and the exceptions they raise (FR-008)."""
+"""wikiforge.api — the five library functions, their typed results and the exceptions they raise (FR-008)."""
 
 from __future__ import annotations
 
@@ -10,25 +10,25 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from aiwiki import api
-from aiwiki.backends.copilot_cli import CopilotCliBackend
-from aiwiki.backends.test import TestBackend
-from aiwiki.errors import (
+from tests.conftest import FIXTURES_DIR, SAMPLE_INCIDENT, make_repo_layout
+from tests.test_cli_contract import _proposals_dir, _wiki_with_pages, _write_page
+from wikiforge import api
+from wikiforge.backends.copilot_cli import CopilotCliBackend
+from wikiforge.backends.test import TestBackend
+from wikiforge.errors import (
     AuditFlushError,
     BackendNotFoundError,
     PathOutsideRootError,
     PromoteValidationError,
     SourceMissingError,
 )
-from aiwiki.paths import WikiPaths
-from aiwiki.promoter import PromoteResult
-from tests.conftest import FIXTURES_DIR, SAMPLE_INCIDENT, make_repo_layout
-from tests.test_cli_contract import _proposals_dir, _wiki_with_pages, _write_page
+from wikiforge.paths import WikiPaths
+from wikiforge.promoter import PromoteResult
 
 
 class _LayoutCase(unittest.TestCase):
     def setUp(self) -> None:
-        self._tmp = tempfile.TemporaryDirectory(prefix="aiwiki-api-")
+        self._tmp = tempfile.TemporaryDirectory(prefix="wikiforge-api-")
         self.root = make_repo_layout(Path(self._tmp.name), with_schema=True)
         self.paths = WikiPaths.for_root(self.root)
         self.sample = self.root / "sample-incident.md"
@@ -248,7 +248,7 @@ class TestLint(_LayoutCase):
         self.assertFalse(strict.passed)
 
     def test_health_pass_survives_a_malformed_contradiction_response(self) -> None:
-        from aiwiki.errors import ContractViolationError
+        from wikiforge.errors import ContractViolationError
 
         class _ProseBackend:
             calls = 0

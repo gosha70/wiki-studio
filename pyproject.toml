@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 [tool.poetry]
-name = "aiwiki"
+name = "wikiforge"
 version = "0.1.0"
 description = "Karpathy-pattern LLM wiki maintainer: ingest, promote, query, lint and audit a curated markdown knowledge base."
 authors = ["EGOGE <i.am.goga@gmail.com>"]
@@ -23,8 +23,8 @@ classifiers = [
     "Topic :: Software Development :: Documentation",
     "Topic :: Text Processing :: Markup :: Markdown",
 ]
-packages = [{ include = "aiwiki", from = "src" }]
-include = [{ path = "src/aiwiki/schema/*.md", format = ["sdist", "wheel"] }]
+packages = [{ include = "wikiforge", from = "src" }]
+include = [{ path = "src/wikiforge/schema/*.md", format = ["sdist", "wheel"] }]
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.14"
@@ -36,7 +36,7 @@ ruff = "^0.12"
 mypy = "^1.14"
 
 [tool.poetry.scripts]
-ai-wiki = "aiwiki.cli:main"
+wikiforge = "wikiforge.cli:main"
 
 [build-system]
 requires = ["poetry-core>=2.0.0"]

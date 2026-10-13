@@ -21,17 +21,17 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from aiwiki.audit import (
+from tests.conftest import PACKAGE_ROOT
+from wikiforge.audit import (
     append_ingest_log,
     build_log_record,
     proposal_hash,
     source_sha,
     truncate_reason,
 )
-from aiwiki.errors import OutputWriteError
-from aiwiki.paths import WikiPaths
-from aiwiki.proposal import IngestLogRecord, IngestProposal, PageEdit, WikiPatchSet
-from tests.conftest import PACKAGE_ROOT
+from wikiforge.errors import OutputWriteError
+from wikiforge.paths import WikiPaths
+from wikiforge.proposal import IngestLogRecord, IngestProposal, PageEdit, WikiPatchSet
 
 # ── source_sha ────────────────────────────────────────────────────────────
 

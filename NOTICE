@@ -1,4 +1,4 @@
-aiwiki
+wikiforge
 Copyright (c) 2026 EGOGE
 
 This product is licensed under the Apache License, Version 2.0 (see LICENSE).
@@ -8,11 +8,11 @@ This product includes code extracted from gosha70/code-copilot-team
 License, Version 2.0 and copyright (c) 2026 EGOGE:
 
   - scripts/wiki_ingest/ (the ingest, promote, query, lint and audit-flush
-    pipeline, its backends and its tests), now src/aiwiki/ and tests/
+    pipeline, its backends and its tests), now src/wikiforge/ and tests/
   - knowledge/wiki/schema/ (the page schema documents), now
-    src/aiwiki/schema/
+    src/wikiforge/schema/
   - the checks of knowledge/wiki/scripts/lint-wiki.sh, reimplemented in
-    src/aiwiki/lint.py
+    src/wikiforge/lint.py
 
 at commit df2c29212e3bed8b547f47bf7976105a6a4678c0 of that repository.
 

@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 SAMPLE_INCIDENT = FIXTURES_DIR / "sample-incident.md"
-PACKAGE_ROOT = Path(__file__).resolve().parents[1] / "src" / "aiwiki"
+PACKAGE_ROOT = Path(__file__).resolve().parents[1] / "src" / "wikiforge"
 
 _INDEX_MD = (
     "---\npage_type: index\nslug: index\ntitle: Test Wiki\nstatus: stable\nlast_reviewed: 2026-05-06\n---\n"
@@ -34,8 +34,8 @@ _LOG_MD = "---\npage_type: log\nslug: log\ntitle: Wiki Log\nstatus: stable\nlast
 
 
 def packaged_schema_dir() -> Path:
-    """Return the on-disk path of the schema documents shipped with aiwiki."""
-    return Path(str(resources.files("aiwiki").joinpath("schema")))
+    """Return the on-disk path of the schema documents shipped with wikiforge."""
+    return Path(str(resources.files("wikiforge").joinpath("schema")))
 
 
 def make_repo_layout(
@@ -85,12 +85,12 @@ class CliResult:
 
 
 def run_cli(*argv: str, cwd: Path | None = None) -> CliResult:
-    """Run ``aiwiki.cli.main(argv)`` in-process, capturing stdout and stderr.
+    """Run ``wikiforge.cli.main(argv)`` in-process, capturing stdout and stderr.
 
     ``SystemExit`` raised by argparse (``--help``, usage errors) is mapped to
     its code so callers can assert on it like a subprocess exit status.
     """
-    from aiwiki.cli import main
+    from wikiforge.cli import main
 
     out, err = io.StringIO(), io.StringIO()
     ctx = chdir(cwd) if cwd is not None else contextlib.nullcontext()

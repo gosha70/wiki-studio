@@ -8,10 +8,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from aiwiki import api, yaml_lite
-from aiwiki.lint import VALID_PAGE_TYPES, lint_wiki, list_pages
-from aiwiki.paths import WikiPaths
 from tests.conftest import FIXTURES_DIR, run_cli
+from wikiforge import api, yaml_lite
+from wikiforge.lint import VALID_PAGE_TYPES, lint_wiki, list_pages
+from wikiforge.paths import WikiPaths
 
 FIXTURE_WIKI = FIXTURES_DIR / "wiki"
 

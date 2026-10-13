@@ -6,11 +6,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from aiwiki.backends.test import TestBackend
-from aiwiki.ingestor import DefaultIngestor
-from aiwiki.paths import WikiPaths
-from aiwiki.proposal import IngestProposal, IngestRequest
 from tests.conftest import make_repo_layout
+from wikiforge.backends.test import TestBackend
+from wikiforge.ingestor import DefaultIngestor
+from wikiforge.paths import WikiPaths
+from wikiforge.proposal import IngestProposal, IngestRequest
 
 _FIXTURE = Path(__file__).parent / "fixtures" / "sample-incident.md"
 
@@ -23,7 +23,7 @@ _PATHS = WikiPaths.for_root(_REPO_ROOT)
 
 def setUpModule() -> None:
     global _TMP, _REPO_ROOT, _PATHS
-    _TMP = tempfile.TemporaryDirectory(prefix="aiwiki-ingestor-")
+    _TMP = tempfile.TemporaryDirectory(prefix="wikiforge-ingestor-")
     _REPO_ROOT = make_repo_layout(Path(_TMP.name), with_sample=False)
     _PATHS = WikiPaths.for_root(_REPO_ROOT)
 
@@ -98,7 +98,7 @@ class TestIngestorWithTestBackend(unittest.TestCase):
         self.assertEqual(p1.page_type, p2.page_type)
 
     def test_source_missing_raises(self) -> None:
-        from aiwiki.errors import SourceMissingError
+        from wikiforge.errors import SourceMissingError
 
         bad_request = IngestRequest(
             source_path=Path("/nonexistent/path/does-not-exist.md"),

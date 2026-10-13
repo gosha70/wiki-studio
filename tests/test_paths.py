@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from aiwiki.paths import (
+from wikiforge.paths import (
     DEFAULT_PROPOSALS_DIR,
     DEFAULT_QUERY_LOG,
     DEFAULT_WIKI_DIR,

@@ -7,12 +7,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from aiwiki.audit_lint import (
+from wikiforge.audit_lint import (
     INGEST_LOG_MARKER,
     validate_audit_dir,
 )
-from aiwiki.health_lint import _list_wiki_pages as health_pages
-from aiwiki.wiki_state import _list_wiki_pages as state_pages
+from wikiforge.health_lint import _list_wiki_pages as health_pages
+from wikiforge.wiki_state import _list_wiki_pages as state_pages
 
 _FIXTURES = Path(__file__).resolve().parent / "fixtures" / "wiki_audit"
 _HEX = "a" * 64

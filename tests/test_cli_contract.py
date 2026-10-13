@@ -1,6 +1,6 @@
 # Copyright (c) 2026 EGOGE
 # SPDX-License-Identifier: Apache-2.0
-"""CLI contract tests: every verb runs in-process through ``aiwiki.cli.main``.
+"""CLI contract tests: every verb runs in-process through ``wikiforge.cli.main``.
 
 Pins the exit-code mapping and the per-verb flags against temporary
 project layouts. The codes are asserted through the exception classes'
@@ -17,14 +17,14 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from aiwiki.cli import EXIT_PATH_OUT_OF_REPO
-from aiwiki.errors import (
+from tests.conftest import FIXTURES_DIR, SAMPLE_INCIDENT, make_repo_layout, run_cli
+from wikiforge.cli import EXIT_PATH_OUT_OF_REPO
+from wikiforge.errors import (
     AuditFlushError,
     BackendNotFoundError,
     PromoteValidationError,
     SourceMissingError,
 )
-from tests.conftest import FIXTURES_DIR, SAMPLE_INCIDENT, make_repo_layout, run_cli
 
 _VERBS = ("ingest", "promote", "query", "lint", "audit-flush")
 
@@ -107,7 +107,7 @@ class _LayoutCase(unittest.TestCase):
     """A fresh layout (schema + bash linter + sample source) per test."""
 
     def setUp(self) -> None:
-        self._tmp = tempfile.TemporaryDirectory(prefix="aiwiki-cli-")
+        self._tmp = tempfile.TemporaryDirectory(prefix="wikiforge-cli-")
         self.root = make_repo_layout(Path(self._tmp.name), with_schema=True)
         self.sample = self.root / "sample-incident.md"
 
@@ -127,7 +127,7 @@ class TestCliHelp(_LayoutCase):
         self.assertIn("Exit codes", result.stdout)
 
     def test_version_prints_the_package_version(self) -> None:
-        from aiwiki import __version__
+        from wikiforge import __version__
 
         result = self.run_cli("--version")
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -205,7 +205,7 @@ class TestCliIngest(_LayoutCase):
         self.assertEqual(result.returncode, EXIT_PATH_OUT_OF_REPO)
 
     def test_backend_cli_missing_from_path_exits_2(self) -> None:
-        with patch("aiwiki.backends.shutil.which", return_value=None):
+        with patch("wikiforge.backends.shutil.which", return_value=None):
             result = self.run_cli("ingest", str(self.sample), "--backend", "claude")
         self.assertEqual(result.returncode, BackendNotFoundError.exit_code)
 

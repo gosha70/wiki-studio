@@ -1,10 +1,10 @@
 # Consumer recipes
 
-`aiwiki` ships one CLI (`ai-wiki`) and one library module (`aiwiki.api`).
+`wikiforge` ships one CLI (`wikiforge`) and one library module (`wikiforge.api`).
 Every location it reads or writes resolves through one object,
 `WikiPaths`, from (highest precedence first) the global options
 `--root`, `--wiki-dir`, `--proposals-dir`, the environment variables
-`AIWIKI_ROOT`, `AIWIKI_WIKI_DIR`, `AIWIKI_PROPOSALS_DIR`, and the defaults:
+`WIKIFORGE_ROOT`, `WIKIFORGE_WIKI_DIR`, `WIKIFORGE_PROPOSALS_DIR`, and the defaults:
 the git toplevel of the current directory, `knowledge/wiki` and
 `doc_internal/proposals` under it. With no flags and no variables the
 layout is byte-identical to the original code-copilot-team layout.
@@ -18,14 +18,14 @@ scripts; each becomes a two-line `exec`.
 
 ```bash
 #!/usr/bin/env bash
-exec ai-wiki "$@"
+exec wikiforge "$@"
 ```
 
 `scripts/wiki-ingest` (the v1 single-source alias):
 
 ```bash
 #!/usr/bin/env bash
-exec ai-wiki ingest --legacy-single-source "$@"
+exec wikiforge ingest --legacy-single-source "$@"
 ```
 
 Install step for `.github/workflows/wiki-ingest-tests.yml` (and for
@@ -33,20 +33,20 @@ developers, once):
 
 ```yaml
       - name: Install the wiki maintainer
-        run: pip install "aiwiki==0.1.0"
+        run: pip install "wikiforge==0.1.0"
 ```
 
 `tests/test-wiki-ingest.sh` passes unchanged: the verbs, flags and exit
 codes are the same, and the defaults reproduce `knowledge/wiki` and
 `doc_internal/proposals`. The structural linter now runs in Python inside
-`ai-wiki lint` and `ai-wiki promote`; `knowledge/wiki/scripts/lint-wiki.sh`
+`wikiforge lint` and `wikiforge promote`; `knowledge/wiki/scripts/lint-wiki.sh`
 can stay for direct use until it is retired.
 
 Two renames, both backward compatible:
 
-- `WIKI_INGEST_BACKEND` is now `AIWIKI_BACKEND`. The old name still works
+- `WIKI_INGEST_BACKEND` is now `WIKIFORGE_BACKEND`. The old name still works
   and prints a one-line deprecation warning on stderr.
-- `pi` is auto-detected only with `AIWIKI_ENABLE_PI=1` (the
+- `pi` is auto-detected only with `WIKIFORGE_ENABLE_PI=1` (the
   `shared/capabilities/pi.yaml` lookup is gone). `--backend pi` works as
   before.
 
@@ -64,11 +64,11 @@ directory and lint after every export:
 
 ```bash
 export MEMKERNEL_WIKI_DIR="$PWD/knowledge/wiki"
-export AIWIKI_WIKI_DIR="$MEMKERNEL_WIKI_DIR"
+export WIKIFORGE_WIKI_DIR="$MEMKERNEL_WIKI_DIR"
 
 memkernel wiki_export            # writes draft pages, index and log entries
-ai-wiki lint                     # zero violations expected
-ai-wiki lint --health            # stale sources, weak orphans, missing cross-links
+wikiforge lint                     # zero violations expected
+wikiforge lint --health            # stale sources, weak orphans, missing cross-links
 ```
 
 The fixture `tests/fixtures/wiki/` in this repository contains three
@@ -82,8 +82,8 @@ From Python:
 ```python
 import os
 from pathlib import Path
-from aiwiki import api
-from aiwiki.paths import WikiPaths
+from wikiforge import api
+from wikiforge.paths import WikiPaths
 
 paths = WikiPaths.for_root(Path.cwd(), wiki_dir=Path(os.environ["MEMKERNEL_WIKI_DIR"]))
 result = api.lint(paths, health=True)
@@ -96,12 +96,12 @@ for violation in result.violations:
 A wiki at a custom path, outside `knowledge/wiki`:
 
 ```bash
-export AIWIKI_WIKI_DIR="$HOME/assistant/kb"
-export AIWIKI_PROPOSALS_DIR="$HOME/assistant/inbox"
+export WIKIFORGE_WIKI_DIR="$HOME/assistant/kb"
+export WIKIFORGE_PROPOSALS_DIR="$HOME/assistant/inbox"
 
-ai-wiki ingest notes/2026-10-12-meeting.md --backend claude
-ai-wiki promote "$HOME/assistant/inbox/2026-10-12-2026-10-12-meeting"
-ai-wiki query "what did we decide about retrieval order?" --backend claude
+wikiforge ingest notes/2026-10-12-meeting.md --backend claude
+wikiforge promote "$HOME/assistant/inbox/2026-10-12-2026-10-12-meeting"
+wikiforge query "what did we decide about retrieval order?" --backend claude
 ```
 
 The same three settings can be passed as `--root`, `--wiki-dir` and

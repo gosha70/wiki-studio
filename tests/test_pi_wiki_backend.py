@@ -4,7 +4,7 @@
 #
 # Explicit `--backend pi` is first-class and always resolvable (when pi-code is
 # on PATH); auto-detect inserts pi (claude -> codex -> pi -> cursor) ONLY when
-# AIWIKI_ENABLE_PI=1 (FR-006).
+# WIKIFORGE_ENABLE_PI=1 (FR-006).
 
 from __future__ import annotations
 
@@ -12,9 +12,9 @@ import os
 import unittest
 from unittest.mock import patch
 
-import aiwiki.backends as be
-from aiwiki.backends import auto_detect, resolve_backend
-from aiwiki.backends.copilot_cli import CopilotCliBackend, cli_binary_for
+import wikiforge.backends as be
+from wikiforge.backends import auto_detect, resolve_backend
+from wikiforge.backends.copilot_cli import CopilotCliBackend, cli_binary_for
 
 
 class TestPiWikiBackend(unittest.TestCase):
@@ -65,16 +65,16 @@ class TestPiWikiBackend(unittest.TestCase):
         self.assertEqual(backend._cli_name, "cursor")  # noqa: SLF001
 
     def test_pi_auto_detect_is_gated_by_environment_flag(self) -> None:
-        with patch.dict(os.environ, {"AIWIKI_ENABLE_PI": "1"}):
+        with patch.dict(os.environ, {"WIKIFORGE_ENABLE_PI": "1"}):
             self.assertTrue(be._pi_enabled())
-        with patch.dict(os.environ, {"AIWIKI_ENABLE_PI": "0"}):
+        with patch.dict(os.environ, {"WIKIFORGE_ENABLE_PI": "0"}):
             self.assertFalse(be._pi_enabled())
-        env_without = {k: v for k, v in os.environ.items() if k != "AIWIKI_ENABLE_PI"}
+        env_without = {k: v for k, v in os.environ.items() if k != "WIKIFORGE_ENABLE_PI"}
         with patch.dict(os.environ, env_without, clear=True):
             self.assertFalse(be._pi_enabled())
 
     def test_unknown_backend_lists_pi_as_valid(self) -> None:
-        from aiwiki.errors import BackendNotFoundError
+        from wikiforge.errors import BackendNotFoundError
 
         with self.assertRaises(BackendNotFoundError) as cm:
             resolve_backend("bogus-xyz")

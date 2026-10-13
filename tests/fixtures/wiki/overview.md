@@ -13,7 +13,7 @@ sources:
 
 ## Summary
 
-This is the fixture wiki for the aiwiki test suite. It has exactly one page of every page type and three draft pages compiled by memkernel, so the structural linter, the query path and the memkernel schema contract are exercised together.
+This is the fixture wiki for the wikiforge test suite. It has exactly one page of every page type and three draft pages compiled by memkernel, so the structural linter, the query path and the memkernel schema contract are exercised together.
 
 ## Key ideas
 
@@ -23,7 +23,7 @@ This is the fixture wiki for the aiwiki test suite. It has exactly one page of e
 
 ## Where this shows up
 
-- `tests/fixtures/wiki/` in the aiwiki repository.
+- `tests/fixtures/wiki/` in the wikiforge repository.
 - `tests/test_fixture_wiki.py` asserts zero lint violations.
 
 ## Related

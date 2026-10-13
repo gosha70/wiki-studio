@@ -22,15 +22,15 @@ advisory unless you ask otherwise.
 
 ## What to look at
 
-- `aiwiki` has no runtime dependencies; the LLM backends are copilot CLIs
+- `wikiforge` has no runtime dependencies; the LLM backends are copilot CLIs
   the tool starts as subprocesses with the rendered prompt as an argument.
   Prompts contain the source being ingested and wiki pages, so backend
   stderr may echo them; error messages therefore carry only a redacted
   fingerprint of stderr unless `--debug-unsafe-output` is given.
 - Sources and proposal directories are confined to the project root by
-  default (`--allow-out-of-repo` lifts that deliberately); the staged-tree
-  lint during `promote` mirrors the project with symlinks inside a private
-  temporary directory.
+  default (`--allow-out-of-repo` lifts that deliberately); `promote`
+  validates and lints a staged copy of the wiki in a private temporary
+  directory before writing anything.
 - `promote` is the only code path that writes into the wiki, and
   `audit-flush` is the only one that runs `git commit`.
 

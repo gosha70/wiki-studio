@@ -16,9 +16,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from aiwiki.paths import ENV_WIKI_DIR
 from tests.conftest import PACKAGE_ROOT, make_repo_layout, run_cli
 from tests.test_cli_contract import _proposals_dir
+from wikiforge.paths import ENV_WIKI_DIR
 
 FORBIDDEN_STRINGS = ("code-copilot-team", "shared/", "specs/", "doc_internal", "knowledge/wiki")
 ALLOWED_FILES = {"paths.py", "cli.py"}
@@ -63,7 +63,7 @@ class TestLayoutContract(unittest.TestCase):
     def test_unflagged_run_reproduces_the_original_layout(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = make_repo_layout(Path(tmp), with_schema=True)
-            env = {k: v for k, v in os.environ.items() if not k.startswith("AIWIKI_")}
+            env = {k: v for k, v in os.environ.items() if not k.startswith("WIKIFORGE_")}
             with patch.dict(os.environ, env, clear=True):
                 result = run_cli("ingest", str(root / "sample-incident.md"), "--backend", "test", cwd=root)
             self.assertEqual(result.returncode, 0, result.stderr)

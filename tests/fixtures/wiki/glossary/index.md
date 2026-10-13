@@ -15,7 +15,7 @@ sources:
 
 ## Definition
 
-The output of `ai-wiki ingest`: a plan and preview files describing edits to several wiki pages, applied atomically by `ai-wiki promote`.
+The output of `wikiforge ingest`: a plan and preview files describing edits to several wiki pages, applied atomically by `wikiforge promote`.
 
 ## Where it appears
 

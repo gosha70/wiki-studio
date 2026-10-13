@@ -7,13 +7,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from aiwiki.errors import ContractViolationError
-from aiwiki.paths import WikiPaths
-from aiwiki.prompt import compose_prompt, load_schema_files, parse_response
 from tests.conftest import make_repo_layout
+from wikiforge.errors import ContractViolationError
+from wikiforge.paths import WikiPaths
+from wikiforge.prompt import compose_prompt, load_schema_files, parse_response
 
 # A project root with no schema/ of its own, so load_schema_files falls back
-# to the documents packaged with aiwiki. Built in setUpModule.
+# to the documents packaged with wikiforge. Built in setUpModule.
 _TMP: tempfile.TemporaryDirectory[str] | None = None
 _REPO_ROOT = Path()
 _PATHS = WikiPaths.for_root(_REPO_ROOT)
@@ -21,7 +21,7 @@ _PATHS = WikiPaths.for_root(_REPO_ROOT)
 
 def setUpModule() -> None:
     global _TMP, _REPO_ROOT, _PATHS
-    _TMP = tempfile.TemporaryDirectory(prefix="aiwiki-prompt-")
+    _TMP = tempfile.TemporaryDirectory(prefix="wikiforge-prompt-")
     _REPO_ROOT = make_repo_layout(Path(_TMP.name), with_sample=False)
     _PATHS = WikiPaths.for_root(_REPO_ROOT)
 
