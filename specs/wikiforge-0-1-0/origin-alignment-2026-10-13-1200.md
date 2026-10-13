@@ -11,7 +11,7 @@ Working claim:
 > The branch delivers the Poetry project `wikiforge` (import `wikiforge`, console script `wikiforge`, `WIKIFORGE_*` variables, no runtime dependencies): every module of scripts/wiki_ingest moved with behaviour, verbs, flags and exit codes unchanged; one WikiPaths resolver with defaults identical to the old layout; the six linter checks in Python; the pi capability lookup replaced by WIKIFORGE_ENABLE_PI; schema documents as package data with a per-wiki override; a library API; a fixture wiki pinning memkernel's exported page shape; a consumer guide; CI on 3.11–3.13 and a trusted-publishing release workflow. The 240 tests moved and 148 were added.
 
 Mismatches:
-  - none. The package, script, distribution and variable names now match the renamed spec; the repository URL stays gosha70/ai-wiki because the GitHub repository was not renamed.
+  - none. The package, script, distribution and variable names now match the renamed spec; the GitHub repository was renamed to gosha70/wikiforge after the merge, matching the origin URL in plan.md.
 
 Verdict: aligned
 Confidence: high
