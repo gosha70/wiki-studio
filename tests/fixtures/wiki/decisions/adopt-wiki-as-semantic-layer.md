@@ -7,7 +7,7 @@ last_reviewed: 2026-10-12
 memkernel_ref: mem-0001
 memory_type: decision
 sources:
-  - url: "memkernel://wikiforge/mem-0001"
+  - url: "memkernel://wikistudio/mem-0001"
     retrieved: 2026-10-12
   - path: docs/adr/ADR-008-llm-wiki-as-semantic-layer.md
 ---

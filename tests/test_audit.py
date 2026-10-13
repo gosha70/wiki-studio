@@ -22,16 +22,16 @@ import unittest
 from pathlib import Path
 
 from tests.conftest import PACKAGE_ROOT
-from wikiforge.audit import (
+from wikistudio.audit import (
     append_ingest_log,
     build_log_record,
     proposal_hash,
     source_sha,
     truncate_reason,
 )
-from wikiforge.errors import OutputWriteError
-from wikiforge.paths import WikiPaths
-from wikiforge.proposal import IngestLogRecord, IngestProposal, PageEdit, WikiPatchSet
+from wikistudio.errors import OutputWriteError
+from wikistudio.paths import WikiPaths
+from wikistudio.proposal import IngestLogRecord, IngestProposal, PageEdit, WikiPatchSet
 
 # ── source_sha ────────────────────────────────────────────────────────────
 

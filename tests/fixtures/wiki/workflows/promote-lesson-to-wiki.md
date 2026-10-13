@@ -17,14 +17,14 @@ A session produced a lesson worth keeping: a root cause, a decision, a procedure
 
 ## Steps
 
-1. Run `wikiforge ingest <source>` to produce a patch-set under the proposals directory.
+1. Run `wiki-studio ingest <source>` to produce a patch-set under the proposals directory.
 2. Review the preview files; edit them if needed.
-3. Run `wikiforge promote <proposal-dir>`; the structural linter gates the apply.
-4. Run `wikiforge audit-flush` to commit the ingest log.
+3. Run `wiki-studio promote <proposal-dir>`; the structural linter gates the apply.
+4. Run `wiki-studio audit-flush` to commit the ingest log.
 
 ## Verification
 
-`wikiforge lint` reports zero violations and the new page is linked from `index.md`.
+`wiki-studio lint` reports zero violations and the new page is linked from `index.md`.
 
 ## Related
 

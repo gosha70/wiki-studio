@@ -1,0 +1,525 @@
+# Copyright (c) 2026 EGOGE
+# SPDX-License-Identifier: Apache-2.0
+# wiki-studio.cli — verb-dispatching CLI entrypoint for the wiki pipeline.
+#
+# A thin argument parser over wikistudio.api: each verb resolves one WikiPaths
+# (from --root / --wiki-dir / --proposals-dir, the WIKISTUDIO_* variables, or the
+# defaults), calls the matching library function and prints its result.
+# Exceptions become exit codes in exactly one place, ``_report``.
+#
+# Invoked as ``wikistudio <verb> ...`` (console script) or ``python -m wikistudio``.
+#
+# Exit codes (stable across v1; exit code 7 added in Phase 0):
+#   0 — successful run; proposal file written (accept or reject), or
+#       structural lint clean, etc.
+#   2 — backend not found (no resolver match, or named CLI not on PATH).
+#   3 — backend invocation failed (non-zero exit, timeout, OS error).
+#   4 — contract violation (backend response failed shape or semantic
+#       cross-consistency validation).
+#   5 — source file missing or unreadable.
+#   6 — output directory write failure.
+#   7 — source path outside the repo (use --allow-out-of-repo to override).
+#   8 — verb not yet implemented (Phase N stub).
+
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+from . import __version__, api
+from .audit_flush import describe_flush
+from .backends import ENV_BACKEND, ENV_BACKEND_DEPRECATED
+from .errors import (
+    BackendInvocationError,
+    ContractViolationError,
+    IngestError,
+    PathOutsideRootError,
+    PromoteApplyError,
+    PromoteValidationError,
+)
+from .paths import (
+    DEFAULT_PROPOSALS_DIR,
+    DEFAULT_WIKI_DIR,
+    ENV_PROPOSALS_DIR,
+    ENV_ROOT,
+    ENV_WIKI_DIR,
+    WikiPaths,
+)
+
+# Exit codes new in Phase 0.
+EXIT_PATH_OUT_OF_REPO = PathOutsideRootError.exit_code
+EXIT_NOT_IMPLEMENTED = 8
+
+_BACKEND_HELP_SUFFIX = f"Defaults to {ENV_BACKEND} env var ({ENV_BACKEND_DEPRECATED} is deprecated), then auto-detect."
+
+# Message prefixes that distinguish the error classes on stderr (the exit
+# code itself comes from the exception).
+_ERROR_PREFIXES: tuple[tuple[type[IngestError], str], ...] = (
+    (BackendInvocationError, "backend invocation failed: "),
+    (ContractViolationError, "contract violation: "),
+    (PromoteValidationError, "promote validation failed:\n"),
+    (PromoteApplyError, "promote apply failed:\n"),
+)
+
+
+def _add_path_options(parser: argparse.ArgumentParser, *, suppress_defaults: bool) -> None:
+    """The three global location options.
+
+    They live on the top-level parser and, with suppressed defaults, on every
+    verb parser, so a value given after the verb is not clobbered by a
+    missing one before it.
+    """
+    default = argparse.SUPPRESS if suppress_defaults else None
+    parser.add_argument(
+        "--root",
+        type=Path,
+        default=default,
+        help=f"Project root. Default: {ENV_ROOT}, else the git toplevel of the current directory, "
+        "else the current directory.",
+    )
+    parser.add_argument(
+        "--wiki-dir",
+        type=Path,
+        default=default,
+        help=f"Wiki directory. Default: {ENV_WIKI_DIR}, else <root>/{DEFAULT_WIKI_DIR}.",
+    )
+    parser.add_argument(
+        "--proposals-dir",
+        type=Path,
+        default=default,
+        help=f"Proposals directory. Default: {ENV_PROPOSALS_DIR}, else <root>/{DEFAULT_PROPOSALS_DIR}.",
+    )
+
+
+def _build_arg_parser() -> argparse.ArgumentParser:
+    """Build the verb-dispatching parser. ``--help`` text is the public CLI surface."""
+    parser = argparse.ArgumentParser(
+        prog="wiki-studio",
+        description=(
+            "Karpathy-pattern LLM Wiki maintainer. Five verbs: "
+            "ingest|promote|query|lint|audit-flush. "
+            "``wikistudio <verb> --help`` for per-verb help."
+        ),
+        epilog=(
+            "Exit codes (stable across v1): "
+            "0 success; 2 backend not found; 3 backend invocation failed; "
+            "4 contract violation; 5 source missing; 6 output write failure; "
+            "7 source out of repo; 8 verb not yet implemented (Phase N stub); "
+            "11 audit-flush error (not a git work tree; append-only invariant "
+            "violated; working log malformed; git commit failed)."
+        ),
+    )
+    parser.add_argument("--version", action="version", version=__version__)
+    _add_path_options(parser, suppress_defaults=False)
+    common = argparse.ArgumentParser(add_help=False)
+    _add_path_options(common, suppress_defaults=True)
+    sub = parser.add_subparsers(dest="verb", required=True, metavar="<verb>")
+
+    # ── ingest ─────────────────────────────────────────────────
+    p_ingest = sub.add_parser(
+        "ingest",
+        parents=[common],
+        help="Run the ingest gate against a source file. "
+        "Phase 0: requires --legacy-single-source for the v1 path; "
+        "multi-page ingest lands in Phase 1.",
+    )
+    p_ingest.add_argument(
+        "source",
+        type=Path,
+        help="Path to the source file to ingest.",
+    )
+    p_ingest.add_argument(
+        "--legacy-single-source",
+        action="store_true",
+        help="Run the v1 single-source proposal generator. Required in Phase 0 (multi-page ingest is Phase 1).",
+    )
+    p_ingest.add_argument(
+        "--backend",
+        default=None,
+        help=f"Backend name. One of: claude, codex, pi, cursor, test. {_BACKEND_HELP_SUFFIX}",
+    )
+    p_ingest.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Dry run. With --legacy-single-source: passes task=gate-only "
+        "to the backend so it skips drafting the body (the rendered "
+        "proposal has no body either way). Multi-page (default): the "
+        "backend still drafts the pages and the patch-set is written; "
+        "the audit record is marked as a dry run (no proposal hash).",
+    )
+    p_ingest.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help=f"Override the output directory. Default: the proposals directory (<root>/{DEFAULT_PROPOSALS_DIR}/).",
+    )
+    p_ingest.add_argument(
+        "--debug-unsafe-output",
+        action="store_true",
+        help="Disable stderr redaction in error messages. Default: "
+        "redacted (sha256 fingerprint only). Use only for local "
+        "debugging — backend stderr can echo source content.",
+    )
+    p_ingest.add_argument(
+        "--allow-out-of-repo",
+        action="store_true",
+        help="Allow source paths outside the repository tree. Default: "
+        "refuse (exit 7). Use only when ingesting external artifacts "
+        "deliberately.",
+    )
+    p_ingest.add_argument(
+        "--check",
+        action="store_true",
+        help="Gate-only pre-flight: run the ingest gate and exit with "
+        "code 0 (accept) or non-zero (reject) with ZERO filesystem "
+        "side effects — no proposal directory, no audit line, no "
+        "snapshot. Mutually exclusive with --dry-run.",
+    )
+
+    # ── promote ────────────────────────────────────────────────
+    p_promote = sub.add_parser(
+        "promote",
+        parents=[common],
+        help="Apply a proposal patch-set to the wiki directory atomically. "
+        "The ONLY code path that writes to the canonical wiki content "
+        "tree, excluding .audit/.",
+    )
+    p_promote.add_argument(
+        "proposal_dir",
+        type=Path,
+        help=f"Path to a <proposals-dir>/<date>-<slug>/ directory (default {DEFAULT_PROPOSALS_DIR}) "
+        "produced by `wiki-studio ingest`.",
+    )
+    p_promote.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Build and validate the staged tree but do not commit to "
+        "the wiki directory and do not move the proposals dir to "
+        ".applied/. Exits 0 on a clean stage.",
+    )
+    p_promote.add_argument(
+        "--allow-out-of-repo",
+        action="store_true",
+        help="Allow proposal directories outside the repository tree. "
+        "Default: refuse (exit 7). The proposal dir's content is "
+        "applied to the wiki directory, so accepting paths from "
+        "outside the repo is an avoidable security surface.",
+    )
+
+    # ── query ──────────────────────────────────────────────────
+    p_query = sub.add_parser(
+        "query",
+        parents=[common],
+        help="Answer a question by reading the wiki, index-first.",
+    )
+    p_query.add_argument(
+        "question",
+        help="The question to answer against the wiki.",
+    )
+    p_query.add_argument(
+        "--file-back",
+        action="store_true",
+        help="In addition to printing the answer, run a multi-page "
+        "ingest over a synthetic source built from the question + "
+        "answer, producing a patch-set under the proposals directory. "
+        "The curator reviews and runs `wiki-studio promote` to land it.",
+    )
+    p_query.add_argument(
+        "--backend",
+        default=None,
+        help=f"Backend name (claude / codex / pi / cursor / test). {_BACKEND_HELP_SUFFIX}",
+    )
+    p_query.add_argument(
+        "--max-pages",
+        type=int,
+        default=None,
+        help="Max number of wiki pages to load into the query prompt. Default 5 (DEFAULT_MAX_QUERY_PAGES).",
+    )
+    p_query.add_argument(
+        "--debug-unsafe-output",
+        action="store_true",
+        help="Disable stderr redaction in error messages (see ingest).",
+    )
+    p_query.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help="When --file-back: override the proposals directory.",
+    )
+
+    # ── lint ───────────────────────────────────────────────────
+    p_lint = sub.add_parser(
+        "lint",
+        parents=[common],
+        help="Run wiki linters. Default: structural (frontmatter, page "
+        "types, slugs, placement, links, reachability). --health adds "
+        "the knowledge-health pass (contradictions, stale claims, "
+        "weak orphans, missing cross-links).",
+    )
+    p_lint.add_argument(
+        "--health",
+        action="store_true",
+        help="Run knowledge-health checks on top of the structural "
+        "linter. Default mode is advisory (exit 0 with stderr "
+        "warnings); --strict flips to non-zero exit on findings.",
+    )
+    p_lint.add_argument(
+        "--strict",
+        action="store_true",
+        help="Make advisory findings fatal (non-zero exit): "
+        "audit-format violations (always run) and, with "
+        "--health, any knowledge-health finding.",
+    )
+    p_lint.add_argument(
+        "--paths",
+        nargs="*",
+        default=None,
+        help="With --health: scope to specific wiki-relative paths.",
+    )
+    p_lint.add_argument(
+        "--backend",
+        default=None,
+        help="With --health: backend for the LLM-dependent "
+        "contradiction check. When omitted, contradictions are "
+        "skipped (the other three checks run without a backend).",
+    )
+
+    # ── audit-flush ────────────────────────────────────────────
+    p_audit_flush = sub.add_parser(
+        "audit-flush",
+        parents=[common],
+        help="Commit any pending (uncommitted) lines in "
+        "<wiki-dir>/.audit/ingest-log.md. The ONLY pipeline "
+        "command that runs git commit; never auto-invoked.",
+    )
+    p_audit_flush.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Report the pending line count and blob SHA without committing. "
+        "Exits 0 after the divergence + malformed gates.",
+    )
+
+    return parser
+
+
+def _paths_from_args(args: argparse.Namespace) -> WikiPaths:
+    """Resolve the layout once per run: flags, then WIKISTUDIO_* variables, then defaults."""
+    return WikiPaths.resolve(
+        root=getattr(args, "root", None),
+        wiki_dir=getattr(args, "wiki_dir", None),
+        proposals_dir=getattr(args, "proposals_dir", None),
+    )
+
+
+# ── Verb implementations (print only; the work is in wikistudio.api) ──
+
+
+def _do_ingest(args: argparse.Namespace) -> int:
+    """Multi-page ingest by default; --legacy-single-source runs the v1 generator."""
+    result = api.ingest(
+        args.source,
+        _paths_from_args(args),
+        backend=args.backend,
+        legacy_single_source=args.legacy_single_source,
+        dry_run=args.dry_run,
+        check=args.check,
+        output_dir=args.output_dir,
+        allow_out_of_repo=args.allow_out_of_repo,
+        redact_output=not args.debug_unsafe_output,
+    )
+    if result.check:
+        # Gate ran, zero side effects. Exit code reflects the disposition.
+        return 0 if result.disposition == "accept" else 1
+    if result.patch is not None and not result.patch.edits:
+        # Multi-page gate rejected the source; surface the rationale.
+        print(f"{result.written}  (gate rejected, 0 edits)")
+        print(f"  rationale: {result.rationale}", file=sys.stderr)
+        return 0
+    print(str(result.written))
+    return 0
+
+
+def _do_promote(args: argparse.Namespace) -> int:
+    """Phase 2: atomic patch-set application — the only writer to the wiki directory."""
+    paths = _paths_from_args(args)
+    result = api.promote(
+        args.proposal_dir,
+        paths,
+        dry_run=args.dry_run,
+        allow_out_of_repo=args.allow_out_of_repo,
+    )
+    if result.dry_run:
+        print(f"dry-run: staged tree validated; would apply {len(result.applied_paths)} edit(s); wiki tree unchanged.")
+        for p in result.applied_paths:
+            print(f"  + {p}")
+        return 0
+    if not result.applied_paths:
+        print(f"no-op: {args.proposal_dir.name} already applied (no changes to write).")
+        return 0
+    print(
+        f"applied {len(result.applied_paths)} edit(s) from {args.proposal_dir.name}; archived to {result.archived_dir}."
+    )
+    for p in result.applied_paths:
+        print(f"  + {paths.wiki_label}/{p}")
+    return 0
+
+
+def _do_query(args: argparse.Namespace) -> int:
+    """Phase 3: index-first query against the wiki."""
+    result = api.query(
+        args.question,
+        _paths_from_args(args),
+        backend=args.backend,
+        file_back=args.file_back,
+        max_pages=args.max_pages,
+        output_dir=args.output_dir,
+        redact_output=not args.debug_unsafe_output,
+    )
+    answer = result.answer
+    if answer.answer:
+        print(answer.answer)
+    else:
+        print("(no answer — wiki does not contain enough information)")
+
+    print("\n--- citations ---", file=sys.stderr)
+    for c in answer.citations:
+        print(f"  - {c.page}: {c.fragment}", file=sys.stderr)
+    print(f"--- pages loaded: {len(answer.pages_loaded)} ---", file=sys.stderr)
+    for p in answer.pages_loaded:
+        print(f"  + {p}", file=sys.stderr)
+
+    if args.file_back:
+        if result.file_back_dir is None:
+            print("(--file-back: empty patch-set; nothing to file back)", file=sys.stderr)
+        else:
+            print(f"--- file-back patch-set: {result.file_back_dir}", file=sys.stderr)
+    return 0
+
+
+def _do_lint(args: argparse.Namespace) -> int:
+    """Structural lint, the audit-format pass and, with --health, the knowledge-health checks."""
+    result = api.lint(
+        _paths_from_args(args),
+        health=args.health,
+        strict=args.strict,
+        only=args.paths,
+        backend=args.backend,
+    )
+    for violation in result.violations:
+        print(f"  ✗ {violation}", file=sys.stderr)
+    print(f"\nlinted {result.pages_checked} pages, {len(result.violations)} violations")
+
+    if result.audit_errors:
+        print(f"\naudit-format: {len(result.audit_errors)} violation(s)", file=sys.stderr)
+        for e in result.audit_errors:
+            print(f"  [audit] {e}", file=sys.stderr)
+    else:
+        print("\naudit-format: clean.")
+
+    health = result.health
+    if health is not None:
+        if not health.findings:
+            print(f"\nknowledge-health: clean ({health.pages_checked} pages checked, 0 findings).")
+        else:
+            # Findings go to stderr so the structural linter's stdout stays canonical.
+            print(
+                f"\nknowledge-health: {len(health.findings)} finding(s) across {health.pages_checked} pages",
+                file=sys.stderr,
+            )
+            for f in health.findings:
+                print(f"  [{f.kind} / {f.severity}] {', '.join(f.pages)}: {f.description}", file=sys.stderr)
+
+    return 0 if result.passed else 1
+
+
+def _do_audit_flush(args: argparse.Namespace) -> int:
+    """Commit pending ingest-log lines (or dry-run report them)."""
+    result = api.audit_flush(_paths_from_args(args), dry_run=args.dry_run)
+    report = describe_flush(result)
+    if report:
+        print(report)
+    return 0
+
+
+_VERBS = ("ingest", "promote", "query", "lint", "audit-flush")
+
+# Global options that take a value; their value is not a positional for the legacy shim.
+_GLOBAL_VALUE_OPTIONS = ("--root", "--wiki-dir", "--proposals-dir")
+
+
+def _inject_legacy_v1_prefix(argv: list[str]) -> list[str]:
+    """Backwards-compat shim for direct ``python3 -m wikistudio <source>`` callers.
+
+    Phase 0 introduced verb dispatch. Pre-Phase-0 callers (and the e2e
+    test suite) invoke ``python3 -m wikistudio <source> [--backend ...]``
+    without any verb. Detect that shape — first non-flag arg is not a
+    known verb — and inject ``ingest --legacy-single-source`` so the v1
+    behavior is preserved at the Python entrypoint as well as at the
+    ``wikistudio`` console script.
+    """
+    if not argv:
+        return argv
+    # Top-level help/version: pass straight through so the parser shows
+    # the verb-dispatching parser's epilog (with stable exit codes).
+    if "-h" in argv or "--help" in argv or "--version" in argv:
+        return argv
+    # Walk past leading flags (and the values of the global location
+    # options, which may precede the verb) to find the first positional arg.
+    first_positional: str | None = None
+    skip_next = False
+    for token in argv:
+        if skip_next:
+            skip_next = False
+            continue
+        if token in _GLOBAL_VALUE_OPTIONS:
+            skip_next = True
+            continue
+        if token.startswith("-"):
+            continue
+        first_positional = token
+        break
+    if first_positional in _VERBS:
+        return argv
+    # No verb in argv → legacy v1 invocation. Inject the prefix.
+    return ["ingest", "--legacy-single-source", *argv]
+
+
+def _report(exc: Exception) -> int:
+    """The one place where exceptions become stderr messages and exit codes."""
+    if isinstance(exc, IngestError):
+        prefix = next((p for cls, p in _ERROR_PREFIXES if isinstance(exc, cls)), "")
+        print(f"error: {prefix}{exc}", file=sys.stderr)
+        return exc.exit_code
+    # ValueError: a flag combination the verb rejects (e.g. --check with --dry-run).
+    print(f"error: {exc}", file=sys.stderr)
+    return 1
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Entry point. Returns the exit code; never raises (errors are mapped)."""
+    if argv is None:
+        argv = sys.argv[1:]
+    argv = _inject_legacy_v1_prefix(list(argv))
+
+    parser = _build_arg_parser()
+    args = parser.parse_args(argv)
+
+    dispatch = {
+        "ingest": _do_ingest,
+        "promote": _do_promote,
+        "query": _do_query,
+        "lint": _do_lint,
+        "audit-flush": _do_audit_flush,
+    }
+    handler = dispatch.get(args.verb)
+    if handler is None:
+        parser.error(f"unknown verb: {args.verb}")
+    try:
+        return handler(args)
+    except (IngestError, ValueError) as exc:
+        return _report(exc)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

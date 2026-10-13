@@ -1,4 +1,4 @@
-# wikiforge
+# wiki-studio
 
 Karpathy-pattern LLM wiki maintainer: a curated markdown knowledge base
 (`index.md`, `log.md`, typed pages with cited sources) that agents ingest
@@ -13,23 +13,23 @@ The code was extracted from
 ## Install
 
 ```bash
-pip install wikiforge          # Python 3.11–3.13, no runtime dependencies
-wikiforge --help
-wikiforge --version           # 0.1.0
+pip install wiki-studio          # Python 3.11–3.13, no runtime dependencies
+wiki-studio --help
+wiki-studio --version           # 0.1.0
 ```
 
-From a checkout: `poetry install`, then `poetry run wikiforge --help`.
+From a checkout: `poetry install`, then `poetry run wiki-studio --help`.
 
 ## Layout
 
-With no flags and no variables `wikiforge` reproduces the original
+With no flags and no variables `wiki-studio` reproduces the original
 code-copilot-team layout under the git toplevel of the current directory:
 
 | Location | Default | Flag | Variable |
 |---|---|---|---|
-| root (confines sources and proposals; anchors `path:` citations) | git toplevel of the current directory, else the current directory | `--root` | `WIKIFORGE_ROOT` |
-| wiki directory | `<root>/knowledge/wiki` | `--wiki-dir` | `WIKIFORGE_WIKI_DIR` |
-| proposals directory | `<root>/doc_internal/proposals` | `--proposals-dir` | `WIKIFORGE_PROPOSALS_DIR` |
+| root (confines sources and proposals; anchors `path:` citations) | git toplevel of the current directory, else the current directory | `--root` | `WIKISTUDIO_ROOT` |
+| wiki directory | `<root>/knowledge/wiki` | `--wiki-dir` | `WIKISTUDIO_WIKI_DIR` |
+| proposals directory | `<root>/doc_internal/proposals` | `--proposals-dir` | `WIKISTUDIO_PROPOSALS_DIR` |
 | query log | `<root>/doc_internal/wiki-query-log.jsonl` | | |
 | ingest audit log | `<wiki-dir>/.audit/ingest-log.md` | | |
 | schema override | `<wiki-dir>/schema/` (used when present) | | |
@@ -40,7 +40,7 @@ the current directory.
 
 ## Verbs
 
-### `wikiforge ingest <source>`
+### `wiki-studio ingest <source>`
 
 Runs the four-question gate over a source file and writes a patch-set
 (`plan.json` plus `preview/<page>.md` for every page it would create or
@@ -57,7 +57,7 @@ line to the ingest audit log.
 | `--allow-out-of-repo` | accept a source outside the root (otherwise exit 7) |
 | `--debug-unsafe-output` | show raw backend stderr instead of a redacted fingerprint |
 
-### `wikiforge promote <proposal-dir>`
+### `wiki-studio promote <proposal-dir>`
 
 Applies a patch-set to the wiki atomically. The staged tree is validated
 page by page and by the structural linter before anything is written; on
@@ -70,7 +70,7 @@ This is the only code path that writes into the wiki.
 | `--dry-run` | build and validate the staged tree, change nothing |
 | `--allow-out-of-repo` | accept a proposal directory outside the root (otherwise exit 7) |
 
-### `wikiforge query "<question>"`
+### `wiki-studio query "<question>"`
 
 Reads `index.md` first, loads the most relevant linked pages, asks the
 backend, and prints the answer; citations and the pages loaded go to
@@ -84,7 +84,7 @@ stderr and the pages-loaded set is appended to the query log.
 | `--output-dir DIR` | with `--file-back`, where to write that patch-set |
 | `--debug-unsafe-output` | as for ingest |
 
-### `wikiforge lint`
+### `wiki-studio lint`
 
 Structural lint of every page: frontmatter present and well formed with
 the required keys; `page_type` known; `slug` equals the file name and is
@@ -100,7 +100,7 @@ The audit tree under `.audit/` is always checked against
 | `--paths P [P ...]` | with `--health`, scope the findings to these wiki-relative pages |
 | `--backend NAME` | with `--health`, the backend for the contradiction check (skipped when omitted) |
 
-### `wikiforge audit-flush`
+### `wiki-studio audit-flush`
 
 Commits pending lines of the ingest audit log. The only verb that runs
 `git commit`; never invoked automatically.
@@ -133,10 +133,10 @@ Commits pending lines of the ingest audit log. The only verb that runs
 | `claude` | `claude` | Claude Code |
 | `codex` | `codex` | Codex CLI |
 | `cursor` | `cursor-agent` | Cursor |
-| `pi` | `pi-code` | selectable with `--backend pi`; auto-detected only with `WIKIFORGE_ENABLE_PI=1` |
+| `pi` | `pi-code` | selectable with `--backend pi`; auto-detected only with `WIKISTUDIO_ENABLE_PI=1` |
 | `test` | (in-process) | deterministic responses; what the test suite and CI use |
 
-Resolution order: `--backend`, then `WIKIFORGE_BACKEND`, then auto-detect,
+Resolution order: `--backend`, then `WIKISTUDIO_BACKEND`, then auto-detect,
 which probes PATH for `claude`, `codex`, `pi` (only when enabled), `cursor`
 in that order. `WIKI_INGEST_BACKEND` is still accepted and prints a
 deprecation warning on stderr.
@@ -148,12 +148,12 @@ redacted fingerprint of it unless `--debug-unsafe-output` is given.
 
 | Variable | Meaning |
 |---|---|
-| `WIKIFORGE_ROOT` | project root (see Layout) |
-| `WIKIFORGE_WIKI_DIR` | wiki directory |
-| `WIKIFORGE_PROPOSALS_DIR` | proposals directory |
-| `WIKIFORGE_BACKEND` | default backend name |
-| `WIKIFORGE_ENABLE_PI` | `1` adds `pi` to the auto-detect order |
-| `WIKI_INGEST_BACKEND` | deprecated alias of `WIKIFORGE_BACKEND` |
+| `WIKISTUDIO_ROOT` | project root (see Layout) |
+| `WIKISTUDIO_WIKI_DIR` | wiki directory |
+| `WIKISTUDIO_PROPOSALS_DIR` | proposals directory |
+| `WIKISTUDIO_BACKEND` | default backend name |
+| `WIKISTUDIO_ENABLE_PI` | `1` adds `pi` to the auto-detect order |
+| `WIKI_INGEST_BACKEND` | deprecated alias of `WIKISTUDIO_BACKEND` |
 
 ## Schema
 
@@ -171,8 +171,8 @@ in `docs/adr/`.
 ```python
 from pathlib import Path
 
-from wikiforge import api
-from wikiforge.paths import WikiPaths
+from wikistudio import api
+from wikistudio.paths import WikiPaths
 
 paths = WikiPaths.for_root(Path("."))                 # or WikiPaths.resolve(wiki_dir="kb")
 
@@ -189,7 +189,7 @@ print(report.passed, report.violations, report.health.findings)
 api.audit_flush(paths, dry_run=True)                   # AuditFlushResult
 ```
 
-The functions raise the exceptions in `wikiforge.errors`; each carries the
+The functions raise the exceptions in `wikistudio.errors`; each carries the
 exit code the CLI would use. `backend` may be a name, `None` (resolution
 order as above) or any object with `call(prompt) -> dict`.
 
@@ -202,7 +202,7 @@ are in [`docs/consumers.md`](docs/consumers.md).
 poetry install
 poetry run ruff check src/ tests/ && poetry run ruff format --check src/ tests/
 poetry run mypy src/
-poetry run pytest -q --cov=wikiforge --cov-fail-under=80
+poetry run pytest -q --cov=wikistudio --cov-fail-under=80
 poetry build
 ```
 

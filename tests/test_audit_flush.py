@@ -33,10 +33,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from wikiforge.audit_flush import detect_pending, flush
-from wikiforge.audit_lint import INGEST_LOG_MARKER
-from wikiforge.errors import AuditFlushError
-from wikiforge.paths import WikiPaths
+from wikistudio.audit_flush import detect_pending, flush
+from wikistudio.audit_lint import INGEST_LOG_MARKER
+from wikistudio.errors import AuditFlushError
+from wikistudio.paths import WikiPaths
 
 # ── Helpers ────────────────────────────────────────────────────────────────
 

@@ -13,7 +13,7 @@ Fixes are released as patch versions of the latest minor line.
 
 Please do not open a public issue for a security problem. Use GitHub's
 private reporting on this repository: **Security → Report a vulnerability**
-(https://github.com/gosha70/wikiforge/security/advisories/new). Include the
+(https://github.com/gosha70/wiki-studio/security/advisories/new). Include the
 version, a reproduction, and what an attacker would gain.
 
 You will get an acknowledgement within seven days and a fix or a
@@ -22,7 +22,7 @@ advisory unless you ask otherwise.
 
 ## What to look at
 
-- `wikiforge` has no runtime dependencies; the LLM backends are copilot CLIs
+- `wiki-studio` has no runtime dependencies; the LLM backends are copilot CLIs
   the tool starts as subprocesses with the rendered prompt as an argument.
   Prompts contain the source being ingested and wiki pages, so backend
   stderr may echo them; error messages therefore carry only a redacted

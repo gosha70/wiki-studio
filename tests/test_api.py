@@ -1,6 +1,6 @@
 # Copyright (c) 2026 EGOGE
 # SPDX-License-Identifier: Apache-2.0
-"""wikiforge.api — the five library functions, their typed results and the exceptions they raise (FR-008)."""
+"""wikistudio.api — the five library functions, their typed results and the exceptions they raise (FR-008)."""
 
 from __future__ import annotations
 
@@ -12,23 +12,23 @@ from pathlib import Path
 
 from tests.conftest import FIXTURES_DIR, SAMPLE_INCIDENT, make_repo_layout
 from tests.test_cli_contract import _proposals_dir, _wiki_with_pages, _write_page
-from wikiforge import api
-from wikiforge.backends.copilot_cli import CopilotCliBackend
-from wikiforge.backends.test import TestBackend
-from wikiforge.errors import (
+from wikistudio import api
+from wikistudio.backends.copilot_cli import CopilotCliBackend
+from wikistudio.backends.test import TestBackend
+from wikistudio.errors import (
     AuditFlushError,
     BackendNotFoundError,
     PathOutsideRootError,
     PromoteValidationError,
     SourceMissingError,
 )
-from wikiforge.paths import WikiPaths
-from wikiforge.promoter import PromoteResult
+from wikistudio.paths import WikiPaths
+from wikistudio.promoter import PromoteResult
 
 
 class _LayoutCase(unittest.TestCase):
     def setUp(self) -> None:
-        self._tmp = tempfile.TemporaryDirectory(prefix="wikiforge-api-")
+        self._tmp = tempfile.TemporaryDirectory(prefix="wikistudio-api-")
         self.root = make_repo_layout(Path(self._tmp.name), with_schema=True)
         self.paths = WikiPaths.for_root(self.root)
         self.sample = self.root / "sample-incident.md"
@@ -248,7 +248,7 @@ class TestLint(_LayoutCase):
         self.assertFalse(strict.passed)
 
     def test_health_pass_survives_a_malformed_contradiction_response(self) -> None:
-        from wikiforge.errors import ContractViolationError
+        from wikistudio.errors import ContractViolationError
 
         class _ProseBackend:
             calls = 0

@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 [tool.poetry]
-name = "wikiforge"
+name = "wiki-studio"
 version = "0.1.0"
 description = "Karpathy-pattern LLM wiki maintainer: ingest, promote, query, lint and audit a curated markdown knowledge base."
 authors = ["EGOGE <i.am.goga@gmail.com>"]
 license = "Apache-2.0"
 readme = "README.md"
-repository = "https://github.com/gosha70/wikiforge"
+repository = "https://github.com/gosha70/wiki-studio"
 keywords = ["llm", "wiki", "knowledge-base", "markdown", "agents"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -23,8 +23,8 @@ classifiers = [
     "Topic :: Software Development :: Documentation",
     "Topic :: Text Processing :: Markup :: Markdown",
 ]
-packages = [{ include = "wikiforge", from = "src" }]
-include = [{ path = "src/wikiforge/schema/*.md", format = ["sdist", "wheel"] }]
+packages = [{ include = "wikistudio", from = "src" }]
+include = [{ path = "src/wikistudio/schema/*.md", format = ["sdist", "wheel"] }]
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.14"
@@ -36,7 +36,7 @@ ruff = "^0.12"
 mypy = "^1.14"
 
 [tool.poetry.scripts]
-wikiforge = "wikiforge.cli:main"
+wiki-studio = "wikistudio.cli:main"
 
 [build-system]
 requires = ["poetry-core>=2.0.0"]
