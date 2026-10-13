@@ -8,7 +8,7 @@ description = "Karpathy-pattern LLM wiki maintainer: ingest, promote, query, lin
 authors = ["EGOGE <i.am.goga@gmail.com>"]
 license = "Apache-2.0"
 readme = "README.md"
-repository = "https://github.com/gosha70/ai-wiki"
+repository = "https://github.com/gosha70/wikiforge"
 keywords = ["llm", "wiki", "knowledge-base", "markdown", "agents"]
 classifiers = [
     "Development Status :: 3 - Alpha",

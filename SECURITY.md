@@ -13,7 +13,7 @@ Fixes are released as patch versions of the latest minor line.
 
 Please do not open a public issue for a security problem. Use GitHub's
 private reporting on this repository: **Security → Report a vulnerability**
-(https://github.com/gosha70/ai-wiki/security/advisories/new). Include the
+(https://github.com/gosha70/wikiforge/security/advisories/new). Include the
 version, a reproduction, and what an attacker would gain.
 
 You will get an acknowledgement within seven days and a fix or a
