@@ -12,7 +12,7 @@ name: Release to PyPI
 
 on:
   push:
-    tags: ["v*"]
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
 
 permissions:
   contents: read
@@ -42,7 +42,7 @@ jobs:
           python -m venv /tmp/smoke
           /tmp/smoke/bin/pip install --quiet dist/*.whl
           /tmp/smoke/bin/pip check
-          test "$(/tmp/smoke/bin/ai-wiki --version)" = "${GITHUB_REF_NAME#v}"
+          test "$(/tmp/smoke/bin/ai-wiki --version)" = "$(poetry version -s)"
           /tmp/smoke/bin/ai-wiki --help
       - uses: actions/upload-artifact@v5
         with:
