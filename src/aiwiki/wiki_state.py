@@ -25,6 +25,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from .paths import WikiPaths
+
 # Maximum candidate pages to load into the prompt by default. The prompt
 # size budget is the 32 KiB AGENTS-style limit; ten typical wiki pages
 # (~1–2 KiB each) plus index.md + log.md + the source comfortably fit.
@@ -77,10 +79,10 @@ class WikiState:
     Attributes
     ----------
     index_md : str
-        Verbatim contents of ``knowledge/wiki/index.md``. Empty string
+        Verbatim contents of the wiki's ``index.md``. Empty string
         if the wiki has no index (a fresh-repo edge case).
     log_md : str
-        Verbatim contents of ``knowledge/wiki/log.md``. Empty string
+        Verbatim contents of the wiki's ``log.md``. Empty string
         if absent.
     candidate_pages : dict[str, str]
         Map from wiki-relative path (e.g. ``concepts/origin-alignment.md``)
@@ -150,7 +152,7 @@ def _score_page_against_source(page_path: Path, source_tokens: set[str]) -> int:
 
 
 def load_wiki_state(
-    repo_root: Path,
+    paths: WikiPaths,
     source_path: Path,
     source_content: str,
     max_candidates: int = DEFAULT_MAX_CANDIDATES,
@@ -159,11 +161,11 @@ def load_wiki_state(
 
     Parameters
     ----------
-    repo_root : Path
-        Repo root. ``knowledge/wiki/`` is resolved relative to this.
+    paths : WikiPaths
+        The resolved layout; pages are read from ``paths.wiki_dir``.
     source_path : Path
         The source file being ingested. Path tokens are added to the
-        relevance signal so a source under ``specs/wiki-ingest-pipeline/``
+        relevance signal so a source under ``docs/wiki-ingest/``
         will rank wiki pages with "wiki" in their slug higher.
     source_content : str
         The full source content; tokens drive the relevance scoring.
@@ -177,7 +179,7 @@ def load_wiki_state(
         index_md, log_md verbatim; candidate_pages keyed by
         wiki-relative path. Returns empty state for missing wiki.
     """
-    wiki_dir = repo_root / "knowledge" / "wiki"
+    wiki_dir = paths.wiki_dir
     index_md = _read_text_or_empty(wiki_dir / "index.md")
     log_md = _read_text_or_empty(wiki_dir / "log.md")
 

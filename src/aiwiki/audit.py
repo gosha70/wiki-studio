@@ -7,11 +7,11 @@
 # IngestLogRecord from a WikiPatchSet or IngestProposal) and
 # append_ingest_log (the fail-closed, marker-prefixed writer).
 #
-# append_ingest_log is called from __main__.py ingest handlers AFTER the
+# append_ingest_log is called from cli.py ingest handlers AFTER the
 # proposal dir is materialized + dry-run stripped (Design Decision 8), NOT
 # from ingestor.py / ingestor_multi.py.
 #
-# See knowledge/wiki/schema/audit-rules.md for the normative format spec.
+# See schema/audit-rules.md for the normative format spec.
 
 from __future__ import annotations
 
@@ -20,10 +20,14 @@ import hashlib
 import json
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from .audit_lint import INGEST_LOG_MARKER
 from .errors import OutputWriteError
 from .proposal import IngestLogRecord, IngestProposal, WikiPatchSet
+
+if TYPE_CHECKING:
+    from .paths import WikiPaths
 
 # ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -115,7 +119,7 @@ def _page_type_from_path(path: str) -> str:
 def build_log_record(
     *,
     source_file: Path,
-    repo_root: Path,
+    paths: WikiPaths,
     backend_name: str,
     proposal_dir_path: Path | None,
     allow_out_of_repo: bool = False,
@@ -132,8 +136,8 @@ def build_log_record(
     source_file : Path
         The source file on disk (used to compute source_sha and derive
         source_path).
-    repo_root : Path
-        Repo root; used to compute the repo-relative POSIX source_path.
+    paths : WikiPaths
+        The resolved layout; ``paths.root`` anchors the repo-relative POSIX source_path.
     backend_name : str
         Backend display name (``"test"``, ``"claude"``, etc.).
     proposal_dir_path : Path | None
@@ -159,7 +163,7 @@ def build_log_record(
 
     # source_path and source_repo_relative.
     try:
-        rel = source_file.resolve().relative_to(repo_root.resolve())
+        rel = source_file.resolve().relative_to(paths.root.resolve())
         src_path = rel.as_posix()
         src_repo_relative = True
     except ValueError:
@@ -240,14 +244,14 @@ _LEGACY_PAGE_TYPE_DIR: dict[str, str] = {
 # ── Append writer (the only writer of ingest-log.md) ──────────────────────
 
 
-def append_ingest_log(repo_root: Path, record: IngestLogRecord) -> None:
-    """Append one NDJSON line to knowledge/wiki/.audit/ingest-log.md.
+def append_ingest_log(paths: WikiPaths, record: IngestLogRecord) -> None:
+    """Append one NDJSON line to the ingest log (``paths.audit_log``).
 
     Creates the file with the marker preamble if it does not exist.
     Fail-closed: any OSError is re-raised so the caller can exit via
     OutputWriteError (exit code 6).
     """
-    log_path = repo_root / "knowledge" / "wiki" / ".audit" / "ingest-log.md"
+    log_path = paths.audit_log
     try:
         log_path.parent.mkdir(parents=True, exist_ok=True)
 

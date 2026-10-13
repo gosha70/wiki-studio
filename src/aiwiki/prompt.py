@@ -12,8 +12,11 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from .paths import WikiPaths
+
 from . import yaml_lite
 from .errors import ContractViolationError
+from .lint import PAGE_TYPE_DIRS
 
 # ---------------------------------------------------------------------------
 # Schema paths (read at runtime, never embedded in source)
@@ -21,19 +24,8 @@ from .errors import ContractViolationError
 
 _SCHEMA_NAMES = ("ingest-rules", "page-types", "citation-rules")
 
-# Directory-placement mapping (mirrors lint-wiki.sh expected_dir_for_type).
-_PAGE_TYPE_TO_DIR: dict[str, str] = {
-    "concept": "concepts",
-    "workflow": "workflows",
-    "incident": "incidents",
-    "decision": "decisions",
-    "playbook": "playbooks",
-    "glossary": "glossary",
-    "open-question": "open-questions",
-    "index": ".",
-    "log": ".",
-    "overview": ".",
-}
+# Directory-placement mapping (shared with the structural linter).
+_PAGE_TYPE_TO_DIR = PAGE_TYPE_DIRS
 
 # Page types that may be the target of an ingest proposal. Excludes
 # root-only meta pages (index, log, overview) — those are wiki structure,
@@ -56,23 +48,18 @@ _VALID_PAGE_TYPES = set(_PAGE_TYPE_TO_DIR.keys())
 _KEBAB_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 
-def _find_schema_dir(repo_root: Path) -> Path:
-    """Return the schema directory, resolving from repo_root."""
-    return repo_root / "knowledge" / "wiki" / "schema"
-
-
 def _read_packaged_schema(name: str) -> str:
     """Read one schema document shipped as package data under ``aiwiki/schema/``."""
     return resources.files(__package__).joinpath("schema", f"{name}.md").read_text(encoding="utf-8")
 
 
-def load_schema_files(repo_root: Path) -> dict[str, str]:
+def load_schema_files(paths: WikiPaths) -> dict[str, str]:
     """Load ingest-rules, page-types, citation-rules. Return {name: content}.
 
     The project's own copy under ``<wiki>/schema/`` wins when that directory
     exists; otherwise the documents packaged with aiwiki are used.
     """
-    schema_dir = _find_schema_dir(repo_root)
+    schema_dir = paths.schema_dir
     result: dict[str, str] = {}
     for name in _SCHEMA_NAMES:
         if schema_dir.is_dir():
@@ -406,7 +393,7 @@ def _validate_semantics(raw: dict[str, Any]) -> None:
         )
 
     # Special directory-placement case: the slug "glossary" is reserved for
-    # glossary/index.md (per knowledge/wiki/schema/page-types.md slug rule)
+    # glossary/index.md (per schema/page-types.md slug rule)
     # and must pair with page_type: glossary.
     if slug == "glossary" and page_type != "glossary":
         raise ContractViolationError(

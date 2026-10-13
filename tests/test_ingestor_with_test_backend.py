@@ -8,6 +8,7 @@ from pathlib import Path
 
 from aiwiki.backends.test import TestBackend
 from aiwiki.ingestor import DefaultIngestor
+from aiwiki.paths import WikiPaths
 from aiwiki.proposal import IngestProposal, IngestRequest
 from tests.conftest import make_repo_layout
 
@@ -17,12 +18,14 @@ _FIXTURE = Path(__file__).parent / "fixtures" / "sample-incident.md"
 # schema through it (there is no schema/ override in the layout).
 _TMP: tempfile.TemporaryDirectory[str] | None = None
 _REPO_ROOT = Path()
+_PATHS = WikiPaths.for_root(_REPO_ROOT)
 
 
 def setUpModule() -> None:
-    global _TMP, _REPO_ROOT
+    global _TMP, _REPO_ROOT, _PATHS
     _TMP = tempfile.TemporaryDirectory(prefix="aiwiki-ingestor-")
     _REPO_ROOT = make_repo_layout(Path(_TMP.name), with_sample=False)
+    _PATHS = WikiPaths.for_root(_REPO_ROOT)
 
 
 def tearDownModule() -> None:
@@ -33,7 +36,7 @@ def tearDownModule() -> None:
 class TestIngestorWithTestBackend(unittest.TestCase):
     def setUp(self) -> None:
         self.backend = TestBackend()
-        self.ingestor = DefaultIngestor(backend=self.backend, repo_root=_REPO_ROOT)
+        self.ingestor = DefaultIngestor(backend=self.backend, paths=_PATHS)
         self.request = IngestRequest(
             source_path=_FIXTURE,
             source_kind="file",

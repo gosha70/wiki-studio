@@ -17,7 +17,6 @@
 import dataclasses
 import hashlib
 import json
-import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -30,8 +29,9 @@ from aiwiki.audit import (
     truncate_reason,
 )
 from aiwiki.errors import OutputWriteError
+from aiwiki.paths import WikiPaths
 from aiwiki.proposal import IngestLogRecord, IngestProposal, PageEdit, WikiPatchSet
-from tests.conftest import FIXTURES_DIR, PACKAGE_ROOT, make_repo_layout
+from tests.conftest import PACKAGE_ROOT
 
 # ── source_sha ────────────────────────────────────────────────────────────
 
@@ -257,7 +257,7 @@ class TestBuildLogRecord(unittest.TestCase):
         patch = _make_patch(edits, rationale="multi-page rationale")
         record = build_log_record(
             source_file=src,
-            repo_root=self._td_path,
+            paths=WikiPaths.for_root(self._td_path),
             backend_name="test",
             proposal_dir_path=prop_dir,
             patch=patch,
@@ -279,7 +279,7 @@ class TestBuildLogRecord(unittest.TestCase):
         patch = _make_patch([], rationale="not wiki-worthy")
         record = build_log_record(
             source_file=src,
-            repo_root=self._td_path,
+            paths=WikiPaths.for_root(self._td_path),
             backend_name="test",
             proposal_dir_path=prop_dir,
             patch=patch,
@@ -304,7 +304,7 @@ class TestBuildLogRecord(unittest.TestCase):
         )
         record = build_log_record(
             source_file=src,
-            repo_root=self._td_path,
+            paths=WikiPaths.for_root(self._td_path),
             backend_name="test",
             proposal_dir_path=prop_dir,
             legacy_proposal=legacy,
@@ -327,7 +327,7 @@ class TestBuildLogRecord(unittest.TestCase):
         patch = _make_patch([], rationale="external reject")
         record = build_log_record(
             source_file=external,
-            repo_root=other_root,
+            paths=WikiPaths.for_root(other_root),
             backend_name="test",
             proposal_dir_path=prop_dir,
             allow_out_of_repo=True,
@@ -344,7 +344,7 @@ class TestBuildLogRecord(unittest.TestCase):
         patch = _make_patch(edits)
         record = build_log_record(
             source_file=src,
-            repo_root=self._td_path,
+            paths=WikiPaths.for_root(self._td_path),
             backend_name="test",
             proposal_dir_path=prop_dir,
             patch=patch,
@@ -360,7 +360,7 @@ class TestBuildLogRecord(unittest.TestCase):
         patch = _make_patch([])
         record = build_log_record(
             source_file=src,
-            repo_root=self._td_path,
+            paths=WikiPaths.for_root(self._td_path),
             backend_name="test",
             proposal_dir_path=prop_dir,
             patch=patch,
@@ -375,6 +375,7 @@ class TestAppendIngestLog(unittest.TestCase):
     def setUp(self) -> None:
         self._td = tempfile.mkdtemp()
         self._repo_root = Path(self._td)
+        self._paths = WikiPaths.for_root(self._repo_root)
 
     def tearDown(self) -> None:
         import shutil
@@ -402,7 +403,7 @@ class TestAppendIngestLog(unittest.TestCase):
 
     def test_creates_marker_and_one_line(self) -> None:
         record = self._make_record()
-        append_ingest_log(self._repo_root, record)
+        append_ingest_log(self._paths, record)
         log = self._log_path()
         self.assertTrue(log.exists())
         content = log.read_text(encoding="utf-8")
@@ -417,8 +418,8 @@ class TestAppendIngestLog(unittest.TestCase):
     def test_second_call_appends(self) -> None:
         record1 = self._make_record("accept")
         record2 = self._make_record("reject")
-        append_ingest_log(self._repo_root, record1)
-        append_ingest_log(self._repo_root, record2)
+        append_ingest_log(self._paths, record1)
+        append_ingest_log(self._paths, record2)
         content = self._log_path().read_text(encoding="utf-8")
         lines = [line for line in content.split("\n") if line.strip()]
         # First non-marker non-blank line is marker, then record1, record2.
@@ -429,8 +430,8 @@ class TestAppendIngestLog(unittest.TestCase):
 
     def test_marker_written_only_once(self) -> None:
         record = self._make_record()
-        append_ingest_log(self._repo_root, record)
-        append_ingest_log(self._repo_root, record)
+        append_ingest_log(self._paths, record)
+        append_ingest_log(self._paths, record)
         content = self._log_path().read_text(encoding="utf-8")
         self.assertEqual(content.count("<!-- ingest-log schema v1 -->"), 1)
 
@@ -442,11 +443,11 @@ class TestAppendIngestLog(unittest.TestCase):
         (audit_parent / ".audit").write_text("not a dir\n", encoding="utf-8")
         record = self._make_record()
         with self.assertRaises(OutputWriteError):
-            append_ingest_log(self._repo_root, record)
+            append_ingest_log(self._paths, record)
 
     def test_appended_line_is_valid_json(self) -> None:
         record = self._make_record()
-        append_ingest_log(self._repo_root, record)
+        append_ingest_log(self._paths, record)
         content = self._log_path().read_text(encoding="utf-8")
         for line in content.split("\n"):
             if line and not line.startswith("<!--"):
@@ -496,49 +497,10 @@ class TestSingleWriterInvariant(unittest.TestCase):
             for line in lines:
                 stripped = line.strip()
                 # Only flag lines where knowledge/wiki is used AND a write call is present.
-                if "knowledge/wiki" in stripped and (
+                if "wiki_dir" in stripped and (
                     "write_text" in stripped or "write_bytes" in stripped or ".write(" in stripped
                 ):
                     self.fail(f"{path.name}: line appears to write to knowledge/wiki: {stripped!r}")
-
-
-# ── Behavioral: lint-wiki.sh .audit/ shell exclusion arm ─────────────────
-
-
-class TestLintWikiShellAuditExclusion(unittest.TestCase):
-    """Verify lint-wiki.sh output does not mention .audit/ artifacts."""
-
-    def test_lint_wiki_sh_output_excludes_audit_path(self) -> None:
-        """Run lint-wiki.sh on a wiki with a planted .audit/ file and verify its
-        output never mentions .audit/ — the find command must not enumerate it."""
-        with tempfile.TemporaryDirectory() as tmp:
-            root = make_repo_layout(Path(tmp), with_lint_script=True, with_sample=False)
-            audit_dir = root / "knowledge" / "wiki" / ".audit"
-            audit_dir.mkdir()
-            (audit_dir / "ingest-log.md").write_text("not a wiki page\n", encoding="utf-8")
-            lint_script = root / "knowledge" / "wiki" / "scripts" / "lint-wiki.sh"
-            result = subprocess.run(
-                ["bash", str(lint_script)],
-                capture_output=True,
-                text=True,
-            )
-        combined = result.stdout + result.stderr
-        self.assertEqual(result.returncode, 0, combined)
-        self.assertNotIn(
-            ".audit/",
-            combined,
-            f"lint-wiki.sh output mentions .audit/ — exclusion may be missing:\n{combined}",
-        )
-
-    def test_lint_wiki_sh_audit_exclusion_is_load_bearing(self) -> None:
-        """Verify the .audit/ exclusion clause exists in lint-wiki.sh source."""
-        lint_script = FIXTURES_DIR / "lint-wiki.sh"
-        content = lint_script.read_text(encoding="utf-8")
-        self.assertIn(
-            ".audit",
-            content,
-            "lint-wiki.sh does not contain a .audit exclusion clause",
-        )
 
 
 if __name__ == "__main__":

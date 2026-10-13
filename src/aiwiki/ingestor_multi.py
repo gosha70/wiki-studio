@@ -42,6 +42,7 @@ from .wiki_state import load_wiki_state
 
 if TYPE_CHECKING:
     from .ingestor import Backend
+    from .paths import WikiPaths
 
 
 @runtime_checkable
@@ -54,9 +55,9 @@ class MultiIngestor(Protocol):
 class DefaultMultiIngestor:
     """Default multi-page ingestor: source + wiki state → WikiPatchSet."""
 
-    def __init__(self, backend: Backend, repo_root: Path) -> None:
+    def __init__(self, backend: Backend, paths: WikiPaths) -> None:
         self._backend = backend
-        self._repo_root = repo_root
+        self._paths = paths
 
     def ingest_multi(self, request: IngestRequest) -> WikiPatchSet:
         # 1. Read source.
@@ -71,13 +72,13 @@ class DefaultMultiIngestor:
         # 2. Load wiki state. Empty state on a fresh repo is fine —
         #    the backend will treat missing pages as creates.
         wiki_state = load_wiki_state(
-            repo_root=self._repo_root,
+            paths=self._paths,
             source_path=source_path,
             source_content=source_content,
         )
 
         # 3. Compose prompt.
-        schema_files = load_schema_files(self._repo_root)
+        schema_files = load_schema_files(self._paths)
         prompt_dict = compose_multi_prompt(
             source_path=source_path,
             source_content=source_content,
@@ -140,7 +141,7 @@ class DefaultMultiIngestor:
         if patch.edits:
             per_edit_errors: list[str] = []
             for edit in patch.edits:
-                per_edit_errors.extend(validate_page_edit_semantics(edit, self._repo_root))
+                per_edit_errors.extend(validate_page_edit_semantics(edit, self._paths))
             if per_edit_errors:
                 raise ContractViolationError(
                     "WikiPatchSet failed per-edit semantic validation:\n  - " + "\n  - ".join(per_edit_errors)

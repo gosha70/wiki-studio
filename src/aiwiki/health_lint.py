@@ -3,7 +3,7 @@
 # aiwiki.health_lint — Phase-4 knowledge-health lint.
 #
 # Four checks that go beyond the structural linter
-# (knowledge/wiki/scripts/lint-wiki.sh, which validates frontmatter
+# (aiwiki.lint, which validates frontmatter
 # shape, slug uniqueness, intra-wiki link integrity, structural
 # orphan-from-index). Knowledge-health checks the *meaning* of the
 # wiki:
@@ -43,6 +43,7 @@ from .wiki_state import _read_text_or_empty
 
 if TYPE_CHECKING:
     from .ingestor import Backend
+    from .paths import WikiPaths
 
 # Pattern for [text](path.md) intra-wiki links.
 _MD_LINK_RE = re.compile(r"\]\(([^)]+\.md)(?:#[^)]*)?\)")
@@ -87,16 +88,13 @@ def _intra_wiki_links_from(page: Path, wiki_dir: Path) -> list[str]:
         try:
             rel = resolved.relative_to(wiki_dir.resolve())
         except ValueError:
-            # Escape link (e.g. ../../../shared/...). Not intra-wiki.
+            # Escape link (e.g. ../../../docs/...). Not intra-wiki.
             continue
         out.append(rel.as_posix())
     return out
 
 
-def _check_stale_claims(
-    wiki_dir: Path,
-    repo_root: Path,
-) -> list[HealthFinding]:
+def _check_stale_claims(paths: WikiPaths) -> list[HealthFinding]:
     """For each page's frontmatter sources entries, check that
     ``path:`` references resolve. Missing paths → stale-claim
     warning.
@@ -106,6 +104,7 @@ def _check_stale_claims(
     (network-dependent; out of scope for the deterministic in-process
     pass).
     """
+    wiki_dir = paths.wiki_dir
     findings: list[HealthFinding] = []
     for page in _list_wiki_pages(wiki_dir):
         content = _read_text_or_empty(page)
@@ -125,7 +124,7 @@ def _check_stale_claims(
             cited_path = src.get("path")
             if not cited_path:
                 continue
-            target = repo_root / cited_path
+            target = paths.root / cited_path
             if not target.exists():
                 findings.append(
                     HealthFinding(
@@ -134,7 +133,7 @@ def _check_stale_claims(
                         pages=[rel],
                         description=(
                             f"page cites missing source path: {cited_path!r} "
-                            f"(no file at {target.relative_to(repo_root)} — "
+                            f"(no file at {paths.relative_to_root(target)} — "
                             f"file may have been renamed, moved, or deleted)"
                         ),
                     )
@@ -420,17 +419,17 @@ def _compose_contradiction_prompt(
 
 
 def lint_health(
-    repo_root: Path,
-    paths: list[str] | None = None,
+    paths: WikiPaths,
+    only: list[str] | None = None,
     backend: Backend | None = None,
 ) -> HealthLintResult:
     """Run all four knowledge-health checks against the wiki.
 
     Parameters
     ----------
-    repo_root : Path
-        Repo root; ``knowledge/wiki/`` resolved relative to it.
-    paths : list[str] | None
+    paths : WikiPaths
+        The resolved layout; pages are read from ``paths.wiki_dir``.
+    only : list[str] | None
         If provided, scope checks to these wiki-relative paths.
         Currently honored only by stale-claims; the graph-based
         checks (orphans, cross-links) need the whole wiki to compute
@@ -440,17 +439,17 @@ def lint_health(
         When None, contradictions are skipped (clean exit on local
         runs without a configured backend).
     """
-    wiki_dir = repo_root / "knowledge" / "wiki"
+    wiki_dir = paths.wiki_dir
     pages = _list_wiki_pages(wiki_dir)
 
     findings: list[HealthFinding] = []
-    findings.extend(_check_stale_claims(wiki_dir, repo_root))
+    findings.extend(_check_stale_claims(paths))
     findings.extend(_check_weak_orphans(wiki_dir))
     findings.extend(_check_missing_cross_links(wiki_dir))
     findings.extend(_check_contradictions(wiki_dir, backend))
 
-    if paths:
-        scoped = set(paths)
+    if only:
+        scoped = set(only)
         findings = [f for f in findings if any(p in scoped for p in f.pages)]
 
     return HealthLintResult(

@@ -7,11 +7,14 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from .errors import BackendInvocationError, SourceMissingError
 from .prompt import compose_prompt, load_schema_files, parse_response
 from .proposal import IngestProposal, IngestRequest
+
+if TYPE_CHECKING:
+    from .paths import WikiPaths
 
 
 @runtime_checkable
@@ -31,9 +34,9 @@ class WikiIngestor(Protocol):
 class DefaultIngestor:
     """Wires prompt composition → backend → response validation → IngestProposal construction."""
 
-    def __init__(self, backend: Backend, repo_root: Path) -> None:
+    def __init__(self, backend: Backend, paths: WikiPaths) -> None:
         self._backend = backend
-        self._repo_root = repo_root
+        self._paths = paths
 
     def ingest(self, request: IngestRequest) -> IngestProposal:
         # 1. Read source
@@ -47,9 +50,9 @@ class DefaultIngestor:
 
         # 2. Load schema files and compose prompt.
         # WIKI_INGEST_TASK env var carries the dry-run intent from
-        # __main__.py; default "ingest" when unset. See compose_prompt
+        # cli.py; default "ingest" when unset. See compose_prompt
         # for the task semantics.
-        schema_files = load_schema_files(self._repo_root)
+        schema_files = load_schema_files(self._paths)
         task = os.environ.get("WIKI_INGEST_TASK", "ingest")
         prompt_dict = compose_prompt(
             source_path=source_path,

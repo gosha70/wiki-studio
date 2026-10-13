@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # tests/test_copilot_cli.py — tests for CopilotCliBackend and resolve_backend().
 
+import contextlib
+import io
 import json
 import os
 import stat
@@ -206,18 +208,18 @@ class TestResolveBackend(unittest.TestCase):
         self.assertIn("claude", msg)
 
     def test_resolve_none_with_env_var_set_uses_env(self) -> None:
-        """resolve_backend(None) with WIKI_INGEST_BACKEND=codex tries codex."""
+        """resolve_backend(None) with AIWIKI_BACKEND=codex tries codex."""
         with (
-            patch.dict(os.environ, {"WIKI_INGEST_BACKEND": "codex"}),
+            patch.dict(os.environ, {"AIWIKI_BACKEND": "codex"}),
             patch("aiwiki.backends.shutil.which", return_value="/usr/bin/codex"),
         ):
             backend = resolve_backend(None)
         self.assertIsInstance(backend, CopilotCliBackend)
 
     def test_resolve_none_with_env_var_missing_from_path_raises(self) -> None:
-        """resolve_backend(None) with WIKI_INGEST_BACKEND=codex but codex not on PATH raises."""
+        """resolve_backend(None) with AIWIKI_BACKEND=codex but codex not on PATH raises."""
         with (
-            patch.dict(os.environ, {"WIKI_INGEST_BACKEND": "codex"}),
+            patch.dict(os.environ, {"AIWIKI_BACKEND": "codex"}),
             patch("aiwiki.backends.shutil.which", return_value=None),
             self.assertRaises(BackendNotFoundError) as ctx,
         ):
@@ -230,7 +232,7 @@ class TestResolveBackend(unittest.TestCase):
         def which_side_effect(name: str) -> str | None:
             return "/usr/local/bin/claude" if name == "claude" else None
 
-        env_without_backend = {k: v for k, v in os.environ.items() if k != "WIKI_INGEST_BACKEND"}
+        env_without_backend = {k: v for k, v in os.environ.items() if k != "AIWIKI_BACKEND"}
         with (
             patch.dict(os.environ, env_without_backend, clear=True),
             patch("aiwiki.backends.shutil.which", side_effect=which_side_effect),
@@ -240,7 +242,7 @@ class TestResolveBackend(unittest.TestCase):
 
     def test_auto_detect_nothing_on_path_raises(self) -> None:
         """resolve_backend(None) with no env, nothing on PATH raises BackendNotFoundError."""
-        env_without_backend = {k: v for k, v in os.environ.items() if k != "WIKI_INGEST_BACKEND"}
+        env_without_backend = {k: v for k, v in os.environ.items() if k != "AIWIKI_BACKEND"}
         with (
             patch.dict(os.environ, env_without_backend, clear=True),
             patch("aiwiki.backends.shutil.which", return_value=None),
@@ -254,8 +256,8 @@ class TestResolveBackend(unittest.TestCase):
         self.assertIn("cursor", msg)
 
     def test_cli_flag_wins_over_env_var(self) -> None:
-        """CLI flag wins over WIKI_INGEST_BACKEND env var: resolve_backend('test') ignores env."""
-        with patch.dict(os.environ, {"WIKI_INGEST_BACKEND": "codex"}):
+        """CLI flag wins over AIWIKI_BACKEND env var: resolve_backend('test') ignores env."""
+        with patch.dict(os.environ, {"AIWIKI_BACKEND": "codex"}):
             backend = resolve_backend("test")
         # Should be TestBackend (from the "test" flag), not CopilotCliBackend
         self.assertIsInstance(backend, TestBackend)
@@ -273,10 +275,32 @@ class TestResolveBackend(unittest.TestCase):
         self.assertIsInstance(backend, CopilotCliBackend)
 
     def test_resolve_env_test_returns_test_backend(self) -> None:
-        """WIKI_INGEST_BACKEND=test resolves to TestBackend (registered backend, no PATH check)."""
-        with patch.dict(os.environ, {"WIKI_INGEST_BACKEND": "test"}):
+        """AIWIKI_BACKEND=test resolves to TestBackend (registered backend, no PATH check)."""
+        with patch.dict(os.environ, {"AIWIKI_BACKEND": "test"}):
             backend = resolve_backend(None)
         self.assertIsInstance(backend, TestBackend)
+
+
+class TestBackendEnvironmentVariables(unittest.TestCase):
+    """AIWIKI_BACKEND is the variable; WIKI_INGEST_BACKEND is accepted with a stderr warning."""
+
+    def test_deprecated_variable_is_accepted_with_a_warning(self) -> None:
+        env = {k: v for k, v in os.environ.items() if k not in ("AIWIKI_BACKEND", "WIKI_INGEST_BACKEND")}
+        env["WIKI_INGEST_BACKEND"] = "test"
+        with patch.dict(os.environ, env, clear=True), contextlib.redirect_stderr(io.StringIO()) as err:
+            backend = resolve_backend(None)
+        self.assertIsInstance(backend, TestBackend)
+        self.assertIn("WIKI_INGEST_BACKEND is deprecated", err.getvalue())
+        self.assertIn("AIWIKI_BACKEND", err.getvalue())
+
+    def test_new_variable_wins_over_deprecated_one_silently(self) -> None:
+        with (
+            patch.dict(os.environ, {"AIWIKI_BACKEND": "test", "WIKI_INGEST_BACKEND": "codex"}),
+            contextlib.redirect_stderr(io.StringIO()) as err,
+        ):
+            backend = resolve_backend(None)
+        self.assertIsInstance(backend, TestBackend)
+        self.assertEqual(err.getvalue(), "")
 
 
 if __name__ == "__main__":

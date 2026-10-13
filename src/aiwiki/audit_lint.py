@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # aiwiki.audit_lint — Phase-1 audit-trail format lint.
 #
-# The lint-side validator for knowledge/wiki/.audit/. It implements the
-# machine-checkable spec in knowledge/wiki/schema/audit-rules.md the
-# same way lint-wiki.sh implements lint-rules.md: the schema file is the
+# The lint-side validator for <wiki_dir>/.audit/. It implements the
+# machine-checkable spec in schema/audit-rules.md the same way
+# aiwiki.lint implements lint-rules.md: the schema file is the
 # human contract, this module is the executable check. It is NOT loaded
 # via prompt.load_schema_files and is never injected into a backend
 # prompt — it is consumed directly by `wiki lint`.
@@ -20,8 +20,12 @@ import json
 import re
 from typing import TYPE_CHECKING
 
+from .paths import AUDIT_DIR_NAME
+
 if TYPE_CHECKING:
     from pathlib import Path
+
+    from .paths import WikiPaths
 
 INGEST_LOG_MARKER = "<!-- ingest-log schema v1 -->"
 
@@ -158,13 +162,13 @@ def _validate_proposal_dir(d: Path) -> list[str]:
     return errors
 
 
-def validate_audit_tree(repo_root: Path) -> list[str]:
-    """Validate knowledge/wiki/.audit/. Empty list = clean (or absent).
+def validate_audit_tree(paths: WikiPaths) -> list[str]:
+    """Validate ``<wiki_dir>/.audit/``. Empty list = clean (or absent).
 
     Format-only per audit-rules.md v1. A missing .audit/ tree is clean
     (the trail simply has not started yet).
     """
-    return validate_audit_dir(repo_root / "knowledge" / "wiki" / ".audit")
+    return validate_audit_dir(paths.wiki_dir / AUDIT_DIR_NAME)
 
 
 def validate_audit_dir(audit_dir: Path) -> list[str]:

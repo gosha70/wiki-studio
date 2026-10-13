@@ -2,25 +2,26 @@
 # SPDX-License-Identifier: Apache-2.0
 # aiwiki.audit_flush — the ONLY git-committing module in the wiki pipeline.
 #
-# Implements `detect_pending(repo_root) -> PendingState` and
-# `flush(repo_root, dry_run) -> int` for the `wiki audit-flush` verb.
+# Implements `detect_pending(paths) -> PendingState` and
+# `flush(paths, dry_run) -> int` for the `ai-wiki audit-flush` verb.
 #
 # `wiki audit-flush` is the sole pipeline command that runs `git commit`,
 # by design and in one place. `ingest`/`promote`/`lint` remain git-free.
 # Never auto-invoked, hooked, or scheduled — only user-driven.
 #
-# See specs/wiki-audit-flush/spec.md for the full contract.
 
 from __future__ import annotations
 
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from .audit_lint import _validate_ingest_log
 from .errors import AuditFlushError
 
-_LOG_REL = "knowledge/wiki/.audit/ingest-log.md"
+if TYPE_CHECKING:
+    from .paths import WikiPaths
 
 # Number of fixed preamble lines: "<!-- ingest-log schema v1 -->" + blank.
 _PREAMBLE_LINES = 2
@@ -55,16 +56,16 @@ def _count_data_lines(raw: bytes) -> int:
     return sum(1 for ln in data_lines if ln.strip())
 
 
-def detect_pending(repo_root: Path) -> PendingState:
-    """Return the pending-state for knowledge/wiki/.audit/ingest-log.md.
+def detect_pending(paths: WikiPaths) -> PendingState:
+    """Return the pending-state for the ingest log (``paths.audit_log``).
 
     Reads the committed blob from HEAD via `git show` and the working file
     from disk. Never mutates git or the filesystem.
 
     Parameters
     ----------
-    repo_root : Path
-        Absolute path to the git work tree root.
+    paths : WikiPaths
+        The resolved layout; ``paths.root`` is the git work tree.
 
     Returns
     -------
@@ -79,17 +80,18 @@ def detect_pending(repo_root: Path) -> PendingState:
         This function propagates the subprocess result; callers must decide
         whether a non-zero `git show` exit means "absent" or "not a repo".
     """
-    log_path = repo_root / _LOG_REL
+    log_path = paths.audit_log
+    log_rel = paths.relative_to_root(log_path)
 
     # ── Committed blob ────────────────────────────────────────────────────
     result = _run(
-        ["git", "-C", str(repo_root), "show", f"HEAD:{_LOG_REL}"],
+        ["git", "-C", str(paths.root), "show", f"HEAD:{log_rel}"],
     )
     if result.returncode != 0:
         stderr_text = result.stderr.decode("utf-8", errors="replace")
         # Distinguish "not a git repo" from "file absent at HEAD".
         if "not a git repository" in stderr_text or "not a git repo" in stderr_text:
-            raise AuditFlushError(f"not a git work tree: {repo_root}\n  {stderr_text.strip()}")
+            raise AuditFlushError(f"not a git work tree: {paths.root}\n  {stderr_text.strip()}")
         # File absent at HEAD (untracked or brand-new): treat as empty committed.
         committed_bytes = b""
     else:
@@ -99,7 +101,7 @@ def detect_pending(repo_root: Path) -> PendingState:
     if not log_path.exists():
         # Nothing on disk either → trivially clean, nothing pending.
         return PendingState(
-            path=Path(_LOG_REL),
+            path=Path(log_rel),
             pending=0,
             blob_sha=None,
             diverged=False,
@@ -110,7 +112,7 @@ def detect_pending(repo_root: Path) -> PendingState:
 
     # ── blob_sha via git hash-object ──────────────────────────────────────
     sha_result = _run(
-        ["git", "-C", str(repo_root), "hash-object", str(log_path)],
+        ["git", "-C", str(paths.root), "hash-object", str(log_path)],
     )
     blob_sha: str | None = sha_result.stdout.decode("ascii").strip() if sha_result.returncode == 0 else None
 
@@ -137,7 +139,7 @@ def detect_pending(repo_root: Path) -> PendingState:
     pending = max(0, working_data - committed_data)
 
     return PendingState(
-        path=Path(_LOG_REL),
+        path=Path(log_rel),
         pending=pending,
         blob_sha=blob_sha,
         diverged=diverged,
@@ -145,13 +147,13 @@ def detect_pending(repo_root: Path) -> PendingState:
     )
 
 
-def flush(repo_root: Path, dry_run: bool) -> int:
+def flush(paths: WikiPaths, dry_run: bool) -> int:
     """Commit any pending ingest-log lines, or report them in dry-run mode.
 
     Parameters
     ----------
-    repo_root : Path
-        Absolute path to the git work tree root.
+    paths : WikiPaths
+        The resolved layout; ``paths.root`` is the git work tree.
     dry_run : bool
         When True, print the pending count + blob SHA and exit 0 without
         committing.
@@ -166,7 +168,8 @@ def flush(repo_root: Path, dry_run: bool) -> int:
     AuditFlushError
         For non-git-repo, divergence, malformed log, or a failed git commit.
     """
-    state = detect_pending(repo_root)
+    state = detect_pending(paths)
+    log_rel = state.path.as_posix()
 
     # ── Fail-closed gates (apply before dry-run report) ───────────────────
     if state.diverged:
@@ -181,7 +184,7 @@ def flush(repo_root: Path, dry_run: bool) -> int:
             "audit-flush: working ingest-log.md is malformed (torn final "
             "line, not newline-terminated, or contains a record that fails "
             "audit_lint v1 validation).\n"
-            "  Run `./scripts/wiki lint --strict` for details. The file is "
+            "  Run `ai-wiki lint --strict` for details. The file is "
             "left untouched; the next correct `wiki ingest` append will "
             "repair the tail."
         )
@@ -213,10 +216,10 @@ def flush(repo_root: Path, dry_run: bool) -> int:
         [
             "git",
             "-C",
-            str(repo_root),
+            str(paths.root),
             "add",
             "--",
-            _LOG_REL,
+            log_rel,
         ],
     )
     if add_result.returncode != 0:
@@ -227,12 +230,12 @@ def flush(repo_root: Path, dry_run: bool) -> int:
         [
             "git",
             "-C",
-            str(repo_root),
+            str(paths.root),
             "commit",
             "-m",
             msg,
             "--",
-            _LOG_REL,
+            log_rel,
         ],
     )
     if commit_result.returncode != 0:

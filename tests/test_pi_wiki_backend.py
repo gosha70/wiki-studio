@@ -4,10 +4,11 @@
 #
 # Explicit `--backend pi` is first-class and always resolvable (when pi-code is
 # on PATH); auto-detect inserts pi (claude -> codex -> pi -> cursor) ONLY when
-# the providers.pi capability is enabled (FR-025/FR-028).
+# AIWIKI_ENABLE_PI=1 (FR-006).
 
 from __future__ import annotations
 
+import os
 import unittest
 from unittest.mock import patch
 
@@ -29,7 +30,7 @@ class TestPiWikiBackend(unittest.TestCase):
     def test_explicit_pi_works_even_when_capability_disabled(self) -> None:
         # Explicit override is not gated by the capability — only auto-detect is.
         with (
-            patch.object(be, "_pi_capability_enabled", lambda: False),
+            patch.object(be, "_pi_enabled", lambda: False),
             patch.object(be.shutil, "which", lambda b: "/usr/bin/" + b),
         ):
             backend = resolve_backend("pi")
@@ -37,11 +38,11 @@ class TestPiWikiBackend(unittest.TestCase):
         self.assertEqual(backend._cli_name, "pi")  # noqa: SLF001
 
     def test_autodetect_order_includes_pi_when_capability_enabled(self) -> None:
-        with patch.object(be, "_pi_capability_enabled", lambda: True):
+        with patch.object(be, "_pi_enabled", lambda: True):
             self.assertEqual(be._auto_detect_order(), ("claude", "codex", "pi", "cursor"))
 
     def test_autodetect_order_excludes_pi_when_capability_disabled(self) -> None:
-        with patch.object(be, "_pi_capability_enabled", lambda: False):
+        with patch.object(be, "_pi_enabled", lambda: False):
             self.assertEqual(be._auto_detect_order(), ("claude", "codex", "cursor"))
 
     def test_autodetect_prefers_pi_over_cursor_when_enabled(self) -> None:
@@ -49,7 +50,7 @@ class TestPiWikiBackend(unittest.TestCase):
         def which(binary: str):
             return "/x/" + binary if binary in ("pi-code", "cursor-agent") else None
 
-        with patch.object(be, "_pi_capability_enabled", lambda: True), patch.object(be.shutil, "which", which):
+        with patch.object(be, "_pi_enabled", lambda: True), patch.object(be.shutil, "which", which):
             backend = auto_detect()
         self.assertEqual(backend._cli_name, "pi")  # noqa: SLF001
 
@@ -59,15 +60,18 @@ class TestPiWikiBackend(unittest.TestCase):
         def which(binary: str):
             return "/x/" + binary if binary in ("pi-code", "cursor-agent") else None
 
-        with patch.object(be, "_pi_capability_enabled", lambda: False), patch.object(be.shutil, "which", which):
+        with patch.object(be, "_pi_enabled", lambda: False), patch.object(be.shutil, "which", which):
             backend = auto_detect()
         self.assertEqual(backend._cli_name, "cursor")  # noqa: SLF001
 
-    def test_capability_reader_is_disabled_without_a_capability_file(self) -> None:
-        # This repository ships no shared/capabilities/pi.yaml, so the real
-        # reader reports pi as disabled for auto-detect (explicit --backend pi
-        # is unaffected, see above).
-        self.assertFalse(be._pi_capability_enabled())
+    def test_pi_auto_detect_is_gated_by_environment_flag(self) -> None:
+        with patch.dict(os.environ, {"AIWIKI_ENABLE_PI": "1"}):
+            self.assertTrue(be._pi_enabled())
+        with patch.dict(os.environ, {"AIWIKI_ENABLE_PI": "0"}):
+            self.assertFalse(be._pi_enabled())
+        env_without = {k: v for k, v in os.environ.items() if k != "AIWIKI_ENABLE_PI"}
+        with patch.dict(os.environ, env_without, clear=True):
+            self.assertFalse(be._pi_enabled())
 
     def test_unknown_backend_lists_pi_as_valid(self) -> None:
         from aiwiki.errors import BackendNotFoundError

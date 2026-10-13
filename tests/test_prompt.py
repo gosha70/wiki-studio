@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 
 from aiwiki.errors import ContractViolationError
+from aiwiki.paths import WikiPaths
 from aiwiki.prompt import compose_prompt, load_schema_files, parse_response
 from tests.conftest import make_repo_layout
 
@@ -15,12 +16,14 @@ from tests.conftest import make_repo_layout
 # to the documents packaged with aiwiki. Built in setUpModule.
 _TMP: tempfile.TemporaryDirectory[str] | None = None
 _REPO_ROOT = Path()
+_PATHS = WikiPaths.for_root(_REPO_ROOT)
 
 
 def setUpModule() -> None:
-    global _TMP, _REPO_ROOT
+    global _TMP, _REPO_ROOT, _PATHS
     _TMP = tempfile.TemporaryDirectory(prefix="aiwiki-prompt-")
     _REPO_ROOT = make_repo_layout(Path(_TMP.name), with_sample=False)
+    _PATHS = WikiPaths.for_root(_REPO_ROOT)
 
 
 def tearDownModule() -> None:
@@ -86,32 +89,32 @@ def _make_valid_reject_response(**overrides) -> dict:
 
 class TestSchemaFileLoading(unittest.TestCase):
     def test_loads_all_three_schema_files(self) -> None:
-        schemas = load_schema_files(_REPO_ROOT)
+        schemas = load_schema_files(_PATHS)
         self.assertIn("ingest-rules", schemas)
         self.assertIn("page-types", schemas)
         self.assertIn("citation-rules", schemas)
 
     def test_schema_files_non_empty(self) -> None:
-        schemas = load_schema_files(_REPO_ROOT)
+        schemas = load_schema_files(_PATHS)
         for name, content in schemas.items():
             self.assertGreater(len(content), 100, f"{name} schema is suspiciously short")
 
     def test_ingest_rules_contains_four_question_gate(self) -> None:
-        schemas = load_schema_files(_REPO_ROOT)
+        schemas = load_schema_files(_PATHS)
         self.assertIn("four-question gate", schemas["ingest-rules"])
 
     def test_page_types_contains_incident(self) -> None:
-        schemas = load_schema_files(_REPO_ROOT)
+        schemas = load_schema_files(_PATHS)
         self.assertIn("incident", schemas["page-types"])
 
     def test_citation_rules_contains_sources(self) -> None:
-        schemas = load_schema_files(_REPO_ROOT)
+        schemas = load_schema_files(_PATHS)
         self.assertIn("sources", schemas["citation-rules"])
 
 
 class TestBackendPromptComposition(unittest.TestCase):
     def setUp(self) -> None:
-        self.schemas = load_schema_files(_REPO_ROOT)
+        self.schemas = load_schema_files(_PATHS)
         self.source_path = Path("some/file.md")
         self.source_content = "# Hello World\n\nSome content."
 

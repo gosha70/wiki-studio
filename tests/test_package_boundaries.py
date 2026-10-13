@@ -1,0 +1,123 @@
+# Copyright (c) 2026 EGOGE
+# SPDX-License-Identifier: Apache-2.0
+"""Package boundaries (FR-016) and layout contract (FR-004, FR-005).
+
+The package must not spell the original project's layout anywhere but
+``paths.py`` (as the documented defaults) and ``cli.py`` (help text); the
+bash linter must not ship; and an unflagged run must reproduce the old
+layout byte-for-byte while every location is overridable.
+"""
+
+from __future__ import annotations
+
+import os
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
+from aiwiki.paths import ENV_WIKI_DIR
+from tests.conftest import PACKAGE_ROOT, make_repo_layout, run_cli
+
+FORBIDDEN_STRINGS = ("code-copilot-team", "shared/", "specs/", "doc_internal", "knowledge/wiki")
+ALLOWED_FILES = {"paths.py", "cli.py"}
+
+
+def _wiki(root: Path) -> Path:
+    wiki = root / "kb"
+    wiki.mkdir(parents=True)
+    (wiki / "index.md").write_text(
+        "---\npage_type: index\nslug: index\ntitle: KB\nstatus: stable\nlast_reviewed: 2026-05-06\n---\n\n# KB\n",
+        encoding="utf-8",
+    )
+    (wiki / "log.md").write_text(
+        "---\npage_type: log\nslug: log\ntitle: Log\nstatus: stable\nlast_reviewed: 2026-05-06\n---\n\n# Log\n",
+        encoding="utf-8",
+    )
+    return wiki
+
+
+class TestNoForeignLayoutStrings(unittest.TestCase):
+    def test_only_paths_and_cli_name_the_original_layout(self) -> None:
+        offenders: list[str] = []
+        for py in sorted(PACKAGE_ROOT.rglob("*.py")):
+            if py.name in ALLOWED_FILES:
+                continue
+            for lineno, line in enumerate(py.read_text(encoding="utf-8").splitlines(), start=1):
+                hits = [s for s in FORBIDDEN_STRINGS if s in line]
+                if hits:
+                    offenders.append(f"{py.relative_to(PACKAGE_ROOT)}:{lineno}: {hits} in {line.strip()!r}")
+        self.assertEqual(offenders, [], "\n".join(offenders))
+
+    def test_bash_linter_is_not_shipped(self) -> None:
+        shipped = [p for p in PACKAGE_ROOT.rglob("*") if p.name == "lint-wiki.sh"]
+        self.assertEqual(shipped, [])
+        for module in ("lint.py", "promoter.py"):
+            source = (PACKAGE_ROOT / module).read_text(encoding="utf-8")
+            self.assertNotIn("subprocess", source, f"{module} must not shell out")
+            self.assertNotIn("lint-wiki", source)
+
+
+class TestLayoutContract(unittest.TestCase):
+    def test_unflagged_run_reproduces_the_original_layout(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = make_repo_layout(Path(tmp), with_schema=True)
+            env = {k: v for k, v in os.environ.items() if not k.startswith("AIWIKI_")}
+            with patch.dict(os.environ, env, clear=True):
+                result = run_cli("ingest", str(root / "sample-incident.md"), "--backend", "test", cwd=root)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            written = Path(result.stdout.strip())
+            self.assertEqual(written.parent, root / "doc_internal" / "proposals")
+            self.assertTrue((root / "knowledge" / "wiki" / ".audit" / "ingest-log.md").is_file())
+
+    def test_environment_variable_points_lint_at_a_wiki_outside_the_default_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            wiki = _wiki(root)
+            with patch.dict(os.environ, {ENV_WIKI_DIR: str(wiki)}):
+                result = run_cli("lint", cwd=root)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("linted 2 pages, 0 violations", result.stdout)
+            self.assertFalse((root / "knowledge").exists())
+
+    def test_wiki_dir_flag_is_accepted_before_and_after_the_verb(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            wiki = _wiki(root)
+            before = run_cli("--wiki-dir", str(wiki), "lint", cwd=root)
+            after = run_cli("lint", "--wiki-dir", str(wiki), cwd=root)
+            for result in (before, after):
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn("linted 2 pages, 0 violations", result.stdout)
+
+    def test_flag_beats_environment_variable(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            wiki = _wiki(root)
+            with patch.dict(os.environ, {ENV_WIKI_DIR: str(root / "missing")}):
+                result = run_cli("lint", "--wiki-dir", str(wiki), cwd=root)
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_proposals_dir_override_receives_the_patch_set(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = make_repo_layout(Path(tmp), with_schema=True)
+            out = root / "inbox"
+            result = run_cli(
+                "ingest", str(root / "sample-incident.md"), "--backend", "test", "--proposals-dir", str(out), cwd=root
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(Path(result.stdout.strip()).parent, out)
+
+    def test_root_flag_confines_sources(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = make_repo_layout(Path(tmp), with_schema=True)
+            elsewhere = root.parent / "elsewhere"
+            elsewhere.mkdir(exist_ok=True)
+            result = run_cli(
+                "ingest", str(root / "sample-incident.md"), "--backend", "test", "--root", str(elsewhere), cwd=root
+            )
+            self.assertEqual(result.returncode, 7)
+
+
+if __name__ == "__main__":
+    unittest.main()

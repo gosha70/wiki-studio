@@ -14,7 +14,10 @@ from __future__ import annotations
 import datetime
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
+
+if TYPE_CHECKING:
+    from .paths import WikiPaths
 
 # ── Stage 1 (v1 single-source) ──────────────────────────────
 
@@ -55,7 +58,7 @@ class PageEdit:
     ----------
     path : str
         Wiki-relative path. For ``create``/``update`` actions, the
-        target file path under ``knowledge/wiki/`` (e.g.
+        target file path under the wiki directory (e.g.
         ``concepts/origin-alignment.md``). For ``append-log`` /
         ``append-index``, the conventional value is ``log.md`` /
         ``index.md`` respectively.
@@ -109,7 +112,7 @@ class QueryAnswer:
     pages_loaded : list[str]
         Wiki-relative paths of pages loaded into the prompt. Useful
         for auditing index-first navigation. Logged to
-        ``doc_internal/wiki-query-log.jsonl``.
+        the query log (``WikiPaths.query_log``).
     """
 
     answer: str
@@ -156,7 +159,7 @@ class HealthFinding:
 
 @dataclass(frozen=True)
 class IngestLogRecord:
-    """One NDJSON line appended to knowledge/wiki/.audit/ingest-log.md.
+    """One NDJSON line appended to the ingest log (``<wiki_dir>/.audit/ingest-log.md``).
 
     Patch-set-oriented: a single ``wiki ingest`` run may touch many pages
     of several types, and a reject is an empty ``edits`` list rather than
@@ -172,7 +175,7 @@ class IngestLogRecord:
     backend: str
     disposition: str  # "accept" | "reject"
     reason: str  # rationale, newline-collapsed, ≤ 240 cp
-    proposal_dir: str | None  # basename of doc_internal/proposals/<name>/
+    proposal_dir: str | None  # basename of <proposals_dir>/<name>/
     target_paths: list[str]  # sorted unique wiki-rel paths; [] on reject
     page_types: list[str]  # sorted unique page types; [] on reject
     proposal_hash: str | None  # sha256 of canonicalized payload, or None
@@ -228,7 +231,7 @@ _PROMOTABLE_PAGE_TYPES: frozenset[str] = frozenset(
 
 def validate_page_edit_semantics(
     edit: PageEdit,
-    repo_root: Path,
+    paths: WikiPaths,
 ) -> list[str]:
     """Per-edit semantic validation.
 
@@ -248,7 +251,7 @@ def validate_page_edit_semantics(
         (concepts/ for concept, etc.).
 
     For ``update`` specifically, additionally asserts the target file
-    actually exists under ``knowledge/wiki/<path>`` (otherwise the
+    actually exists under ``<wiki_dir>/<path>`` (otherwise the
     edit is an unintended create masquerading as an update).
 
     For ``append-log`` and ``append-index``, frontmatter parsing is
@@ -342,19 +345,19 @@ def validate_page_edit_semantics(
     # would have to catch this at promote time, but it's cheap to catch
     # at validate time and lets the backend pick the right action).
     if edit.action == "update":
-        target = repo_root / "knowledge" / "wiki" / edit.path
+        target = paths.wiki_dir / edit.path
         if not target.exists():
             errors.append(
                 f"{edit.path}: update target does not exist at "
-                f"{target.relative_to(repo_root)}; use action 'create' "
+                f"{paths.relative_to_root(target)}; use action 'create' "
                 f"for new pages"
             )
     elif edit.action == "create":
-        target = repo_root / "knowledge" / "wiki" / edit.path
+        target = paths.wiki_dir / edit.path
         if target.exists():
             errors.append(
                 f"{edit.path}: create target already exists at "
-                f"{target.relative_to(repo_root)}; use action 'update' "
+                f"{paths.relative_to_root(target)}; use action 'update' "
                 f"to modify an existing page"
             )
 

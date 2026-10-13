@@ -149,7 +149,7 @@ class TestBackend:
           3. append-index  index.md       — entry under "Incidents"
 
         This mirrors the canonical "atomic cluster" pattern from
-        knowledge/wiki/workflows/promote-lesson-to-wiki.md: one source
+        workflows/promote-lesson-to-wiki.md: one source
         produces one main page, one log line, one index link.
         """
         source = prompt.get("source", {})

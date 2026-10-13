@@ -2,21 +2,15 @@
 # SPDX-License-Identifier: Apache-2.0
 # aiwiki.cli — verb-dispatching CLI entrypoint for the wiki pipeline.
 #
-# Phase 0 ships the four-verb skeleton (ingest|promote|query|lint) and the
-# Stage-1 single-source proposal generator behind ``ingest --legacy-single-source``.
-# Phases 1–4 implement the multi-page ingest, promote, query, and
-# knowledge-health lint operations on top of the same package.
+# Five verbs (ingest|promote|query|lint|audit-flush) over one WikiPaths,
+# resolved once per run from the global options --root / --wiki-dir /
+# --proposals-dir, the AIWIKI_* environment variables, or the defaults
+# (knowledge/wiki and doc_internal under the git toplevel of the working
+# directory). The global options are accepted before or after the verb.
 #
-# Invoked indirectly via:
-#   - ``scripts/wiki <verb> ...``           — primary entrypoint (Phase 0+)
-#   - ``scripts/wiki-ingest <source> ...``  — backwards-compat alias for
-#                                             ``wiki ingest --legacy-single-source``
+# Invoked as ``ai-wiki <verb> ...`` (console script) or ``python -m aiwiki``.
 #
-# Both wrappers set ``PYTHONPATH=<repo>/scripts`` and ``exec``
-# ``python3 -m aiwiki <verb> <args>``. Module-form invocation is
-# required so relative imports inside the package resolve.
-#
-# Exit codes (stable across v1; new exit code 7 added in Phase 0):
+# Exit codes (stable across v1; exit code 7 added in Phase 0):
 #   0 — successful run; proposal file written (accept or reject), or
 #       structural lint clean, etc.
 #   2 — backend not found (no resolver match, or named CLI not on PATH).
@@ -33,7 +27,6 @@ from __future__ import annotations
 import argparse
 import datetime
 import os
-import subprocess
 import sys
 from dataclasses import replace
 from pathlib import Path
@@ -41,7 +34,7 @@ from pathlib import Path
 from .audit import append_ingest_log, build_log_record
 from .audit_flush import flush as audit_flush_run
 from .audit_lint import validate_audit_tree
-from .backends import resolve_backend
+from .backends import ENV_BACKEND, ENV_BACKEND_DEPRECATED, resolve_backend
 from .errors import (
     AuditFlushError,
     BackendInvocationError,
@@ -55,15 +48,53 @@ from .errors import (
 from .health_lint import lint_health
 from .ingestor import DefaultIngestor
 from .ingestor_multi import DefaultMultiIngestor, write_patch_set_dir
+from .lint import lint_wiki, list_pages
+from .paths import (
+    DEFAULT_PROPOSALS_DIR,
+    DEFAULT_WIKI_DIR,
+    ENV_PROPOSALS_DIR,
+    ENV_ROOT,
+    ENV_WIKI_DIR,
+    WikiPaths,
+)
 from .promoter import promote as run_promote
 from .proposal import IngestProposal, IngestRequest, render_proposal_file
 from .querier import DefaultQuerier
 
-_DEFAULT_OUTPUT_DIR = Path("doc_internal/proposals")
-
 # Exit codes new in Phase 0.
 EXIT_PATH_OUT_OF_REPO = 7
 EXIT_NOT_IMPLEMENTED = 8
+
+_BACKEND_HELP_SUFFIX = f"Defaults to {ENV_BACKEND} env var ({ENV_BACKEND_DEPRECATED} is deprecated), then auto-detect."
+
+
+def _add_path_options(parser: argparse.ArgumentParser, *, suppress_defaults: bool) -> None:
+    """The three global location options.
+
+    They live on the top-level parser and, with suppressed defaults, on every
+    verb parser, so a value given after the verb is not clobbered by a
+    missing one before it.
+    """
+    default = argparse.SUPPRESS if suppress_defaults else None
+    parser.add_argument(
+        "--root",
+        type=Path,
+        default=default,
+        help=f"Project root. Default: {ENV_ROOT}, else the git toplevel of the current directory, "
+        "else the current directory.",
+    )
+    parser.add_argument(
+        "--wiki-dir",
+        type=Path,
+        default=default,
+        help=f"Wiki directory. Default: {ENV_WIKI_DIR}, else <root>/{DEFAULT_WIKI_DIR}.",
+    )
+    parser.add_argument(
+        "--proposals-dir",
+        type=Path,
+        default=default,
+        help=f"Proposals directory. Default: {ENV_PROPOSALS_DIR}, else <root>/{DEFAULT_PROPOSALS_DIR}.",
+    )
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:
@@ -84,11 +115,15 @@ def _build_arg_parser() -> argparse.ArgumentParser:
             "violated; working log malformed; git commit failed)."
         ),
     )
+    _add_path_options(parser, suppress_defaults=False)
+    common = argparse.ArgumentParser(add_help=False)
+    _add_path_options(common, suppress_defaults=True)
     sub = parser.add_subparsers(dest="verb", required=True, metavar="<verb>")
 
     # ── ingest ─────────────────────────────────────────────────
     p_ingest = sub.add_parser(
         "ingest",
+        parents=[common],
         help="Run the ingest gate against a source file. "
         "Phase 0: requires --legacy-single-source for the v1 path; "
         "multi-page ingest lands in Phase 1.",
@@ -106,8 +141,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     p_ingest.add_argument(
         "--backend",
         default=None,
-        help="Backend name. One of: claude, codex, pi, cursor, test. "
-        "Defaults to WIKI_INGEST_BACKEND env var, then auto-detect.",
+        help=f"Backend name. One of: claude, codex, pi, cursor, test. {_BACKEND_HELP_SUFFIX}",
     )
     p_ingest.add_argument(
         "--dry-run",
@@ -121,7 +155,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         "--output-dir",
         type=Path,
         default=None,
-        help=f"Override the output directory. Default: <repo>/{_DEFAULT_OUTPUT_DIR}/.",
+        help=f"Override the output directory. Default: the proposals directory (<root>/{DEFAULT_PROPOSALS_DIR}/).",
     )
     p_ingest.add_argument(
         "--debug-unsafe-output",
@@ -149,20 +183,22 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     # ── promote ────────────────────────────────────────────────
     p_promote = sub.add_parser(
         "promote",
-        help="Apply a proposal patch-set to knowledge/wiki/ atomically. "
+        parents=[common],
+        help="Apply a proposal patch-set to the wiki directory atomically. "
         "The ONLY code path that writes to the canonical wiki content "
         "tree, excluding .audit/.",
     )
     p_promote.add_argument(
         "proposal_dir",
         type=Path,
-        help="Path to a doc_internal/proposals/<date>-<slug>/ directory produced by `ai-wiki ingest`.",
+        help=f"Path to a <proposals-dir>/<date>-<slug>/ directory (default {DEFAULT_PROPOSALS_DIR}) "
+        "produced by `ai-wiki ingest`.",
     )
     p_promote.add_argument(
         "--dry-run",
         action="store_true",
         help="Build and validate the staged tree but do not commit to "
-        "knowledge/wiki/ and do not move the proposals dir to "
+        "the wiki directory and do not move the proposals dir to "
         ".applied/. Exits 0 on a clean stage.",
     )
     p_promote.add_argument(
@@ -170,13 +206,14 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Allow proposal directories outside the repository tree. "
         "Default: refuse (exit 7). The proposal dir's content is "
-        "applied to knowledge/wiki/, so accepting paths from "
+        "applied to the wiki directory, so accepting paths from "
         "outside the repo is an avoidable security surface.",
     )
 
     # ── query ──────────────────────────────────────────────────
     p_query = sub.add_parser(
         "query",
+        parents=[common],
         help="Answer a question by reading the wiki, index-first.",
     )
     p_query.add_argument(
@@ -188,14 +225,13 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="In addition to printing the answer, run a multi-page "
         "ingest over a synthetic source built from the question + "
-        "answer, producing a patch-set under doc_internal/proposals/. "
-        "The curator reviews and runs `wiki promote` to land it.",
+        "answer, producing a patch-set under the proposals directory. "
+        "The curator reviews and runs `ai-wiki promote` to land it.",
     )
     p_query.add_argument(
         "--backend",
         default=None,
-        help="Backend name (claude / codex / pi / cursor / test). Defaults "
-        "to WIKI_INGEST_BACKEND env var, then auto-detect.",
+        help=f"Backend name (claude / codex / pi / cursor / test). {_BACKEND_HELP_SUFFIX}",
     )
     p_query.add_argument(
         "--max-pages",
@@ -218,8 +254,9 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     # ── lint ───────────────────────────────────────────────────
     p_lint = sub.add_parser(
         "lint",
-        help="Run wiki linters. Default: structural (delegates to "
-        "knowledge/wiki/scripts/lint-wiki.sh). --health adds "
+        parents=[common],
+        help="Run wiki linters. Default: structural (frontmatter, page "
+        "types, slugs, placement, links, reachability). --health adds "
         "the knowledge-health pass (contradictions, stale claims, "
         "weak orphans, missing cross-links).",
     )
@@ -254,8 +291,9 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     # ── audit-flush ────────────────────────────────────────────
     p_audit_flush = sub.add_parser(
         "audit-flush",
+        parents=[common],
         help="Commit any pending (uncommitted) lines in "
-        "knowledge/wiki/.audit/ingest-log.md. The ONLY pipeline "
+        "<wiki-dir>/.audit/ingest-log.md. The ONLY pipeline "
         "command that runs git commit; never auto-invoked.",
     )
     p_audit_flush.add_argument(
@@ -268,24 +306,13 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _resolve_repo_root() -> Path:
-    """Return the repo root: the git toplevel of the current directory, else the current directory.
-
-    The package is installed, so its own location says nothing about the
-    project it operates on; the working directory does.
-    """
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "--show-toplevel"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    except OSError:
-        return Path.cwd().resolve()
-    if result.returncode == 0 and result.stdout.strip():
-        return Path(result.stdout.strip()).resolve()
-    return Path.cwd().resolve()
+def _paths_from_args(args: argparse.Namespace) -> WikiPaths:
+    """Resolve the layout once per run: flags, then AIWIKI_* variables, then defaults."""
+    return WikiPaths.resolve(
+        root=getattr(args, "root", None),
+        wiki_dir=getattr(args, "wiki_dir", None),
+        proposals_dir=getattr(args, "proposals_dir", None),
+    )
 
 
 def _backend_display_name(backend: object, cli_flag: str | None) -> str:
@@ -297,6 +324,17 @@ def _backend_display_name(backend: object, cli_flag: str | None) -> str:
         return str(cli_name)
     cls_name = backend.__class__.__name__
     return cls_name.removesuffix("Backend").lower() or "unknown"
+
+
+def _configure_backend(backend: object, args: argparse.Namespace, paths: WikiPaths) -> None:
+    """Apply per-run settings a copilot-CLI backend carries: stderr redaction and the wiki label."""
+    # Stderr redaction default (T0.5). The backend has its own redact_output
+    # parameter; flip it on this instance.
+    if getattr(args, "debug_unsafe_output", False) and hasattr(backend, "_redact_output"):
+        backend._redact_output = False
+    # Rendered prompts head each wiki page with its project-relative location.
+    if hasattr(backend, "_wiki_label"):
+        backend._wiki_label = paths.wiki_label
 
 
 def _make_proposal_filename(proposal: IngestProposal) -> str:
@@ -321,15 +359,6 @@ def _write_proposal_file(
     except OSError as exc:
         raise OutputWriteError(f"Could not write proposal file at {proposal_path}: {exc}") from exc
     return proposal_path.resolve()
-
-
-def _path_within_repo(source: Path, repo_root: Path) -> bool:
-    """True if ``source`` resolves to a path inside ``repo_root``."""
-    try:
-        source.resolve().relative_to(repo_root.resolve())
-        return True
-    except ValueError:
-        return False
 
 
 def _write_ingest_snapshot(proposal_dir: Path) -> None:
@@ -358,6 +387,15 @@ def _write_ingest_snapshot(proposal_dir: Path) -> None:
         _shutil.copytree(str(preview), str(preview_snapshot))
 
 
+def _refuse_out_of_repo(kind: str, path: Path, paths: WikiPaths, hint: str) -> int:
+    """Print the exit-7 refusal for a path outside the root."""
+    print(
+        f"error: {kind} is outside the repository tree: {path}\n  Repo root: {paths.root}\n  {hint}",
+        file=sys.stderr,
+    )
+    return EXIT_PATH_OUT_OF_REPO
+
+
 # ── Verb implementations ──────────────────────────────────────
 
 
@@ -366,7 +404,7 @@ def _do_ingest(args: argparse.Namespace) -> int:
 
     --legacy-single-source preserves the v1 IngestProposal flow.
     Without the flag, Phase-1 DefaultMultiIngestor produces a
-    WikiPatchSet under doc_internal/proposals/<date>-<slug>/.
+    WikiPatchSet under <proposals-dir>/<date>-<slug>/.
     """
     # --check and --dry-run are mutually exclusive.
     if getattr(args, "check", False) and getattr(args, "dry_run", False):
@@ -376,7 +414,7 @@ def _do_ingest(args: argparse.Namespace) -> int:
     if not args.legacy_single_source:
         return _do_ingest_multi(args)
 
-    repo_root = _resolve_repo_root()
+    paths = _paths_from_args(args)
 
     # Source must exist; check before paying backend resolution cost.
     source_path: Path = args.source
@@ -386,30 +424,24 @@ def _do_ingest(args: argparse.Namespace) -> int:
 
     # Repo-root path confinement (T0.7). The default refuses external paths;
     # --allow-out-of-repo is the explicit opt-in.
-    if not args.allow_out_of_repo and not _path_within_repo(source_path, repo_root):
-        print(
-            f"error: source path is outside the repository tree: {source_path}\n"
-            f"  Repo root: {repo_root}\n"
-            f"  Pass --allow-out-of-repo to override (only when ingesting "
-            f"external artifacts deliberately).",
-            file=sys.stderr,
+    if not args.allow_out_of_repo and not paths.within_root(source_path):
+        return _refuse_out_of_repo(
+            "source path",
+            source_path,
+            paths,
+            "Pass --allow-out-of-repo to override (only when ingesting external artifacts deliberately).",
         )
-        return EXIT_PATH_OUT_OF_REPO
 
-    # Resolve backend (--backend → WIKI_INGEST_BACKEND env → auto-detect).
+    # Resolve backend (--backend → AIWIKI_BACKEND env → auto-detect).
     try:
         backend = resolve_backend(args.backend)
     except BackendNotFoundError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return BackendNotFoundError.exit_code
-
-    # Stderr redaction default (T0.5). The backend has its own redact_output
-    # parameter; flip it on this instance.
-    if args.debug_unsafe_output and hasattr(backend, "_redact_output"):
-        backend._redact_output = False
+    _configure_backend(backend, args, paths)
 
     backend_name = _backend_display_name(backend, args.backend)
-    ingestor = DefaultIngestor(backend=backend, repo_root=repo_root)
+    ingestor = DefaultIngestor(backend=backend, paths=paths)
 
     request = IngestRequest(
         source_path=source_path,
@@ -457,7 +489,7 @@ def _do_ingest(args: argparse.Namespace) -> int:
     if args.dry_run:
         proposal = replace(proposal, draft_markdown=None)
 
-    output_dir: Path = args.output_dir or (repo_root / _DEFAULT_OUTPUT_DIR)
+    output_dir: Path = args.output_dir or paths.proposals_dir
     try:
         proposal_path = _write_proposal_file(proposal, request, backend_name, output_dir)
     except OutputWriteError as exc:
@@ -475,14 +507,14 @@ def _do_ingest(args: argparse.Namespace) -> int:
     try:
         record = build_log_record(
             source_file=source_path,
-            repo_root=repo_root,
+            paths=paths,
             backend_name=backend_name,
             proposal_dir_path=proposal_path.parent,
             allow_out_of_repo=getattr(args, "allow_out_of_repo", False),
             legacy_proposal=proposal,
             dry_run=args.dry_run,
         )
-        append_ingest_log(repo_root, record)
+        append_ingest_log(paths, record)
     except OutputWriteError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return OutputWriteError.exit_code
@@ -492,34 +524,26 @@ def _do_ingest(args: argparse.Namespace) -> int:
 
 
 def _do_ingest_multi(args: argparse.Namespace) -> int:
-    """Phase-1 multi-page ingest: source → WikiPatchSet → proposals/<date>-<slug>/."""
-    repo_root = _resolve_repo_root()
+    """Phase-1 multi-page ingest: source → WikiPatchSet → <proposals-dir>/<date>-<slug>/."""
+    paths = _paths_from_args(args)
 
     source_path: Path = args.source
     if not source_path.exists():
         print(f"error: source file not found: {source_path}", file=sys.stderr)
         return SourceMissingError.exit_code
 
-    if not args.allow_out_of_repo and not _path_within_repo(source_path, repo_root):
-        print(
-            f"error: source path is outside the repository tree: {source_path}\n"
-            f"  Repo root: {repo_root}\n"
-            f"  Pass --allow-out-of-repo to override.",
-            file=sys.stderr,
-        )
-        return EXIT_PATH_OUT_OF_REPO
+    if not args.allow_out_of_repo and not paths.within_root(source_path):
+        return _refuse_out_of_repo("source path", source_path, paths, "Pass --allow-out-of-repo to override.")
 
     try:
         backend = resolve_backend(args.backend)
     except BackendNotFoundError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return BackendNotFoundError.exit_code
-
-    if args.debug_unsafe_output and hasattr(backend, "_redact_output"):
-        backend._redact_output = False
+    _configure_backend(backend, args, paths)
 
     backend_name = _backend_display_name(backend, args.backend)
-    multi = DefaultMultiIngestor(backend=backend, repo_root=repo_root)
+    multi = DefaultMultiIngestor(backend=backend, paths=paths)
 
     request = IngestRequest(
         source_path=source_path,
@@ -559,19 +583,16 @@ def _do_ingest_multi(args: argparse.Namespace) -> int:
             return 0
         return 1
 
-    # Output dir: doc_internal/proposals/<date>-<source-stem>/
+    # Output dir: <proposals-dir>/<date>-<source-stem>/
     today = datetime.date.today().isoformat()
     source_stem = source_path.stem or "source"
-    proposal_root: Path = args.output_dir or (repo_root / _DEFAULT_OUTPUT_DIR)
+    proposal_root: Path = args.output_dir or paths.proposals_dir
     output_dir = proposal_root / f"{today}-{source_stem}"
 
     try:
         written = write_patch_set_dir(patch, output_dir)
     except OSError as exc:
-        print(
-            f"error: could not write patch-set dir at {output_dir}: {exc}",
-            file=sys.stderr,
-        )
+        print(f"error: could not write patch-set dir at {output_dir}: {exc}", file=sys.stderr)
         return OutputWriteError.exit_code
 
     # Phase-3: write .ingest-snapshot/ immediately after materialisation
@@ -585,14 +606,14 @@ def _do_ingest_multi(args: argparse.Namespace) -> int:
     try:
         record = build_log_record(
             source_file=source_path,
-            repo_root=repo_root,
+            paths=paths,
             backend_name=backend_name,
             proposal_dir_path=written,
             allow_out_of_repo=getattr(args, "allow_out_of_repo", False),
             patch=patch,
             dry_run=args.dry_run,
         )
-        append_ingest_log(repo_root, record)
+        append_ingest_log(paths, record)
     except OutputWriteError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return OutputWriteError.exit_code
@@ -607,36 +628,32 @@ def _do_ingest_multi(args: argparse.Namespace) -> int:
 
 
 def _do_promote(args: argparse.Namespace) -> int:
-    """Phase 2: atomic patch-set application — the only writer to knowledge/wiki/."""
-    repo_root = _resolve_repo_root()
+    """Phase 2: atomic patch-set application — the only writer to the wiki directory."""
+    paths = _paths_from_args(args)
     proposals_dir: Path = args.proposal_dir
     if not proposals_dir.exists():
-        print(
-            f"error: proposals dir not found: {proposals_dir}",
-            file=sys.stderr,
-        )
+        print(f"error: proposals dir not found: {proposals_dir}", file=sys.stderr)
         return SourceMissingError.exit_code
 
     # Repo-root path confinement (parallel to ingest's check). The
-    # proposal dir's content gets written to knowledge/wiki/ on
-    # successful promote, so a proposal dir from outside the repo
-    # tree is an avoidable security surface — refuse by default;
-    # --allow-out-of-repo overrides for the rare deliberate case
-    # (e.g. a curator hand-assembling a patch-set in /tmp).
-    if not args.allow_out_of_repo and not _path_within_repo(proposals_dir, repo_root):
-        print(
-            f"error: proposal dir is outside the repository tree: {proposals_dir}\n"
-            f"  Repo root: {repo_root}\n"
-            f"  Pass --allow-out-of-repo to override (only when the "
-            f"proposal dir comes from a trusted source you've audited).",
-            file=sys.stderr,
+    # proposal dir's content gets written to the wiki on successful
+    # promote, so a proposal dir from outside the repo tree is an
+    # avoidable security surface — refuse by default; --allow-out-of-repo
+    # overrides for the rare deliberate case (e.g. a curator
+    # hand-assembling a patch-set in /tmp).
+    if not args.allow_out_of_repo and not paths.within_root(proposals_dir):
+        return _refuse_out_of_repo(
+            "proposal dir",
+            proposals_dir,
+            paths,
+            "Pass --allow-out-of-repo to override (only when the proposal dir comes from a trusted source "
+            "you've audited).",
         )
-        return EXIT_PATH_OUT_OF_REPO
 
     try:
         result = run_promote(
             proposals_dir=proposals_dir,
-            repo_root=repo_root,
+            paths=paths,
             dry_run=args.dry_run,
         )
     except PromoteValidationError as exc:
@@ -658,25 +675,23 @@ def _do_promote(args: argparse.Namespace) -> int:
 
     print(f"applied {len(result.applied_paths)} edit(s) from {proposals_dir.name}; archived to {result.archived_dir}.")
     for p in result.applied_paths:
-        print(f"  + knowledge/wiki/{p}")
+        print(f"  + {paths.wiki_label}/{p}")
     return 0
 
 
 def _do_query(args: argparse.Namespace) -> int:
     """Phase 3: index-first query against the wiki."""
-    repo_root = _resolve_repo_root()
+    paths = _paths_from_args(args)
     try:
         backend = resolve_backend(args.backend)
     except BackendNotFoundError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return BackendNotFoundError.exit_code
-
-    if args.debug_unsafe_output and hasattr(backend, "_redact_output"):
-        backend._redact_output = False
+    _configure_backend(backend, args, paths)
 
     querier_kwargs: dict[str, object] = {
         "backend": backend,
-        "repo_root": repo_root,
+        "paths": paths,
     }
     if args.max_pages is not None:
         querier_kwargs["max_pages"] = args.max_pages
@@ -706,26 +721,18 @@ def _do_query(args: argparse.Namespace) -> int:
     print("\n--- citations ---", file=sys.stderr)
     for c in answer.citations:
         print(f"  - {c.page}: {c.fragment}", file=sys.stderr)
-    print(
-        f"--- pages loaded: {len(answer.pages_loaded)} ---",
-        file=sys.stderr,
-    )
+    print(f"--- pages loaded: {len(answer.pages_loaded)} ---", file=sys.stderr)
     for p in answer.pages_loaded:
         print(f"  + {p}", file=sys.stderr)
 
     if args.file_back and patch is not None:
         if not patch.edits:
-            print(
-                "(--file-back: empty patch-set; nothing to file back)",
-                file=sys.stderr,
-            )
+            print("(--file-back: empty patch-set; nothing to file back)", file=sys.stderr)
             return 0
         # Write the patch-set out so the curator can promote it.
-        from .ingestor_multi import write_patch_set_dir
-
         today = datetime.date.today().isoformat()
         slug = "query-fileback"
-        proposal_root: Path = args.output_dir or (repo_root / _DEFAULT_OUTPUT_DIR)
+        proposal_root: Path = args.output_dir or paths.proposals_dir
         out = proposal_root / f"{today}-{slug}"
         try:
             written = write_patch_set_dir(patch, out)
@@ -739,30 +746,24 @@ def _do_query(args: argparse.Namespace) -> int:
 def _do_lint(args: argparse.Namespace) -> int:
     """Wiki linters.
 
-    Default: structural lint via knowledge/wiki/scripts/lint-wiki.sh.
+    Default: structural lint (aiwiki.lint, in-process).
     --health: structural + knowledge-health (contradictions,
     stale-claims, weak-orphans, missing-cross-links).
     """
-    repo_root = _resolve_repo_root()
-    linter = repo_root / "knowledge" / "wiki" / "scripts" / "lint-wiki.sh"
-    if not linter.exists():
-        print(
-            f"error: structural linter not found at {linter}",
-            file=sys.stderr,
-        )
-        return BackendNotFoundError.exit_code
+    paths = _paths_from_args(args)
 
-    structural_rc = subprocess.call(["bash", str(linter)])
+    violations = lint_wiki(paths.wiki_dir)
+    for violation in violations:
+        print(f"  ✗ {violation}", file=sys.stderr)
+    print(f"\nlinted {len(list_pages(paths.wiki_dir))} pages, {len(violations)} violations")
+    structural_rc = 1 if violations else 0
 
     # Audit-format pass: always on (advisory; gates only under --strict).
-    # Validates knowledge/wiki/.audit/ against schema/audit-rules.md.
-    audit_errors = validate_audit_tree(repo_root)
+    # Validates <wiki-dir>/.audit/ against schema/audit-rules.md.
+    audit_errors = validate_audit_tree(paths)
     audit_rc = 0
     if audit_errors:
-        print(
-            f"\naudit-format: {len(audit_errors)} violation(s)",
-            file=sys.stderr,
-        )
+        print(f"\naudit-format: {len(audit_errors)} violation(s)", file=sys.stderr)
         for e in audit_errors:
             print(f"  [audit] {e}", file=sys.stderr)
         if args.strict:
@@ -779,33 +780,21 @@ def _do_lint(args: argparse.Namespace) -> int:
         try:
             backend = resolve_backend(args.backend)
         except BackendNotFoundError as exc:
-            print(
-                f"error: --health backend resolution failed: {exc}",
-                file=sys.stderr,
-            )
+            print(f"error: --health backend resolution failed: {exc}", file=sys.stderr)
             return BackendNotFoundError.exit_code
+        _configure_backend(backend, args, paths)
 
-    result = lint_health(
-        repo_root=repo_root,
-        paths=args.paths,
-        backend=backend,
-    )
+    result = lint_health(paths, only=args.paths, backend=backend)
     if not result.findings:
         print(f"\nknowledge-health: clean ({result.pages_checked} pages checked, 0 findings).")
         return structural_rc or audit_rc
 
     # Print findings on stderr so the structural linter's stdout
     # remains the canonical output.
-    print(
-        f"\nknowledge-health: {len(result.findings)} finding(s) across {result.pages_checked} pages",
-        file=sys.stderr,
-    )
+    print(f"\nknowledge-health: {len(result.findings)} finding(s) across {result.pages_checked} pages", file=sys.stderr)
     for f in result.findings:
         loc = ", ".join(f.pages)
-        print(
-            f"  [{f.kind} / {f.severity}] {loc}: {f.description}",
-            file=sys.stderr,
-        )
+        print(f"  [{f.kind} / {f.severity}] {loc}: {f.description}", file=sys.stderr)
 
     if args.strict:
         return (1 if structural_rc == 0 else structural_rc) or audit_rc
@@ -814,15 +803,18 @@ def _do_lint(args: argparse.Namespace) -> int:
 
 def _do_audit_flush(args: argparse.Namespace) -> int:
     """Commit pending ingest-log lines (or dry-run report them)."""
-    repo_root = _resolve_repo_root()
+    paths = _paths_from_args(args)
     try:
-        return audit_flush_run(repo_root, dry_run=args.dry_run)
+        return audit_flush_run(paths, dry_run=args.dry_run)
     except AuditFlushError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return AuditFlushError.exit_code
 
 
 _VERBS = ("ingest", "promote", "query", "lint", "audit-flush")
+
+# Global options that take a value; their value is not a positional for the legacy shim.
+_GLOBAL_VALUE_OPTIONS = ("--root", "--wiki-dir", "--proposals-dir")
 
 
 def _inject_legacy_v1_prefix(argv: list[str]) -> list[str]:
@@ -833,7 +825,7 @@ def _inject_legacy_v1_prefix(argv: list[str]) -> list[str]:
     without any verb. Detect that shape — first non-flag arg is not a
     known verb — and inject ``ingest --legacy-single-source`` so the v1
     behavior is preserved at the Python entrypoint as well as at the
-    ``scripts/wiki-ingest`` shell wrapper.
+    ``ai-wiki`` console script.
     """
     if not argv:
         return argv
@@ -846,9 +838,17 @@ def _inject_legacy_v1_prefix(argv: list[str]) -> list[str]:
             if token in _VERBS:
                 return argv
         return argv
-    # Walk past leading flags to find the first positional arg.
+    # Walk past leading flags (and the values of the global location
+    # options, which may precede the verb) to find the first positional arg.
     first_positional: str | None = None
+    skip_next = False
     for token in argv:
+        if skip_next:
+            skip_next = False
+            continue
+        if token in _GLOBAL_VALUE_OPTIONS:
+            skip_next = True
+            continue
         if token.startswith("-"):
             continue
         first_positional = token

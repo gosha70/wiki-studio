@@ -42,14 +42,12 @@ def make_repo_layout(
     tmp: Path,
     *,
     with_schema: bool = False,
-    with_lint_script: bool = False,
     with_sample: bool = True,
 ) -> Path:
     """Build the default project layout under ``tmp`` and return the root.
 
     Creates ``knowledge/wiki/{index.md,log.md}`` and ``doc_internal/proposals/``.
     ``with_schema`` copies the packaged schema documents to ``knowledge/wiki/schema/``;
-    ``with_lint_script`` copies the bash linter fixture to ``knowledge/wiki/scripts/``;
     ``with_sample`` copies ``sample-incident.md`` to the root so an unflagged
     ingest stays inside the repository tree.
     """
@@ -61,9 +59,6 @@ def make_repo_layout(
     (root / "doc_internal" / "proposals").mkdir(parents=True, exist_ok=True)
     if with_schema:
         shutil.copytree(packaged_schema_dir(), wiki / "schema", dirs_exist_ok=True)
-    if with_lint_script:
-        (wiki / "scripts").mkdir(exist_ok=True)
-        shutil.copy(FIXTURES_DIR / "lint-wiki.sh", wiki / "scripts" / "lint-wiki.sh")
     if with_sample:
         shutil.copy(SAMPLE_INCIDENT, root / SAMPLE_INCIDENT.name)
     return root

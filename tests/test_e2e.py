@@ -19,6 +19,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from aiwiki.paths import WikiPaths
 from tests.conftest import PACKAGE_ROOT, make_repo_layout, packaged_schema_dir, run_cli
 
 # A project layout shared by the module's CLI tests; built once in
@@ -27,13 +28,15 @@ from tests.conftest import PACKAGE_ROOT, make_repo_layout, packaged_schema_dir, 
 # outside the repository tree).
 _TMP: tempfile.TemporaryDirectory[str] | None = None
 _ROOT = Path()
+_PATHS = WikiPaths.for_root(_ROOT)
 _SAMPLE_INCIDENT = Path()
 
 
 def setUpModule() -> None:
-    global _TMP, _ROOT, _SAMPLE_INCIDENT
+    global _TMP, _ROOT, _PATHS, _SAMPLE_INCIDENT
     _TMP = tempfile.TemporaryDirectory(prefix="aiwiki-e2e-")
-    _ROOT = make_repo_layout(Path(_TMP.name), with_schema=True, with_lint_script=True)
+    _ROOT = make_repo_layout(Path(_TMP.name), with_schema=True)
+    _PATHS = WikiPaths.for_root(_ROOT)
     _SAMPLE_INCIDENT = _ROOT / "sample-incident.md"
 
 
@@ -396,7 +399,7 @@ class TestE2EPerEditSemanticValidation(unittest.TestCase):
             validate_page_edit_semantics,
         )
 
-        repo_root = _ROOT
+        paths = _PATHS
         bad = PageEdit(
             path="concepts/foo.md",
             action="create",
@@ -413,7 +416,7 @@ class TestE2EPerEditSemanticValidation(unittest.TestCase):
             ),
             rationale="r",
         )
-        errors = validate_page_edit_semantics(bad, repo_root)
+        errors = validate_page_edit_semantics(bad, paths)
         self.assertTrue(any("slug" in e for e in errors))
 
     def test_validates_sources_non_empty(self) -> None:
@@ -422,14 +425,14 @@ class TestE2EPerEditSemanticValidation(unittest.TestCase):
             validate_page_edit_semantics,
         )
 
-        repo_root = _ROOT
+        paths = _PATHS
         bad = PageEdit(
             path="concepts/foo.md",
             action="create",
             new_content=("---\npage_type: concept\nslug: foo\ntitle: Foo\n---\n# Foo\n"),
             rationale="r",
         )
-        errors = validate_page_edit_semantics(bad, repo_root)
+        errors = validate_page_edit_semantics(bad, paths)
         self.assertTrue(any("sources" in e for e in errors))
 
     def test_rejects_root_only_page_type_as_create_target(self) -> None:
@@ -438,7 +441,7 @@ class TestE2EPerEditSemanticValidation(unittest.TestCase):
             validate_page_edit_semantics,
         )
 
-        repo_root = _ROOT
+        paths = _PATHS
         bad = PageEdit(
             path="overview.md",
             action="create",
@@ -455,7 +458,7 @@ class TestE2EPerEditSemanticValidation(unittest.TestCase):
             ),
             rationale="r",
         )
-        errors = validate_page_edit_semantics(bad, repo_root)
+        errors = validate_page_edit_semantics(bad, paths)
         self.assertTrue(any("promotable" in e or "page_type" in e for e in errors))
 
     def test_rejects_update_to_nonexistent_path(self) -> None:
@@ -464,7 +467,7 @@ class TestE2EPerEditSemanticValidation(unittest.TestCase):
             validate_page_edit_semantics,
         )
 
-        repo_root = _ROOT
+        paths = _PATHS
         bad = PageEdit(
             path="concepts/does-not-exist.md",
             action="update",
@@ -481,7 +484,7 @@ class TestE2EPerEditSemanticValidation(unittest.TestCase):
             ),
             rationale="r",
         )
-        errors = validate_page_edit_semantics(bad, repo_root)
+        errors = validate_page_edit_semantics(bad, paths)
         self.assertTrue(any("does not exist" in e for e in errors))
 
     def test_rejects_directory_mismatch(self) -> None:
@@ -490,7 +493,7 @@ class TestE2EPerEditSemanticValidation(unittest.TestCase):
             validate_page_edit_semantics,
         )
 
-        repo_root = _ROOT
+        paths = _PATHS
         bad = PageEdit(
             path="incidents/foo.md",  # path under incidents/
             action="create",
@@ -507,7 +510,7 @@ class TestE2EPerEditSemanticValidation(unittest.TestCase):
             ),
             rationale="r",
         )
-        errors = validate_page_edit_semantics(bad, repo_root)
+        errors = validate_page_edit_semantics(bad, paths)
         self.assertTrue(any("concepts" in e or "incidents" in e for e in errors))
 
     def test_well_formed_create_passes(self) -> None:
@@ -516,7 +519,7 @@ class TestE2EPerEditSemanticValidation(unittest.TestCase):
             validate_page_edit_semantics,
         )
 
-        repo_root = _ROOT
+        paths = _PATHS
         good = PageEdit(
             path="incidents/foo.md",
             action="create",
@@ -533,7 +536,7 @@ class TestE2EPerEditSemanticValidation(unittest.TestCase):
             ),
             rationale="r",
         )
-        self.assertEqual(validate_page_edit_semantics(good, repo_root), [])
+        self.assertEqual(validate_page_edit_semantics(good, paths), [])
 
     def test_append_log_skips_frontmatter_validation(self) -> None:
         """append-log content is a one-line bullet, not a full page —
@@ -543,14 +546,14 @@ class TestE2EPerEditSemanticValidation(unittest.TestCase):
             validate_page_edit_semantics,
         )
 
-        repo_root = _ROOT
+        paths = _PATHS
         good = PageEdit(
             path="log.md",
             action="append-log",
             new_content="- 2026-05-06 — promote foo (concept): rationale.",
             rationale="r",
         )
-        self.assertEqual(validate_page_edit_semantics(good, repo_root), [])
+        self.assertEqual(validate_page_edit_semantics(good, paths), [])
 
     def test_ingestor_multi_raises_on_bad_frontmatter(self) -> None:
         """End-to-end: a backend that returns a patch with bad frontmatter
@@ -582,8 +585,8 @@ class TestE2EPerEditSemanticValidation(unittest.TestCase):
                     ],
                 }
 
-        repo_root = _ROOT
-        ingestor = DefaultMultiIngestor(backend=_BadBackend(), repo_root=repo_root)
+        paths = _PATHS
+        ingestor = DefaultMultiIngestor(backend=_BadBackend(), paths=paths)
         req = IngestRequest(
             source_path=_SAMPLE_INCIDENT,
             source_kind="file",
@@ -767,7 +770,7 @@ class TestE2ECreateTargetExistsRejection(unittest.TestCase):
             validate_page_edit_semantics,
         )
 
-        repo_root = _ROOT
+        paths = _PATHS
         # concepts/spec-driven-development.md is a real, committed wiki
         # page. A create against it must fail.
         bad = PageEdit(
@@ -786,7 +789,7 @@ class TestE2ECreateTargetExistsRejection(unittest.TestCase):
             ),
             rationale="r",
         )
-        errors = validate_page_edit_semantics(bad, repo_root)
+        errors = validate_page_edit_semantics(bad, paths)
         self.assertTrue(
             any("create target already exists" in e for e in errors),
             f"errors: {errors}",
@@ -799,7 +802,7 @@ class TestE2ECreateTargetExistsRejection(unittest.TestCase):
             validate_page_edit_semantics,
         )
 
-        repo_root = _ROOT
+        paths = _PATHS
         good = PageEdit(
             path="concepts/this-page-does-not-yet-exist.md",
             action="create",
@@ -816,7 +819,7 @@ class TestE2ECreateTargetExistsRejection(unittest.TestCase):
             ),
             rationale="r",
         )
-        self.assertEqual(validate_page_edit_semantics(good, repo_root), [])
+        self.assertEqual(validate_page_edit_semantics(good, paths), [])
 
 
 class TestE2EWikiState(unittest.TestCase):
@@ -825,9 +828,9 @@ class TestE2EWikiState(unittest.TestCase):
     def test_loads_index_and_log(self) -> None:
         from aiwiki.wiki_state import load_wiki_state
 
-        repo_root = _ROOT
+        paths = _PATHS
         state = load_wiki_state(
-            repo_root=repo_root,
+            paths=paths,
             source_path=_SAMPLE_INCIDENT,
             source_content=_SAMPLE_INCIDENT.read_text(encoding="utf-8"),
         )
@@ -875,7 +878,7 @@ class TestE2EPromote(unittest.TestCase):
         )
         # Mirror the schema/scripts dirs from the real repo so the
         # linter has its rules + script in the staged-tree validation.
-        make_repo_layout(tmp, with_schema=True, with_lint_script=True, with_sample=False)
+        make_repo_layout(tmp, with_schema=True, with_sample=False)
         return wiki
 
     def _build_proposals_dir(
@@ -953,7 +956,7 @@ class TestE2EPromote(unittest.TestCase):
             wiki = self._build_tmp_repo(tmp_root)
             prop = self._build_proposals_dir(tmp_root)
 
-            result = promote(prop, tmp_root)
+            result = promote(prop, WikiPaths.for_root(tmp_root))
 
             # Patch applied: incident page exists, log/index have new entries.
             incident = wiki / "incidents" / "promote-fixture.md"
@@ -984,7 +987,7 @@ class TestE2EPromote(unittest.TestCase):
             log_before = (wiki / "log.md").read_text()
             index_before = (wiki / "index.md").read_text()
 
-            result = promote(prop, tmp_root, dry_run=True)
+            result = promote(prop, WikiPaths.for_root(tmp_root), dry_run=True)
 
             self.assertTrue(result.dry_run)
             # Wiki unchanged.
@@ -1014,7 +1017,7 @@ class TestE2EPromote(unittest.TestCase):
             bad_preview.write_text(corrupted)
 
             with self.assertRaises(PromoteValidationError):
-                promote(prop, tmp_root)
+                promote(prop, WikiPaths.for_root(tmp_root))
 
             # Wiki tree still pristine.
             self.assertFalse((wiki / "incidents" / "bad-fixture.md").exists())
@@ -1030,11 +1033,11 @@ class TestE2EPromote(unittest.TestCase):
             self._build_tmp_repo(tmp_root)
             prop = self._build_proposals_dir(tmp_root)
 
-            promote(prop, tmp_root)  # first apply
+            promote(prop, WikiPaths.for_root(tmp_root))  # first apply
 
             archived = tmp_root / "doc_internal" / "proposals" / ".applied" / prop.name
             # Second promote on the .applied/ path is a no-op.
-            result = promote(archived, tmp_root)
+            result = promote(archived, WikiPaths.for_root(tmp_root))
             self.assertEqual(result.applied_paths, [])
 
     def test_promote_missing_proposals_dir_raises(self) -> None:
@@ -1045,7 +1048,7 @@ class TestE2EPromote(unittest.TestCase):
             tmp_root = Path(tmp)
             self._build_tmp_repo(tmp_root)
             with self.assertRaises(PromoteValidationError):
-                promote(tmp_root / "doc_internal" / "proposals" / "nope", tmp_root)
+                promote(tmp_root / "doc_internal" / "proposals" / "nope", WikiPaths.for_root(tmp_root))
 
 
 class TestE2ESingleWriterInvariant(unittest.TestCase):
@@ -1061,36 +1064,31 @@ class TestE2ESingleWriterInvariant(unittest.TestCase):
     _PACKAGE_ROOT = PACKAGE_ROOT
     _ALLOWED_WRITERS = {"promoter.py"}
 
-    def test_only_promoter_writes_to_knowledge_wiki(self) -> None:
+    def test_only_promoter_writes_to_wiki_dir(self) -> None:
         import re
 
-        # Patterns that signal "writing to knowledge/wiki": any
-        # filesystem-write call (.write_text, .write_bytes, shutil.copy*,
-        # shutil.move, os.rename, os.replace, mkdir+write) where the
-        # path expression mentions "knowledge" / "wiki".
+        # Patterns that signal "writing to the wiki": any filesystem-write
+        # call (.write_text, .write_bytes, shutil.copy*, shutil.move,
+        # os.rename, os.replace) on a line whose path expression mentions
+        # the wiki directory (``wiki_dir``). The audit log lives under the
+        # wiki too but is addressed as ``audit_log`` and owned by audit.py.
         write_re = re.compile(
-            r"(\.write_text|\.write_bytes|shutil\.(copy|move|rmtree)|"
-            r"os\.(rename|replace))\s*\(",
+            r"(\.write_text|\.write_bytes|shutil\.(copy|move|rmtree)|os\.(rename|replace))\s*\(",
         )
 
         offenders: list[tuple[str, int, str]] = []
         for py in self._PACKAGE_ROOT.rglob("*.py"):
             rel = py.relative_to(self._PACKAGE_ROOT)
-            # Tests are allowed to touch fixture wiki dirs.
-            if rel.parts and rel.parts[0] == "tests":
-                continue
             if py.name in self._ALLOWED_WRITERS:
                 continue
             for lineno, line in enumerate(py.read_text(encoding="utf-8").splitlines(), start=1):
-                if write_re.search(line) and (
-                    "knowledge/wiki" in line or 'knowledge / "wiki"' in line or 'knowledge"' in line
-                ):
+                if write_re.search(line) and "wiki_dir" in line:
                     offenders.append((str(rel), lineno, line.strip()))
 
         self.assertEqual(
             offenders,
             [],
-            f"Found {len(offenders)} non-promoter writes to knowledge/wiki/:\n"
+            f"Found {len(offenders)} non-promoter writes to the wiki directory:\n"
             + "\n".join(f"  {p}:{n}: {line}" for p, n, line in offenders),
         )
 
@@ -1143,7 +1141,7 @@ class TestE2EQuery(unittest.TestCase):
             tmp_root = Path(tmp)
             self._build_tmp_repo_with_pages(tmp_root)
             index_md, pages_loaded, pages_content = _select_query_candidates(
-                repo_root=tmp_root,
+                WikiPaths.for_root(tmp_root),
                 question="what does the wiki say about origin alignment and the breaker?",
                 max_pages=5,
             )
@@ -1162,7 +1160,7 @@ class TestE2EQuery(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
             self._build_tmp_repo_with_pages(tmp_root)
-            q = DefaultQuerier(backend=TestBackend(), repo_root=tmp_root)
+            q = DefaultQuerier(backend=TestBackend(), paths=WikiPaths.for_root(tmp_root))
             answer = q.query("origin alignment")
             self.assertTrue(answer.answer)
             self.assertGreater(len(answer.citations), 0)
@@ -1177,7 +1175,7 @@ class TestE2EQuery(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
             self._build_tmp_repo_with_pages(tmp_root)
-            q = DefaultQuerier(backend=TestBackend(), repo_root=tmp_root)
+            q = DefaultQuerier(backend=TestBackend(), paths=WikiPaths.for_root(tmp_root))
             q.query("origin alignment breaker")
             log_path = tmp_root / "doc_internal" / "wiki-query-log.jsonl"
             self.assertTrue(log_path.exists())
@@ -1201,7 +1199,7 @@ class TestE2EQuery(unittest.TestCase):
                 encoding="utf-8",
             )
             _index, pages_loaded, _content = _select_query_candidates(
-                repo_root=tmp_root,
+                WikiPaths.for_root(tmp_root),
                 question="origin alignment breaker drift",
                 max_pages=10,
             )
@@ -1228,7 +1226,7 @@ class TestE2EQuery(unittest.TestCase):
                         "citations": [{"page": "index.md", "fragment": "(index only)"}],
                     }
 
-            q = DefaultQuerier(backend=_NoMatchBackend(), repo_root=tmp_root)
+            q = DefaultQuerier(backend=_NoMatchBackend(), paths=WikiPaths.for_root(tmp_root))
             ans = q.query("a question with no good answer")
             self.assertEqual(ans.answer, "")
             self.assertEqual(len(ans.citations), 1)
@@ -1241,7 +1239,7 @@ class TestE2EQuery(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
             self._build_tmp_repo_with_pages(tmp_root)
-            q = DefaultQuerier(backend=TestBackend(), repo_root=tmp_root)
+            q = DefaultQuerier(backend=TestBackend(), paths=WikiPaths.for_root(tmp_root))
             answer, patch = q.query_with_file_back("origin alignment breaker")
             self.assertTrue(answer.answer)
             # Test backend's ingest-multi response is deterministic and
@@ -1303,7 +1301,7 @@ class TestE2EHealthLint(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
             self._build_wiki(tmp_root)
-            result = lint_health(repo_root=tmp_root, backend=None)
+            result = lint_health(WikiPaths.for_root(tmp_root), backend=None)
             stale = [f for f in result.findings if f.kind == "stale-claim"]
             self.assertEqual(len(stale), 1)
             self.assertIn("concepts/bar.md", stale[0].pages)
@@ -1318,7 +1316,7 @@ class TestE2EHealthLint(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
             self._build_wiki(tmp_root)
-            result = lint_health(repo_root=tmp_root, backend=None)
+            result = lint_health(WikiPaths.for_root(tmp_root), backend=None)
             orphans = [f for f in result.findings if f.kind == "weak-orphan"]
             self.assertGreater(len(orphans), 0)
 
@@ -1339,7 +1337,7 @@ class TestE2EHealthLint(unittest.TestCase):
                     f"# Mentions Foo {i}\n\nThis page mentions foo without linking it.\n",
                     encoding="utf-8",
                 )
-            result = lint_health(repo_root=tmp_root, backend=None)
+            result = lint_health(WikiPaths.for_root(tmp_root), backend=None)
             cross = [f for f in result.findings if f.kind == "missing-cross-link"]
             self.assertGreater(len(cross), 0)
             slugs = sum(("foo" in f.description) for f in cross)
@@ -1380,7 +1378,7 @@ class TestE2EHealthLint(unittest.TestCase):
             )
             shutil.copytree(packaged_schema_dir(), wiki / "schema")
 
-            result = lint_health(repo_root=tmp_root, backend=None)
+            result = lint_health(WikiPaths.for_root(tmp_root), backend=None)
             # alpha and beta cross-link each other AND both are linked
             # from index → no weak orphans (each has 2 inbound edges).
             # Sources resolve. No frequent-mention entities.
@@ -1398,8 +1396,8 @@ class TestE2EHealthLint(unittest.TestCase):
             self._build_wiki(tmp_root)
             # Scoped to bar.md only.
             scoped = lint_health(
-                repo_root=tmp_root,
-                paths=["concepts/bar.md"],
+                WikiPaths.for_root(tmp_root),
+                only=["concepts/bar.md"],
                 backend=None,
             )
             for f in scoped.findings:
@@ -1425,7 +1423,7 @@ class TestE2EHealthLint(unittest.TestCase):
                     }
 
             result = lint_health(
-                repo_root=tmp_root,
+                WikiPaths.for_root(tmp_root),
                 backend=_FixedBackend(),
             )
             contradictions = [f for f in result.findings if f.kind == "contradiction"]
@@ -1457,7 +1455,7 @@ class TestE2EPromoteAtomicity(unittest.TestCase):
             "---\npage_type: log\nslug: log\ntitle: L\nstatus: stable\nlast_reviewed: 2026-05-06\n---\n\n# Log\n",
             encoding="utf-8",
         )
-        make_repo_layout(tmp, with_schema=True, with_lint_script=True, with_sample=False)
+        make_repo_layout(tmp, with_schema=True, with_sample=False)
         return wiki
 
     def _build_proposals_dir(self, tmp: Path, slug: str = "atomicity-fixture") -> Path:
@@ -1539,7 +1537,7 @@ class TestE2EPromoteAtomicity(unittest.TestCase):
                 return real_write(self, *args, **kwargs)
 
             with _patch.object(Path, "write_text", flaky_write), self.assertRaises(PromoteApplyError) as ctx:
-                promote(prop, tmp_root)
+                promote(prop, WikiPaths.for_root(tmp_root))
 
             self.assertIn("simulated mid-commit failure", str(ctx.exception))
             self.assertIn("rolled back", str(ctx.exception))
@@ -1624,7 +1622,7 @@ class TestE2EQueryCitationValidation(unittest.TestCase):
                         ],
                     }
 
-            q = DefaultQuerier(backend=_LiarBackend(), repo_root=tmp_root)
+            q = DefaultQuerier(backend=_LiarBackend(), paths=WikiPaths.for_root(tmp_root))
             with self.assertRaises(ContractViolationError) as ctx:
                 q.query("foo")
             msg = str(ctx.exception)
@@ -1649,7 +1647,7 @@ class TestE2EQueryCitationValidation(unittest.TestCase):
                         ],
                     }
 
-            q = DefaultQuerier(backend=_EmptyFragBackend(), repo_root=tmp_root)
+            q = DefaultQuerier(backend=_EmptyFragBackend(), paths=WikiPaths.for_root(tmp_root))
             with self.assertRaises(ContractViolationError) as ctx:
                 q.query("foo")
             self.assertIn("empty", str(ctx.exception).lower())
@@ -1672,7 +1670,7 @@ class TestE2EQueryCitationValidation(unittest.TestCase):
                         ],
                     }
 
-            q = DefaultQuerier(backend=_IndexOnlyBackend(), repo_root=tmp_root)
+            q = DefaultQuerier(backend=_IndexOnlyBackend(), paths=WikiPaths.for_root(tmp_root))
             # No raise.
             ans = q.query("foo")
             self.assertEqual(ans.answer, "")

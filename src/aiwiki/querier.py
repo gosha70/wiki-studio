@@ -11,7 +11,7 @@
 # already flagged by the structural linter).
 #
 # The pages-loaded list is appended to
-# ``doc_internal/wiki-query-log.jsonl`` so curators can audit the
+# the query log (``WikiPaths.query_log``) so curators can audit the
 # index-first navigation: did the query open the right pages? did
 # it load too many? did it open pages NOT linked from the index
 # (which would be a bug)?
@@ -42,6 +42,7 @@ from .wiki_state import _read_text_or_empty, _tokenise
 
 if TYPE_CHECKING:
     from .ingestor import Backend
+    from .paths import WikiPaths
 
 # Default cap on candidate pages loaded into the query prompt. Index-
 # first navigation typically needs only 1–5 pages; the default of 5 is
@@ -77,7 +78,7 @@ def _extract_index_links(index_md: str) -> list[str]:
 
 
 def _select_query_candidates(
-    repo_root: Path,
+    paths: WikiPaths,
     question: str,
     max_pages: int,
 ) -> tuple[str, list[str], dict[str, str]]:
@@ -91,7 +92,7 @@ def _select_query_candidates(
                         loaded into the prompt
         pages_content — map from path to content for the loaded pages
     """
-    wiki_dir = repo_root / "knowledge" / "wiki"
+    wiki_dir = paths.wiki_dir
     index_md = _read_text_or_empty(wiki_dir / "index.md")
     if not index_md:
         return "", [], {}
@@ -245,21 +246,21 @@ class DefaultQuerier:
     """
 
     backend: Backend
-    repo_root: Path
+    paths: WikiPaths
     max_pages: int = DEFAULT_MAX_QUERY_PAGES
 
     def query(self, question: str) -> QueryAnswer:
         index_md, pages_loaded, pages_content = _select_query_candidates(
-            repo_root=self.repo_root,
+            paths=self.paths,
             question=question,
             max_pages=self.max_pages,
         )
         if not index_md:
             raise SourceMissingError(
-                "knowledge/wiki/index.md not found; cannot run query (index is the navigation primitive)."
+                f"{self.paths.wiki_label}/index.md not found; cannot run query (index is the navigation primitive)."
             )
 
-        schema_files = load_schema_files(self.repo_root)
+        schema_files = load_schema_files(self.paths)
         prompt = compose_query_prompt(
             question=question,
             index_md=index_md,
@@ -346,7 +347,7 @@ class DefaultQuerier:
             synthetic_path = Path(f.name)
 
         try:
-            multi = DefaultMultiIngestor(backend=self.backend, repo_root=self.repo_root)
+            multi = DefaultMultiIngestor(backend=self.backend, paths=self.paths)
             req = IngestRequest(
                 source_path=synthetic_path,
                 source_kind="file",
@@ -359,8 +360,8 @@ class DefaultQuerier:
         return answer, patch
 
     def _append_query_log(self, question: str, answer: QueryAnswer) -> None:
-        """Append one JSONL line to doc_internal/wiki-query-log.jsonl."""
-        log_path = self.repo_root / "doc_internal" / "wiki-query-log.jsonl"
+        """Append one JSONL line to the query log (``paths.query_log``)."""
+        log_path = self.paths.query_log
         try:
             log_path.parent.mkdir(parents=True, exist_ok=True)
             entry = {

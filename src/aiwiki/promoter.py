@@ -2,12 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 # aiwiki.promoter — Phase-2 patch-set promotion.
 #
-# THE ONLY MODULE IN THE PIPELINE THAT WRITES TO knowledge/wiki/.
+# THE ONLY MODULE IN THE PIPELINE THAT WRITES TO THE WIKI DIRECTORY.
 #
 # Promotion is atomic: build a staged tree (copy of the current wiki +
 # the patch-set's edits applied), validate the staged tree end-to-end
 # (per-edit semantic + structural lint), and only then commit the
-# staged tree to ``knowledge/wiki/``. Any validation failure leaves
+# staged tree to the wiki directory. Any validation failure leaves
 # the wiki untouched.
 #
 # The validation step intentionally runs against the staged tree, not
@@ -20,7 +20,7 @@
 #     the pre-apply wiki
 #
 # After a successful commit, the proposals dir is moved to
-# ``doc_internal/proposals/.applied/<source-stem>/`` (gitignored audit
+# ``<proposals_dir>/.applied/<source-stem>/`` (audit
 # trail). Subsequent runs against the same dir are no-ops.
 
 from __future__ import annotations
@@ -28,21 +28,26 @@ from __future__ import annotations
 import difflib
 import json
 import shutil
-import subprocess
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from .errors import (
     PromoteApplyError,
     PromoteValidationError,
 )
+from .lint import lint_wiki
+from .paths import APPLIED_DIR_NAME
 from .proposal import (
     PageEdit,
     WikiPatchSet,
     validate_page_edit_semantics,
     validate_patch_set,
 )
+
+if TYPE_CHECKING:
+    from .paths import WikiPaths
 
 
 @dataclass(frozen=True)
@@ -107,14 +112,14 @@ def _load_patch_from_dir(proposals_dir: Path) -> WikiPatchSet:
     )
 
 
-def _stage_wiki(repo_root: Path, dest: Path) -> None:
-    """Copy the current wiki tree to ``dest`` (excluding scripts/)."""
-    wiki_src = repo_root / "knowledge" / "wiki"
+def _stage_wiki(paths: WikiPaths, dest: Path) -> None:
+    """Copy the current wiki tree to ``dest``."""
+    wiki_src = paths.wiki_dir
     if not wiki_src.is_dir():
         raise PromoteApplyError(f"wiki source not found at {wiki_src}; cannot stage.")
     if dest.exists():
         shutil.rmtree(dest)
-    # Shallow copy via copytree — knowledge/wiki/ is small (~21 pages),
+    # Shallow copy via copytree — a wiki is small (tens of pages),
     # full copy is the simplest atomicity primitive.
     shutil.copytree(wiki_src, dest)
 
@@ -166,12 +171,12 @@ def _apply_edit(stage_dir: Path, edit: PageEdit) -> None:
 
 def _validate_staged_tree(
     stage_dir: Path,
-    repo_root: Path,
+    paths: WikiPaths,
     patch: WikiPatchSet,
 ) -> None:
     """Re-run per-edit semantic + structural lint against the staged tree.
 
-    The staged tree is the post-apply view of knowledge/wiki/, so
+    The staged tree is the post-apply view of the wiki, so
     create/update edits that depend on each other (e.g. an append-log
     that targets a log.md created earlier in the same patch-set) are
     judged against the right state.
@@ -179,116 +184,74 @@ def _validate_staged_tree(
     Raises PromoteValidationError on any failure; the wiki tree is
     not touched.
     """
-    # Build a temporary repo root whose knowledge/wiki/ is the staged
-    # tree so validate_page_edit_semantics' update/create-target-exists
-    # checks see post-apply state.
-    with tempfile.TemporaryDirectory(prefix="wiki-promote-validate-") as tmp:
-        tmp_root = Path(tmp)
-        (tmp_root / "knowledge").mkdir()
-        # symlink the staged wiki under the temp root's knowledge/
-        (tmp_root / "knowledge" / "wiki").symlink_to(stage_dir)
+    # Per-edit validation against the staged tree, so the update-exists and
+    # create-clobber checks see post-apply state.
+    staged = paths.with_wiki_dir(stage_dir)
+    per_edit_errors: list[str] = []
+    for edit in patch.edits:
+        if edit.action == "create":
+            # The file exists in the staged tree by design (post-apply), so
+            # the create-clobber check would fire. Re-run the rest of the
+            # checks (slug==stem, page_type promotable, dir placement,
+            # sources non-empty) against an empty wiki so existence checks
+            # skip.
+            with tempfile.TemporaryDirectory(prefix="wiki-no-wiki-") as empty:
+                per_edit_errors.extend(validate_page_edit_semantics(edit, paths.with_wiki_dir(Path(empty))))
+        else:
+            per_edit_errors.extend(validate_page_edit_semantics(edit, staged))
+    if per_edit_errors:
+        raise PromoteValidationError("Staged-tree per-edit validation failed:\n  - " + "\n  - ".join(per_edit_errors))
 
-        per_edit_errors: list[str] = []
-        for edit in patch.edits:
-            # Per-edit validation against the staged tree. NOTE: for
-            # `create` actions, the staged tree has just had the file
-            # created, so the "create target must not exist" check
-            # would now fire. Skip the existence checks for create
-            # in post-apply mode by passing a temp-root whose wiki has
-            # NOT yet been written to for the file under inspection —
-            # actually simpler: the per-edit validator's existence
-            # checks make sense pre-apply. Here we re-verify the
-            # frontmatter cross-consistency (the part that matters
-            # post-apply: slug==stem, page_type promotable, dir
-            # placement, sources non-empty). We DO want to re-check
-            # update existence in case Phase-2's caller skipped Phase-1
-            # validation.
-            if edit.action == "create":
-                # Don't re-run the create-clobber check (the file
-                # exists in the staged tree by design, post-apply).
-                # Re-run the rest by passing a fake repo root with no
-                # knowledge/wiki/ so existence checks skip.
-                with tempfile.TemporaryDirectory(prefix="wiki-no-wiki-") as empty:
-                    empty_root = Path(empty)
-                    per_edit_errors.extend(validate_page_edit_semantics(edit, empty_root))
-            else:
-                per_edit_errors.extend(validate_page_edit_semantics(edit, tmp_root))
-        if per_edit_errors:
-            raise PromoteValidationError(
-                "Staged-tree per-edit validation failed:\n  - " + "\n  - ".join(per_edit_errors)
-            )
+    set_errors = validate_patch_set(patch)
+    if set_errors:
+        raise PromoteValidationError("Staged-tree set-level validation failed:\n  - " + "\n  - ".join(set_errors))
 
-        set_errors = validate_patch_set(patch)
-        if set_errors:
-            raise PromoteValidationError("Staged-tree set-level validation failed:\n  - " + "\n  - ".join(set_errors))
+    # Structural lint of the staged tree (post-apply state).
+    violations = _lint_staged_tree(stage_dir, paths)
+    if violations:
+        raise PromoteValidationError(
+            "Structural linter rejected staged tree:\n" + "\n".join(f"  ✗ {v}" for v in violations)
+        )
 
-    # Structural lint. The lint script reads the wiki dir from
-    # knowledge/wiki/ relative to the script's location. We invoke
-    # via bash with the staged tree masked into a temporary repo
-    # layout so the linter sees the post-apply state.
-    lint_script = repo_root / "knowledge" / "wiki" / "scripts" / "lint-wiki.sh"
-    if not lint_script.exists():
-        # Linter missing → soft warning; don't block promote on a
-        # missing dependency (the alignment gate would catch it).
-        return
+
+def _lint_staged_tree(stage_dir: Path, paths: WikiPaths) -> list[str]:
+    """Run the structural linter over the staged wiki with escape links resolvable.
+
+    Pages may link outside the wiki (``../../docs/...``). Those targets live
+    in the real project, so the staged wiki is mirrored at its own relative
+    location under a temporary root whose other entries are symlinks to the
+    live ones. A wiki outside the root is linted in place (escape links
+    cannot be mirrored, as for the live wiki).
+    """
+    try:
+        rel = paths.wiki_dir.resolve().relative_to(paths.root.resolve())
+    except ValueError:
+        return lint_wiki(stage_dir)
 
     with tempfile.TemporaryDirectory(prefix="wiki-lint-stage-") as tmp:
         tmp_root = Path(tmp)
-        # Replicate the repo layout enough that intra-wiki escape
-        # links (e.g. ``../../../shared/skills/...``) resolve to real
-        # files. The lint script anchors WIKI_DIR off its own
-        # location, so we copy the staged wiki to
-        # <tmp>/knowledge/wiki/ and symlink the other top-level repo
-        # entries from <tmp>/ so escape paths resolve identically.
-        kn_dir = tmp_root / "knowledge"
-        kn_dir.mkdir()
-        wiki_dst = kn_dir / "wiki"
-        shutil.copytree(stage_dir, wiki_dst)
-        # Restore scripts/ + schema/ that the staging step omitted
-        # (they're not patch-set targets but the linter needs them).
-        for sub in ("scripts", "schema"):
-            src = repo_root / "knowledge" / "wiki" / sub
-            dst = wiki_dst / sub
-            if src.is_dir() and not dst.exists():
-                shutil.copytree(src, dst)
-        # Symlink every other top-level repo entry from <tmp>/ so
-        # escape links from wiki pages (``../../../shared/...``, etc.)
-        # resolve. Skip ``knowledge`` (we've built our own) and any
-        # entry that's already in <tmp>/ from a prior loop iteration.
-        for entry in repo_root.iterdir():
-            if entry.name == "knowledge":
-                continue
-            link = tmp_root / entry.name
-            if link.exists() or link.is_symlink():
-                continue
-            try:
-                link.symlink_to(entry)
-            except OSError:
-                if entry.is_file():
-                    shutil.copy(entry, link)
-        # Mirror the rest of <repo>/knowledge/ besides wiki/ (e.g.
-        # knowledge/README.md, knowledge/raw/) — wiki pages may link
-        # up two levels to ``../../README.md`` from a workflows page.
-        for entry in (repo_root / "knowledge").iterdir():
-            if entry.name == "wiki":
-                continue
-            link = kn_dir / entry.name
-            if link.exists() or link.is_symlink():
-                continue
-            try:
-                link.symlink_to(entry)
-            except OSError:
-                if entry.is_file():
-                    shutil.copy(entry, link)
-
-        result = subprocess.run(
-            ["bash", str(wiki_dst / "scripts" / "lint-wiki.sh")],
-            capture_output=True,
-            text=True,
-            timeout=30,
-        )
-        if result.returncode != 0:
-            raise PromoteValidationError(f"Structural linter rejected staged tree:\n{result.stdout}\n{result.stderr}")
+        mirrored = tmp_root / rel
+        shutil.copytree(stage_dir, mirrored, dirs_exist_ok=True)
+        # Symlink the siblings of every ancestor of the wiki (root entries
+        # except ``knowledge``, then ``knowledge`` entries except ``wiki``,
+        # for the default layout) so escape paths resolve identically.
+        real_dir = paths.root.resolve()
+        tmp_dir = tmp_root
+        for part in rel.parts:
+            for entry in real_dir.iterdir():
+                if entry.name == part:
+                    continue
+                link = tmp_dir / entry.name
+                if link.exists() or link.is_symlink():
+                    continue
+                try:
+                    link.symlink_to(entry)
+                except OSError:
+                    if entry.is_file():
+                        shutil.copy(entry, link)
+            real_dir = real_dir / part
+            tmp_dir = tmp_dir / part
+        return lint_wiki(mirrored)
 
 
 def _stage_audit_archive(
@@ -402,8 +365,8 @@ def _stage_audit_archive(
             (archive_dir / "curator-delta.md").write_text("".join(delta_lines), encoding="utf-8")
 
 
-def _commit_stage_to_wiki(stage_dir: Path, repo_root: Path) -> list[str]:
-    """Copy staged tree files back into knowledge/wiki/ atomically.
+def _commit_stage_to_wiki(stage_dir: Path, paths: WikiPaths) -> list[str]:
+    """Copy staged tree files back into the live wiki atomically.
 
     Atomicity is the load-bearing guarantee here: every patch-set is
     a single curator decision, and the wiki must not end up in a
@@ -422,7 +385,7 @@ def _commit_stage_to_wiki(stage_dir: Path, repo_root: Path) -> list[str]:
     Returns the list of wiki-relative paths actually written
     (excluding no-op files whose content was already identical).
     """
-    wiki_dst = repo_root / "knowledge" / "wiki"
+    wiki_dst = paths.wiki_dir
 
     # Plan phase — read existing state for every file we'd write.
     @dataclass
@@ -452,7 +415,7 @@ def _commit_stage_to_wiki(stage_dir: Path, repo_root: Path) -> list[str]:
                     original = target.read_text(encoding="utf-8")
                 except OSError as exc:
                     raise PromoteApplyError(
-                        f"could not read existing wiki file for backup: {target.relative_to(repo_root)}: {exc}"
+                        f"could not read existing wiki file for backup: {paths.relative_to_root(target)}: {exc}"
                     ) from exc
                 if original == new_content:
                     continue  # no-op for this file
@@ -484,7 +447,7 @@ def _commit_stage_to_wiki(stage_dir: Path, repo_root: Path) -> list[str]:
                     original_bytes = target.read_bytes()
                 except OSError as exc:
                     raise PromoteApplyError(
-                        f"could not read existing wiki file for backup: {target.relative_to(repo_root)}: {exc}"
+                        f"could not read existing wiki file for backup: {paths.relative_to_root(target)}: {exc}"
                     ) from exc
                 if original_bytes == new_bytes:
                     continue  # no-op
@@ -547,14 +510,13 @@ def _commit_stage_to_wiki(stage_dir: Path, repo_root: Path) -> list[str]:
     return [p.rel for p in applied]
 
 
-def _archive_proposals_dir(proposals_dir: Path, repo_root: Path) -> Path:
-    """Move the proposals dir into doc_internal/proposals/.applied/.
+def _archive_proposals_dir(proposals_dir: Path, paths: WikiPaths) -> Path:
+    """Move the proposals dir into ``<proposals_dir>/.applied/``.
 
-    The .applied/ subdir is gitignored (doc_internal/ already is) and
-    serves as an audit trail. Idempotent: a second call with the same
+    The .applied/ subdir serves as an audit trail. Idempotent: a second call with the same
     dir is a no-op when the dir has already been archived.
     """
-    applied_root = repo_root / "doc_internal" / "proposals" / ".applied"
+    applied_root = paths.applied_dir
     applied_root.mkdir(parents=True, exist_ok=True)
     target = applied_root / proposals_dir.name
     if target.exists():
@@ -565,27 +527,27 @@ def _archive_proposals_dir(proposals_dir: Path, repo_root: Path) -> Path:
 
 
 def _is_already_applied(proposals_dir: Path) -> bool:
-    """True when proposals_dir lives under doc_internal/proposals/.applied/."""
-    return ".applied" in proposals_dir.parts
+    """True when proposals_dir lives under the proposals ``.applied/`` archive."""
+    return APPLIED_DIR_NAME in proposals_dir.parts
 
 
 def promote(
     proposals_dir: Path,
-    repo_root: Path,
+    paths: WikiPaths,
     dry_run: bool = False,
 ) -> PromoteResult:
-    """Apply a proposals dir's patch-set to knowledge/wiki/ atomically.
+    """Apply a proposals dir's patch-set to the wiki atomically.
 
     Parameters
     ----------
     proposals_dir : Path
         Directory containing plan.json + preview/<path>.md (output of
         Phase-1 ``wiki ingest``).
-    repo_root : Path
-        Repo root; knowledge/wiki/ resolved relative to it.
+    paths : WikiPaths
+        The resolved layout (wiki directory, proposals archive).
     dry_run : bool
         When True, build and validate the staged tree but do not
-        commit to knowledge/wiki/ and do not move the proposals dir
+        commit to the wiki and do not move the proposals dir
         to .applied/.
 
     Returns
@@ -611,7 +573,7 @@ def promote(
         # Empty patch-set (gate reject) — nothing to apply.
         archived: Path | None = None
         if not dry_run:
-            archived = _archive_proposals_dir(proposals_dir, repo_root)
+            archived = _archive_proposals_dir(proposals_dir, paths)
         return PromoteResult(
             applied_paths=[],
             proposals_dir=proposals_dir,
@@ -621,7 +583,7 @@ def promote(
 
     with tempfile.TemporaryDirectory(prefix="wiki-stage-") as stage:
         stage_dir = Path(stage) / "wiki"
-        _stage_wiki(repo_root, stage_dir)
+        _stage_wiki(paths, stage_dir)
 
         for edit in patch.edits:
             _apply_edit(stage_dir, edit)
@@ -634,7 +596,7 @@ def promote(
         # Validation gate. Raises PromoteValidationError on any
         # failure; the wiki tree is unchanged because we haven't
         # committed yet.
-        _validate_staged_tree(stage_dir, repo_root, patch)
+        _validate_staged_tree(stage_dir, paths, patch)
 
         if dry_run:
             return PromoteResult(
@@ -644,13 +606,13 @@ def promote(
                 dry_run=True,
             )
 
-        applied = _commit_stage_to_wiki(stage_dir, repo_root)
+        applied = _commit_stage_to_wiki(stage_dir, paths)
 
     # Archive is post-commit and best-effort. The wiki is already
     # updated; failing to move the proposals dir is a curator-fixable
     # housekeeping issue, not a promote failure. Log and continue.
     try:
-        archived = _archive_proposals_dir(proposals_dir, repo_root)
+        archived = _archive_proposals_dir(proposals_dir, paths)
     except OSError:
         archived = None
     return PromoteResult(

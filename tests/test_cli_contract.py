@@ -108,7 +108,7 @@ class _LayoutCase(unittest.TestCase):
 
     def setUp(self) -> None:
         self._tmp = tempfile.TemporaryDirectory(prefix="aiwiki-cli-")
-        self.root = make_repo_layout(Path(self._tmp.name), with_schema=True, with_lint_script=True)
+        self.root = make_repo_layout(Path(self._tmp.name), with_schema=True)
         self.sample = self.root / "sample-incident.md"
 
     def tearDown(self) -> None:

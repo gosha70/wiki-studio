@@ -28,6 +28,7 @@ import subprocess
 from typing import Any
 
 from ..errors import BackendInvocationError, BackendNotFoundError
+from ..paths import DEFAULT_WIKI_DIR
 from .json_extract import extract_json_object
 
 # Reference content rendered into the prompt — source body, candidate
@@ -133,7 +134,7 @@ def _redact_stderr(stderr: str) -> str:
     return f"<redacted: {len(encoded)} bytes, sha256={digest}; rerun with --debug-unsafe-output to see raw text>"
 
 
-def _render_plain_text_prompt(backend_prompt: dict[str, Any]) -> str:
+def _render_plain_text_prompt(backend_prompt: dict[str, Any], wiki_label: str = DEFAULT_WIKI_DIR) -> str:
     """Render a BackendPrompt dict as a plain-text prompt suitable for CLI invocation.
 
     The rendered prompt:
@@ -212,12 +213,12 @@ def _render_plain_text_prompt(backend_prompt: dict[str, Any]) -> str:
         lines.append("")
         index_md = wiki_state.get("index_md", "")
         if index_md:
-            lines.append("--- knowledge/wiki/index.md ---")
+            lines.append(f"--- {wiki_label}/index.md ---")
             lines.append(_neutralize_extractor_fences(index_md))
             lines.append("")
         log_md = wiki_state.get("log_md", "")
         if log_md:
-            lines.append("--- knowledge/wiki/log.md ---")
+            lines.append(f"--- {wiki_label}/log.md ---")
             lines.append(_neutralize_extractor_fences(log_md))
             lines.append("")
         candidate_pages = wiki_state.get("candidate_pages", {}) or {}
@@ -227,7 +228,7 @@ def _render_plain_text_prompt(backend_prompt: dict[str, Any]) -> str:
                 "selected by lexical overlap with the source) ---"
             )
             for rel_path, page_content in candidate_pages.items():
-                lines.append(f"--- knowledge/wiki/{rel_path} ---")
+                lines.append(f"--- {wiki_label}/{rel_path} ---")
                 lines.append(_neutralize_extractor_fences(page_content))
                 lines.append("")
         lines.append("")
@@ -290,10 +291,12 @@ class CopilotCliBackend:
         cli_name: str,
         timeout_seconds: int = 120,
         redact_output: bool = True,
+        wiki_label: str = DEFAULT_WIKI_DIR,
     ) -> None:
         self._cli_name = cli_name
         self._timeout_seconds = timeout_seconds
         self._redact_output = redact_output
+        self._wiki_label = wiki_label
 
     def _build_command(self, prompt_text: str) -> list[str]:
         """Construct argv for the subprocess: [binary, *invocation, prompt]."""
@@ -321,7 +324,7 @@ class CopilotCliBackend:
         ContractViolationError
             If extract_json_object cannot find a parseable JSON object in stdout.
         """
-        prompt_text = _render_plain_text_prompt(prompt)
+        prompt_text = _render_plain_text_prompt(prompt, wiki_label=self._wiki_label)
         cmd = self._build_command(prompt_text)
 
         try:

@@ -36,6 +36,7 @@ from pathlib import Path
 from aiwiki.audit_flush import detect_pending, flush
 from aiwiki.audit_lint import INGEST_LOG_MARKER
 from aiwiki.errors import AuditFlushError
+from aiwiki.paths import WikiPaths
 
 # ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -127,7 +128,7 @@ class TestDetectPendingAbsent(unittest.TestCase):
     def test_absent(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             repo = _init_repo(Path(td))
-            state = detect_pending(repo)
+            state = detect_pending(WikiPaths.for_root(repo))
             self.assertEqual(state.pending, 0)
             self.assertIsNone(state.blob_sha)
             self.assertFalse(state.diverged)
@@ -144,7 +145,7 @@ class TestDetectPendingUntracked(unittest.TestCase):
             lp = _log_path(repo)
             lp.parent.mkdir(parents=True, exist_ok=True)
             lp.write_bytes(content)
-            state = detect_pending(repo)
+            state = detect_pending(WikiPaths.for_root(repo))
             self.assertEqual(state.pending, 1)
             self.assertIsNotNone(state.blob_sha)
             self.assertFalse(state.diverged)
@@ -158,7 +159,7 @@ class TestDetectPendingUntracked(unittest.TestCase):
             lp = _log_path(repo)
             lp.parent.mkdir(parents=True, exist_ok=True)
             lp.write_bytes(content)
-            state = detect_pending(repo)
+            state = detect_pending(WikiPaths.for_root(repo))
             self.assertEqual(state.pending, 3)
             self.assertFalse(state.diverged)
             self.assertFalse(state.malformed)
@@ -178,7 +179,7 @@ class TestDetectPendingAppended(unittest.TestCase):
             appended = committed.rstrip(b"\n") + b"\n" + (json.dumps(r2, separators=(",", ":")) + "\n").encode("utf-8")
             _log_path(repo).write_bytes(appended)
 
-            state = detect_pending(repo)
+            state = detect_pending(WikiPaths.for_root(repo))
             self.assertEqual(state.pending, 1)
             self.assertFalse(state.diverged)
             self.assertFalse(state.malformed)
@@ -198,7 +199,7 @@ class TestDetectPendingAppended(unittest.TestCase):
             existing = committed.rstrip(b"\n") + b"\n" + extra
             _log_path(repo).write_bytes(existing)
 
-            state = detect_pending(repo)
+            state = detect_pending(WikiPaths.for_root(repo))
             self.assertEqual(state.pending, 2)
             self.assertFalse(state.diverged)
             self.assertFalse(state.malformed)
@@ -213,7 +214,7 @@ class TestDetectPendingIdentical(unittest.TestCase):
             content = _make_log_bytes(_valid_record())
             _commit_log(repo, content)
             # No change to working file.
-            state = detect_pending(repo)
+            state = detect_pending(WikiPaths.for_root(repo))
             self.assertEqual(state.pending, 0)
             self.assertFalse(state.diverged)
             self.assertFalse(state.malformed)
@@ -229,7 +230,7 @@ class TestDetectPendingPreambleOnly(unittest.TestCase):
             lp = _log_path(repo)
             lp.parent.mkdir(parents=True, exist_ok=True)
             lp.write_bytes(content)
-            state = detect_pending(repo)
+            state = detect_pending(WikiPaths.for_root(repo))
             self.assertEqual(state.pending, 0)
             self.assertFalse(state.diverged)
             # Preamble-only is valid (no data lines to be invalid).
@@ -240,7 +241,7 @@ class TestDetectPendingPreambleOnly(unittest.TestCase):
             repo = _init_repo(Path(td))
             content = _make_preamble()
             _commit_log(repo, content)
-            state = detect_pending(repo)
+            state = detect_pending(WikiPaths.for_root(repo))
             self.assertEqual(state.pending, 0)
             self.assertFalse(state.diverged)
             self.assertFalse(state.malformed)
@@ -261,7 +262,7 @@ class TestDetectPendingDiverged(unittest.TestCase):
             different = _make_log_bytes(r2)
             _log_path(repo).write_bytes(different)
 
-            state = detect_pending(repo)
+            state = detect_pending(WikiPaths.for_root(repo))
             self.assertTrue(state.diverged)
 
 
@@ -279,7 +280,7 @@ class TestDetectPendingMalformed(unittest.TestCase):
             # Append a partial line (no trailing newline).
             torn = committed + b'{"v":1,"ts":"2026'  # no closing
             _log_path(repo).write_bytes(torn)
-            state = detect_pending(repo)
+            state = detect_pending(WikiPaths.for_root(repo))
             self.assertTrue(state.malformed)
 
     def test_not_newline_terminated(self) -> None:
@@ -293,7 +294,7 @@ class TestDetectPendingMalformed(unittest.TestCase):
             lp = _log_path(repo)
             lp.parent.mkdir(parents=True, exist_ok=True)
             lp.write_bytes(content)
-            state = detect_pending(repo)
+            state = detect_pending(WikiPaths.for_root(repo))
             self.assertTrue(state.malformed)
 
     def test_schema_invalid_record(self) -> None:
@@ -306,7 +307,7 @@ class TestDetectPendingMalformed(unittest.TestCase):
             lp = _log_path(repo)
             lp.parent.mkdir(parents=True, exist_ok=True)
             lp.write_bytes(content)
-            state = detect_pending(repo)
+            state = detect_pending(WikiPaths.for_root(repo))
             self.assertTrue(state.malformed)
 
 
@@ -330,7 +331,7 @@ class TestFlushCreatesCommit(unittest.TestCase):
             working = committed.rstrip(b"\n") + b"\n" + (json.dumps(r2, separators=(",", ":")) + "\n").encode("utf-8")
             _log_path(repo).write_bytes(working)
 
-            rc = flush(repo, dry_run=False)
+            rc = flush(WikiPaths.for_root(repo), dry_run=False)
             self.assertEqual(rc, 0)
             after_count = _count_commits(repo)
             self.assertEqual(after_count, before_count + 1)
@@ -357,7 +358,7 @@ class TestFlushCreatesCommit(unittest.TestCase):
             working = committed.rstrip(b"\n") + b"\n" + extra
             _log_path(repo).write_bytes(working)
 
-            rc = flush(repo, dry_run=False)
+            rc = flush(WikiPaths.for_root(repo), dry_run=False)
             self.assertEqual(rc, 0)
             after_count = _count_commits(repo)
             self.assertEqual(after_count, before_count + 1)
@@ -378,7 +379,7 @@ class TestFlushCreatesCommit(unittest.TestCase):
             working = committed.rstrip(b"\n") + b"\n" + (json.dumps(r2, separators=(",", ":")) + "\n").encode("utf-8")
             _log_path(repo).write_bytes(working)
 
-            flush(repo, dry_run=False)
+            flush(WikiPaths.for_root(repo), dry_run=False)
 
             stat_result = _git(repo, "show", "--stat", "--format=", "HEAD")
             stat = stat_result.stdout.decode()
@@ -400,7 +401,7 @@ class TestFlushCreatesCommit(unittest.TestCase):
             lp.write_bytes(working)
             before_bytes = lp.read_bytes()
 
-            flush(repo, dry_run=False)
+            flush(WikiPaths.for_root(repo), dry_run=False)
 
             after_bytes = lp.read_bytes()
             self.assertEqual(before_bytes, after_bytes)
@@ -416,7 +417,7 @@ class TestFlushNoop(unittest.TestCase):
             _commit_log(repo, content)
             before_count = _count_commits(repo)
 
-            rc = flush(repo, dry_run=False)
+            rc = flush(WikiPaths.for_root(repo), dry_run=False)
             self.assertEqual(rc, 0)
             self.assertEqual(_count_commits(repo), before_count)
 
@@ -424,7 +425,7 @@ class TestFlushNoop(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             repo = _init_repo(Path(td))
             before_count = _count_commits(repo)
-            rc = flush(repo, dry_run=False)
+            rc = flush(WikiPaths.for_root(repo), dry_run=False)
             self.assertEqual(rc, 0)
             self.assertEqual(_count_commits(repo), before_count)
 
@@ -440,11 +441,11 @@ class TestFlushNoop(unittest.TestCase):
             working = committed.rstrip(b"\n") + b"\n" + (json.dumps(r2, separators=(",", ":")) + "\n").encode("utf-8")
             _log_path(repo).write_bytes(working)
 
-            rc1 = flush(repo, dry_run=False)
+            rc1 = flush(WikiPaths.for_root(repo), dry_run=False)
             self.assertEqual(rc1, 0)
             count_after_first = _count_commits(repo)
 
-            rc2 = flush(repo, dry_run=False)
+            rc2 = flush(WikiPaths.for_root(repo), dry_run=False)
             self.assertEqual(rc2, 0)
             self.assertEqual(_count_commits(repo), count_after_first)
 
@@ -467,7 +468,7 @@ class TestFlushPathspecIsolation(unittest.TestCase):
             working = committed.rstrip(b"\n") + b"\n" + (json.dumps(r2, separators=(",", ":")) + "\n").encode("utf-8")
             _log_path(repo).write_bytes(working)
 
-            flush(repo, dry_run=False)
+            flush(WikiPaths.for_root(repo), dry_run=False)
 
             # The commit must not include dirty.txt.
             stat_result = _git(repo, "show", "--stat", "--format=", "HEAD")
@@ -499,7 +500,7 @@ class TestFlushDetachedHead(unittest.TestCase):
             working = committed.rstrip(b"\n") + b"\n" + (json.dumps(r2, separators=(",", ":")) + "\n").encode("utf-8")
             _log_path(repo).write_bytes(working)
 
-            rc = flush(repo, dry_run=False)
+            rc = flush(WikiPaths.for_root(repo), dry_run=False)
             self.assertEqual(rc, 0)
 
             # A commit was created.
@@ -525,7 +526,7 @@ class TestFlushDiverged(unittest.TestCase):
             _log_path(repo).write_bytes(different)
 
             with self.assertRaises(AuditFlushError):
-                flush(repo, dry_run=False)
+                flush(WikiPaths.for_root(repo), dry_run=False)
             self.assertEqual(_count_commits(repo), before_count)
 
     def test_diverged_bytes_unchanged(self) -> None:
@@ -542,7 +543,7 @@ class TestFlushDiverged(unittest.TestCase):
             before_bytes = lp.read_bytes()
 
             with contextlib.suppress(AuditFlushError):
-                flush(repo, dry_run=False)
+                flush(WikiPaths.for_root(repo), dry_run=False)
 
             self.assertEqual(lp.read_bytes(), before_bytes)
 
@@ -562,7 +563,7 @@ class TestFlushMalformed(unittest.TestCase):
             _log_path(repo).write_bytes(torn)
 
             with self.assertRaises(AuditFlushError):
-                flush(repo, dry_run=False)
+                flush(WikiPaths.for_root(repo), dry_run=False)
             self.assertEqual(_count_commits(repo), before_count)
 
     def test_malformed_bytes_unchanged(self) -> None:
@@ -578,7 +579,7 @@ class TestFlushMalformed(unittest.TestCase):
             before_bytes = lp.read_bytes()
 
             with contextlib.suppress(AuditFlushError):
-                flush(repo, dry_run=False)
+                flush(WikiPaths.for_root(repo), dry_run=False)
 
             self.assertEqual(lp.read_bytes(), before_bytes)
 
@@ -593,7 +594,7 @@ class TestFlushMalformed(unittest.TestCase):
             before_count = _count_commits(repo)
 
             with self.assertRaises(AuditFlushError):
-                flush(repo, dry_run=False)
+                flush(WikiPaths.for_root(repo), dry_run=False)
             self.assertEqual(_count_commits(repo), before_count)
 
 
@@ -612,7 +613,7 @@ class TestFlushDryRun(unittest.TestCase):
             working = committed.rstrip(b"\n") + b"\n" + (json.dumps(r2, separators=(",", ":")) + "\n").encode("utf-8")
             _log_path(repo).write_bytes(working)
 
-            rc = flush(repo, dry_run=True)
+            rc = flush(WikiPaths.for_root(repo), dry_run=True)
             self.assertEqual(rc, 0)
             self.assertEqual(_count_commits(repo), before_count)
 
@@ -628,7 +629,7 @@ class TestFlushDryRun(unittest.TestCase):
             _log_path(repo).write_bytes(different)
 
             with self.assertRaises(AuditFlushError):
-                flush(repo, dry_run=True)
+                flush(WikiPaths.for_root(repo), dry_run=True)
 
     def test_dry_run_malformed_raises(self) -> None:
         with tempfile.TemporaryDirectory() as td:
@@ -641,7 +642,7 @@ class TestFlushDryRun(unittest.TestCase):
             _log_path(repo).write_bytes(torn)
 
             with self.assertRaises(AuditFlushError):
-                flush(repo, dry_run=True)
+                flush(WikiPaths.for_root(repo), dry_run=True)
 
 
 class TestFlushGitCommitFailure(unittest.TestCase):
@@ -653,7 +654,7 @@ class TestFlushGitCommitFailure(unittest.TestCase):
             not_a_repo = Path(td) / "not-a-repo"
             not_a_repo.mkdir()
             with self.assertRaises(AuditFlushError):
-                detect_pending(not_a_repo)
+                detect_pending(WikiPaths.for_root(not_a_repo))
 
 
 if __name__ == "__main__":
