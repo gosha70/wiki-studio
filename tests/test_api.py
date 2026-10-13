@@ -140,6 +140,31 @@ class TestPromote(_LayoutCase):
             result = api.promote(prop, self.paths, allow_out_of_repo=True)
             self.assertEqual(len(result.applied_paths), 5)
 
+    def test_promote_resolves_escape_links_of_a_wiki_outside_the_root(self) -> None:
+        # Regression: the staged copy has no neighbours, so ``../guide.md`` used to
+        # be reported as broken although the live wiki (and api.lint) resolve it.
+        with tempfile.TemporaryDirectory() as other:
+            elsewhere = Path(other)
+            (elsewhere / "guide.md").write_text("# guide\n", encoding="utf-8")
+            wiki = elsewhere / "kb"
+            wiki.mkdir()
+            (wiki / "index.md").write_text(
+                "---\npage_type: index\nslug: index\ntitle: KB\nstatus: stable\nlast_reviewed: 2026-05-06\n---\n\n"
+                "# KB\n\n- [guide](../guide.md)\n",
+                encoding="utf-8",
+            )
+            (wiki / "log.md").write_text(
+                "---\npage_type: log\nslug: log\ntitle: Log\nstatus: stable\nlast_reviewed: 2026-05-06\n---\n\n# Log\n",
+                encoding="utf-8",
+            )
+            paths = WikiPaths.for_root(self.root, wiki_dir=wiki)
+            self.assertTrue(api.lint(paths).passed)
+            prop = _proposals_dir(self.root)
+            self.assertTrue(api.promote(prop, paths, dry_run=True).dry_run)
+            result = api.promote(prop, paths)
+            self.assertEqual(len(result.applied_paths), 5)
+            self.assertTrue((wiki / "incidents" / "cli-fixture.md").is_file())
+
     def test_validation_failure_raises(self) -> None:
         prop = _proposals_dir(self.root, slug="bad-fixture")
         preview = prop / "preview" / "incidents" / "bad-fixture.md"

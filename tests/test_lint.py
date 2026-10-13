@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -224,6 +225,30 @@ class TestLinksAndReachability(_WikiCase):
         violations = lint_wiki(self.wiki)
         self.assertViolation(violations, f"wiki: missing index.md at {self.wiki / 'index.md'}")
         self.assertFalse(any("orphan" in v for v in violations))
+
+
+class TestLiveWikiDir(_WikiCase):
+    """``live_wiki_dir``: escape links resolve at the live wiki; intra-wiki links stay authoritative in the copy."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        _clean_wiki(self.wiki)
+        (self.root / "knowledge" / "guide.md").write_text("# guide\n", encoding="utf-8")
+        _page(self.wiki, "concepts/alpha.md", page_type="concept", body="[guide](../../guide.md) [beta](beta.md)\n")
+        self.copy = self.root / "staged-copy"
+        shutil.copytree(self.wiki, self.copy)
+
+    def test_live_wiki_passes_and_bare_copy_fails(self) -> None:
+        self.assertEqual(lint_wiki(self.wiki), [])
+        self.assertViolation(lint_wiki(self.copy), "concepts/alpha.md: broken intra-wiki link → ../../guide.md")
+
+    def test_copy_with_live_wiki_dir_resolves_escape_links(self) -> None:
+        self.assertEqual(lint_wiki(self.copy, live_wiki_dir=self.wiki), [])
+
+    def test_intra_wiki_links_are_judged_against_the_copy(self) -> None:
+        (self.copy / "concepts" / "beta.md").unlink()
+        violations = lint_wiki(self.copy, live_wiki_dir=self.wiki)
+        self.assertViolation(violations, "concepts/alpha.md: broken intra-wiki link → beta.md")
 
 
 class TestAuditExclusion(_WikiCase):

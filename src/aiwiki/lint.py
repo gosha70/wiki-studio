@@ -18,6 +18,7 @@ unchanged for consumers that grep it.
 
 from __future__ import annotations
 
+import os
 import re
 from pathlib import Path
 
@@ -153,8 +154,31 @@ def _canonical(path: Path) -> Path:
     return path.parent.resolve() / path.name
 
 
-def lint_wiki(wiki_dir: Path) -> list[str]:
-    """Run the six structural checks over ``wiki_dir`` and return the violations (empty when clean)."""
+def _link_resolves(page: Path, target: str, wiki_dir: Path, live_wiki_dir: Path | None) -> bool:
+    """True when ``target`` (relative to ``page``) exists.
+
+    A link that escapes the wiki (``../docs/x.md``) is checked at the live
+    wiki's location when ``live_wiki_dir`` is given: a staged copy carries the
+    wiki's pages but not its neighbours. Links inside the wiki are always
+    judged against the tree being linted.
+    """
+    candidate = page.parent / target
+    if candidate.exists():
+        return True
+    if live_wiki_dir is None:
+        return False
+    normalized = Path(os.path.normpath(candidate))
+    if normalized.is_relative_to(Path(os.path.normpath(wiki_dir))):
+        return False
+    return (live_wiki_dir / page.parent.relative_to(wiki_dir) / target).exists()
+
+
+def lint_wiki(wiki_dir: Path, *, live_wiki_dir: Path | None = None) -> list[str]:
+    """Run the six structural checks over ``wiki_dir`` and return the violations (empty when clean).
+
+    ``live_wiki_dir`` is where the wiki really lives when ``wiki_dir`` is a
+    staged copy of it (``promote``): escape links are resolved there.
+    """
     wiki_dir = Path(wiki_dir)
     violations: list[str] = []
     pages = list_pages(wiki_dir)
@@ -212,7 +236,7 @@ def lint_wiki(wiki_dir: Path) -> list[str]:
     for page in pages:
         rel = page.relative_to(wiki_dir).as_posix()
         for target in md_links(_read(page)):
-            if not (page.parent / target).exists():
+            if not _link_resolves(page, target, wiki_dir, live_wiki_dir):
                 violations.append(f"{rel}: broken intra-wiki link → {target}")
 
     # ── Orphan check: BFS from index.md over links that stay inside the wiki ──

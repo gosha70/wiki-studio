@@ -213,44 +213,14 @@ def _validate_staged_tree(
 
 
 def _lint_staged_tree(stage_dir: Path, paths: WikiPaths) -> list[str]:
-    """Run the structural linter over the staged wiki with escape links resolvable.
+    """Run the structural linter over the staged wiki.
 
     Pages may link outside the wiki (``../../docs/...``). Those targets live
-    in the real project, so the staged wiki is mirrored at its own relative
-    location under a temporary root whose other entries are symlinks to the
-    live ones. A wiki outside the root is linted in place (escape links
-    cannot be mirrored, as for the live wiki).
+    next to the real wiki, not next to the staged copy, so escape links are
+    resolved at ``paths.wiki_dir`` while every intra-wiki link is judged
+    against the staged (post-apply) tree.
     """
-    try:
-        rel = paths.wiki_dir.resolve().relative_to(paths.root.resolve())
-    except ValueError:
-        return lint_wiki(stage_dir)
-
-    with tempfile.TemporaryDirectory(prefix="wiki-lint-stage-") as tmp:
-        tmp_root = Path(tmp)
-        mirrored = tmp_root / rel
-        shutil.copytree(stage_dir, mirrored, dirs_exist_ok=True)
-        # Symlink the siblings of every ancestor of the wiki (root entries
-        # except ``knowledge``, then ``knowledge`` entries except ``wiki``,
-        # for the default layout) so escape paths resolve identically.
-        real_dir = paths.root.resolve()
-        tmp_dir = tmp_root
-        for part in rel.parts:
-            tmp_dir.mkdir(parents=True, exist_ok=True)
-            for entry in real_dir.iterdir():
-                if entry.name == part:
-                    continue
-                link = tmp_dir / entry.name
-                if link.exists() or link.is_symlink():
-                    continue
-                try:
-                    link.symlink_to(entry)
-                except OSError:
-                    if entry.is_file():
-                        shutil.copy(entry, link)
-            real_dir = real_dir / part
-            tmp_dir = tmp_dir / part
-        return lint_wiki(mirrored)
+    return lint_wiki(stage_dir, live_wiki_dir=paths.wiki_dir)
 
 
 def _stage_audit_archive(
