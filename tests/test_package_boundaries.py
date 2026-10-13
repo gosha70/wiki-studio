@@ -120,6 +120,33 @@ class TestLayoutContract(unittest.TestCase):
             self.assertIn("  + kb/incidents/cli-fixture.md", result.stdout)
             self.assertFalse((root / "knowledge").exists())
 
+    def test_promote_with_a_deep_wiki_dir_resolves_escape_links_through_siblings(self) -> None:
+        # Wiki at <root>/a/b/kb; index links to a root-level sibling (docs/) and to a
+        # sibling two levels down (a/notes/), both outside the wiki. The staged-tree
+        # lint must mirror both levels or promote would report broken links.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "docs").mkdir()
+            (root / "docs" / "guide.md").write_text("# guide\n", encoding="utf-8")
+            (root / "a" / "notes").mkdir(parents=True)
+            (root / "a" / "notes" / "todo.md").write_text("# todo\n", encoding="utf-8")
+            wiki = root / "a" / "b" / "kb"
+            wiki.mkdir(parents=True)
+            (wiki / "index.md").write_text(
+                "---\npage_type: index\nslug: index\ntitle: KB\nstatus: stable\nlast_reviewed: 2026-05-06\n---\n\n"
+                "# KB\n\n- [guide](../../../docs/guide.md)\n- [todo](../../notes/todo.md)\n",
+                encoding="utf-8",
+            )
+            (wiki / "log.md").write_text(
+                "---\npage_type: log\nslug: log\ntitle: Log\nstatus: stable\nlast_reviewed: 2026-05-06\n---\n\n# Log\n",
+                encoding="utf-8",
+            )
+            prop = _proposals_dir(root)
+            result = run_cli("promote", str(prop), "--wiki-dir", str(wiki), cwd=root)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue((wiki / "incidents" / "cli-fixture.md").is_file())
+            self.assertIn("  + a/b/kb/incidents/cli-fixture.md", result.stdout)
+
     def test_root_flag_confines_sources(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = make_repo_layout(Path(tmp), with_schema=True)

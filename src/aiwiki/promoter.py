@@ -236,6 +236,7 @@ def _lint_staged_tree(stage_dir: Path, paths: WikiPaths) -> list[str]:
         real_dir = paths.root.resolve()
         tmp_dir = tmp_root
         for part in rel.parts:
+            tmp_dir.mkdir(parents=True, exist_ok=True)
             for entry in real_dir.iterdir():
                 if entry.name == part:
                     continue
