@@ -84,16 +84,8 @@ def detect_pending(paths: WikiPaths) -> PendingState:
     log_rel = paths.relative_to_root(log_path)
 
     # ── Committed blob ────────────────────────────────────────────────────
-    result = _run(
-        # ``HEAD:./p`` is relative to the -C directory; ``HEAD:p`` would be relative to the toplevel.
-        [
-            "git",
-            "-C",
-            str(paths.root),
-            "show",
-            f"HEAD:{log_rel}" if Path(log_rel).is_absolute() else f"HEAD:./{log_rel}",
-        ],
-    )
+    # ``HEAD:./p`` is relative to the -C directory; ``HEAD:p`` would be relative to the toplevel.
+    result = _run(["git", "-C", str(paths.root), "show", f"HEAD:./{log_rel}"])
     if result.returncode != 0:
         stderr_text = result.stderr.decode("utf-8", errors="replace")
         # Distinguish "not a git repo" from "file absent at HEAD".

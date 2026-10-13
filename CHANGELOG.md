@@ -118,6 +118,15 @@ for 0.2 rather than changed in the extraction release:
   verify the marker itself.
 - `audit_flush` treats any `git show HEAD:<log>` failure other than
   "not a git repository" as "file absent at HEAD".
+- Multi-page `ingest --dry-run` is not dry: the backend drafts every page
+  and the patch-set directory is written; only the audit record is marked
+  (`proposal_hash` null). A dry-run signal in the prompt contract that the
+  backends honour is planned for 0.2.
+- The legacy single-source ingest records the proposals directory, not the
+  proposal file, as `proposal_dir`, hashes an empty payload, and leaves an
+  empty `.ingest-snapshot/` next to the file. This is the v1 shim's
+  original behaviour; consumers parsing the log would see the change, so
+  it is kept for 0.1.0.
 - The legacy single-source ingest passes the dry-run intent to the prompt
   through the `WIKI_INGEST_TASK` environment variable; the multi-page path
   does not use it.

@@ -142,10 +142,11 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     p_ingest.add_argument(
         "--dry-run",
         action="store_true",
-        help="Real dry-run: passes task=gate-only to the backend so it "
-        "skips drafting the body. Saves model tokens and latency. "
-        "Render also strips any body the backend returns as a safety "
-        "net for non-honoring stubs.",
+        help="Dry run. With --legacy-single-source: passes task=gate-only "
+        "to the backend so it skips drafting the body (the rendered "
+        "proposal has no body either way). Multi-page (default): the "
+        "backend still drafts the pages and the patch-set is written; "
+        "the audit record is marked as a dry run (no proposal hash).",
     )
     p_ingest.add_argument(
         "--output-dir",
