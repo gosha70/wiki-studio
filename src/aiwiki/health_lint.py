@@ -303,8 +303,11 @@ def _check_contradictions(
         else:
             try:
                 data = json.loads(response)
-            except json.JSONDecodeError:
+            except (json.JSONDecodeError, TypeError):
                 continue
+        if not isinstance(data, dict):
+            # A JSON list or scalar is a malformed answer for this pair; skip it.
+            continue
         if data.get("contradicts") is True:
             findings.append(
                 HealthFinding(
