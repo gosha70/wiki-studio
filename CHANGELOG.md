@@ -55,7 +55,7 @@ unchanged; the paths are decoupled.
 
 - The package, console script, distribution and environment variables are
   named `wikiforge`; the bundle's earlier working name was `aiwiki`. The
-  GitHub repository stays `gosha70/ai-wiki`.
+  GitHub repository was renamed to `gosha70/wikiforge` on 2026-10-13.
 - `load_schema_files` prefers `<wiki-dir>/schema/` when that directory
   exists and otherwise reads the packaged documents.
 - The root is no longer derived from the package's own location (which is
@@ -146,5 +146,5 @@ for 0.2 rather than changed in the extraction release:
   the value of a flag other than the three global options as a positional
   when deciding whether a verb is present; the documented shapes work.
 
-[Unreleased]: https://github.com/gosha70/ai-wiki/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/gosha70/ai-wiki/releases/tag/v0.1.0
+[Unreleased]: https://github.com/gosha70/wikiforge/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/gosha70/wikiforge/releases/tag/v0.1.0
