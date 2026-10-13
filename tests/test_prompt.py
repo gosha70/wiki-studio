@@ -368,5 +368,18 @@ class TestSemanticValidationNegative(unittest.TestCase):
         self.assertIn("non-empty", msg)
 
 
+class TestSchemaOverride(unittest.TestCase):
+    def test_partial_project_schema_dir_falls_back_per_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = make_repo_layout(Path(tmp), with_sample=False)
+            paths = WikiPaths.for_root(root)
+            paths.schema_dir.mkdir()
+            (paths.schema_dir / "ingest-rules.md").write_text("# local ingest rules\n", encoding="utf-8")
+            schemas = load_schema_files(paths)
+        self.assertEqual(schemas["ingest-rules"], "# local ingest rules\n")
+        self.assertIn("incident", schemas["page-types"])
+        self.assertIn("sources", schemas["citation-rules"])
+
+
 if __name__ == "__main__":
     unittest.main()

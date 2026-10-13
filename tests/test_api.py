@@ -247,6 +247,22 @@ class TestLint(_LayoutCase):
         strict = api.lint(self.paths, health=True, strict=True, only=["concepts/stale.md"])
         self.assertFalse(strict.passed)
 
+    def test_health_pass_survives_a_malformed_contradiction_response(self) -> None:
+        from aiwiki.errors import ContractViolationError
+
+        class _ProseBackend:
+            calls = 0
+
+            def call(self, prompt: dict) -> dict:
+                self.calls += 1
+                raise ContractViolationError("no JSON object found in output")
+
+        backend = _ProseBackend()
+        result = api.lint(self.paths, health=True, backend=backend)
+        assert result.health is not None
+        self.assertGreater(backend.calls, 0)
+        self.assertFalse(any(f.kind == "contradiction" for f in result.health.findings))
+
     def test_health_with_unknown_backend_raises(self) -> None:
         with self.assertRaises(BackendNotFoundError):
             api.lint(self.paths, health=True, backend="bogus")

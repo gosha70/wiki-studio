@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import difflib
 import json
+import os
 import shutil
 import tempfile
 from dataclasses import dataclass
@@ -87,6 +88,8 @@ def _load_patch_from_dir(proposals_dir: Path) -> WikiPatchSet:
 
     edits: list[PageEdit] = []
     for raw in plan.get("edits", []):
+        if not isinstance(raw, dict) or "path" not in raw or "action" not in raw:
+            raise PromoteValidationError(f"plan.json edit must be an object with 'path' and 'action': {raw!r}")
         # plan.json does not embed full new_content (Phase 1 stored it
         # only in preview/<path>) so we re-read from preview on apply.
         preview_rel = raw.get("preview")
@@ -138,6 +141,8 @@ def _apply_edit(stage_dir: Path, edit: PageEdit) -> None:
     defense-in-depth check at apply time.
     """
     target = stage_dir / edit.path
+    if not Path(os.path.normpath(target)).is_relative_to(Path(os.path.normpath(stage_dir))):
+        raise PromoteValidationError(f"{edit.path}: path escapes the wiki directory")
     if edit.action == "create":
         if target.exists():
             raise PromoteApplyError(
@@ -151,16 +156,9 @@ def _apply_edit(stage_dir: Path, edit: PageEdit) -> None:
                 f"update edit to {edit.path}: does not exist in staged tree (caught at apply time)."
             )
         target.write_text(edit.new_content, encoding="utf-8")
-    elif edit.action == "append-log":
+    elif edit.action in ("append-log", "append-index"):
         if not target.exists():
-            raise PromoteApplyError(f"append-log edit to {edit.path}: log.md does not exist in staged tree.")
-        existing = target.read_text(encoding="utf-8")
-        suffix = edit.new_content if edit.new_content.endswith("\n") else edit.new_content + "\n"
-        prefix = existing if existing.endswith("\n") else existing + "\n"
-        target.write_text(prefix + suffix, encoding="utf-8")
-    elif edit.action == "append-index":
-        if not target.exists():
-            raise PromoteApplyError(f"append-index edit to {edit.path}: index.md does not exist in staged tree.")
+            raise PromoteApplyError(f"{edit.action} edit to {edit.path}: {target.name} does not exist in staged tree.")
         existing = target.read_text(encoding="utf-8")
         suffix = edit.new_content if edit.new_content.endswith("\n") else edit.new_content + "\n"
         prefix = existing if existing.endswith("\n") else existing + "\n"
@@ -221,6 +219,25 @@ def _lint_staged_tree(stage_dir: Path, paths: WikiPaths) -> list[str]:
     against the staged (post-apply) tree.
     """
     return lint_wiki(stage_dir, live_wiki_dir=paths.wiki_dir)
+
+
+def _validate_before_staging(patch: WikiPatchSet, paths: WikiPaths) -> None:
+    """Reject a bad patch-set before a single byte is staged.
+
+    Set-level checks (paths must be wiki-relative, append targets, duplicate
+    creates) and the per-edit checks against the live wiki (create must not
+    clobber, update must exist, frontmatter consistency) all surface as
+    PromoteValidationError (exit 9) here. The staged-tree pass later re-checks
+    the post-apply state.
+    """
+    set_errors = validate_patch_set(patch)
+    if set_errors:
+        raise PromoteValidationError("Patch-set validation failed:\n  - " + "\n  - ".join(set_errors))
+    per_edit_errors: list[str] = []
+    for edit in patch.edits:
+        per_edit_errors.extend(validate_page_edit_semantics(edit, paths))
+    if per_edit_errors:
+        raise PromoteValidationError("Per-edit validation failed:\n  - " + "\n  - ".join(per_edit_errors))
 
 
 def _stage_audit_archive(
@@ -549,6 +566,8 @@ def promote(
             archived_dir=archived,
             dry_run=dry_run,
         )
+
+    _validate_before_staging(patch, paths)
 
     with tempfile.TemporaryDirectory(prefix="wiki-stage-") as stage:
         stage_dir = Path(stage) / "wiki"

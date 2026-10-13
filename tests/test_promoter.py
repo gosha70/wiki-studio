@@ -79,18 +79,60 @@ class TestApplyGuards(_LayoutCase):
         _write_plan(prop, plan)
         return prop
 
-    def test_create_over_existing_page(self) -> None:
+    def test_create_over_existing_page_is_a_validation_error(self) -> None:
         prop = _proposals_dir(self.root)
         (self.wiki / "incidents").mkdir()
         (self.wiki / "incidents" / "cli-fixture.md").write_text("# existing\n", encoding="utf-8")
-        with self.assertRaises(PromoteApplyError) as ctx:
+        with self.assertRaises(PromoteValidationError) as ctx:
             promote(prop, self.paths)
-        self.assertIn("already exists in staged tree", str(ctx.exception))
+        self.assertEqual(ctx.exception.exit_code, 9)
+        self.assertIn("create target already exists", str(ctx.exception))
 
-    def test_update_of_missing_page(self) -> None:
-        with self.assertRaises(PromoteApplyError) as ctx:
-            promote(self._with_action("update", "concepts/nope.md"), self.paths)
-        self.assertIn("does not exist in staged tree", str(ctx.exception))
+    def test_update_of_missing_page_is_a_validation_error(self) -> None:
+        prop = _proposals_dir(self.root)
+        plan = _plan(prop)
+        plan["edits"] = [
+            {
+                "path": "incidents/nope.md",
+                "action": "update",
+                "rationale": "r",
+                "preview": "preview/incidents/cli-fixture.md",
+            }
+        ]
+        _write_plan(prop, plan)
+        with self.assertRaises(PromoteValidationError) as ctx:
+            promote(prop, self.paths)
+        self.assertIn("update target does not exist", str(ctx.exception))
+
+    def test_path_escape_is_rejected_before_anything_is_written(self) -> None:
+        for bad in ("../escape.md", "/tmp/aiwiki-escape.md"):
+            with self.subTest(path=bad):
+                prop = _proposals_dir(self.root, slug=f"esc-{len(bad)}")
+                plan = _plan(prop)
+                plan["edits"][0]["path"] = bad
+                _write_plan(prop, plan)
+                with self.assertRaises(PromoteValidationError) as ctx:
+                    promote(prop, self.paths)
+                self.assertIn("path must be relative", str(ctx.exception))
+        self.assertFalse((self.wiki.parent / "escape.md").exists())
+        self.assertFalse(Path("/tmp/aiwiki-escape.md").exists())
+
+    def test_apply_time_containment_guard(self) -> None:
+        from aiwiki.promoter import _apply_edit
+        from aiwiki.proposal import PageEdit
+
+        with self.assertRaises(PromoteValidationError):
+            _apply_edit(self.wiki, PageEdit(path="../x.md", action="create", new_content="x", rationale="r"))
+        self.assertFalse((self.wiki.parent / "x.md").exists())
+
+    def test_malformed_plan_edit_is_a_validation_error(self) -> None:
+        prop = _proposals_dir(self.root)
+        plan = _plan(prop)
+        del plan["edits"][0]["action"]
+        _write_plan(prop, plan)
+        with self.assertRaises(PromoteValidationError) as ctx:
+            promote(prop, self.paths)
+        self.assertIn("'path' and 'action'", str(ctx.exception))
 
     def test_append_log_without_log(self) -> None:
         (self.wiki / "log.md").unlink()
@@ -104,8 +146,8 @@ class TestApplyGuards(_LayoutCase):
             promote(self._with_action("append-index", "index.md"), self.paths)
         self.assertIn("index.md does not exist", str(ctx.exception))
 
-    def test_unknown_action(self) -> None:
-        with self.assertRaises(PromoteApplyError) as ctx:
+    def test_unknown_action_is_a_validation_error(self) -> None:
+        with self.assertRaises(PromoteValidationError) as ctx:
             promote(self._with_action("rename", "log.md"), self.paths)
         self.assertIn("unknown action", str(ctx.exception))
 
@@ -122,9 +164,9 @@ class TestApplyGuards(_LayoutCase):
         plan["edits"].append(dict(plan["edits"][0], path="incidents/other.md"))
         plan["edits"][-1]["path"] = plan["edits"][0]["path"]
         _write_plan(prop, plan)
-        with self.assertRaises(PromoteApplyError):
-            # The second create of the same path hits the apply-time clobber guard first.
+        with self.assertRaises(PromoteValidationError) as ctx:
             promote(prop, self.paths)
+        self.assertIn("duplicate create", str(ctx.exception))
 
 
 class TestAuditArchive(_LayoutCase):
@@ -205,7 +247,7 @@ class TestValidationAndFailures(_LayoutCase):
         _write_plan(prop, plan)
         with self.assertRaises(PromoteValidationError) as ctx:
             promote(prop, self.paths)
-        self.assertIn("set-level validation failed", str(ctx.exception))
+        self.assertIn("append-log targets must be log.md", str(ctx.exception))
 
     def test_structural_lint_rejects_a_broken_link_in_the_staged_tree(self) -> None:
         prop = _proposals_dir(self.root)

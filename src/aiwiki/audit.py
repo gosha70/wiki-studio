@@ -170,12 +170,6 @@ def build_log_record(
         src_path = str(source_file)
         src_repo_relative = False
 
-    # For --allow-out-of-repo sources, honour the flag even when Path.relative_to
-    # would have succeeded (the flag is what matters for the record).
-    if allow_out_of_repo and not src_repo_relative:
-        # already verbatim
-        pass
-
     sha = source_sha(source_file)
 
     now_ts = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")

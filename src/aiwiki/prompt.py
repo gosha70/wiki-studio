@@ -56,16 +56,13 @@ def _read_packaged_schema(name: str) -> str:
 def load_schema_files(paths: WikiPaths) -> dict[str, str]:
     """Load ingest-rules, page-types, citation-rules. Return {name: content}.
 
-    The project's own copy under ``<wiki>/schema/`` wins when that directory
-    exists; otherwise the documents packaged with aiwiki are used.
+    A document present under the project's own ``<wiki>/schema/`` wins; any
+    document missing there comes from the copy packaged with aiwiki.
     """
-    schema_dir = paths.schema_dir
     result: dict[str, str] = {}
     for name in _SCHEMA_NAMES:
-        if schema_dir.is_dir():
-            result[name] = (schema_dir / f"{name}.md").read_text(encoding="utf-8")
-        else:
-            result[name] = _read_packaged_schema(name)
+        local = paths.schema_dir / f"{name}.md"
+        result[name] = local.read_text(encoding="utf-8") if local.is_file() else _read_packaged_schema(name)
     return result
 
 

@@ -462,11 +462,6 @@ def _inject_legacy_v1_prefix(argv: list[str]) -> list[str]:
     # Top-level help/version: pass straight through so the parser shows
     # the verb-dispatching parser's epilog (with stable exit codes).
     if "-h" in argv or "--help" in argv or "--version" in argv:
-        # If a verb is already present, let it through — the per-verb
-        # help is what the user asked for.
-        for token in argv:
-            if token in _VERBS:
-                return argv
         return argv
     # Walk past leading flags (and the values of the global location
     # options, which may precede the verb) to find the first positional arg.

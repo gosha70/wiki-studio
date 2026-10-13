@@ -657,5 +657,25 @@ class TestFlushGitCommitFailure(unittest.TestCase):
                 detect_pending(WikiPaths.for_root(not_a_repo))
 
 
+class TestNestedRoot(unittest.TestCase):
+    """--root below the git toplevel: the committed log must still be found (HEAD:./path)."""
+
+    def test_flush_with_root_below_the_toplevel(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = _init_repo(Path(tmp))
+            sub = repo / "sub"
+            paths = WikiPaths.for_root(sub)
+            paths.audit_log.parent.mkdir(parents=True)
+            paths.audit_log.write_bytes(_make_log_bytes(_valid_record()))
+            self.assertEqual(detect_pending(paths).pending, 1)
+            self.assertEqual(flush(paths, dry_run=False), 0)
+            self.assertEqual(_count_commits(repo), 2)
+            state = detect_pending(paths)
+            self.assertEqual(state.pending, 0)
+            self.assertFalse(state.diverged)
+            self.assertEqual(flush(paths, dry_run=False), 0)
+            self.assertEqual(_count_commits(repo), 2)
+
+
 if __name__ == "__main__":
     unittest.main()

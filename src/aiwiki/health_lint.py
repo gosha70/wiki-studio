@@ -37,7 +37,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from . import yaml_lite
-from .errors import BackendInvocationError
+from .errors import BackendInvocationError, ContractViolationError
 from .proposal import HealthFinding
 from .wiki_state import _read_text_or_empty
 
@@ -294,9 +294,9 @@ def _check_contradictions(
         prompt = _compose_contradiction_prompt(left, right, wiki_dir)
         try:
             response = backend.call(prompt)
-        except BackendInvocationError:
-            # A failed contradiction check shouldn't block the whole
-            # health pass — log nothing, move on.
+        except (BackendInvocationError, ContractViolationError):
+            # A failed or malformed contradiction check shouldn't block the
+            # whole health pass — log nothing, move on.
             continue
         if isinstance(response, dict):
             data = response
