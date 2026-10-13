@@ -2,11 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 # aiwiki.cli — verb-dispatching CLI entrypoint for the wiki pipeline.
 #
-# Five verbs (ingest|promote|query|lint|audit-flush) over one WikiPaths,
-# resolved once per run from the global options --root / --wiki-dir /
-# --proposals-dir, the AIWIKI_* environment variables, or the defaults
-# (knowledge/wiki and doc_internal under the git toplevel of the working
-# directory). The global options are accepted before or after the verb.
+# A thin argument parser over aiwiki.api: each verb resolves one WikiPaths
+# (from --root / --wiki-dir / --proposals-dir, the AIWIKI_* variables, or the
+# defaults), calls the matching library function and prints its result.
+# Exceptions become exit codes in exactly one place, ``_report``.
 #
 # Invoked as ``ai-wiki <verb> ...`` (console script) or ``python -m aiwiki``.
 #
@@ -25,30 +24,20 @@
 from __future__ import annotations
 
 import argparse
-import datetime
-import os
 import sys
-from dataclasses import replace
 from pathlib import Path
 
-from .audit import append_ingest_log, build_log_record
-from .audit_flush import flush as audit_flush_run
-from .audit_lint import validate_audit_tree
-from .backends import ENV_BACKEND, ENV_BACKEND_DEPRECATED, resolve_backend
+from . import api
+from .audit_flush import describe_flush
+from .backends import ENV_BACKEND, ENV_BACKEND_DEPRECATED
 from .errors import (
-    AuditFlushError,
     BackendInvocationError,
-    BackendNotFoundError,
     ContractViolationError,
-    OutputWriteError,
+    IngestError,
+    PathOutsideRootError,
     PromoteApplyError,
     PromoteValidationError,
-    SourceMissingError,
 )
-from .health_lint import lint_health
-from .ingestor import DefaultIngestor
-from .ingestor_multi import DefaultMultiIngestor, write_patch_set_dir
-from .lint import lint_wiki, list_pages
 from .paths import (
     DEFAULT_PROPOSALS_DIR,
     DEFAULT_WIKI_DIR,
@@ -57,15 +46,21 @@ from .paths import (
     ENV_WIKI_DIR,
     WikiPaths,
 )
-from .promoter import promote as run_promote
-from .proposal import IngestProposal, IngestRequest, render_proposal_file
-from .querier import DefaultQuerier
 
 # Exit codes new in Phase 0.
-EXIT_PATH_OUT_OF_REPO = 7
+EXIT_PATH_OUT_OF_REPO = PathOutsideRootError.exit_code
 EXIT_NOT_IMPLEMENTED = 8
 
 _BACKEND_HELP_SUFFIX = f"Defaults to {ENV_BACKEND} env var ({ENV_BACKEND_DEPRECATED} is deprecated), then auto-detect."
+
+# Message prefixes that distinguish the error classes on stderr (the exit
+# code itself comes from the exception).
+_ERROR_PREFIXES: tuple[tuple[type[IngestError], str], ...] = (
+    (BackendInvocationError, "backend invocation failed: "),
+    (ContractViolationError, "contract violation: "),
+    (PromoteValidationError, "promote validation failed:\n"),
+    (PromoteApplyError, "promote apply failed:\n"),
+)
 
 
 def _add_path_options(parser: argparse.ArgumentParser, *, suppress_defaults: bool) -> None:
@@ -315,365 +310,54 @@ def _paths_from_args(args: argparse.Namespace) -> WikiPaths:
     )
 
 
-def _backend_display_name(backend: object, cli_flag: str | None) -> str:
-    """Best-effort name for the resolved backend, recorded in proposal frontmatter."""
-    if cli_flag:
-        return cli_flag
-    cli_name = getattr(backend, "_cli_name", None)
-    if cli_name:
-        return str(cli_name)
-    cls_name = backend.__class__.__name__
-    return cls_name.removesuffix("Backend").lower() or "unknown"
-
-
-def _configure_backend(backend: object, args: argparse.Namespace, paths: WikiPaths) -> None:
-    """Apply per-run settings a copilot-CLI backend carries: stderr redaction and the wiki label."""
-    # Stderr redaction default (T0.5). The backend has its own redact_output
-    # parameter; flip it on this instance.
-    if getattr(args, "debug_unsafe_output", False) and hasattr(backend, "_redact_output"):
-        backend._redact_output = False
-    # Rendered prompts head each wiki page with its project-relative location.
-    if hasattr(backend, "_wiki_label"):
-        backend._wiki_label = paths.wiki_label
-
-
-def _make_proposal_filename(proposal: IngestProposal) -> str:
-    """Compose the proposal filename: ``<YYYY-MM-DD>-<slug>.md``."""
-    today = datetime.date.today().isoformat()
-    base = proposal.slug or f"unslugged-{proposal.disposition}"
-    return f"{today}-{base}.md"
-
-
-def _write_proposal_file(
-    proposal: IngestProposal,
-    request: IngestRequest,
-    backend_name: str,
-    output_dir: Path,
-) -> Path:
-    """Render and write the proposal file. Returns the absolute path written."""
-    proposal_path = output_dir / _make_proposal_filename(proposal)
-    try:
-        output_dir.mkdir(parents=True, exist_ok=True)
-        body = render_proposal_file(proposal, request, backend_name)
-        proposal_path.write_text(body, encoding="utf-8")
-    except OSError as exc:
-        raise OutputWriteError(f"Could not write proposal file at {proposal_path}: {exc}") from exc
-    return proposal_path.resolve()
-
-
-def _write_ingest_snapshot(proposal_dir: Path) -> None:
-    """Write an immutable .ingest-snapshot/ copy inside the gitignored proposal dir.
-
-    Copies plan.json + preview/ into proposal_dir/.ingest-snapshot/ so that
-    wiki promote can later diff the LLM draft vs the curator-edited version.
-    Called from the CLI layer immediately after write_patch_set_dir materializes
-    the proposal dir (Design Decision 2, 8). Never called on --dry-run (no body)
-    or --check (no materialization).
-    """
-    import shutil as _shutil
-
-    snapshot_dir = proposal_dir / ".ingest-snapshot"
-    snapshot_dir.mkdir(parents=True, exist_ok=True)
-
-    plan = proposal_dir / "plan.json"
-    if plan.is_file():
-        _shutil.copy2(str(plan), str(snapshot_dir / "plan.json"))
-
-    preview = proposal_dir / "preview"
-    if preview.is_dir():
-        preview_snapshot = snapshot_dir / "preview"
-        if preview_snapshot.exists():
-            _shutil.rmtree(str(preview_snapshot))
-        _shutil.copytree(str(preview), str(preview_snapshot))
-
-
-def _refuse_out_of_repo(kind: str, path: Path, paths: WikiPaths, hint: str) -> int:
-    """Print the exit-7 refusal for a path outside the root."""
-    print(
-        f"error: {kind} is outside the repository tree: {path}\n  Repo root: {paths.root}\n  {hint}",
-        file=sys.stderr,
-    )
-    return EXIT_PATH_OUT_OF_REPO
-
-
-# ── Verb implementations ──────────────────────────────────────
+# ── Verb implementations (print only; the work is in aiwiki.api) ──
 
 
 def _do_ingest(args: argparse.Namespace) -> int:
-    """Route to legacy single-source ingest or Phase-1 multi-page ingest.
-
-    --legacy-single-source preserves the v1 IngestProposal flow.
-    Without the flag, Phase-1 DefaultMultiIngestor produces a
-    WikiPatchSet under <proposals-dir>/<date>-<slug>/.
-    """
-    # --check and --dry-run are mutually exclusive.
-    if getattr(args, "check", False) and getattr(args, "dry_run", False):
-        print("error: --check and --dry-run are mutually exclusive", file=sys.stderr)
-        return 1
-
-    if not args.legacy_single_source:
-        return _do_ingest_multi(args)
-
-    paths = _paths_from_args(args)
-
-    # Source must exist; check before paying backend resolution cost.
-    source_path: Path = args.source
-    if not source_path.exists():
-        print(f"error: source file not found: {source_path}", file=sys.stderr)
-        return SourceMissingError.exit_code
-
-    # Repo-root path confinement (T0.7). The default refuses external paths;
-    # --allow-out-of-repo is the explicit opt-in.
-    if not args.allow_out_of_repo and not paths.within_root(source_path):
-        return _refuse_out_of_repo(
-            "source path",
-            source_path,
-            paths,
-            "Pass --allow-out-of-repo to override (only when ingesting external artifacts deliberately).",
-        )
-
-    # Resolve backend (--backend → AIWIKI_BACKEND env → auto-detect).
-    try:
-        backend = resolve_backend(args.backend)
-    except BackendNotFoundError as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return BackendNotFoundError.exit_code
-    _configure_backend(backend, args, paths)
-
-    backend_name = _backend_display_name(backend, args.backend)
-    ingestor = DefaultIngestor(backend=backend, paths=paths)
-
-    request = IngestRequest(
-        source_path=source_path,
-        source_kind="file",
-        backend_name=backend_name,
+    """Multi-page ingest by default; --legacy-single-source runs the v1 generator."""
+    result = api.ingest(
+        args.source,
+        _paths_from_args(args),
+        backend=args.backend,
+        legacy_single_source=args.legacy_single_source,
+        dry_run=args.dry_run,
+        check=args.check,
+        output_dir=args.output_dir,
+        allow_out_of_repo=args.allow_out_of_repo,
+        redact_output=not args.debug_unsafe_output,
     )
-
-    # Pass dry-run intent through to the prompt (T0.6 — real --dry-run).
-    # The compose_prompt path picks up task="gate-only" via os.environ; the
-    # render side still strips the body as a safety net for stubs that ignore
-    # the task hint. This keeps the v1 stub behavior intact while letting
-    # real LLM backends save tokens.
-    env_backup = os.environ.get("WIKI_INGEST_TASK")
-    if args.dry_run:
-        os.environ["WIKI_INGEST_TASK"] = "gate-only"
-    try:
-        proposal = ingestor.ingest(request)
-    except SourceMissingError as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return SourceMissingError.exit_code
-    except BackendNotFoundError as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return BackendNotFoundError.exit_code
-    except BackendInvocationError as exc:
-        print(f"error: backend invocation failed: {exc}", file=sys.stderr)
-        return BackendInvocationError.exit_code
-    except ContractViolationError as exc:
-        print(f"error: contract violation: {exc}", file=sys.stderr)
-        return ContractViolationError.exit_code
-    finally:
-        if env_backup is None:
-            os.environ.pop("WIKI_INGEST_TASK", None)
-        else:
-            os.environ["WIKI_INGEST_TASK"] = env_backup
-
-    # --check: gate ran, no side effects.  Exit code reflects disposition.
-    if getattr(args, "check", False):
-        if proposal.disposition == "accept":
-            return 0
-        return 1
-
-    # Render-side body strip is the safety net: stubs that ignore the
-    # gate-only task still produce body text; we drop it here so the
-    # proposal file matches the dry-run contract.
-    if args.dry_run:
-        proposal = replace(proposal, draft_markdown=None)
-
-    output_dir: Path = args.output_dir or paths.proposals_dir
-    try:
-        proposal_path = _write_proposal_file(proposal, request, backend_name, output_dir)
-    except OutputWriteError as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return OutputWriteError.exit_code
-
-    # Phase-3: write .ingest-snapshot/ immediately after materialisation
-    # (not on --dry-run because the body was stripped).
-    if not args.dry_run:
-        _write_ingest_snapshot(proposal_path.parent)
-
-    # Phase-2: audit-log append (fail-closed). Runs after proposal-dir
-    # materialisation and after dry-run stripping so proposal_hash is
-    # computed over the on-disk payload.
-    try:
-        record = build_log_record(
-            source_file=source_path,
-            paths=paths,
-            backend_name=backend_name,
-            proposal_dir_path=proposal_path.parent,
-            allow_out_of_repo=getattr(args, "allow_out_of_repo", False),
-            legacy_proposal=proposal,
-            dry_run=args.dry_run,
-        )
-        append_ingest_log(paths, record)
-    except OutputWriteError as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return OutputWriteError.exit_code
-
-    print(str(proposal_path))
-    return 0
-
-
-def _do_ingest_multi(args: argparse.Namespace) -> int:
-    """Phase-1 multi-page ingest: source → WikiPatchSet → <proposals-dir>/<date>-<slug>/."""
-    paths = _paths_from_args(args)
-
-    source_path: Path = args.source
-    if not source_path.exists():
-        print(f"error: source file not found: {source_path}", file=sys.stderr)
-        return SourceMissingError.exit_code
-
-    if not args.allow_out_of_repo and not paths.within_root(source_path):
-        return _refuse_out_of_repo("source path", source_path, paths, "Pass --allow-out-of-repo to override.")
-
-    try:
-        backend = resolve_backend(args.backend)
-    except BackendNotFoundError as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return BackendNotFoundError.exit_code
-    _configure_backend(backend, args, paths)
-
-    backend_name = _backend_display_name(backend, args.backend)
-    multi = DefaultMultiIngestor(backend=backend, paths=paths)
-
-    request = IngestRequest(
-        source_path=source_path,
-        source_kind="file",
-        backend_name=backend_name,
-    )
-
-    check_mode = getattr(args, "check", False)
-
-    # For multi-page, compose_multi_prompt sets task=ingest-multi in the prompt
-    # dict; ingestor_multi.py then overrides with WIKI_INGEST_TASK env if set.
-    # We deliberately do NOT set gate-only here: clobbering task=ingest-multi
-    # would break the backend dispatch (the test backend and real backends both
-    # expect the multi-page task contract when entering this path).
-    # --dry-run for multi-page writes the full proposal dir; proposal_hash is
-    # forced null in the audit record to signal the dry-run intent.
-    # --check is gate-only at the CLI level: it reads patch.edits and returns
-    # before writing anything.
-    try:
-        patch = multi.ingest_multi(request)
-    except SourceMissingError as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return SourceMissingError.exit_code
-    except BackendNotFoundError as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return BackendNotFoundError.exit_code
-    except BackendInvocationError as exc:
-        print(f"error: backend invocation failed: {exc}", file=sys.stderr)
-        return BackendInvocationError.exit_code
-    except ContractViolationError as exc:
-        print(f"error: contract violation: {exc}", file=sys.stderr)
-        return ContractViolationError.exit_code
-
-    # --check: gate ran, zero side effects.  Exit code reflects disposition.
-    if check_mode:
-        if patch.edits:
-            return 0
-        return 1
-
-    # Output dir: <proposals-dir>/<date>-<source-stem>/
-    today = datetime.date.today().isoformat()
-    source_stem = source_path.stem or "source"
-    proposal_root: Path = args.output_dir or paths.proposals_dir
-    output_dir = proposal_root / f"{today}-{source_stem}"
-
-    try:
-        written = write_patch_set_dir(patch, output_dir)
-    except OSError as exc:
-        print(f"error: could not write patch-set dir at {output_dir}: {exc}", file=sys.stderr)
-        return OutputWriteError.exit_code
-
-    # Phase-3: write .ingest-snapshot/ immediately after materialisation
-    # (not on --dry-run because the body was stripped).
-    if not args.dry_run and patch.edits:
-        _write_ingest_snapshot(written)
-
-    # Phase-2: audit-log append (fail-closed). Runs after proposal-dir
-    # materialisation and after dry-run stripping so proposal_hash is
-    # computed over the on-disk payload.
-    try:
-        record = build_log_record(
-            source_file=source_path,
-            paths=paths,
-            backend_name=backend_name,
-            proposal_dir_path=written,
-            allow_out_of_repo=getattr(args, "allow_out_of_repo", False),
-            patch=patch,
-            dry_run=args.dry_run,
-        )
-        append_ingest_log(paths, record)
-    except OutputWriteError as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return OutputWriteError.exit_code
-
-    if not patch.edits:
-        # Gate rejected the source; surface the rationale.
-        print(f"{written}  (gate rejected, 0 edits)")
-        print(f"  rationale: {patch.rationale}", file=sys.stderr)
+    if result.check:
+        # Gate ran, zero side effects. Exit code reflects the disposition.
+        return 0 if result.disposition == "accept" else 1
+    if result.patch is not None and not result.patch.edits:
+        # Multi-page gate rejected the source; surface the rationale.
+        print(f"{result.written}  (gate rejected, 0 edits)")
+        print(f"  rationale: {result.rationale}", file=sys.stderr)
         return 0
-    print(str(written))
+    print(str(result.written))
     return 0
 
 
 def _do_promote(args: argparse.Namespace) -> int:
     """Phase 2: atomic patch-set application — the only writer to the wiki directory."""
     paths = _paths_from_args(args)
-    proposals_dir: Path = args.proposal_dir
-    if not proposals_dir.exists():
-        print(f"error: proposals dir not found: {proposals_dir}", file=sys.stderr)
-        return SourceMissingError.exit_code
-
-    # Repo-root path confinement (parallel to ingest's check). The
-    # proposal dir's content gets written to the wiki on successful
-    # promote, so a proposal dir from outside the repo tree is an
-    # avoidable security surface — refuse by default; --allow-out-of-repo
-    # overrides for the rare deliberate case (e.g. a curator
-    # hand-assembling a patch-set in /tmp).
-    if not args.allow_out_of_repo and not paths.within_root(proposals_dir):
-        return _refuse_out_of_repo(
-            "proposal dir",
-            proposals_dir,
-            paths,
-            "Pass --allow-out-of-repo to override (only when the proposal dir comes from a trusted source "
-            "you've audited).",
-        )
-
-    try:
-        result = run_promote(
-            proposals_dir=proposals_dir,
-            paths=paths,
-            dry_run=args.dry_run,
-        )
-    except PromoteValidationError as exc:
-        print(f"error: promote validation failed:\n{exc}", file=sys.stderr)
-        return PromoteValidationError.exit_code
-    except PromoteApplyError as exc:
-        print(f"error: promote apply failed:\n{exc}", file=sys.stderr)
-        return PromoteApplyError.exit_code
-
+    result = api.promote(
+        args.proposal_dir,
+        paths,
+        dry_run=args.dry_run,
+        allow_out_of_repo=args.allow_out_of_repo,
+    )
     if result.dry_run:
         print(f"dry-run: staged tree validated; would apply {len(result.applied_paths)} edit(s); wiki tree unchanged.")
         for p in result.applied_paths:
             print(f"  + {p}")
         return 0
-
     if not result.applied_paths:
-        print(f"no-op: {proposals_dir.name} already applied (no changes to write).")
+        print(f"no-op: {args.proposal_dir.name} already applied (no changes to write).")
         return 0
-
-    print(f"applied {len(result.applied_paths)} edit(s) from {proposals_dir.name}; archived to {result.archived_dir}.")
+    print(
+        f"applied {len(result.applied_paths)} edit(s) from {args.proposal_dir.name}; archived to {result.archived_dir}."
+    )
     for p in result.applied_paths:
         print(f"  + {paths.wiki_label}/{p}")
     return 0
@@ -681,38 +365,16 @@ def _do_promote(args: argparse.Namespace) -> int:
 
 def _do_query(args: argparse.Namespace) -> int:
     """Phase 3: index-first query against the wiki."""
-    paths = _paths_from_args(args)
-    try:
-        backend = resolve_backend(args.backend)
-    except BackendNotFoundError as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return BackendNotFoundError.exit_code
-    _configure_backend(backend, args, paths)
-
-    querier_kwargs: dict[str, object] = {
-        "backend": backend,
-        "paths": paths,
-    }
-    if args.max_pages is not None:
-        querier_kwargs["max_pages"] = args.max_pages
-    querier = DefaultQuerier(**querier_kwargs)  # type: ignore[arg-type]
-
-    try:
-        if args.file_back:
-            answer, patch = querier.query_with_file_back(args.question)
-        else:
-            answer = querier.query(args.question)
-            patch = None
-    except SourceMissingError as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return SourceMissingError.exit_code
-    except BackendInvocationError as exc:
-        print(f"error: backend invocation failed: {exc}", file=sys.stderr)
-        return BackendInvocationError.exit_code
-    except ContractViolationError as exc:
-        print(f"error: contract violation: {exc}", file=sys.stderr)
-        return ContractViolationError.exit_code
-
+    result = api.query(
+        args.question,
+        _paths_from_args(args),
+        backend=args.backend,
+        file_back=args.file_back,
+        max_pages=args.max_pages,
+        output_dir=args.output_dir,
+        redact_output=not args.debug_unsafe_output,
+    )
+    answer = result.answer
     if answer.answer:
         print(answer.answer)
     else:
@@ -725,91 +387,57 @@ def _do_query(args: argparse.Namespace) -> int:
     for p in answer.pages_loaded:
         print(f"  + {p}", file=sys.stderr)
 
-    if args.file_back and patch is not None:
-        if not patch.edits:
+    if args.file_back:
+        if result.file_back_dir is None:
             print("(--file-back: empty patch-set; nothing to file back)", file=sys.stderr)
-            return 0
-        # Write the patch-set out so the curator can promote it.
-        today = datetime.date.today().isoformat()
-        slug = "query-fileback"
-        proposal_root: Path = args.output_dir or paths.proposals_dir
-        out = proposal_root / f"{today}-{slug}"
-        try:
-            written = write_patch_set_dir(patch, out)
-        except OSError as exc:
-            print(f"error: could not write file-back dir: {exc}", file=sys.stderr)
-            return OutputWriteError.exit_code
-        print(f"--- file-back patch-set: {written}", file=sys.stderr)
+        else:
+            print(f"--- file-back patch-set: {result.file_back_dir}", file=sys.stderr)
     return 0
 
 
 def _do_lint(args: argparse.Namespace) -> int:
-    """Wiki linters.
-
-    Default: structural lint (aiwiki.lint, in-process).
-    --health: structural + knowledge-health (contradictions,
-    stale-claims, weak-orphans, missing-cross-links).
-    """
-    paths = _paths_from_args(args)
-
-    violations = lint_wiki(paths.wiki_dir)
-    for violation in violations:
+    """Structural lint, the audit-format pass and, with --health, the knowledge-health checks."""
+    result = api.lint(
+        _paths_from_args(args),
+        health=args.health,
+        strict=args.strict,
+        only=args.paths,
+        backend=args.backend,
+    )
+    for violation in result.violations:
         print(f"  ✗ {violation}", file=sys.stderr)
-    print(f"\nlinted {len(list_pages(paths.wiki_dir))} pages, {len(violations)} violations")
-    structural_rc = 1 if violations else 0
+    print(f"\nlinted {result.pages_checked} pages, {len(result.violations)} violations")
 
-    # Audit-format pass: always on (advisory; gates only under --strict).
-    # Validates <wiki-dir>/.audit/ against schema/audit-rules.md.
-    audit_errors = validate_audit_tree(paths)
-    audit_rc = 0
-    if audit_errors:
-        print(f"\naudit-format: {len(audit_errors)} violation(s)", file=sys.stderr)
-        for e in audit_errors:
+    if result.audit_errors:
+        print(f"\naudit-format: {len(result.audit_errors)} violation(s)", file=sys.stderr)
+        for e in result.audit_errors:
             print(f"  [audit] {e}", file=sys.stderr)
-        if args.strict:
-            audit_rc = 1
     else:
         print("\naudit-format: clean.")
 
-    if not args.health:
-        return structural_rc or audit_rc
+    health = result.health
+    if health is not None:
+        if not health.findings:
+            print(f"\nknowledge-health: clean ({health.pages_checked} pages checked, 0 findings).")
+        else:
+            # Findings go to stderr so the structural linter's stdout stays canonical.
+            print(
+                f"\nknowledge-health: {len(health.findings)} finding(s) across {health.pages_checked} pages",
+                file=sys.stderr,
+            )
+            for f in health.findings:
+                print(f"  [{f.kind} / {f.severity}] {', '.join(f.pages)}: {f.description}", file=sys.stderr)
 
-    # Knowledge-health pass.
-    backend = None
-    if args.backend:
-        try:
-            backend = resolve_backend(args.backend)
-        except BackendNotFoundError as exc:
-            print(f"error: --health backend resolution failed: {exc}", file=sys.stderr)
-            return BackendNotFoundError.exit_code
-        _configure_backend(backend, args, paths)
-
-    result = lint_health(paths, only=args.paths, backend=backend)
-    if not result.findings:
-        print(f"\nknowledge-health: clean ({result.pages_checked} pages checked, 0 findings).")
-        return structural_rc or audit_rc
-
-    # Print findings on stderr so the structural linter's stdout
-    # remains the canonical output.
-    print(f"\nknowledge-health: {len(result.findings)} finding(s) across {result.pages_checked} pages", file=sys.stderr)
-    for f in result.findings:
-        loc = ", ".join(f.pages)
-        print(f"  [{f.kind} / {f.severity}] {loc}: {f.description}", file=sys.stderr)
-
-    if args.strict:
-        # Health findings are fatal under --strict whatever the structural result was.
-        return 1
-    return structural_rc or audit_rc
+    return 0 if result.passed else 1
 
 
 def _do_audit_flush(args: argparse.Namespace) -> int:
     """Commit pending ingest-log lines (or dry-run report them)."""
-    paths = _paths_from_args(args)
-    try:
-        return audit_flush_run(paths, dry_run=args.dry_run)
-    except AuditFlushError as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return AuditFlushError.exit_code
+    result = api.audit_flush(_paths_from_args(args), dry_run=args.dry_run)
+    report = describe_flush(result)
+    if report:
+        print(report)
+    return 0
 
 
 _VERBS = ("ingest", "promote", "query", "lint", "audit-flush")
@@ -860,6 +488,17 @@ def _inject_legacy_v1_prefix(argv: list[str]) -> list[str]:
     return ["ingest", "--legacy-single-source", *argv]
 
 
+def _report(exc: Exception) -> int:
+    """The one place where exceptions become stderr messages and exit codes."""
+    if isinstance(exc, IngestError):
+        prefix = next((p for cls, p in _ERROR_PREFIXES if isinstance(exc, cls)), "")
+        print(f"error: {prefix}{exc}", file=sys.stderr)
+        return exc.exit_code
+    # ValueError: a flag combination the verb rejects (e.g. --check with --dry-run).
+    print(f"error: {exc}", file=sys.stderr)
+    return 1
+
+
 def main(argv: list[str] | None = None) -> int:
     """Entry point. Returns the exit code; never raises (errors are mapped)."""
     if argv is None:
@@ -879,7 +518,10 @@ def main(argv: list[str] | None = None) -> int:
     handler = dispatch.get(args.verb)
     if handler is None:
         parser.error(f"unknown verb: {args.verb}")
-    return handler(args)
+    try:
+        return handler(args)
+    except (IngestError, ValueError) as exc:
+        return _report(exc)
 
 
 if __name__ == "__main__":

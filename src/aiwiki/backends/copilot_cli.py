@@ -298,6 +298,15 @@ class CopilotCliBackend:
         self._redact_output = redact_output
         self._wiki_label = wiki_label
 
+    def with_options(self, *, redact_output: bool | None = None, wiki_label: str | None = None) -> CopilotCliBackend:
+        """A copy of this backend with per-run settings applied; the receiver is unchanged."""
+        return CopilotCliBackend(
+            self._cli_name,
+            timeout_seconds=self._timeout_seconds,
+            redact_output=self._redact_output if redact_output is None else redact_output,
+            wiki_label=self._wiki_label if wiki_label is None else wiki_label,
+        )
+
     def _build_command(self, prompt_text: str) -> list[str]:
         """Construct argv for the subprocess: [binary, *invocation, prompt]."""
         binary = cli_binary_for(self._cli_name)

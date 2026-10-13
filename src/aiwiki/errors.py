@@ -33,6 +33,12 @@ class SourceMissingError(IngestError):
     exit_code: int = 5
 
 
+class PathOutsideRootError(IngestError):
+    """A source or proposal path lies outside the project root; pass allow_out_of_repo to override. Exit 7."""
+
+    exit_code: int = 7
+
+
 class OutputWriteError(IngestError):
     """Could not write the proposal file to the output directory. Exit 6."""
 

@@ -147,21 +147,24 @@ def detect_pending(paths: WikiPaths) -> PendingState:
     )
 
 
-def flush(paths: WikiPaths, dry_run: bool) -> int:
-    """Commit any pending ingest-log lines, or report them in dry-run mode.
+@dataclass(frozen=True)
+class FlushResult:
+    """Outcome of an audit-flush run: the pending state and whether a commit was made."""
+
+    state: PendingState
+    committed: bool
+    dry_run: bool
+
+
+def flush_state(paths: WikiPaths, dry_run: bool) -> FlushResult:
+    """Commit any pending ingest-log lines, or report them in dry-run mode, without printing.
 
     Parameters
     ----------
     paths : WikiPaths
         The resolved layout; ``paths.root`` is the git work tree.
     dry_run : bool
-        When True, print the pending count + blob SHA and exit 0 without
-        committing.
-
-    Returns
-    -------
-    int
-        Process exit code: 0 for success/no-op, 11 for AuditFlushError.
+        When True, never commit; the pending count and blob SHA are in the result.
 
     Raises
     ------
@@ -191,15 +194,9 @@ def flush(paths: WikiPaths, dry_run: bool) -> int:
             "repair the tail."
         )
 
-    # ── No-op ─────────────────────────────────────────────────────────────
-    if state.pending == 0 or state.blob_sha is None:
-        print("nothing to flush")
-        return 0
-
-    # ── Dry-run report ────────────────────────────────────────────────────
-    if dry_run:
-        print(f"{state.pending} pending ingest-log line(s); blob {state.blob_sha}")
-        return 0
+    # ── No-op / dry-run ───────────────────────────────────────────────────
+    if state.pending == 0 or state.blob_sha is None or dry_run:
+        return FlushResult(state=state, committed=False, dry_run=dry_run)
 
     # ── Real commit ───────────────────────────────────────────────────────
     # Message BEFORE `--`; pathspec AFTER. `-m` after `--` is parsed as a
@@ -214,36 +211,34 @@ def flush(paths: WikiPaths, dry_run: bool) -> int:
     # subsequent flushes the file is already tracked so this is a no-op.
     # The pathspec on `git commit` then restricts the commit to only this
     # file even if other paths are staged.
-    add_result = _run(
-        [
-            "git",
-            "-C",
-            str(paths.root),
-            "add",
-            "--",
-            log_rel,
-        ],
-    )
+    add_result = _run(["git", "-C", str(paths.root), "add", "--", log_rel])
     if add_result.returncode != 0:
         stderr_text = add_result.stderr.decode("utf-8", errors="replace")
         raise AuditFlushError(f"audit-flush: git add failed (exit {add_result.returncode}):\n  {stderr_text.strip()}")
 
-    commit_result = _run(
-        [
-            "git",
-            "-C",
-            str(paths.root),
-            "commit",
-            "-m",
-            msg,
-            "--",
-            log_rel,
-        ],
-    )
+    commit_result = _run(["git", "-C", str(paths.root), "commit", "-m", msg, "--", log_rel])
     if commit_result.returncode != 0:
         stderr_text = commit_result.stderr.decode("utf-8", errors="replace")
         raise AuditFlushError(
             f"audit-flush: git commit failed (exit {commit_result.returncode}):\n  {stderr_text.strip()}"
         )
 
+    return FlushResult(state=state, committed=True, dry_run=False)
+
+
+def flush(paths: WikiPaths, dry_run: bool) -> int:
+    """``flush_state`` plus the human-readable report on stdout; returns the exit code (0)."""
+    report = describe_flush(flush_state(paths, dry_run))
+    if report:
+        print(report)
     return 0
+
+
+def describe_flush(result: FlushResult) -> str | None:
+    """The one-line report ``ai-wiki audit-flush`` prints; None after a real commit (git already reported)."""
+    state = result.state
+    if state.pending == 0 or state.blob_sha is None:
+        return "nothing to flush"
+    if result.dry_run:
+        return f"{state.pending} pending ingest-log line(s); blob {state.blob_sha}"
+    return None
