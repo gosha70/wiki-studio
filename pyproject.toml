@@ -30,10 +30,11 @@ include = [{ path = "src/wiki_studio/schema/*.md", format = ["sdist", "wheel"] }
 python = ">=3.11,<3.14"
 
 [tool.poetry.group.dev.dependencies]
-pytest = ">=8.3,<10.0"
+pytest = "^9.0.3"
 pytest-cov = "^6.0"
 ruff = "^0.12"
 mypy = "^1.14"
+pip-audit = "^2.10.0"
 
 [tool.poetry.scripts]
 wiki-studio = "wiki_studio.cli:main"
