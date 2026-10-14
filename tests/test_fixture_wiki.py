@@ -15,7 +15,9 @@ from wiki_studio.paths import WikiPaths
 
 FIXTURE_WIKI = FIXTURES_DIR / "wiki"
 
-# The three drafts in the shape memkernel 0.3's WikiExporter writes.
+# The three drafts in the shape memkernel 0.3's WikiExporter writes. The
+# `memkernel://<project>/<ref>` namespace is memkernel's project id (the
+# repository name, wiki-studio), not this package's import name.
 MEMKERNEL_PAGES = {
     "decisions/adopt-wiki-as-semantic-layer.md": ("decision", "decision"),
     "concepts/prefer-small-commits.md": ("concept", "convention"),
@@ -56,7 +58,7 @@ class TestMemkernelContract(unittest.TestCase):
                 self.assertTrue(str(fm["memkernel_ref"]).startswith("mem-"))
                 sources = fm["sources"]
                 self.assertIsInstance(sources, list)
-                self.assertTrue(str(sources[0]["url"]).startswith("memkernel://"))
+                self.assertTrue(str(sources[0]["url"]).startswith("memkernel://wiki-studio/"))
                 self.assertIn("retrieved", sources[0])
 
     def test_exported_pages_are_linked_from_index_and_logged(self) -> None:
