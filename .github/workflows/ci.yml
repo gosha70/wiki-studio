@@ -26,11 +26,16 @@ jobs:
       - uses: snok/install-poetry@v1
         with:
           virtualenvs-in-project: true
-      - name: Cache Poetry virtualenv
+      - name: Cache Poetry downloads
+        # Cache the wheel downloads, not .venv: a virtualenv's console scripts
+        # carry an absolute shebang, so a cached .venv breaks every Python
+        # entry point (mypy, pytest) as soon as the workspace path changes,
+        # for example after a repository rename, while native ones (ruff)
+        # keep working.
         uses: actions/cache@v4
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('poetry.lock') }}
+          path: ~/.cache/pypoetry
+          key: poetry-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('poetry.lock') }}
       - name: Install
         run: poetry install --no-interaction
       - name: Ruff check
