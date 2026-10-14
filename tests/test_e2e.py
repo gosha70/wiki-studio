@@ -1,11 +1,11 @@
 # Copyright (c) 2026 EGOGE
 # SPDX-License-Identifier: Apache-2.0
-# tests/test_e2e.py — end-to-end tests for the wikiforge CLI and pipeline.
+# tests/test_e2e.py — end-to-end tests for the wiki-studio CLI and pipeline.
 #
-# CLI tests call ``wikiforge.cli.main(argv)`` in-process (see ``run_cli`` in
+# CLI tests call ``wiki_studio.cli.main(argv)`` in-process (see ``run_cli`` in
 # conftest) inside a temporary project layout built by ``make_repo_layout``,
 # so nothing in this repository is read or written. Exactly one test spawns
-# a subprocess (``python -m wikiforge --help``) to pin the module entry point.
+# a subprocess (``python -m wiki-studio --help``) to pin the module entry point.
 #
 # All ingest tests pass ``--output-dir`` explicitly so the layout's
 # ``doc_internal/proposals/`` is never touched.
@@ -20,7 +20,7 @@ import unittest
 from pathlib import Path
 
 from tests.conftest import PACKAGE_ROOT, make_repo_layout, packaged_schema_dir, run_cli
-from wikiforge.paths import WikiPaths
+from wiki_studio.paths import WikiPaths
 
 # A project layout shared by the module's CLI tests; built once in
 # setUpModule, removed in tearDownModule. ``_SAMPLE_INCIDENT`` is the copy
@@ -34,7 +34,7 @@ _SAMPLE_INCIDENT = Path()
 
 def setUpModule() -> None:
     global _TMP, _ROOT, _PATHS, _SAMPLE_INCIDENT
-    _TMP = tempfile.TemporaryDirectory(prefix="wikiforge-e2e-")
+    _TMP = tempfile.TemporaryDirectory(prefix="wiki_studio-e2e-")
     _ROOT = make_repo_layout(Path(_TMP.name), with_schema=True)
     _PATHS = WikiPaths.for_root(_ROOT)
     _SAMPLE_INCIDENT = _ROOT / "sample-incident.md"
@@ -204,11 +204,11 @@ class TestE2ENegativePaths(unittest.TestCase):
 
 
 class TestE2EModuleEntryPoint(unittest.TestCase):
-    """The one subprocess test: ``python -m wikiforge --help`` pins the module entry point."""
+    """The one subprocess test: ``python -m wiki-studio --help`` pins the module entry point."""
 
-    def test_python_m_wikiforge_help_lists_verbs(self) -> None:
+    def test_python_m_wiki_studio_help_lists_verbs(self) -> None:
         result = subprocess.run(
-            [sys.executable, "-m", "wikiforge", "--help"],
+            [sys.executable, "-m", "wiki_studio", "--help"],
             capture_output=True,
             text=True,
             timeout=30,
@@ -220,7 +220,7 @@ class TestE2EModuleEntryPoint(unittest.TestCase):
 
 
 class TestE2EMultiPageIngest(unittest.TestCase):
-    """Phase 1: ``wikiforge ingest <source>`` (without --legacy-single-source)
+    """Phase 1: ``wiki-studio ingest <source>`` (without --legacy-single-source)
     runs the multi-page DefaultMultiIngestor and produces a patch-set dir."""
 
     def test_multi_page_ingest_writes_plan_and_preview(self) -> None:
@@ -256,7 +256,7 @@ class TestE2EMultiPageIngest(unittest.TestCase):
 
     def test_multi_page_ingest_validates_per_edit_paths(self) -> None:
         """Patch-set with a duplicate-create or '..' in path raises contract violation."""
-        from wikiforge.proposal import (
+        from wiki_studio.proposal import (
             PageEdit,
             WikiPatchSet,
             validate_patch_set,
@@ -326,7 +326,7 @@ class TestE2ERendererIncludesWikiState(unittest.TestCase):
     directly) saw it. Real Claude/Codex/Cursor backends got nothing."""
 
     def test_render_includes_index_log_and_candidate_pages(self) -> None:
-        from wikiforge.backends.copilot_cli import _render_plain_text_prompt
+        from wiki_studio.backends.copilot_cli import _render_plain_text_prompt
 
         prompt = {
             "version": 1,
@@ -367,7 +367,7 @@ class TestE2ERendererIncludesWikiState(unittest.TestCase):
     def test_render_omits_wiki_state_block_when_empty(self) -> None:
         """Stage-1 (single-source) prompts have no wiki_state; the block
         must be omitted entirely so v1 prompts stay byte-identical."""
-        from wikiforge.backends.copilot_cli import _render_plain_text_prompt
+        from wiki_studio.backends.copilot_cli import _render_plain_text_prompt
 
         prompt = {
             "version": 1,
@@ -394,7 +394,7 @@ class TestE2EPerEditSemanticValidation(unittest.TestCase):
     slipped through to the proposal directory."""
 
     def test_validates_frontmatter_slug_matches_filename(self) -> None:
-        from wikiforge.proposal import (
+        from wiki_studio.proposal import (
             PageEdit,
             validate_page_edit_semantics,
         )
@@ -420,7 +420,7 @@ class TestE2EPerEditSemanticValidation(unittest.TestCase):
         self.assertTrue(any("slug" in e for e in errors))
 
     def test_validates_sources_non_empty(self) -> None:
-        from wikiforge.proposal import (
+        from wiki_studio.proposal import (
             PageEdit,
             validate_page_edit_semantics,
         )
@@ -436,7 +436,7 @@ class TestE2EPerEditSemanticValidation(unittest.TestCase):
         self.assertTrue(any("sources" in e for e in errors))
 
     def test_rejects_root_only_page_type_as_create_target(self) -> None:
-        from wikiforge.proposal import (
+        from wiki_studio.proposal import (
             PageEdit,
             validate_page_edit_semantics,
         )
@@ -462,7 +462,7 @@ class TestE2EPerEditSemanticValidation(unittest.TestCase):
         self.assertTrue(any("promotable" in e or "page_type" in e for e in errors))
 
     def test_rejects_update_to_nonexistent_path(self) -> None:
-        from wikiforge.proposal import (
+        from wiki_studio.proposal import (
             PageEdit,
             validate_page_edit_semantics,
         )
@@ -488,7 +488,7 @@ class TestE2EPerEditSemanticValidation(unittest.TestCase):
         self.assertTrue(any("does not exist" in e for e in errors))
 
     def test_rejects_directory_mismatch(self) -> None:
-        from wikiforge.proposal import (
+        from wiki_studio.proposal import (
             PageEdit,
             validate_page_edit_semantics,
         )
@@ -514,7 +514,7 @@ class TestE2EPerEditSemanticValidation(unittest.TestCase):
         self.assertTrue(any("concepts" in e or "incidents" in e for e in errors))
 
     def test_well_formed_create_passes(self) -> None:
-        from wikiforge.proposal import (
+        from wiki_studio.proposal import (
             PageEdit,
             validate_page_edit_semantics,
         )
@@ -541,7 +541,7 @@ class TestE2EPerEditSemanticValidation(unittest.TestCase):
     def test_append_log_skips_frontmatter_validation(self) -> None:
         """append-log content is a one-line bullet, not a full page —
         frontmatter validation must not fire on it."""
-        from wikiforge.proposal import (
+        from wiki_studio.proposal import (
             PageEdit,
             validate_page_edit_semantics,
         )
@@ -558,9 +558,9 @@ class TestE2EPerEditSemanticValidation(unittest.TestCase):
     def test_ingestor_multi_raises_on_bad_frontmatter(self) -> None:
         """End-to-end: a backend that returns a patch with bad frontmatter
         causes DefaultMultiIngestor.ingest_multi to raise ContractViolationError."""
-        from wikiforge.errors import ContractViolationError
-        from wikiforge.ingestor_multi import DefaultMultiIngestor
-        from wikiforge.proposal import IngestRequest
+        from wiki_studio.errors import ContractViolationError
+        from wiki_studio.ingestor_multi import DefaultMultiIngestor
+        from wiki_studio.proposal import IngestRequest
 
         class _BadBackend:
             def call(self, prompt: dict) -> dict:
@@ -607,7 +607,7 @@ class TestE2EFenceNeutralization(unittest.TestCase):
     the rendered prompt so the extractor only sees the model's fence."""
 
     def test_source_json_fence_is_neutralized(self) -> None:
-        from wikiforge.backends.copilot_cli import _render_plain_text_prompt
+        from wiki_studio.backends.copilot_cli import _render_plain_text_prompt
 
         prompt = {
             "version": 1,
@@ -647,7 +647,7 @@ class TestE2EFenceNeutralization(unittest.TestCase):
         self.assertIn('"slug": "decoy"', rendered)
 
     def test_candidate_page_json_fence_is_neutralized(self) -> None:
-        from wikiforge.backends.copilot_cli import _render_plain_text_prompt
+        from wiki_studio.backends.copilot_cli import _render_plain_text_prompt
 
         prompt = {
             "version": 1,
@@ -687,7 +687,7 @@ class TestE2EFenceNeutralization(unittest.TestCase):
         """Closing fences must stay ``` so rendered code blocks remain
         well-formed for the model to parse. Only OPENING fences are
         rewritten."""
-        from wikiforge.backends.copilot_cli import _neutralize_extractor_fences
+        from wiki_studio.backends.copilot_cli import _neutralize_extractor_fences
 
         text = "before\n```json\n{}\n```\nafter\n"
         out = _neutralize_extractor_fences(text)
@@ -697,7 +697,7 @@ class TestE2EFenceNeutralization(unittest.TestCase):
         )
 
     def test_neutralize_handles_bare_fence(self) -> None:
-        from wikiforge.backends.copilot_cli import _neutralize_extractor_fences
+        from wiki_studio.backends.copilot_cli import _neutralize_extractor_fences
 
         text = "before\n```\n{}\n```\nafter\n"
         out = _neutralize_extractor_fences(text)
@@ -710,10 +710,10 @@ class TestE2EFenceNeutralization(unittest.TestCase):
         """End-to-end: simulate a CLI that echoes the prompt before its
         response. The extractor must return the model's response, not
         the source's example fence."""
-        from wikiforge.backends.copilot_cli import (
+        from wiki_studio.backends.copilot_cli import (
             _render_plain_text_prompt,
         )
-        from wikiforge.backends.json_extract import extract_json_object
+        from wiki_studio.backends.json_extract import extract_json_object
 
         prompt = {
             "version": 1,
@@ -765,7 +765,7 @@ class TestE2ECreateTargetExistsRejection(unittest.TestCase):
         )
 
     def test_rejects_create_to_existing_wiki_page(self) -> None:
-        from wikiforge.proposal import (
+        from wiki_studio.proposal import (
             PageEdit,
             validate_page_edit_semantics,
         )
@@ -797,7 +797,7 @@ class TestE2ECreateTargetExistsRejection(unittest.TestCase):
 
     def test_create_to_new_path_passes(self) -> None:
         """The happy path — create a brand-new file — still passes."""
-        from wikiforge.proposal import (
+        from wiki_studio.proposal import (
             PageEdit,
             validate_page_edit_semantics,
         )
@@ -826,7 +826,7 @@ class TestE2EWikiState(unittest.TestCase):
     """Phase 1: WikiState loads the existing wiki for the multi-page prompt."""
 
     def test_loads_index_and_log(self) -> None:
-        from wikiforge.wiki_state import load_wiki_state
+        from wiki_studio.wiki_state import load_wiki_state
 
         paths = _PATHS
         state = load_wiki_state(
@@ -842,7 +842,7 @@ class TestE2EWikiState(unittest.TestCase):
 
 
 class TestE2EPromote(unittest.TestCase):
-    """Phase 2: ``wikiforge promote <dir>`` applies a patch-set atomically.
+    """Phase 2: ``wiki-studio promote <dir>`` applies a patch-set atomically.
 
     Tests use a tmp repo layout (``<tmp>/knowledge/wiki/...``) so the
     real repo's wiki is never touched, even if the promoter has a bug.
@@ -949,7 +949,7 @@ class TestE2EPromote(unittest.TestCase):
         return prop
 
     def test_promote_happy_path_applies_all_edits(self) -> None:
-        from wikiforge.promoter import promote
+        from wiki_studio.promoter import promote
 
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
@@ -977,7 +977,7 @@ class TestE2EPromote(unittest.TestCase):
             self.assertFalse(result.dry_run)
 
     def test_promote_dry_run_does_not_modify_wiki(self) -> None:
-        from wikiforge.promoter import promote
+        from wiki_studio.promoter import promote
 
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
@@ -1001,8 +1001,8 @@ class TestE2EPromote(unittest.TestCase):
     def test_promote_validation_failure_leaves_wiki_untouched(self) -> None:
         """A patch-set that would fail the structural linter must NOT
         touch the live wiki tree."""
-        from wikiforge.errors import PromoteValidationError
-        from wikiforge.promoter import promote
+        from wiki_studio.errors import PromoteValidationError
+        from wiki_studio.promoter import promote
 
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
@@ -1026,7 +1026,7 @@ class TestE2EPromote(unittest.TestCase):
 
     def test_promote_idempotent_on_already_applied(self) -> None:
         """A second promote on an already-archived dir is a no-op."""
-        from wikiforge.promoter import promote
+        from wiki_studio.promoter import promote
 
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
@@ -1041,8 +1041,8 @@ class TestE2EPromote(unittest.TestCase):
             self.assertEqual(result.applied_paths, [])
 
     def test_promote_missing_proposals_dir_raises(self) -> None:
-        from wikiforge.errors import PromoteValidationError
-        from wikiforge.promoter import promote
+        from wiki_studio.errors import PromoteValidationError
+        from wiki_studio.promoter import promote
 
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
@@ -1054,7 +1054,7 @@ class TestE2EPromote(unittest.TestCase):
 class TestE2ESingleWriterInvariant(unittest.TestCase):
     """Phase 2 invariant: ONLY ``promoter.py`` writes to knowledge/wiki/.
 
-    Grep-based check across the wikiforge package for write-side
+    Grep-based check across the wiki_studio package for write-side
     filesystem operations targeting knowledge/wiki/. Any module other
     than promoter.py performing such writes is a bug — even if it's
     "safe" — because the single-writer property is what makes
@@ -1094,7 +1094,7 @@ class TestE2ESingleWriterInvariant(unittest.TestCase):
 
 
 class TestE2EQuery(unittest.TestCase):
-    """Phase 3: ``wikiforge query "<question>"`` reads index.md
+    """Phase 3: ``wiki-studio query "<question>"`` reads index.md
     first, follows links to relevant pages, returns an answer with
     citations. Pages NOT linked from the index are unreachable."""
 
@@ -1135,7 +1135,7 @@ class TestE2EQuery(unittest.TestCase):
         return wiki
 
     def test_query_reads_index_first_and_selects_relevant_pages(self) -> None:
-        from wikiforge.querier import _select_query_candidates
+        from wiki_studio.querier import _select_query_candidates
 
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
@@ -1154,8 +1154,8 @@ class TestE2EQuery(unittest.TestCase):
                 self.assertIn(rel, index_md)
 
     def test_query_with_test_backend_returns_answer_and_citations(self) -> None:
-        from wikiforge.backends.test import TestBackend
-        from wikiforge.querier import DefaultQuerier
+        from wiki_studio.backends.test import TestBackend
+        from wiki_studio.querier import DefaultQuerier
 
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
@@ -1169,8 +1169,8 @@ class TestE2EQuery(unittest.TestCase):
     def test_query_logs_pages_loaded_to_jsonl(self) -> None:
         import json as _json
 
-        from wikiforge.backends.test import TestBackend
-        from wikiforge.querier import DefaultQuerier
+        from wiki_studio.backends.test import TestBackend
+        from wiki_studio.querier import DefaultQuerier
 
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
@@ -1187,7 +1187,7 @@ class TestE2EQuery(unittest.TestCase):
     def test_query_skips_pages_not_in_index(self) -> None:
         """A page on disk that is NOT linked from index.md must not be
         loaded, even if its content looks relevant. Index-first."""
-        from wikiforge.querier import _select_query_candidates
+        from wiki_studio.querier import _select_query_candidates
 
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
@@ -1212,7 +1212,7 @@ class TestE2EQuery(unittest.TestCase):
     def test_query_empty_answer_when_wiki_lacks_info(self) -> None:
         """When the test backend's deterministic response returns an
         empty answer, the orchestrator surfaces it as ``answer == ''``."""
-        from wikiforge.querier import DefaultQuerier
+        from wiki_studio.querier import DefaultQuerier
 
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
@@ -1233,8 +1233,8 @@ class TestE2EQuery(unittest.TestCase):
 
     def test_query_file_back_round_trip(self) -> None:
         """--file-back: query → answer → patch-set with at least one edit."""
-        from wikiforge.backends.test import TestBackend
-        from wikiforge.querier import DefaultQuerier
+        from wiki_studio.backends.test import TestBackend
+        from wiki_studio.querier import DefaultQuerier
 
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
@@ -1296,7 +1296,7 @@ class TestE2EHealthLint(unittest.TestCase):
         return wiki
 
     def test_stale_claim_check_flags_missing_source_path(self) -> None:
-        from wikiforge.health_lint import lint_health
+        from wiki_studio.health_lint import lint_health
 
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
@@ -1311,7 +1311,7 @@ class TestE2EHealthLint(unittest.TestCase):
         """concepts/foo.md is linked only from decisions/use-foo.md
         (and from index.md, but the orphan check counts non-index
         non-log inbound edges as both contribute)."""
-        from wikiforge.health_lint import lint_health
+        from wiki_studio.health_lint import lint_health
 
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
@@ -1323,7 +1323,7 @@ class TestE2EHealthLint(unittest.TestCase):
     def test_missing_cross_link_check(self) -> None:
         """Build a wiki where 'foo' is mentioned in many pages but
         only linked once → flagged."""
-        from wikiforge.health_lint import lint_health
+        from wiki_studio.health_lint import lint_health
 
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
@@ -1347,7 +1347,7 @@ class TestE2EHealthLint(unittest.TestCase):
         """A wiki where every cited path exists, every page has ≥2
         inbound edges, and every entity is cross-linked produces 0
         findings."""
-        from wikiforge.health_lint import lint_health
+        from wiki_studio.health_lint import lint_health
 
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
@@ -1389,7 +1389,7 @@ class TestE2EHealthLint(unittest.TestCase):
             )
 
     def test_paths_filter_scopes_findings(self) -> None:
-        from wikiforge.health_lint import lint_health
+        from wiki_studio.health_lint import lint_health
 
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
@@ -1404,7 +1404,7 @@ class TestE2EHealthLint(unittest.TestCase):
                 self.assertIn("concepts/bar.md", f.pages)
 
     def test_contradiction_check_uses_backend_when_provided(self) -> None:
-        from wikiforge.health_lint import lint_health
+        from wiki_studio.health_lint import lint_health
 
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
@@ -1510,8 +1510,8 @@ class TestE2EPromoteAtomicity(unittest.TestCase):
         raised."""
         from unittest.mock import patch as _patch
 
-        from wikiforge.errors import PromoteApplyError
-        from wikiforge.promoter import promote
+        from wiki_studio.errors import PromoteApplyError
+        from wiki_studio.promoter import promote
 
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
@@ -1605,8 +1605,8 @@ class TestE2EQueryCitationValidation(unittest.TestCase):
         return wiki
 
     def test_query_rejects_citation_to_unloaded_page(self) -> None:
-        from wikiforge.errors import ContractViolationError
-        from wikiforge.querier import DefaultQuerier
+        from wiki_studio.errors import ContractViolationError
+        from wiki_studio.querier import DefaultQuerier
 
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
@@ -1630,8 +1630,8 @@ class TestE2EQueryCitationValidation(unittest.TestCase):
             self.assertIn("hallucinated", msg)
 
     def test_query_rejects_empty_fragment(self) -> None:
-        from wikiforge.errors import ContractViolationError
-        from wikiforge.querier import DefaultQuerier
+        from wiki_studio.errors import ContractViolationError
+        from wiki_studio.querier import DefaultQuerier
 
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
@@ -1654,7 +1654,7 @@ class TestE2EQueryCitationValidation(unittest.TestCase):
 
     def test_query_accepts_index_md_citation(self) -> None:
         """index.md citation is allowed (legitimate when wiki lacks info)."""
-        from wikiforge.querier import DefaultQuerier
+        from wiki_studio.querier import DefaultQuerier
 
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)

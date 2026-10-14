@@ -8,8 +8,8 @@
 import json
 import unittest
 
-from wikiforge.backends.json_extract import extract_json_object
-from wikiforge.errors import ContractViolationError
+from wiki_studio.backends.json_extract import extract_json_object
+from wiki_studio.errors import ContractViolationError
 
 # ---------------------------------------------------------------------------
 # Shared fixture
@@ -365,7 +365,7 @@ class TestPromptEchoCollision(unittest.TestCase):
 
     def test_extracts_response_when_prompt_is_echoed_verbatim(self) -> None:
         """The extractor must return the BackendResponse, not the prompt's schema."""
-        from wikiforge.backends.copilot_cli import _render_plain_text_prompt
+        from wiki_studio.backends.copilot_cli import _render_plain_text_prompt
 
         backend_prompt = {
             "version": 1,
@@ -408,7 +408,7 @@ class TestPromptEchoCollision(unittest.TestCase):
         captured first by the brace scanner. This test pins that the
         extractor masks out fenced regions before scanning.
         """
-        from wikiforge.backends.copilot_cli import _render_plain_text_prompt
+        from wiki_studio.backends.copilot_cli import _render_plain_text_prompt
 
         backend_prompt = {
             "version": 1,
@@ -457,7 +457,7 @@ class TestPromptEchoCollision(unittest.TestCase):
         realistic JSON-shaped response_schema (matching production) to
         exercise the balanced-brace fence-stripping path.
         """
-        from wikiforge.backends.copilot_cli import _render_plain_text_prompt
+        from wiki_studio.backends.copilot_cli import _render_plain_text_prompt
 
         backend_prompt = {
             "version": 1,

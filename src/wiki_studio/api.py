@@ -1,0 +1,410 @@
+# Copyright (c) 2026 EGOGE
+# SPDX-License-Identifier: Apache-2.0
+"""wiki_studio.api — the library surface: ``ingest``, ``promote``, ``query``, ``lint``, ``audit_flush``.
+
+Each function takes a :class:`~wiki_studio.paths.WikiPaths`, returns a typed result
+and raises the exceptions in :mod:`wiki_studio.errors`. Nothing here prints; the
+CLI in :mod:`wiki_studio.cli` is a thin parser over these functions that renders
+results and maps exceptions to exit codes.
+
+Example::
+
+    from pathlib import Path
+    from wiki_studio import api
+    from wiki_studio.paths import WikiPaths
+
+    paths = WikiPaths.for_root(Path("."))
+    result = api.ingest(Path("notes/incident.md"), paths, backend="test")
+    api.promote(result.written, paths)
+    print(api.query("what caused the outage?", paths, backend="test").answer.answer)
+"""
+
+from __future__ import annotations
+
+import datetime
+import os
+import shutil
+from dataclasses import dataclass, replace
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+from .audit import append_ingest_log, build_log_record
+from .audit_flush import FlushResult, flush_state
+from .audit_lint import validate_audit_tree
+from .backends import resolve_backend
+from .backends.copilot_cli import CopilotCliBackend
+from .errors import OutputWriteError, PathOutsideRootError, SourceMissingError
+from .health_lint import lint_health
+from .ingestor import DefaultIngestor
+from .ingestor_multi import DefaultMultiIngestor, write_patch_set_dir
+from .lint import lint_wiki, list_pages
+from .promoter import PromoteResult
+from .promoter import promote as _promote
+from .proposal import IngestLogRecord, IngestProposal, IngestRequest, QueryAnswer, WikiPatchSet, render_proposal_file
+from .querier import DefaultQuerier
+
+if TYPE_CHECKING:
+    from .health_lint import HealthLintResult
+    from .ingestor import Backend
+    from .paths import WikiPaths
+
+# The env var the legacy single-source ingestor reads its task hint from.
+_TASK_ENV = "WIKI_INGEST_TASK"
+_GATE_ONLY_TASK = "gate-only"
+_SNAPSHOT_DIR_NAME = ".ingest-snapshot"
+_FILE_BACK_SLUG = "query-fileback"
+
+ALLOW_OUT_OF_REPO_HINT = "Pass --allow-out-of-repo to override (only when ingesting external artifacts deliberately)."
+ALLOW_OUT_OF_REPO_PROMOTE_HINT = (
+    "Pass --allow-out-of-repo to override (only when the proposal dir comes from a trusted source you've audited)."
+)
+
+
+# ── Results ───────────────────────────────────────────────────
+
+
+@dataclass(frozen=True)
+class IngestResult:
+    """What ``ingest`` produced.
+
+    ``written`` is the proposal file (legacy single-source) or the patch-set
+    directory (multi-page); None in check mode. ``edits`` lists the
+    wiki-relative pages the proposal touches.
+    """
+
+    disposition: str
+    written: Path | None
+    edits: tuple[str, ...]
+    rationale: str
+    dry_run: bool
+    check: bool
+    patch: WikiPatchSet | None
+    proposal: IngestProposal | None
+    record: IngestLogRecord | None
+
+
+@dataclass(frozen=True)
+class QueryResult:
+    """An answer with citations; with ``file_back`` also the patch-set and where it was written."""
+
+    answer: QueryAnswer
+    patch: WikiPatchSet | None
+    file_back_dir: Path | None
+
+
+@dataclass(frozen=True)
+class LintResult:
+    """Structural violations, audit-format errors and (optionally) knowledge-health findings."""
+
+    violations: tuple[str, ...]
+    pages_checked: int
+    audit_errors: tuple[str, ...]
+    health: HealthLintResult | None
+    strict: bool
+
+    @property
+    def passed(self) -> bool:
+        """Structural violations always fail; audit and health findings fail only under ``strict``."""
+        if self.violations:
+            return False
+        if not self.strict:
+            return True
+        if self.audit_errors:
+            return False
+        return not (self.health is not None and self.health.findings)
+
+
+AuditFlushResult = FlushResult
+
+
+# ── Backends ──────────────────────────────────────────────────
+
+
+def prepare_backend(
+    backend: str | Backend | None,
+    paths: WikiPaths,
+    *,
+    redact_output: bool = True,
+) -> Backend:
+    """Resolve a backend by name (or env/auto-detect when None) and apply per-run settings.
+
+    A :class:`Backend` instance is used as given; a copilot-CLI backend gets a
+    copy carrying the stderr redaction setting and the wiki label used in
+    rendered prompts.
+    """
+    resolved: Backend = backend if backend is not None and not isinstance(backend, str) else resolve_backend(backend)
+    if isinstance(resolved, CopilotCliBackend):
+        return resolved.with_options(redact_output=redact_output, wiki_label=paths.wiki_label)
+    return resolved
+
+
+def backend_display_name(backend: object, requested: str | None) -> str:
+    """Best-effort name for the resolved backend, recorded in proposal frontmatter."""
+    if requested:
+        return requested
+    cli_name = getattr(backend, "_cli_name", None)
+    if cli_name:
+        return str(cli_name)
+    cls_name = backend.__class__.__name__
+    return cls_name.removesuffix("Backend").lower() or "unknown"
+
+
+# ── ingest ────────────────────────────────────────────────────
+
+
+def _proposal_filename(proposal: IngestProposal) -> str:
+    """``<YYYY-MM-DD>-<slug>.md``."""
+    today = datetime.date.today().isoformat()
+    base = proposal.slug or f"unslugged-{proposal.disposition}"
+    return f"{today}-{base}.md"
+
+
+def _write_proposal_file(proposal: IngestProposal, request: IngestRequest, backend_name: str, output_dir: Path) -> Path:
+    proposal_path = output_dir / _proposal_filename(proposal)
+    try:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        proposal_path.write_text(render_proposal_file(proposal, request, backend_name), encoding="utf-8")
+    except OSError as exc:
+        raise OutputWriteError(f"Could not write proposal file at {proposal_path}: {exc}") from exc
+    return proposal_path.resolve()
+
+
+def _write_ingest_snapshot(proposal_dir: Path) -> None:
+    """Immutable copy of plan.json + preview/ so promote can diff the curator's edits (never on dry-run or check)."""
+    snapshot_dir = proposal_dir / _SNAPSHOT_DIR_NAME
+    snapshot_dir.mkdir(parents=True, exist_ok=True)
+    plan = proposal_dir / "plan.json"
+    if plan.is_file():
+        shutil.copy2(str(plan), str(snapshot_dir / "plan.json"))
+    preview = proposal_dir / "preview"
+    if preview.is_dir():
+        preview_snapshot = snapshot_dir / "preview"
+        if preview_snapshot.exists():
+            shutil.rmtree(str(preview_snapshot))
+        shutil.copytree(str(preview), str(preview_snapshot))
+
+
+def _require_within_root(kind: str, path: Path, paths: WikiPaths, allow: bool, hint: str) -> None:
+    if allow or paths.within_root(path):
+        return
+    raise PathOutsideRootError(f"{kind} is outside the repository tree: {path}\n  Repo root: {paths.root}\n  {hint}")
+
+
+def ingest(
+    source: Path,
+    paths: WikiPaths,
+    *,
+    backend: str | Backend | None = None,
+    legacy_single_source: bool = False,
+    dry_run: bool = False,
+    check: bool = False,
+    output_dir: Path | None = None,
+    allow_out_of_repo: bool = False,
+    redact_output: bool = True,
+) -> IngestResult:
+    """Run the ingest gate over ``source`` and write the proposal.
+
+    Multi-page by default (a patch-set directory under the proposals dir);
+    ``legacy_single_source`` runs the v1 single-page generator. ``check``
+    runs the gate with zero filesystem side effects; ``dry_run`` skips the
+    draft body (legacy) or marks the audit record (multi).
+
+    Raises ``ValueError`` when ``check`` and ``dry_run`` are combined, and the
+    :mod:`wiki_studio.errors` exceptions for everything else.
+    """
+    if check and dry_run:
+        raise ValueError("--check and --dry-run are mutually exclusive")
+    source_path = Path(source)
+    if not source_path.exists():
+        raise SourceMissingError(f"source file not found: {source_path}")
+    _require_within_root("source path", source_path, paths, allow_out_of_repo, ALLOW_OUT_OF_REPO_HINT)
+
+    requested = backend if isinstance(backend, str) else None
+    resolved = prepare_backend(backend, paths, redact_output=redact_output)
+    backend_name = backend_display_name(resolved, requested)
+    request = IngestRequest(source_path=source_path, source_kind="file", backend_name=backend_name)
+    proposals_root = output_dir if output_dir is not None else paths.proposals_dir
+
+    if legacy_single_source:
+        return _ingest_legacy(request, paths, resolved, backend_name, proposals_root, dry_run, check, allow_out_of_repo)
+    return _ingest_multi(request, paths, resolved, backend_name, proposals_root, dry_run, check, allow_out_of_repo)
+
+
+def _ingest_legacy(
+    request: IngestRequest,
+    paths: WikiPaths,
+    backend: Backend,
+    backend_name: str,
+    output_dir: Path,
+    dry_run: bool,
+    check: bool,
+    allow_out_of_repo: bool,
+) -> IngestResult:
+    ingestor = DefaultIngestor(backend=backend, paths=paths)
+    # The legacy prompt reads the dry-run intent from the environment; the
+    # render side still strips the body as a safety net for stubs that
+    # ignore the task hint.
+    env_backup = os.environ.get(_TASK_ENV)
+    if dry_run:
+        os.environ[_TASK_ENV] = _GATE_ONLY_TASK
+    try:
+        proposal = ingestor.ingest(request)
+    finally:
+        if env_backup is None:
+            os.environ.pop(_TASK_ENV, None)
+        else:
+            os.environ[_TASK_ENV] = env_backup
+
+    edits = (proposal.slug,) if proposal.slug else ()
+    if check:
+        return IngestResult(proposal.disposition, None, edits, proposal.reason, False, True, None, proposal, None)
+    if dry_run:
+        proposal = replace(proposal, draft_markdown=None)
+
+    proposal_path = _write_proposal_file(proposal, request, backend_name, output_dir)
+    if not dry_run:
+        _write_ingest_snapshot(proposal_path.parent)
+    record = build_log_record(
+        source_file=request.source_path,
+        paths=paths,
+        backend_name=backend_name,
+        proposal_dir_path=proposal_path.parent,
+        allow_out_of_repo=allow_out_of_repo,
+        legacy_proposal=proposal,
+        dry_run=dry_run,
+    )
+    append_ingest_log(paths, record)
+    return IngestResult(
+        proposal.disposition, proposal_path, edits, proposal.reason, dry_run, False, None, proposal, record
+    )
+
+
+def _ingest_multi(
+    request: IngestRequest,
+    paths: WikiPaths,
+    backend: Backend,
+    backend_name: str,
+    proposals_root: Path,
+    dry_run: bool,
+    check: bool,
+    allow_out_of_repo: bool,
+) -> IngestResult:
+    multi = DefaultMultiIngestor(backend=backend, paths=paths)
+    patch = multi.ingest_multi(request)
+    disposition = "accept" if patch.edits else "reject"
+    edits = tuple(e.path for e in patch.edits)
+    if check:
+        return IngestResult(disposition, None, edits, patch.rationale, False, True, patch, None, None)
+
+    today = datetime.date.today().isoformat()
+    output_dir = proposals_root / f"{today}-{request.source_path.stem or 'source'}"
+    try:
+        written = write_patch_set_dir(patch, output_dir)
+    except OSError as exc:
+        raise OutputWriteError(f"could not write patch-set dir at {output_dir}: {exc}") from exc
+    if not dry_run and patch.edits:
+        _write_ingest_snapshot(written)
+    record = build_log_record(
+        source_file=request.source_path,
+        paths=paths,
+        backend_name=backend_name,
+        proposal_dir_path=written,
+        allow_out_of_repo=allow_out_of_repo,
+        patch=patch,
+        dry_run=dry_run,
+    )
+    append_ingest_log(paths, record)
+    return IngestResult(disposition, written, edits, patch.rationale, dry_run, False, patch, None, record)
+
+
+# ── promote ───────────────────────────────────────────────────
+
+
+def promote(
+    proposal_dir: Path,
+    paths: WikiPaths,
+    *,
+    dry_run: bool = False,
+    allow_out_of_repo: bool = False,
+) -> PromoteResult:
+    """Apply a patch-set directory to the wiki atomically (the only write into the wiki).
+
+    Raises ``SourceMissingError`` when the directory does not exist,
+    ``PathOutsideRootError`` when it lies outside the root without
+    ``allow_out_of_repo``, and the promoter's validation/apply errors.
+    """
+    proposal_path = Path(proposal_dir)
+    if not proposal_path.exists():
+        raise SourceMissingError(f"proposals dir not found: {proposal_path}")
+    _require_within_root("proposal dir", proposal_path, paths, allow_out_of_repo, ALLOW_OUT_OF_REPO_PROMOTE_HINT)
+    return _promote(proposals_dir=proposal_path, paths=paths, dry_run=dry_run)
+
+
+# ── query ─────────────────────────────────────────────────────
+
+
+def query(
+    question: str,
+    paths: WikiPaths,
+    *,
+    backend: str | Backend | None = None,
+    file_back: bool = False,
+    max_pages: int | None = None,
+    output_dir: Path | None = None,
+    redact_output: bool = True,
+) -> QueryResult:
+    """Answer ``question`` index-first over the wiki; with ``file_back`` also write a patch-set for the answer."""
+    resolved = prepare_backend(backend, paths, redact_output=redact_output)
+    querier = (
+        DefaultQuerier(backend=resolved, paths=paths)
+        if max_pages is None
+        else DefaultQuerier(resolved, paths, max_pages)
+    )
+    if not file_back:
+        return QueryResult(answer=querier.query(question), patch=None, file_back_dir=None)
+
+    answer, patch = querier.query_with_file_back(question)
+    if not patch.edits:
+        return QueryResult(answer=answer, patch=patch, file_back_dir=None)
+    today = datetime.date.today().isoformat()
+    out = (output_dir if output_dir is not None else paths.proposals_dir) / f"{today}-{_FILE_BACK_SLUG}"
+    try:
+        written = write_patch_set_dir(patch, out)
+    except OSError as exc:
+        raise OutputWriteError(f"could not write file-back dir: {exc}") from exc
+    return QueryResult(answer=answer, patch=patch, file_back_dir=written)
+
+
+# ── lint ──────────────────────────────────────────────────────
+
+
+def lint(
+    paths: WikiPaths,
+    *,
+    health: bool = False,
+    strict: bool = False,
+    only: list[str] | None = None,
+    backend: str | Backend | None = None,
+    redact_output: bool = True,
+) -> LintResult:
+    """Structural lint plus the audit-format pass; ``health`` adds the knowledge-health checks.
+
+    ``backend`` is only consulted with ``health`` (for the contradiction
+    check); when it is None, contradictions are skipped.
+    """
+    violations = tuple(lint_wiki(paths.wiki_dir))
+    pages_checked = len(list_pages(paths.wiki_dir))
+    audit_errors = tuple(validate_audit_tree(paths))
+    health_result: HealthLintResult | None = None
+    if health:
+        resolved = prepare_backend(backend, paths, redact_output=redact_output) if backend is not None else None
+        health_result = lint_health(paths, only=only, backend=resolved)
+    return LintResult(violations, pages_checked, audit_errors, health_result, strict)
+
+
+# ── audit-flush ───────────────────────────────────────────────
+
+
+def audit_flush(paths: WikiPaths, *, dry_run: bool = False) -> AuditFlushResult:
+    """Commit pending ingest-log lines (or report them with ``dry_run``); raises ``AuditFlushError``."""
+    return flush_state(paths, dry_run)

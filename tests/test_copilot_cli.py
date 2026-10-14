@@ -13,10 +13,10 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from wikiforge.backends import resolve_backend
-from wikiforge.backends.copilot_cli import CopilotCliBackend
-from wikiforge.backends.test import TestBackend
-from wikiforge.errors import BackendInvocationError, BackendNotFoundError, ContractViolationError
+from wiki_studio.backends import resolve_backend
+from wiki_studio.backends.copilot_cli import CopilotCliBackend
+from wiki_studio.backends.test import TestBackend
+from wiki_studio.errors import BackendInvocationError, BackendNotFoundError, ContractViolationError
 
 # Locate fixtures directory.
 _FIXTURES_DIR = Path(__file__).parent / "fixtures"
@@ -187,14 +187,14 @@ class TestResolveBackend(unittest.TestCase):
 
     def test_resolve_claude_with_which_finds_it(self) -> None:
         """resolve_backend('claude') constructs a CopilotCliBackend when shutil.which finds it."""
-        with patch("wikiforge.backends.shutil.which", return_value="/usr/local/bin/claude"):
+        with patch("wiki_studio.backends.shutil.which", return_value="/usr/local/bin/claude"):
             backend = resolve_backend("claude")
         self.assertIsInstance(backend, CopilotCliBackend)
 
     def test_resolve_claude_with_which_missing_raises(self) -> None:
         """resolve_backend('claude') raises BackendNotFoundError when shutil.which returns None."""
         with (
-            patch("wikiforge.backends.shutil.which", return_value=None),
+            patch("wiki_studio.backends.shutil.which", return_value=None),
             self.assertRaises(BackendNotFoundError) as ctx,
         ):
             resolve_backend("claude")
@@ -211,19 +211,19 @@ class TestResolveBackend(unittest.TestCase):
         self.assertIn("claude", msg)
 
     def test_resolve_none_with_env_var_set_uses_env(self) -> None:
-        """resolve_backend(None) with WIKIFORGE_BACKEND=codex tries codex."""
+        """resolve_backend(None) with WIKI_STUDIO_BACKEND=codex tries codex."""
         with (
-            patch.dict(os.environ, {"WIKIFORGE_BACKEND": "codex"}),
-            patch("wikiforge.backends.shutil.which", return_value="/usr/bin/codex"),
+            patch.dict(os.environ, {"WIKI_STUDIO_BACKEND": "codex"}),
+            patch("wiki_studio.backends.shutil.which", return_value="/usr/bin/codex"),
         ):
             backend = resolve_backend(None)
         self.assertIsInstance(backend, CopilotCliBackend)
 
     def test_resolve_none_with_env_var_missing_from_path_raises(self) -> None:
-        """resolve_backend(None) with WIKIFORGE_BACKEND=codex but codex not on PATH raises."""
+        """resolve_backend(None) with WIKI_STUDIO_BACKEND=codex but codex not on PATH raises."""
         with (
-            patch.dict(os.environ, {"WIKIFORGE_BACKEND": "codex"}),
-            patch("wikiforge.backends.shutil.which", return_value=None),
+            patch.dict(os.environ, {"WIKI_STUDIO_BACKEND": "codex"}),
+            patch("wiki_studio.backends.shutil.which", return_value=None),
             self.assertRaises(BackendNotFoundError) as ctx,
         ):
             resolve_backend(None)
@@ -235,20 +235,20 @@ class TestResolveBackend(unittest.TestCase):
         def which_side_effect(name: str) -> str | None:
             return "/usr/local/bin/claude" if name == "claude" else None
 
-        env_without_backend = {k: v for k, v in os.environ.items() if k != "WIKIFORGE_BACKEND"}
+        env_without_backend = {k: v for k, v in os.environ.items() if k != "WIKI_STUDIO_BACKEND"}
         with (
             patch.dict(os.environ, env_without_backend, clear=True),
-            patch("wikiforge.backends.shutil.which", side_effect=which_side_effect),
+            patch("wiki_studio.backends.shutil.which", side_effect=which_side_effect),
         ):
             backend = resolve_backend(None)
         self.assertIsInstance(backend, CopilotCliBackend)
 
     def test_auto_detect_nothing_on_path_raises(self) -> None:
         """resolve_backend(None) with no env, nothing on PATH raises BackendNotFoundError."""
-        env_without_backend = {k: v for k, v in os.environ.items() if k != "WIKIFORGE_BACKEND"}
+        env_without_backend = {k: v for k, v in os.environ.items() if k != "WIKI_STUDIO_BACKEND"}
         with (
             patch.dict(os.environ, env_without_backend, clear=True),
-            patch("wikiforge.backends.shutil.which", return_value=None),
+            patch("wiki_studio.backends.shutil.which", return_value=None),
             self.assertRaises(BackendNotFoundError) as ctx,
         ):
             resolve_backend(None)
@@ -259,46 +259,46 @@ class TestResolveBackend(unittest.TestCase):
         self.assertIn("cursor", msg)
 
     def test_cli_flag_wins_over_env_var(self) -> None:
-        """CLI flag wins over WIKIFORGE_BACKEND env var: resolve_backend('test') ignores env."""
-        with patch.dict(os.environ, {"WIKIFORGE_BACKEND": "codex"}):
+        """CLI flag wins over WIKI_STUDIO_BACKEND env var: resolve_backend('test') ignores env."""
+        with patch.dict(os.environ, {"WIKI_STUDIO_BACKEND": "codex"}):
             backend = resolve_backend("test")
         # Should be TestBackend (from the "test" flag), not CopilotCliBackend
         self.assertIsInstance(backend, TestBackend)
 
     def test_resolve_codex_with_which_finds_it(self) -> None:
         """resolve_backend('codex') constructs a CopilotCliBackend when shutil.which finds it."""
-        with patch("wikiforge.backends.shutil.which", return_value="/usr/local/bin/codex"):
+        with patch("wiki_studio.backends.shutil.which", return_value="/usr/local/bin/codex"):
             backend = resolve_backend("codex")
         self.assertIsInstance(backend, CopilotCliBackend)
 
     def test_resolve_cursor_with_which_finds_it(self) -> None:
         """resolve_backend('cursor') constructs a CopilotCliBackend when shutil.which finds it."""
-        with patch("wikiforge.backends.shutil.which", return_value="/usr/local/bin/cursor"):
+        with patch("wiki_studio.backends.shutil.which", return_value="/usr/local/bin/cursor"):
             backend = resolve_backend("cursor")
         self.assertIsInstance(backend, CopilotCliBackend)
 
     def test_resolve_env_test_returns_test_backend(self) -> None:
-        """WIKIFORGE_BACKEND=test resolves to TestBackend (registered backend, no PATH check)."""
-        with patch.dict(os.environ, {"WIKIFORGE_BACKEND": "test"}):
+        """WIKI_STUDIO_BACKEND=test resolves to TestBackend (registered backend, no PATH check)."""
+        with patch.dict(os.environ, {"WIKI_STUDIO_BACKEND": "test"}):
             backend = resolve_backend(None)
         self.assertIsInstance(backend, TestBackend)
 
 
 class TestBackendEnvironmentVariables(unittest.TestCase):
-    """WIKIFORGE_BACKEND is the variable; WIKI_INGEST_BACKEND is accepted with a stderr warning."""
+    """WIKI_STUDIO_BACKEND is the variable; WIKI_INGEST_BACKEND is accepted with a stderr warning."""
 
     def test_deprecated_variable_is_accepted_with_a_warning(self) -> None:
-        env = {k: v for k, v in os.environ.items() if k not in ("WIKIFORGE_BACKEND", "WIKI_INGEST_BACKEND")}
+        env = {k: v for k, v in os.environ.items() if k not in ("WIKI_STUDIO_BACKEND", "WIKI_INGEST_BACKEND")}
         env["WIKI_INGEST_BACKEND"] = "test"
         with patch.dict(os.environ, env, clear=True), contextlib.redirect_stderr(io.StringIO()) as err:
             backend = resolve_backend(None)
         self.assertIsInstance(backend, TestBackend)
         self.assertIn("WIKI_INGEST_BACKEND is deprecated", err.getvalue())
-        self.assertIn("WIKIFORGE_BACKEND", err.getvalue())
+        self.assertIn("WIKI_STUDIO_BACKEND", err.getvalue())
 
     def test_new_variable_wins_over_deprecated_one_silently(self) -> None:
         with (
-            patch.dict(os.environ, {"WIKIFORGE_BACKEND": "test", "WIKI_INGEST_BACKEND": "codex"}),
+            patch.dict(os.environ, {"WIKI_STUDIO_BACKEND": "test", "WIKI_INGEST_BACKEND": "codex"}),
             contextlib.redirect_stderr(io.StringIO()) as err,
         ):
             backend = resolve_backend(None)

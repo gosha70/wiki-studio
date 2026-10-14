@@ -1,6 +1,6 @@
 # Copyright (c) 2026 EGOGE
 # SPDX-License-Identifier: Apache-2.0
-"""wikiforge.promoter: patch-set loading, apply-time guards, the audit archive and idempotency."""
+"""wiki_studio.promoter: patch-set loading, apply-time guards, the audit archive and idempotency."""
 
 from __future__ import annotations
 
@@ -13,9 +13,9 @@ from unittest.mock import patch
 
 from tests.conftest import make_repo_layout
 from tests.test_cli_contract import _proposals_dir
-from wikiforge.errors import PromoteApplyError, PromoteValidationError
-from wikiforge.paths import WikiPaths
-from wikiforge.promoter import promote
+from wiki_studio.errors import PromoteApplyError, PromoteValidationError
+from wiki_studio.paths import WikiPaths
+from wiki_studio.promoter import promote
 
 
 def _plan(prop: Path) -> dict:
@@ -28,7 +28,7 @@ def _write_plan(prop: Path, plan: dict) -> None:
 
 class _LayoutCase(unittest.TestCase):
     def setUp(self) -> None:
-        self._tmp = tempfile.TemporaryDirectory(prefix="wikiforge-promoter-")
+        self._tmp = tempfile.TemporaryDirectory(prefix="wiki_studio-promoter-")
         self.root = make_repo_layout(Path(self._tmp.name), with_schema=True, with_sample=False)
         self.paths = WikiPaths.for_root(self.root)
         self.wiki = self.paths.wiki_dir
@@ -105,7 +105,7 @@ class TestApplyGuards(_LayoutCase):
         self.assertIn("update target does not exist", str(ctx.exception))
 
     def test_path_escape_is_rejected_before_anything_is_written(self) -> None:
-        for bad in ("../escape.md", "/tmp/wikiforge-escape.md"):
+        for bad in ("../escape.md", "/tmp/wiki_studio-escape.md"):
             with self.subTest(path=bad):
                 prop = _proposals_dir(self.root, slug=f"esc-{len(bad)}")
                 plan = _plan(prop)
@@ -115,11 +115,11 @@ class TestApplyGuards(_LayoutCase):
                     promote(prop, self.paths)
                 self.assertIn("path must be relative", str(ctx.exception))
         self.assertFalse((self.wiki.parent / "escape.md").exists())
-        self.assertFalse(Path("/tmp/wikiforge-escape.md").exists())
+        self.assertFalse(Path("/tmp/wiki_studio-escape.md").exists())
 
     def test_apply_time_containment_guard(self) -> None:
-        from wikiforge.promoter import _apply_edit
-        from wikiforge.proposal import PageEdit
+        from wiki_studio.promoter import _apply_edit
+        from wiki_studio.proposal import PageEdit
 
         with self.assertRaises(PromoteValidationError):
             _apply_edit(self.wiki, PageEdit(path="../x.md", action="create", new_content="x", rationale="r"))
@@ -261,7 +261,7 @@ class TestValidationAndFailures(_LayoutCase):
 
     def test_archive_failure_after_commit_is_not_a_promote_failure(self) -> None:
         prop = _proposals_dir(self.root)
-        with patch("wikiforge.promoter.shutil.move", side_effect=OSError("disk full")):
+        with patch("wiki_studio.promoter.shutil.move", side_effect=OSError("disk full")):
             result = promote(prop, self.paths)
         self.assertEqual(len(result.applied_paths), 5)
         self.assertIsNone(result.archived_dir)

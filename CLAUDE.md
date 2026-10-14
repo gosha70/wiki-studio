@@ -1,4 +1,4 @@
-# wikiforge — project instructions
+# wiki-studio — project instructions
 
 Standalone, stdlib-only implementation of the Karpathy-pattern **LLM wiki**:
 a curated markdown knowledge base (`index.md`, `log.md`, typed pages with cited
@@ -15,8 +15,8 @@ poetry install                                   # once
 poetry run pytest -q -p no:cacheprovider          # unit + e2e (test backend, no network)
 poetry run ruff check src/ tests/ && poetry run ruff format --check src/ tests/
 poetry run mypy src/
-poetry run pytest -q --cov=wikiforge --cov-fail-under=80
-poetry run wikiforge --help                        # the CLI
+poetry run pytest -q --cov=wiki_studio --cov-fail-under=80
+poetry run wiki-studio --help                        # the CLI
 poetry build                                     # wheel + sdist
 ```
 
@@ -25,17 +25,17 @@ Format with `poetry run ruff format src/ tests/` before finishing.
 ## Layout
 
 ```
-src/wikiforge/cli.py          verb dispatcher: ingest | promote | query | lint | audit-flush (exit codes 0,2..8 are a contract)
-src/wikiforge/paths.py        WikiPaths: root, wiki_dir, proposals_dir, query log, audit log (the only place paths are resolved)
-src/wikiforge/ingestor*.py    single-source and multi-page ingest (proposal generation; never writes the wiki)
-src/wikiforge/promoter.py     THE ONLY MODULE THAT WRITES INTO THE WIKI DIRECTORY (atomic, lint-gated)
-src/wikiforge/querier.py      index-first question answering over wiki pages
-src/wikiforge/lint.py         structural linter (frontmatter, page_type, slug, placement, links, reachability)
-src/wikiforge/health_lint.py  knowledge-health checks (contradictions, stale claims, weak orphans, cross-links)
-src/wikiforge/audit*.py       ingest log, audit tree validation, audit flush (git)
-src/wikiforge/prompt.py, proposal.py, wiki_state.py, yaml_lite.py, errors.py
-src/wikiforge/backends/       copilot_cli (claude, codex, cursor, pi), json_extract, test (deterministic, for CI)
-src/wikiforge/schema/*.md     page-types, ingest, citation, lint, audit rules, WIKI_MAINTAINER (package data)
+src/wiki_studio/cli.py          verb dispatcher: ingest | promote | query | lint | audit-flush (exit codes 0,2..8 are a contract)
+src/wiki_studio/paths.py        WikiPaths: root, wiki_dir, proposals_dir, query log, audit log (the only place paths are resolved)
+src/wiki_studio/ingestor*.py    single-source and multi-page ingest (proposal generation; never writes the wiki)
+src/wiki_studio/promoter.py     THE ONLY MODULE THAT WRITES INTO THE WIKI DIRECTORY (atomic, lint-gated)
+src/wiki_studio/querier.py      index-first question answering over wiki pages
+src/wiki_studio/lint.py         structural linter (frontmatter, page_type, slug, placement, links, reachability)
+src/wiki_studio/health_lint.py  knowledge-health checks (contradictions, stale claims, weak orphans, cross-links)
+src/wiki_studio/audit*.py       ingest log, audit tree validation, audit flush (git)
+src/wiki_studio/prompt.py, proposal.py, wiki_state.py, yaml_lite.py, errors.py
+src/wiki_studio/backends/       copilot_cli (claude, codex, cursor, pi), json_extract, test (deterministic, for CI)
+src/wiki_studio/schema/*.md     page-types, ingest, citation, lint, audit rules, WIKI_MAINTAINER (package data)
 tests/                     unittest-style tests run by pytest; fixtures under tests/fixtures/
 ```
 
@@ -47,13 +47,13 @@ tests/                     unittest-style tests run by pytest; fixtures under te
 - Every source file starts with `# Copyright (c) 2026 EGOGE` / `# SPDX-License-Identifier: Apache-2.0`.
 - CLI exit codes are stable: 0 ok, 2 backend not found, 3 backend failed, 4 contract violation, 5 source missing, 6 output write failure, 7 path outside root, 8 not implemented.
 - `promoter.py` is the single writer into the wiki directory; a test scans the package for violations.
-- Defaults reproduce `code-copilot-team`'s layout (`knowledge/wiki`, `doc_internal/proposals`) so its wrapper is `exec wikiforge "$@"`; every path is overridable by flag and `WIKIFORGE_*` environment variable.
+- Defaults reproduce `code-copilot-team`'s layout (`knowledge/wiki`, `doc_internal/proposals`) so its wrapper is `exec wiki-studio "$@"`; every path is overridable by flag and `WIKI_STUDIO_*` environment variable.
 - The page schema (frontmatter keys, page types, directories) is a published contract shared with memkernel's `WikiExporter`/`WikiImporter`; changing it needs a decision record in `docs/adr/`.
-- Coverage ≥ 80 percent; CLI tests call `wikiforge.cli.main(argv)` in-process except one subprocess smoke test.
+- Coverage ≥ 80 percent; CLI tests call `wiki_studio.cli.main(argv)` in-process except one subprocess smoke test.
 
 ## Working rules
 
 - Read `specs/<feature-id>/spec.md` and `plan.md` before changing behaviour; keep each change to one phase of `tasks.md`; do not edit `specs/` except artifacts the phase owns.
 - Do not commit, push, or change branches inside an auto-build session; the driver owns git.
-- Update `CHANGELOG.md` under `[Unreleased]` for user-visible changes; bump `pyproject.toml` and `src/wikiforge/__init__.py` together.
+- Update `CHANGELOG.md` under `[Unreleased]` for user-visible changes; bump `pyproject.toml` and `src/wiki_studio/__init__.py` together.
 - Report test failures and skipped steps plainly; never skip or weaken a test to get green.

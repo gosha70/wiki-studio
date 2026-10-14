@@ -40,6 +40,6 @@ jobs:
       - name: Mypy
         run: poetry run mypy src/
       - name: Tests with coverage
-        run: poetry run pytest -q -p no:cacheprovider --cov=wikiforge --cov-fail-under=80
+        run: poetry run pytest -q -p no:cacheprovider --cov=wiki_studio --cov-fail-under=80
       - name: Build check
         run: poetry build

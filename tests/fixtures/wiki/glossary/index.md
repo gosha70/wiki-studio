@@ -15,7 +15,7 @@ sources:
 
 ## Definition
 
-The output of `wikiforge ingest`: a plan and preview files describing edits to several wiki pages, applied atomically by `wikiforge promote`.
+The output of `wiki-studio ingest`: a plan and preview files describing edits to several wiki pages, applied atomically by `wiki-studio promote`.
 
 ## Where it appears
 

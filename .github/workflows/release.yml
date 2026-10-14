@@ -3,12 +3,12 @@
 name: Release to PyPI
 
 # Publishes a tagged version with PyPI trusted publishing (OpenID Connect).
-# One-time setup: on pypi.org add a pending publisher for project `wikiforge`,
-# owner `gosha70`, repository `wikiforge`, workflow `release.yml`, environment
+# One-time setup: on pypi.org add a pending publisher for project `wiki-studio`,
+# owner `gosha70`, repository `wiki-studio`, workflow `release.yml`, environment
 # `pypi`; in this repository create the `pypi` environment.
-# Each release: bump `version` in pyproject.toml and `src/wikiforge/__init__.py`,
+# Each release: bump `version` in pyproject.toml and `src/wiki_studio/__init__.py`,
 # update CHANGELOG.md, merge, then
-#   git tag -a vX.Y.Z -m "wikiforge X.Y.Z" && git push origin vX.Y.Z
+#   git tag -a vX.Y.Z -m "wiki-studio X.Y.Z" && git push origin vX.Y.Z
 
 on:
   push:
@@ -42,8 +42,8 @@ jobs:
           python -m venv /tmp/smoke
           /tmp/smoke/bin/pip install --quiet dist/*.whl
           /tmp/smoke/bin/pip check
-          test "$(/tmp/smoke/bin/wikiforge --version)" = "$(poetry version -s)"
-          /tmp/smoke/bin/wikiforge --help
+          test "$(/tmp/smoke/bin/wiki-studio --version)" = "$(poetry version -s)"
+          /tmp/smoke/bin/wiki-studio --help
       - uses: actions/upload-artifact@v5
         with:
           name: dist
@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/project/wikiforge/
+      url: https://pypi.org/project/wiki-studio/
     permissions:
       id-token: write
     steps:
