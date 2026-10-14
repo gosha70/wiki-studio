@@ -17,7 +17,7 @@
     "max_fix_sessions_per_phase": 2
   },
   "test": {
-    "command": "poetry run ruff check src/ tests/ && poetry run ruff format --check src/ tests/ && poetry run mypy src/ && poetry run pytest -q -p no:cacheprovider --cov=wikistudio --cov-fail-under=80",
+    "command": "poetry run ruff check src/ tests/ && poetry run ruff format --check src/ tests/ && poetry run mypy src/ && poetry run pytest -q -p no:cacheprovider --cov=wiki_studio --cov-fail-under=80",
     "timeout_sec": 900
   },
   "review": {

@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 SAMPLE_INCIDENT = FIXTURES_DIR / "sample-incident.md"
-PACKAGE_ROOT = Path(__file__).resolve().parents[1] / "src" / "wikistudio"
+PACKAGE_ROOT = Path(__file__).resolve().parents[1] / "src" / "wiki_studio"
 
 _INDEX_MD = (
     "---\npage_type: index\nslug: index\ntitle: Test Wiki\nstatus: stable\nlast_reviewed: 2026-05-06\n---\n"
@@ -34,8 +34,8 @@ _LOG_MD = "---\npage_type: log\nslug: log\ntitle: Wiki Log\nstatus: stable\nlast
 
 
 def packaged_schema_dir() -> Path:
-    """Return the on-disk path of the schema documents shipped with wikistudio."""
-    return Path(str(resources.files("wikistudio").joinpath("schema")))
+    """Return the on-disk path of the schema documents shipped with wiki_studio."""
+    return Path(str(resources.files("wiki_studio").joinpath("schema")))
 
 
 def make_repo_layout(
@@ -85,12 +85,12 @@ class CliResult:
 
 
 def run_cli(*argv: str, cwd: Path | None = None) -> CliResult:
-    """Run ``wikistudio.cli.main(argv)`` in-process, capturing stdout and stderr.
+    """Run ``wiki_studio.cli.main(argv)`` in-process, capturing stdout and stderr.
 
     ``SystemExit`` raised by argparse (``--help``, usage errors) is mapped to
     its code so callers can assert on it like a subprocess exit status.
     """
-    from wikistudio.cli import main
+    from wiki_studio.cli import main
 
     out, err = io.StringIO(), io.StringIO()
     ctx = chdir(cwd) if cwd is not None else contextlib.nullcontext()

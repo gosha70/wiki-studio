@@ -6,7 +6,7 @@ import unittest
 from dataclasses import FrozenInstanceError
 from pathlib import Path
 
-from wikistudio.proposal import IngestProposal, IngestRequest, render_proposal_file
+from wiki_studio.proposal import IngestProposal, IngestRequest, render_proposal_file
 
 
 class TestIngestRequest(unittest.TestCase):
@@ -144,7 +144,7 @@ class TestRenderProposalFile(unittest.TestCase):
         is ambiguous YAML — the second colon could be parsed as a nested key.
         Single-quoted scalars treat the value verbatim.
         """
-        from wikistudio.prompt import _parse_frontmatter
+        from wiki_studio.prompt import _parse_frontmatter
 
         proposal = IngestProposal(
             disposition="reject",
@@ -170,7 +170,7 @@ class TestRenderProposalFile(unittest.TestCase):
 
     def test_reason_with_single_quote_escapes_correctly(self) -> None:
         """A reason containing a single quote must double the quote per YAML spec."""
-        from wikistudio.prompt import _parse_frontmatter
+        from wiki_studio.prompt import _parse_frontmatter
 
         proposal = IngestProposal(
             disposition="reject",

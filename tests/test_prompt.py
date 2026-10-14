@@ -8,12 +8,12 @@ import unittest
 from pathlib import Path
 
 from tests.conftest import make_repo_layout
-from wikistudio.errors import ContractViolationError
-from wikistudio.paths import WikiPaths
-from wikistudio.prompt import compose_prompt, load_schema_files, parse_response
+from wiki_studio.errors import ContractViolationError
+from wiki_studio.paths import WikiPaths
+from wiki_studio.prompt import compose_prompt, load_schema_files, parse_response
 
 # A project root with no schema/ of its own, so load_schema_files falls back
-# to the documents packaged with wikistudio. Built in setUpModule.
+# to the documents packaged with wiki_studio. Built in setUpModule.
 _TMP: tempfile.TemporaryDirectory[str] | None = None
 _REPO_ROOT = Path()
 _PATHS = WikiPaths.for_root(_REPO_ROOT)
@@ -21,7 +21,7 @@ _PATHS = WikiPaths.for_root(_REPO_ROOT)
 
 def setUpModule() -> None:
     global _TMP, _REPO_ROOT, _PATHS
-    _TMP = tempfile.TemporaryDirectory(prefix="wikistudio-prompt-")
+    _TMP = tempfile.TemporaryDirectory(prefix="wiki_studio-prompt-")
     _REPO_ROOT = make_repo_layout(Path(_TMP.name), with_sample=False)
     _PATHS = WikiPaths.for_root(_REPO_ROOT)
 

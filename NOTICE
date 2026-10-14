@@ -8,11 +8,11 @@ This product includes code extracted from gosha70/code-copilot-team
 License, Version 2.0 and copyright (c) 2026 EGOGE:
 
   - scripts/wiki_ingest/ (the ingest, promote, query, lint and audit-flush
-    pipeline, its backends and its tests), now src/wikistudio/ and tests/
+    pipeline, its backends and its tests), now src/wiki_studio/ and tests/
   - knowledge/wiki/schema/ (the page schema documents), now
-    src/wikistudio/schema/
+    src/wiki_studio/schema/
   - the checks of knowledge/wiki/scripts/lint-wiki.sh, reimplemented in
-    src/wikistudio/lint.py
+    src/wiki_studio/lint.py
 
 at commit df2c29212e3bed8b547f47bf7976105a6a4678c0 of that repository.
 

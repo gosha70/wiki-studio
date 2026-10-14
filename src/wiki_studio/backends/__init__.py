@@ -4,10 +4,10 @@
 #
 # Backend resolution precedence (first match wins):
 #   1. cli_flag argument to resolve_backend()  — most specific signal
-#   2. WIKISTUDIO_BACKEND environment variable     — developer override
+#   2. WIKI_STUDIO_BACKEND environment variable     — developer override
 #      (WIKI_INGEST_BACKEND is still accepted, with a deprecation warning)
 #   3. auto_detect()                            — first CLI found on PATH
-#      (WIKISTUDIO_ENABLE_PI=1 adds pi to the probe order; explicit --backend pi
+#      (WIKI_STUDIO_ENABLE_PI=1 adds pi to the probe order; explicit --backend pi
 #      needs no flag)
 #
 # Registered backends (by name):
@@ -31,22 +31,22 @@ if TYPE_CHECKING:
     from ..ingestor import Backend
 
 # Environment variables read by resolve_backend() and auto_detect().
-ENV_BACKEND = "WIKISTUDIO_BACKEND"
+ENV_BACKEND = "WIKI_STUDIO_BACKEND"
 ENV_BACKEND_DEPRECATED = "WIKI_INGEST_BACKEND"
-ENV_ENABLE_PI = "WIKISTUDIO_ENABLE_PI"
+ENV_ENABLE_PI = "WIKI_STUDIO_ENABLE_PI"
 
 _REGISTRY: dict[str, type] = {
     "test": TestBackend,
 }
 
 # Every valid copilot-CLI backend name. Explicit `--backend <name>` (or the
-# WIKISTUDIO_BACKEND env override) accepts any of these first-class — pi
+# WIKI_STUDIO_BACKEND env override) accepts any of these first-class — pi
 # included. Auto-detect is a separate, opt-in concern (see below).
 _COPILOT_NAMES: tuple[str, ...] = ("claude", "codex", "cursor", "pi")
 
 
 def _pi_enabled() -> bool:
-    """True iff ``WIKISTUDIO_ENABLE_PI=1``.
+    """True iff ``WIKI_STUDIO_ENABLE_PI=1``.
 
     PATH presence of pi-code is NOT sufficient; auto-detect only considers pi
     when the user opted in. Explicit ``--backend pi`` is unaffected.
@@ -56,7 +56,7 @@ def _pi_enabled() -> bool:
 
 def _auto_detect_order() -> tuple[str, ...]:
     """Auto-detect probe order. pi is inserted (claude → codex → pi → cursor)
-    ONLY when WIKISTUDIO_ENABLE_PI=1; explicit --backend pi is unaffected."""
+    ONLY when WIKI_STUDIO_ENABLE_PI=1; explicit --backend pi is unaffected."""
     order = ["claude", "codex"]
     if _pi_enabled():
         order.append("pi")
@@ -96,7 +96,7 @@ def auto_detect() -> Backend:
 
 
 def _backend_from_env() -> str | None:
-    """The backend named by WIKISTUDIO_BACKEND, else by the deprecated WIKI_INGEST_BACKEND (with a stderr warning)."""
+    """The backend named by WIKI_STUDIO_BACKEND, else by the deprecated WIKI_INGEST_BACKEND (with a stderr warning)."""
     value = os.environ.get(ENV_BACKEND)
     if value:
         return value
@@ -115,7 +115,7 @@ def resolve_backend(cli_flag: str | None) -> Backend:
 
     Precedence:
       1. cli_flag (from --backend CLI argument) — if provided, use it.
-      2. WIKISTUDIO_BACKEND environment variable (or the deprecated
+      2. WIKI_STUDIO_BACKEND environment variable (or the deprecated
          WIKI_INGEST_BACKEND) — if set, use it.
       3. auto_detect() — probe PATH for claude, codex, (pi), cursor.
 

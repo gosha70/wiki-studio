@@ -6,7 +6,7 @@ Every verb and every library function takes a :class:`WikiPaths` instead of
 spelling directory names itself. The defaults reproduce the original
 code-copilot-team layout (``knowledge/wiki`` and ``doc_internal`` under the
 repository root), so an unflagged run is byte-identical to the old wrapper;
-each location can be overridden by a CLI flag or an ``WIKISTUDIO_*`` variable.
+each location can be overridden by a CLI flag or an ``WIKI_STUDIO_*`` variable.
 
 Precedence, highest first: CLI flag, environment variable, default.
 """
@@ -23,9 +23,9 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
 
 # Environment variables (the CLI flags of the same name take precedence).
-ENV_ROOT = "WIKISTUDIO_ROOT"
-ENV_WIKI_DIR = "WIKISTUDIO_WIKI_DIR"
-ENV_PROPOSALS_DIR = "WIKISTUDIO_PROPOSALS_DIR"
+ENV_ROOT = "WIKI_STUDIO_ROOT"
+ENV_WIKI_DIR = "WIKI_STUDIO_WIKI_DIR"
+ENV_PROPOSALS_DIR = "WIKI_STUDIO_PROPOSALS_DIR"
 
 # Defaults, relative to the root. These names are the documented layout and
 # must not be spelled anywhere else in the package.
@@ -132,7 +132,7 @@ class WikiPaths:
         env: Mapping[str, str] | None = None,
         cwd: Path | None = None,
     ) -> WikiPaths:
-        """Resolve the layout from flags, then ``WIKISTUDIO_*`` variables, then defaults.
+        """Resolve the layout from flags, then ``WIKI_STUDIO_*`` variables, then defaults.
 
         Explicit values (flag or variable) that are relative are taken relative
         to ``cwd``; defaults are relative to the resolved root.

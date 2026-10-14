@@ -2,12 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 # wiki-studio.cli — verb-dispatching CLI entrypoint for the wiki pipeline.
 #
-# A thin argument parser over wikistudio.api: each verb resolves one WikiPaths
-# (from --root / --wiki-dir / --proposals-dir, the WIKISTUDIO_* variables, or the
+# A thin argument parser over wiki_studio.api: each verb resolves one WikiPaths
+# (from --root / --wiki-dir / --proposals-dir, the WIKI_STUDIO_* variables, or the
 # defaults), calls the matching library function and prints its result.
 # Exceptions become exit codes in exactly one place, ``_report``.
 #
-# Invoked as ``wikistudio <verb> ...`` (console script) or ``python -m wikistudio``.
+# Invoked as ``wiki_studio <verb> ...`` (console script) or ``python -m wiki_studio``.
 #
 # Exit codes (stable across v1; exit code 7 added in Phase 0):
 #   0 — successful run; proposal file written (accept or reject), or
@@ -304,7 +304,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
 
 
 def _paths_from_args(args: argparse.Namespace) -> WikiPaths:
-    """Resolve the layout once per run: flags, then WIKISTUDIO_* variables, then defaults."""
+    """Resolve the layout once per run: flags, then WIKI_STUDIO_* variables, then defaults."""
     return WikiPaths.resolve(
         root=getattr(args, "root", None),
         wiki_dir=getattr(args, "wiki_dir", None),
@@ -312,7 +312,7 @@ def _paths_from_args(args: argparse.Namespace) -> WikiPaths:
     )
 
 
-# ── Verb implementations (print only; the work is in wikistudio.api) ──
+# ── Verb implementations (print only; the work is in wiki_studio.api) ──
 
 
 def _do_ingest(args: argparse.Namespace) -> int:
@@ -449,14 +449,14 @@ _GLOBAL_VALUE_OPTIONS = ("--root", "--wiki-dir", "--proposals-dir")
 
 
 def _inject_legacy_v1_prefix(argv: list[str]) -> list[str]:
-    """Backwards-compat shim for direct ``python3 -m wikistudio <source>`` callers.
+    """Backwards-compat shim for direct ``python3 -m wiki_studio <source>`` callers.
 
     Phase 0 introduced verb dispatch. Pre-Phase-0 callers (and the e2e
-    test suite) invoke ``python3 -m wikistudio <source> [--backend ...]``
+    test suite) invoke ``python3 -m wiki_studio <source> [--backend ...]``
     without any verb. Detect that shape — first non-flag arg is not a
     known verb — and inject ``ingest --legacy-single-source`` so the v1
     behavior is preserved at the Python entrypoint as well as at the
-    ``wikistudio`` console script.
+    ``wiki_studio`` console script.
     """
     if not argv:
         return argv

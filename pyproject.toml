@@ -23,8 +23,8 @@ classifiers = [
     "Topic :: Software Development :: Documentation",
     "Topic :: Text Processing :: Markup :: Markdown",
 ]
-packages = [{ include = "wikistudio", from = "src" }]
-include = [{ path = "src/wikistudio/schema/*.md", format = ["sdist", "wheel"] }]
+packages = [{ include = "wiki_studio", from = "src" }]
+include = [{ path = "src/wiki_studio/schema/*.md", format = ["sdist", "wheel"] }]
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.14"
@@ -36,7 +36,7 @@ ruff = "^0.12"
 mypy = "^1.14"
 
 [tool.poetry.scripts]
-wiki-studio = "wikistudio.cli:main"
+wiki-studio = "wiki_studio.cli:main"
 
 [build-system]
 requires = ["poetry-core>=2.0.0"]

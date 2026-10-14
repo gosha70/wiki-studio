@@ -9,9 +9,9 @@ import unittest
 from pathlib import Path
 
 from tests.conftest import FIXTURES_DIR, run_cli
-from wikistudio import api, yaml_lite
-from wikistudio.lint import VALID_PAGE_TYPES, lint_wiki, list_pages
-from wikistudio.paths import WikiPaths
+from wiki_studio import api, yaml_lite
+from wiki_studio.lint import VALID_PAGE_TYPES, lint_wiki, list_pages
+from wiki_studio.paths import WikiPaths
 
 FIXTURE_WIKI = FIXTURES_DIR / "wiki"
 

@@ -1,17 +1,17 @@
 # Copyright (c) 2026 EGOGE
 # SPDX-License-Identifier: Apache-2.0
-"""wikistudio.api — the library surface: ``ingest``, ``promote``, ``query``, ``lint``, ``audit_flush``.
+"""wiki_studio.api — the library surface: ``ingest``, ``promote``, ``query``, ``lint``, ``audit_flush``.
 
-Each function takes a :class:`~wikistudio.paths.WikiPaths`, returns a typed result
-and raises the exceptions in :mod:`wikistudio.errors`. Nothing here prints; the
-CLI in :mod:`wikistudio.cli` is a thin parser over these functions that renders
+Each function takes a :class:`~wiki_studio.paths.WikiPaths`, returns a typed result
+and raises the exceptions in :mod:`wiki_studio.errors`. Nothing here prints; the
+CLI in :mod:`wiki_studio.cli` is a thin parser over these functions that renders
 results and maps exceptions to exit codes.
 
 Example::
 
     from pathlib import Path
-    from wikistudio import api
-    from wikistudio.paths import WikiPaths
+    from wiki_studio import api
+    from wiki_studio.paths import WikiPaths
 
     paths = WikiPaths.for_root(Path("."))
     result = api.ingest(Path("notes/incident.md"), paths, backend="test")
@@ -210,7 +210,7 @@ def ingest(
     draft body (legacy) or marks the audit record (multi).
 
     Raises ``ValueError`` when ``check`` and ``dry_run`` are combined, and the
-    :mod:`wikistudio.errors` exceptions for everything else.
+    :mod:`wiki_studio.errors` exceptions for everything else.
     """
     if check and dry_run:
         raise ValueError("--check and --dry-run are mutually exclusive")

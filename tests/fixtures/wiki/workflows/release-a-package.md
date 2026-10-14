@@ -7,7 +7,7 @@ last_reviewed: 2026-10-12
 memkernel_ref: mem-0003
 memory_type: procedure
 sources:
-  - url: "memkernel://wikistudio/mem-0003"
+  - url: "memkernel://wiki_studio/mem-0003"
     retrieved: 2026-10-12
 ---
 

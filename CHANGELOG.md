@@ -9,38 +9,38 @@ uses [Semantic Versioning](https://semver.org/).
 ## [0.1.0] — 2026-10-12
 
 The extraction release. The maintainer that lived in
-`code-copilot-team/scripts/wiki_ingest` becomes the `wikistudio` package with
+`code-copilot-team/scripts/wiki_ingest` becomes the `wiki_studio` package with
 the `wiki-studio` console script. Behaviour, verbs, flags and exit codes are
 unchanged; the paths are decoupled.
 
 ### Moved
 
 - Every module of `code-copilot-team/scripts/wiki_ingest/` at commit
-  `df2c29212e3bed8b547f47bf7976105a6a4678c0` is now `src/wikistudio/`:
+  `df2c29212e3bed8b547f47bf7976105a6a4678c0` is now `src/wiki_studio/`:
   `__main__.py` became `cli.py` (a two-line `__main__.py` remains for
-  `python -m wikistudio`); the other modules keep their names, including the
+  `python -m wiki_studio`); the other modules keep their names, including the
   `backends/` package with `copilot_cli.py`, `json_extract.py` and `test.py`.
 - The six schema documents from `code-copilot-team/knowledge/wiki/schema/`
-  ship as package data under `wikistudio/schema/`.
+  ship as package data under `wiki_studio/schema/`.
 - The 240 tests moved to `tests/` and pass in-process (see "Tests" below).
 
 ### Added
 
-- `wikistudio.paths.WikiPaths`: every location (`root`, `wiki_dir`,
+- `wiki_studio.paths.WikiPaths`: every location (`root`, `wiki_dir`,
   `proposals_dir`, `query_log`, `audit_log`, `schema_dir`) resolved once
   from the global options `--root`, `--wiki-dir`, `--proposals-dir`, then
-  `WIKISTUDIO_ROOT`, `WIKISTUDIO_WIKI_DIR`, `WIKISTUDIO_PROPOSALS_DIR`, then the
+  `WIKI_STUDIO_ROOT`, `WIKI_STUDIO_WIKI_DIR`, `WIKI_STUDIO_PROPOSALS_DIR`, then the
   defaults (git toplevel of the current directory; `knowledge/wiki`;
   `doc_internal/proposals`). The defaults reproduce the original layout
   byte for byte. The options are accepted before or after the verb.
-- `wikistudio.lint`: the six structural checks of `lint-wiki.sh` in Python,
+- `wiki_studio.lint`: the six structural checks of `lint-wiki.sh` in Python,
   with the same messages; `lint` and `promote` run it in-process.
-- `wikistudio.api`: `ingest`, `promote`, `query`, `lint`, `audit_flush` taking
+- `wiki_studio.api`: `ingest`, `promote`, `query`, `lint`, `audit_flush` taking
   a `WikiPaths` and returning typed results; `cli.py` is a thin parser over
   them and maps exceptions to exit codes in one place.
-- `wikistudio.errors.PathOutsideRootError` (exit 7) so the library can report
+- `wiki_studio.errors.PathOutsideRootError` (exit 7) so the library can report
   the confinement refusal the CLI always had.
-- `WIKISTUDIO_BACKEND` names the default backend; `WIKISTUDIO_ENABLE_PI=1` adds
+- `WIKI_STUDIO_BACKEND` names the default backend; `WIKI_STUDIO_ENABLE_PI=1` adds
   `pi` to the auto-detect order.
 - `wiki-studio --version`.
 - A fixture wiki (`tests/fixtures/wiki/`) with one page of every page type
@@ -54,7 +54,7 @@ unchanged; the paths are decoupled.
 ### Changed
 
 - The distribution, console script and repository are named `wiki-studio`
-  (import `wikistudio`, variables `WIKISTUDIO_*`). The bundle's earlier
+  (import `wiki_studio`, variables `WIKI_STUDIO_*`). The bundle's earlier
   working names were `aiwiki` (`ai-wiki` is taken on PyPI) and `wikiforge`
   (PyPI rejects it as too similar to the existing `wiki-forge`). The GitHub
   repository was renamed to `gosha70/wiki-studio` on 2026-10-13.
@@ -64,7 +64,7 @@ unchanged; the paths are decoupled.
   meaningless once installed) but from the working directory's git
   toplevel.
 - The `pi` backend no longer reads `shared/capabilities/pi.yaml`;
-  `--backend pi` works as before, auto-detection needs `WIKISTUDIO_ENABLE_PI=1`.
+  `--backend pi` works as before, auto-detection needs `WIKI_STUDIO_ENABLE_PI=1`.
 - Rendered prompts label wiki pages with the root-relative wiki directory
   (`knowledge/wiki/...` by default) or the directory name when the wiki is
   outside the root.
@@ -78,7 +78,7 @@ unchanged; the paths are decoupled.
 ### Deprecated
 
 - `WIKI_INGEST_BACKEND`: still honoured, prints a one-line warning on
-  stderr; use `WIKISTUDIO_BACKEND`.
+  stderr; use `WIKI_STUDIO_BACKEND`.
 
 ### Removed
 
@@ -94,9 +94,9 @@ unchanged; the paths are decoupled.
 re-homed:
 
 - `tests/test_e2e.py::TestE2EBashEntrypoint::test_bash_entrypoint_runs_test_backend`
-  is now `TestE2EModuleEntryPoint::test_python_m_wikistudio_help_lists_verbs`,
+  is now `TestE2EModuleEntryPoint::test_python_m_wiki_studio_help_lists_verbs`,
   the one subprocess test (`python -m wiki-studio --help`); every other CLI test
-  calls `wikistudio.cli.main(argv)` in-process inside a temporary layout.
+  calls `wiki_studio.cli.main(argv)` in-process inside a temporary layout.
 - `tests/test_e2e.py::TestE2ESingleWriterInvariant::test_only_promoter_writes_to_knowledge_wiki`
   is now `test_only_promoter_writes_to_wiki_dir` and keys on `wiki_dir`.
 - `tests/test_audit.py::TestLintWikiShellAuditExclusion` (two tests of the
@@ -104,7 +104,7 @@ re-homed:
 - `tests/test_pi_wiki_backend.py::test_capability_reader_reflects_the_real_pi_yaml`
   is now `test_pi_auto_detect_is_gated_by_environment_flag`; the patched
   symbol `_pi_capability_enabled` is `_pi_enabled`.
-- `tests/test_copilot_cli.py` reads `WIKISTUDIO_BACKEND`; the deprecated alias
+- `tests/test_copilot_cli.py` reads `WIKI_STUDIO_BACKEND`; the deprecated alias
   has its own tests in `TestBackendEnvironmentVariables`.
 - `tests/test_prompt.py` and `tests/test_ingestor_with_test_backend.py`
   build a temporary layout instead of locating the repository.
@@ -144,7 +144,7 @@ for 0.2 rather than changed in the extraction release:
   returns a non-string, non-dict value would raise inside the health pass.
 - The cross-link heuristic strips frontmatter by searching for the first
   `\n---` after the opening marker.
-- The legacy argv shim (`python -m wikistudio <source>` without a verb) treats
+- The legacy argv shim (`python -m wiki_studio <source>` without a verb) treats
   the value of a flag other than the three global options as a positional
   when deciding whether a verb is present; the documented shapes work.
 

@@ -1,6 +1,6 @@
 # Copyright (c) 2026 EGOGE
 # SPDX-License-Identifier: Apache-2.0
-"""wikistudio.lint — the six structural checks (FR-005), including the ports of the former shell-linter tests."""
+"""wiki_studio.lint — the six structural checks (FR-005), including the ports of the former shell-linter tests."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from wikistudio.lint import EXCLUDED_DIRS, PAGE_TYPE_DIRS, VALID_PAGE_TYPES, lint_wiki, list_pages, md_links
+from wiki_studio.lint import EXCLUDED_DIRS, PAGE_TYPE_DIRS, VALID_PAGE_TYPES, lint_wiki, list_pages, md_links
 
 _FM = (
     "---\npage_type: {page_type}\nslug: {slug}\ntitle: {title}\nstatus: stable\nlast_reviewed: 2026-05-06\n{extra}---\n"
@@ -57,7 +57,7 @@ def _clean_wiki(wiki: Path) -> None:
 
 class _WikiCase(unittest.TestCase):
     def setUp(self) -> None:
-        self._tmp = tempfile.TemporaryDirectory(prefix="wikistudio-lint-")
+        self._tmp = tempfile.TemporaryDirectory(prefix="wiki_studio-lint-")
         self.root = Path(self._tmp.name)
         self.wiki = self.root / "knowledge" / "wiki"
         self.wiki.mkdir(parents=True)

@@ -3,7 +3,7 @@
 # wiki-studio.health_lint — Phase-4 knowledge-health lint.
 #
 # Four checks that go beyond the structural linter
-# (wikistudio.lint, which validates frontmatter
+# (wiki_studio.lint, which validates frontmatter
 # shape, slug uniqueness, intra-wiki link integrity, structural
 # orphan-from-index). Knowledge-health checks the *meaning* of the
 # wiki:

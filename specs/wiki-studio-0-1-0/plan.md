@@ -40,7 +40,7 @@ code-copilot-team hosts a working Karpathy-pattern wiki maintainer under
 `scripts/wiki_ingest` (5,691 lines, standard library only, 240 tests) with the
 page schema under `knowledge/wiki/schema` and a bash structural linter. memkernel
 writes pages in that schema without importing anything, and document-assistant
-wants the same tool. 0.1.0 moves the code into this repository as the `wikistudio`
+wants the same tool. 0.1.0 moves the code into this repository as the `wiki_studio`
 package with a `wiki-studio` CLI, replaces the hard-coded `knowledge/wiki` and
 `doc_internal` paths with one `WikiPaths` object, ports the bash linter to Python,
 removes the two code-copilot-team couplings (the `pi` capability file and the
@@ -74,7 +74,7 @@ release workflow. Behaviour, flags and exit codes do not change.
 ### ADR-2: One `WikiPaths` object replaces `repo_root`
 
 **Context**: Eleven functions take `repo_root` and join `knowledge/wiki` or `doc_internal` themselves; the bash wrapper set `PYTHONPATH`.
-**Decision**: `paths.py` resolves flags, `WIKISTUDIO_*` variables and defaults once; every function takes `WikiPaths`. Defaults equal the old layout, so an unflagged run is byte-identical.
+**Decision**: `paths.py` resolves flags, `WIKI_STUDIO_*` variables and defaults once; every function takes `WikiPaths`. Defaults equal the old layout, so an unflagged run is byte-identical.
 **Consequences**: code-copilot-team's wrapper becomes `exec wiki-studio "$@"`; memkernel can point the tool at `MEMKERNEL_WIKI_DIR`.
 
 ### ADR-3: Structural lint in Python, bash script not shipped
@@ -92,23 +92,23 @@ release workflow. Behaviour, flags and exit codes do not change.
 ### ADR-5: Distribution `wiki-studio`, CLI `wiki-studio`
 
 **Context**: the repository started as `ai-wiki`; `ai-wiki`, `llmwiki`, `agent-wiki` and `memforge` are taken on PyPI, a memory-flavoured name would collide with memkernel's role, and PyPI rejects `wikiforge` as too similar to the existing `wiki-forge` (another LLM-wiki project). `wiki-studio` is free on PyPI in every spelling, matches `rlm-studio`, and names the knowledge layer agents build.
-**Decision**: repository, distribution and console script are `wiki-studio`; the import name is `wikistudio` because module names cannot contain hyphens; the PyPI name is held by a `0.0.1` placeholder release until 0.1.0 replaces it.
-**Consequences**: `pip install wiki-studio`, `import wikistudio`, `wiki-studio <verb>`; one name everywhere except the import.
+**Decision**: repository, distribution and console script are `wiki-studio`; the import name is `wiki_studio` because module names cannot contain hyphens; the PyPI name is held by a `0.0.1` placeholder release until 0.1.0 replaces it.
+**Consequences**: `pip install wiki-studio`, `import wiki_studio`, `wiki-studio <verb>`; one name everywhere except the import.
 
 ## Project Structure
 
 ```
 pyproject.toml                       — poetry, wiki-studio 0.1.0, console script wiki-studio, no runtime deps
-src/wikistudio/__init__.py               — __version__
-src/wikistudio/__main__.py               — python -m wikistudio
-src/wikistudio/cli.py                    — verb parser, exit-code mapping (from __main__.py)
-src/wikistudio/api.py                    — ingest/promote/query/lint/audit_flush as functions
-src/wikistudio/paths.py                  — WikiPaths
-src/wikistudio/lint.py                   — structural linter (from lint-wiki.sh)
-src/wikistudio/{ingestor,ingestor_multi,promoter,querier,proposal,prompt,wiki_state,yaml_lite,errors}.py
-src/wikistudio/{audit,audit_flush,audit_lint,health_lint}.py
-src/wikistudio/backends/{__init__,copilot_cli,json_extract,test}.py
-src/wikistudio/schema/*.md               — package data
+src/wiki_studio/__init__.py               — __version__
+src/wiki_studio/__main__.py               — python -m wiki_studio
+src/wiki_studio/cli.py                    — verb parser, exit-code mapping (from __main__.py)
+src/wiki_studio/api.py                    — ingest/promote/query/lint/audit_flush as functions
+src/wiki_studio/paths.py                  — WikiPaths
+src/wiki_studio/lint.py                   — structural linter (from lint-wiki.sh)
+src/wiki_studio/{ingestor,ingestor_multi,promoter,querier,proposal,prompt,wiki_state,yaml_lite,errors}.py
+src/wiki_studio/{audit,audit_flush,audit_lint,health_lint}.py
+src/wiki_studio/backends/{__init__,copilot_cli,json_extract,test}.py
+src/wiki_studio/schema/*.md               — package data
 tests/                               — moved suite + test_paths.py, test_lint.py, test_api.py, test_package_boundaries.py
 tests/fixtures/{sample-incident.md,stub-backend.sh,stub-backend-fail.sh,wiki_audit/,wiki/}
 docs/consumers.md                    — recipes for code-copilot-team, memkernel, document-assistant
@@ -120,7 +120,7 @@ README.md, CHANGELOG.md, NOTICE, SECURITY.md, LICENSE
 
 ### Task 1: Package scaffold and mechanical move (US1)
 
-**Files**: `pyproject.toml`, `src/wikistudio/**`, `tests/**`, `.github/workflows/ci.yml`
+**Files**: `pyproject.toml`, `src/wiki_studio/**`, `tests/**`, `.github/workflows/ci.yml`
 **Acceptance criteria**:
 - [ ] FR-001, FR-002, FR-003 (packaging part), FR-009 (move part), FR-013 (ci.yml), FR-015
 - [ ] `poetry run pytest -q` passes with every moved test
@@ -128,21 +128,21 @@ README.md, CHANGELOG.md, NOTICE, SECURITY.md, LICENSE
 
 ### Task 2: Paths, Python linter, backend decoupling (US2)
 
-**Files**: `src/wikistudio/paths.py`, `src/wikistudio/lint.py`, `src/wikistudio/backends/__init__.py`, every module that took `repo_root`, tests
+**Files**: `src/wiki_studio/paths.py`, `src/wiki_studio/lint.py`, `src/wiki_studio/backends/__init__.py`, every module that took `repo_root`, tests
 **Acceptance criteria**:
 - [ ] FR-004, FR-005, FR-006, FR-007, FR-016 implemented
 - [ ] Boundary test passes; unflagged run reproduces the old layout
 
 ### Task 3: Library API, fixture wiki, consumer guide (US3)
 
-**Files**: `src/wikistudio/api.py`, `src/wikistudio/cli.py`, `tests/fixtures/wiki/**`, `tests/test_api.py`, `docs/consumers.md`
+**Files**: `src/wiki_studio/api.py`, `src/wiki_studio/cli.py`, `tests/fixtures/wiki/**`, `tests/test_api.py`, `docs/consumers.md`
 **Acceptance criteria**:
 - [ ] FR-008, FR-010, FR-011 implemented
 - [ ] memkernel-shaped pages lint clean
 
 ### Task 4: Release hygiene (US4)
 
-**Files**: `README.md`, `CHANGELOG.md`, `NOTICE`, `SECURITY.md`, `.github/workflows/release.yml`, `pyproject.toml`, `src/wikistudio/__init__.py`
+**Files**: `README.md`, `CHANGELOG.md`, `NOTICE`, `SECURITY.md`, `.github/workflows/release.yml`, `pyproject.toml`, `src/wiki_studio/__init__.py`
 **Acceptance criteria**:
 - [ ] FR-012, FR-013 (release.yml), FR-014 satisfied
 - [ ] `poetry build` and a clean-venv smoke run pass; coverage ≥ 80 percent

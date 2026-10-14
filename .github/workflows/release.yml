@@ -6,7 +6,7 @@ name: Release to PyPI
 # One-time setup: on pypi.org add a pending publisher for project `wiki-studio`,
 # owner `gosha70`, repository `wiki-studio`, workflow `release.yml`, environment
 # `pypi`; in this repository create the `pypi` environment.
-# Each release: bump `version` in pyproject.toml and `src/wikistudio/__init__.py`,
+# Each release: bump `version` in pyproject.toml and `src/wiki_studio/__init__.py`,
 # update CHANGELOG.md, merge, then
 #   git tag -a vX.Y.Z -m "wiki-studio X.Y.Z" && git push origin vX.Y.Z
 

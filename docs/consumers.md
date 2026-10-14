@@ -1,10 +1,10 @@
 # Consumer recipes
 
-`wikistudio` ships one CLI (`wiki-studio`) and one library module (`wikistudio.api`).
+`wiki_studio` ships one CLI (`wiki-studio`) and one library module (`wiki_studio.api`).
 Every location it reads or writes resolves through one object,
 `WikiPaths`, from (highest precedence first) the global options
 `--root`, `--wiki-dir`, `--proposals-dir`, the environment variables
-`WIKISTUDIO_ROOT`, `WIKISTUDIO_WIKI_DIR`, `WIKISTUDIO_PROPOSALS_DIR`, and the defaults:
+`WIKI_STUDIO_ROOT`, `WIKI_STUDIO_WIKI_DIR`, `WIKI_STUDIO_PROPOSALS_DIR`, and the defaults:
 the git toplevel of the current directory, `knowledge/wiki` and
 `doc_internal/proposals` under it. With no flags and no variables the
 layout is byte-identical to the original code-copilot-team layout.
@@ -44,9 +44,9 @@ can stay for direct use until it is retired.
 
 Two renames, both backward compatible:
 
-- `WIKI_INGEST_BACKEND` is now `WIKISTUDIO_BACKEND`. The old name still works
+- `WIKI_INGEST_BACKEND` is now `WIKI_STUDIO_BACKEND`. The old name still works
   and prints a one-line deprecation warning on stderr.
-- `pi` is auto-detected only with `WIKISTUDIO_ENABLE_PI=1` (the
+- `pi` is auto-detected only with `WIKI_STUDIO_ENABLE_PI=1` (the
   `shared/capabilities/pi.yaml` lookup is gone). `--backend pi` works as
   before.
 
@@ -64,7 +64,7 @@ directory and lint after every export:
 
 ```bash
 export MEMKERNEL_WIKI_DIR="$PWD/knowledge/wiki"
-export WIKISTUDIO_WIKI_DIR="$MEMKERNEL_WIKI_DIR"
+export WIKI_STUDIO_WIKI_DIR="$MEMKERNEL_WIKI_DIR"
 
 memkernel wiki_export            # writes draft pages, index and log entries
 wiki-studio lint                     # zero violations expected
@@ -82,8 +82,8 @@ From Python:
 ```python
 import os
 from pathlib import Path
-from wikistudio import api
-from wikistudio.paths import WikiPaths
+from wiki_studio import api
+from wiki_studio.paths import WikiPaths
 
 paths = WikiPaths.for_root(Path.cwd(), wiki_dir=Path(os.environ["MEMKERNEL_WIKI_DIR"]))
 result = api.lint(paths, health=True)
@@ -96,8 +96,8 @@ for violation in result.violations:
 A wiki at a custom path, outside `knowledge/wiki`:
 
 ```bash
-export WIKISTUDIO_WIKI_DIR="$HOME/assistant/kb"
-export WIKISTUDIO_PROPOSALS_DIR="$HOME/assistant/inbox"
+export WIKI_STUDIO_WIKI_DIR="$HOME/assistant/kb"
+export WIKI_STUDIO_PROPOSALS_DIR="$HOME/assistant/inbox"
 
 wiki-studio ingest notes/2026-10-12-meeting.md --backend claude
 wiki-studio promote "$HOME/assistant/inbox/2026-10-12-2026-10-12-meeting"

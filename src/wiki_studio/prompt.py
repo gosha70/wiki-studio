@@ -49,7 +49,7 @@ _KEBAB_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 
 def _read_packaged_schema(name: str) -> str:
-    """Read one schema document shipped as package data under ``wikistudio/schema/``."""
+    """Read one schema document shipped as package data under ``wiki_studio/schema/``."""
     return resources.files(__package__).joinpath("schema", f"{name}.md").read_text(encoding="utf-8")
 
 
@@ -57,7 +57,7 @@ def load_schema_files(paths: WikiPaths) -> dict[str, str]:
     """Load ingest-rules, page-types, citation-rules. Return {name: content}.
 
     A document present under the project's own ``<wiki>/schema/`` wins; any
-    document missing there comes from the copy packaged with wikistudio.
+    document missing there comes from the copy packaged with wiki_studio.
     """
     result: dict[str, str] = {}
     for name in _SCHEMA_NAMES:
