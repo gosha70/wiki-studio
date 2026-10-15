@@ -25,7 +25,9 @@ the edit model (:class:`PageEdit`, :data:`PageAction`, :class:`WikiPatchSet`)
 and the patch-set directory format that :func:`propose` writes and
 :func:`promote` reads (``docs/patch-set-format.md``) are public and follow
 semantic versioning: fields and keywords are only removed or renamed in a
-major version; a minor version may add fields with defaults.
+major version; a minor version may add fields with defaults. ``__all__``
+names that surface; the set of names a star-import brings in is not part of
+the contract.
 """
 
 from __future__ import annotations
@@ -74,11 +76,16 @@ __all__ = [
     "ALLOW_OUT_OF_REPO_PROMOTE_HINT",
     "PROPOSE_BACKEND",
     "AuditFlushResult",
+    "FlushResult",
+    "IngestLogRecord",
+    "IngestProposal",
+    "IngestRequest",
     "IngestResult",
     "LintResult",
     "PageAction",
     "PageEdit",
     "PromoteResult",
+    "QueryAnswer",
     "QueryResult",
     "WikiPatchSet",
     "audit_flush",
@@ -100,9 +107,10 @@ _FILE_BACK_SLUG = "query-fileback"
 # Recorded as ``backend`` in plan.json when a library caller proposes edits directly.
 PROPOSE_BACKEND = "api"
 
-# A proposal name: one path component of letters, digits, '.', '_' and '-', not
-# starting with '.' (hidden names such as ``.applied`` are the archive's).
-_PROPOSAL_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+# A proposal name: one path component of ASCII letters, digits, '.', '_' and
+# '-', not starting with '.' (hidden names such as ``.applied`` are the
+# archive's). Matched with fullmatch: '$' alone would accept a trailing newline.
+_PROPOSAL_NAME_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 
 ALLOW_OUT_OF_REPO_HINT = "Pass --allow-out-of-repo to override (only when ingesting external artifacts deliberately)."
 ALLOW_OUT_OF_REPO_PROMOTE_HINT = (
@@ -390,16 +398,19 @@ def propose(
     rendered into the audit archive by ``promote``. The ingest log is not
     touched: nothing was ingested.
 
-    Raises ``ValueError`` when ``name`` is not one path component of letters,
-    digits, ``.``, ``_`` and ``-`` that does not start with ``.``,
-    ``ContractViolationError`` when the edits are invalid (including an empty
-    list), and ``OutputWriteError`` when the directory already exists or
-    cannot be written (a partially written directory is removed). Returns the
+    Raises ``ValueError`` when ``name`` is not one path component of ASCII
+    letters, digits, ``.``, ``_`` and ``-`` that does not start with ``.``
+    (stricter than the names ``ingest`` generates), ``ContractViolationError``
+    when the edits are invalid (including an empty list), and
+    ``OutputWriteError`` when the directory already exists or cannot be
+    written. Whatever the failure while writing, the directory (and a
+    proposals directory this call created) is removed again. Returns the
     absolute directory path.
     """
-    if not _PROPOSAL_NAME_RE.match(name):
+    if not _PROPOSAL_NAME_RE.fullmatch(name):
         raise ValueError(
-            f"name must be one path component of letters, digits, '.', '_' and '-' not starting with '.', got {name!r}"
+            "name must be one path component of ASCII letters, digits, '.', '_' and '-' "
+            f"not starting with '.', got {name!r}"
         )
     patch = WikiPatchSet(edits=list(edits), source_path=source, backend=backend, rationale=rationale)
     set_errors = validate_patch_set(patch)
@@ -411,6 +422,7 @@ def propose(
             "patch-set failed per-edit semantic validation:\n  - " + "\n  - ".join(per_edit_errors)
         )
     output_dir = paths.proposals_dir / name
+    proposals_dir_existed = paths.proposals_dir.is_dir()
     try:
         # Creating the directory is the collision check: it must not exist, and
         # from here on it is ours to remove if a later write fails.
@@ -422,9 +434,14 @@ def propose(
     try:
         written = write_patch_set_dir(patch, output_dir)
         _write_ingest_snapshot(written)
-    except OSError as exc:
+    except Exception as exc:
+        # Any failure, not only OSError: leave no half-written directory behind.
         shutil.rmtree(output_dir, ignore_errors=True)
-        raise OutputWriteError(f"could not write patch-set dir at {output_dir}: {exc}") from exc
+        if not proposals_dir_existed:
+            shutil.rmtree(paths.proposals_dir, ignore_errors=True)
+        if isinstance(exc, OSError):
+            raise OutputWriteError(f"could not write patch-set dir at {output_dir}: {exc}") from exc
+        raise
     return written
 
 

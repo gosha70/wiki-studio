@@ -12,6 +12,7 @@ from tests.test_api import _LayoutCase
 from wiki_studio import api, proposal
 from wiki_studio.api import PageEdit
 from wiki_studio.errors import ContractViolationError, OutputWriteError
+from wiki_studio.paths import WikiPaths
 
 NAME = "2026-10-15-memkernel-export"
 PAGE_REL = "concepts/retry-budget.md"
@@ -152,7 +153,20 @@ class TestProposeRejects(_LayoutCase):
         self._assert_nothing_written()
 
     def test_name_must_be_one_visible_path_component(self) -> None:
-        for bad in ("", ".", "..", "a/b", "sub/", "a\\b", "with space", "nul\0byte", ".applied", ".hidden"):
+        for bad in (
+            "",
+            ".",
+            "..",
+            "a/b",
+            "sub/",
+            "a\\b",
+            "with space",
+            "nul\0byte",
+            "demo\n",
+            "é",
+            ".applied",
+            ".hidden",
+        ):
             with self.subTest(name=bad), self.assertRaises(ValueError):
                 api.propose(_edits(), self.paths, name=bad)
         self._assert_nothing_written()
@@ -168,6 +182,36 @@ class TestProposeRejects(_LayoutCase):
             api.propose(_edits(), self.paths, name=NAME)
         self.assertIn("disk full", str(ctx.exception))
         self._assert_nothing_written()
+
+    def test_non_oserror_failure_also_cleans_up(self) -> None:
+        # Whatever the writer raises, the partial directory must not survive;
+        # a non-OSError propagates unchanged rather than as OutputWriteError.
+        def boom(_: object) -> None:
+            raise RuntimeError("writer bug")
+
+        with patch.object(api, "_write_ingest_snapshot", boom), self.assertRaises(RuntimeError):
+            api.propose(_edits(), self.paths, name=NAME)
+        self._assert_nothing_written()
+
+    def test_non_string_content_is_rejected_before_any_write(self) -> None:
+        bad = [*_edits()[:2], PageEdit("log.md", "append-log", ["not", "a", "string"], "r")]  # type: ignore[arg-type]
+        with self.assertRaises(AttributeError):
+            api.propose(bad, self.paths, name=NAME)
+        self._assert_nothing_written()
+
+    def test_failure_removes_a_proposals_dir_it_created(self) -> None:
+        inbox = self.root / "inbox"
+        paths = WikiPaths.for_root(self.root, proposals_dir=inbox)
+        self.assertFalse(inbox.exists())
+
+        def boom(_: object) -> None:
+            raise OSError("disk full")
+
+        with patch.object(api, "_write_ingest_snapshot", boom), self.assertRaises(OutputWriteError):
+            api.propose(_edits(), paths, name=NAME)
+        self.assertFalse(inbox.exists())
+        written = api.propose(_edits(), paths, name=NAME)
+        self.assertEqual(written.parent, inbox)
 
     def test_existing_directory_is_not_overwritten(self) -> None:
         existing = self.paths.proposals_dir / NAME

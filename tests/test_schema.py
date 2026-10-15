@@ -20,6 +20,7 @@ _TYPE_HEADING_RE = re.compile(r"^### `([a-z-]+)` — `([^`]+)`")
 _SECTION_BULLET_RE = re.compile(r"^- `## ([^`]+)`")
 _INLINE_SECTION_RE = re.compile(r"`## ([^`]+)`")
 _REQUIRED_MARKER = "Required H2 sections"
+_SOURCES_EXEMPTION_RE = re.compile(r"`sources:` is required for every type \*\*except\*\* ([^.]+)\.")
 
 SCHEMA_DOCUMENTS = frozenset(
     {"audit-rules.md", "citation-rules.md", "ingest-rules.md", "lint-rules.md", "page-types.md", "WIKI_MAINTAINER.md"}
@@ -133,7 +134,19 @@ class TestSchemaMatchesPageTypesMd(unittest.TestCase):
 
     def test_sources_exemption_matches_the_document(self) -> None:
         # "`sources:` is required for every type **except** `index` and `log`."
-        self.assertEqual(schema.SOURCELESS_PAGE_TYPES, frozenset({"index", "log"}))
+        match = _SOURCES_EXEMPTION_RE.search(_page_types_md())
+        assert match is not None, "page-types.md no longer states the sources exemption"
+        exempt = frozenset(re.findall(r"`([a-z-]+)`", match.group(1)))
+        self.assertEqual(schema.SOURCELESS_PAGE_TYPES, exempt)
+        for name, spec in PAGE_TYPES.items():
+            self.assertEqual(spec.sources_required, name not in exempt, name)
+
+    def test_promotable_means_the_document_gives_the_type_a_directory(self) -> None:
+        # Root-only types are headed "`index.md` only"; promotable ones "<dir>/<slug>.md".
+        parsed = parse_page_types_md(_page_types_md())
+        for name, (directory, _) in parsed.items():
+            with self.subTest(page_type=name):
+                self.assertEqual(PAGE_TYPES[name].promotable, directory != schema.ROOT_DIR)
 
 
 class TestDerivedConstants(unittest.TestCase):

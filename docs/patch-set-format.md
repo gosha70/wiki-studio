@@ -21,9 +21,10 @@ versioned with the package (see "Stability" in `wiki_studio.api`).
 `<proposals-dir>` is `WikiPaths.proposals_dir` (`doc_internal/proposals` by
 default; `--proposals-dir` / `WIKI_STUDIO_PROPOSALS_DIR` override it). `ingest`
 names the directory `<YYYY-MM-DD>-<source stem>`; `propose` uses the `name`
-the caller passes: one path component of letters, digits, `.`, `_` and `-`,
-not starting with `.` (hidden names such as `.applied` are reserved for the
-archive).
+the caller passes: one path component of ASCII letters, digits, `.`, `_` and
+`-`, not starting with `.` (hidden names such as `.applied` are reserved for
+the archive). This is stricter than the names `ingest` derives from a source
+file; `promote` accepts both.
 
 ## `plan.json`
 
@@ -114,6 +115,7 @@ api.promote(proposal, paths)
 reaches disk. For `append-index` and `append-log` edits that check is only
 that the content is non-empty; the target file must exist at promote time.
 `propose` refuses to overwrite an existing directory (`OutputWriteError`)
-and removes a directory it could only partly write. Validation is against the
+and, whatever the failure while writing, removes the directory it could only
+partly write (and a proposals directory it created for it). Validation is against the
 live wiki: propose and promote patch-sets one at a time rather than proposing
 several that depend on each other.
