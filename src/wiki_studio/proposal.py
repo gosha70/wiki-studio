@@ -22,6 +22,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
+from .schema import PAGE_TYPE_DIRS, PROMOTABLE_PAGE_TYPES
+
 if TYPE_CHECKING:
     from .paths import WikiPaths
 
@@ -218,23 +220,6 @@ class WikiPatchSet:
     rationale: str
 
 
-# Promotable wiki page types — the only types valid as the target of a
-# create or update edit. Root-only meta types (index, log, overview)
-# cannot be (re)created via ingest; they are touched via append-index /
-# append-log only. Mirrors prompt.py::_PROMOTABLE_PAGE_TYPES.
-_PROMOTABLE_PAGE_TYPES: frozenset[str] = frozenset(
-    {
-        "concept",
-        "workflow",
-        "incident",
-        "decision",
-        "playbook",
-        "glossary",
-        "open-question",
-    }
-)
-
-
 def validate_page_edit_semantics(
     edit: PageEdit,
     paths: WikiPaths,
@@ -308,8 +293,8 @@ def validate_page_edit_semantics(
             errors.append(f"{edit.path}: frontmatter slug {fm_slug!r} should be {expected_stem!r} (filename stem rule)")
 
     # page_type must be promotable (not index/log/overview)
-    if fm_page_type and fm_page_type not in _PROMOTABLE_PAGE_TYPES:
-        valid = ", ".join(sorted(_PROMOTABLE_PAGE_TYPES))
+    if fm_page_type and fm_page_type not in PROMOTABLE_PAGE_TYPES:
+        valid = ", ".join(sorted(PROMOTABLE_PAGE_TYPES))
         errors.append(
             f"{edit.path}: frontmatter page_type {fm_page_type!r} is not "
             f"promotable for create/update; must be one of: {valid}. "
@@ -317,18 +302,10 @@ def validate_page_edit_semantics(
             f"append-index / append-log."
         )
 
-    # page_type matches directory placement
-    page_type_to_dir = {
-        "concept": "concepts",
-        "workflow": "workflows",
-        "incident": "incidents",
-        "decision": "decisions",
-        "playbook": "playbooks",
-        "glossary": "glossary",
-        "open-question": "open-questions",
-    }
-    if fm_page_type and fm_page_type in page_type_to_dir:
-        expected_dir = page_type_to_dir[fm_page_type]
+    # page_type matches directory placement (promotable types only: the
+    # root-only types were rejected above and would add a second error).
+    if fm_page_type and fm_page_type in PROMOTABLE_PAGE_TYPES:
+        expected_dir = PAGE_TYPE_DIRS[fm_page_type]
         actual_dir = Path(edit.path).parent.as_posix() or "."
         if actual_dir != expected_dir:
             errors.append(

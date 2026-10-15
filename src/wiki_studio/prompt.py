@@ -16,33 +16,13 @@ if TYPE_CHECKING:
 
 from . import yaml_lite
 from .errors import ContractViolationError
-from .lint import PAGE_TYPE_DIRS
+from .schema import PROMOTABLE_PAGE_TYPES
 
 # ---------------------------------------------------------------------------
 # Schema paths (read at runtime, never embedded in source)
 # ---------------------------------------------------------------------------
 
 _SCHEMA_NAMES = ("ingest-rules", "page-types", "citation-rules")
-
-# Directory-placement mapping (shared with the structural linter).
-_PAGE_TYPE_TO_DIR = PAGE_TYPE_DIRS
-
-# Page types that may be the target of an ingest proposal. Excludes
-# root-only meta pages (index, log, overview) — those are wiki structure,
-# not promotable lessons.
-_PROMOTABLE_PAGE_TYPES: frozenset[str] = frozenset(
-    {
-        "concept",
-        "workflow",
-        "incident",
-        "decision",
-        "playbook",
-        "glossary",
-        "open-question",
-    }
-)
-
-_VALID_PAGE_TYPES = set(_PAGE_TYPE_TO_DIR.keys())
 
 # Kebab-case: only lowercase letters, digits, hyphens; no leading/trailing hyphen.
 _KEBAB_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -380,8 +360,8 @@ def _validate_semantics(raw: dict[str, Any]) -> None:
     # page_type must be a *promotable* wiki page type. Root-only meta types
     # (index, log, overview) cannot be the target of an ingest proposal —
     # those are wiki structure, not lessons.
-    if page_type not in _PROMOTABLE_PAGE_TYPES:
-        promotable = ", ".join(sorted(_PROMOTABLE_PAGE_TYPES))
+    if page_type not in PROMOTABLE_PAGE_TYPES:
+        promotable = ", ".join(sorted(PROMOTABLE_PAGE_TYPES))
         raise ContractViolationError(
             f"semantic rule violation: page_type {page_type!r} is not a "
             f"promotable wiki page type. Ingest proposals must target one of: "

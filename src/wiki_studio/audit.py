@@ -25,6 +25,7 @@ from typing import TYPE_CHECKING
 from .audit_lint import INGEST_LOG_MARKER
 from .errors import OutputWriteError
 from .proposal import IngestLogRecord, IngestProposal, WikiPatchSet
+from .schema import PAGE_TYPE_DIRS, PROMOTABLE_PAGE_TYPES
 
 if TYPE_CHECKING:
     from .paths import WikiPaths
@@ -223,16 +224,8 @@ def build_log_record(
     )
 
 
-# Map legacy page_type values to their wiki directory names.
-_LEGACY_PAGE_TYPE_DIR: dict[str, str] = {
-    "concept": "concepts",
-    "workflow": "workflows",
-    "incident": "incidents",
-    "decision": "decisions",
-    "playbook": "playbooks",
-    "glossary": "glossary",
-    "open-question": "open-questions",
-}
+# Map legacy page_type values (always a promotable type) to their wiki directory names.
+_LEGACY_PAGE_TYPE_DIR: dict[str, str] = {name: PAGE_TYPE_DIRS[name] for name in PROMOTABLE_PAGE_TYPES}
 
 
 # ── Append writer (the only writer of ingest-log.md) ──────────────────────

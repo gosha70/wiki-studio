@@ -14,6 +14,9 @@ Checks (per ``schema/lint-rules.md``):
 Pages under ``schema/``, ``scripts/`` and ``.audit/`` are not wiki content and
 are skipped. Messages keep the wording of the bash linter so output is
 unchanged for consumers that grep it.
+
+``VALID_PAGE_TYPES``, ``PAGE_TYPE_DIRS`` and ``REQUIRED_KEYS`` are defined in
+:mod:`wiki_studio.schema` and re-exported here for 0.1.0 compatibility.
 """
 
 from __future__ import annotations
@@ -22,39 +25,9 @@ import os
 import re
 from pathlib import Path
 
+from .schema import PAGE_TYPE_DIRS, REQUIRED_KEYS, SOURCELESS_PAGE_TYPES, VALID_PAGE_TYPES
+
 EXCLUDED_DIRS: frozenset[str] = frozenset({"schema", "scripts", ".audit"})
-
-VALID_PAGE_TYPES: tuple[str, ...] = (
-    "concept",
-    "workflow",
-    "incident",
-    "decision",
-    "playbook",
-    "glossary",
-    "open-question",
-    "index",
-    "log",
-    "overview",
-)
-
-REQUIRED_KEYS: tuple[str, ...] = ("page_type", "slug", "title", "status", "last_reviewed")
-
-# Directory (relative to the wiki) each page type lives in; "." is the wiki root.
-PAGE_TYPE_DIRS: dict[str, str] = {
-    "concept": "concepts",
-    "workflow": "workflows",
-    "incident": "incidents",
-    "decision": "decisions",
-    "playbook": "playbooks",
-    "glossary": "glossary",
-    "open-question": "open-questions",
-    "index": ".",
-    "log": ".",
-    "overview": ".",
-}
-
-# Page types that need no ``sources:`` block.
-_SOURCELESS_TYPES: frozenset[str] = frozenset({"index", "log"})
 
 MAX_FRONTMATTER_CLOSE_LINE = 50
 INDEX_NAME = "index.md"
@@ -229,7 +202,7 @@ def lint_wiki(wiki_dir: Path, *, live_wiki_dir: Path | None = None) -> list[str]
                     f"{rel}: page_type '{page_type}' should live under '{expected_dir}/' but found in '{page_parent}/'"
                 )
 
-        if page_type not in _SOURCELESS_TYPES and not _has_sources(fm_lines):
+        if page_type not in SOURCELESS_PAGE_TYPES and not _has_sources(fm_lines):
             violations.append(f"{rel}: missing 'sources:' frontmatter (or empty list)")
 
     # ── Intra-wiki link integrity ────────────────────────────
