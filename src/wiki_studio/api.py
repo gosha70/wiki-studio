@@ -1,6 +1,6 @@
 # Copyright (c) 2026 EGOGE
 # SPDX-License-Identifier: Apache-2.0
-"""wiki_studio.api — the library surface: ``ingest``, ``promote``, ``query``, ``lint``, ``audit_flush``.
+"""wiki_studio.api — the library surface: ``ingest``, ``propose``, ``promote``, ``query``, ``lint``, ``audit_flush``.
 
 Each function takes a :class:`~wiki_studio.paths.WikiPaths`, returns a typed result
 and raises the exceptions in :mod:`wiki_studio.errors`. Nothing here prints; the
@@ -17,12 +17,24 @@ Example::
     result = api.ingest(Path("notes/incident.md"), paths, backend="test")
     api.promote(result.written, paths)
     print(api.query("what caused the outage?", paths, backend="test").answer.answer)
+
+Stability
+---------
+The functions in this module, their keyword names, the result dataclasses,
+the edit model (:class:`PageEdit`, :data:`PageAction`, :class:`WikiPatchSet`)
+and the patch-set directory format that :func:`propose` writes and
+:func:`promote` reads (``docs/patch-set-format.md``) are public and follow
+semantic versioning: fields and keywords are only removed or renamed in a
+major version; a minor version may add fields with defaults. ``__all__``
+names that surface; the set of names a star-import brings in is not part of
+the contract.
 """
 
 from __future__ import annotations
 
 import datetime
 import os
+import re
 import shutil
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -33,14 +45,25 @@ from .audit_flush import FlushResult, flush_state
 from .audit_lint import validate_audit_tree
 from .backends import resolve_backend
 from .backends.copilot_cli import CopilotCliBackend
-from .errors import OutputWriteError, PathOutsideRootError, SourceMissingError
+from .errors import ContractViolationError, OutputWriteError, PathOutsideRootError, SourceMissingError
 from .health_lint import lint_health
 from .ingestor import DefaultIngestor
 from .ingestor_multi import DefaultMultiIngestor, write_patch_set_dir
 from .lint import lint_wiki, list_pages
 from .promoter import PromoteResult
 from .promoter import promote as _promote
-from .proposal import IngestLogRecord, IngestProposal, IngestRequest, QueryAnswer, WikiPatchSet, render_proposal_file
+from .proposal import (
+    IngestLogRecord,
+    IngestProposal,
+    IngestRequest,
+    PageAction,
+    PageEdit,
+    QueryAnswer,
+    WikiPatchSet,
+    render_proposal_file,
+    validate_page_edit_semantics,
+    validate_patch_set,
+)
 from .querier import DefaultQuerier
 
 if TYPE_CHECKING:
@@ -48,11 +71,46 @@ if TYPE_CHECKING:
     from .ingestor import Backend
     from .paths import WikiPaths
 
+__all__ = [
+    "ALLOW_OUT_OF_REPO_HINT",
+    "ALLOW_OUT_OF_REPO_PROMOTE_HINT",
+    "PROPOSE_BACKEND",
+    "AuditFlushResult",
+    "FlushResult",
+    "IngestLogRecord",
+    "IngestProposal",
+    "IngestRequest",
+    "IngestResult",
+    "LintResult",
+    "PageAction",
+    "PageEdit",
+    "PromoteResult",
+    "QueryAnswer",
+    "QueryResult",
+    "WikiPatchSet",
+    "audit_flush",
+    "backend_display_name",
+    "ingest",
+    "lint",
+    "prepare_backend",
+    "promote",
+    "propose",
+    "query",
+]
+
 # The env var the legacy single-source ingestor reads its task hint from.
 _TASK_ENV = "WIKI_INGEST_TASK"
 _GATE_ONLY_TASK = "gate-only"
 _SNAPSHOT_DIR_NAME = ".ingest-snapshot"
 _FILE_BACK_SLUG = "query-fileback"
+
+# Recorded as ``backend`` in plan.json when a library caller proposes edits directly.
+PROPOSE_BACKEND = "api"
+
+# A proposal name: one path component of ASCII letters, digits, '.', '_' and
+# '-', not starting with '.' (hidden names such as ``.applied`` are the
+# archive's). Matched with fullmatch: '$' alone would accept a trailing newline.
+_PROPOSAL_NAME_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 
 ALLOW_OUT_OF_REPO_HINT = "Pass --allow-out-of-repo to override (only when ingesting external artifacts deliberately)."
 ALLOW_OUT_OF_REPO_PROMOTE_HINT = (
@@ -315,6 +373,76 @@ def _ingest_multi(
     )
     append_ingest_log(paths, record)
     return IngestResult(disposition, written, edits, patch.rationale, dry_run, False, patch, None, record)
+
+
+# ── propose ───────────────────────────────────────────────────
+
+
+def propose(
+    edits: list[PageEdit],
+    paths: WikiPaths,
+    *,
+    name: str,
+    source: str = "",
+    rationale: str = "",
+    backend: str = PROPOSE_BACKEND,
+) -> Path:
+    """Write ``edits`` as a patch-set directory ``<proposals_dir>/<name>/`` for :func:`promote`.
+
+    The directory has the format ``ingest`` writes (``docs/patch-set-format.md``):
+    ``plan.json``, one ``preview/<path>`` per edit and an ``.ingest-snapshot/``
+    copy. The edits are validated first with the same two checks ``ingest`` and
+    ``promote`` run (set-level invariants, then per-edit frontmatter and
+    placement against the live wiki); nothing is written when they fail.
+    ``source``, ``rationale`` and ``backend`` are recorded in ``plan.json`` and
+    rendered into the audit archive by ``promote``. The ingest log is not
+    touched: nothing was ingested.
+
+    Raises ``ValueError`` when ``name`` is not one path component of ASCII
+    letters, digits, ``.``, ``_`` and ``-`` that does not start with ``.``
+    (stricter than the names ``ingest`` generates), ``ContractViolationError``
+    when the edits are invalid (including an empty list), and
+    ``OutputWriteError`` when the directory already exists or cannot be
+    written. Whatever the failure while writing, the directory (and a
+    proposals directory this call created) is removed again. Returns the
+    absolute directory path.
+    """
+    if not _PROPOSAL_NAME_RE.fullmatch(name):
+        raise ValueError(
+            "name must be one path component of ASCII letters, digits, '.', '_' and '-' "
+            f"not starting with '.', got {name!r}"
+        )
+    patch = WikiPatchSet(edits=list(edits), source_path=source, backend=backend, rationale=rationale)
+    set_errors = validate_patch_set(patch)
+    if set_errors:
+        raise ContractViolationError("patch-set failed set-level validation:\n  - " + "\n  - ".join(set_errors))
+    per_edit_errors = [error for edit in patch.edits for error in validate_page_edit_semantics(edit, paths)]
+    if per_edit_errors:
+        raise ContractViolationError(
+            "patch-set failed per-edit semantic validation:\n  - " + "\n  - ".join(per_edit_errors)
+        )
+    output_dir = paths.proposals_dir / name
+    proposals_dir_existed = paths.proposals_dir.is_dir()
+    try:
+        # Creating the directory is the collision check: it must not exist, and
+        # from here on it is ours to remove if a later write fails.
+        output_dir.mkdir(parents=True, exist_ok=False)
+    except FileExistsError as exc:
+        raise OutputWriteError(f"proposal dir already exists: {output_dir}") from exc
+    except OSError as exc:
+        raise OutputWriteError(f"could not create patch-set dir at {output_dir}: {exc}") from exc
+    try:
+        written = write_patch_set_dir(patch, output_dir)
+        _write_ingest_snapshot(written)
+    except Exception as exc:
+        # Any failure, not only OSError: leave no half-written directory behind.
+        shutil.rmtree(output_dir, ignore_errors=True)
+        if not proposals_dir_existed:
+            shutil.rmtree(paths.proposals_dir, ignore_errors=True)
+        if isinstance(exc, OSError):
+            raise OutputWriteError(f"could not write patch-set dir at {output_dir}: {exc}") from exc
+        raise
+    return written
 
 
 # ── promote ───────────────────────────────────────────────────

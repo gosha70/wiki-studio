@@ -6,6 +6,51 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-10-15
+
+The memkernel release: the two contracts memkernel 0.5's `memkernel[wiki]`
+extra builds against, and a recipe fix (issue #7).
+
+### Added
+
+- `wiki_studio.api.propose(edits, paths, *, name, source="", rationale="", backend="api")`:
+  a library caller hands a list of `PageEdit`s to the package and gets back a
+  patch-set directory under the proposals dir that `api.promote` applies
+  through the usual gate. The edits are validated first with the checks
+  `ingest` and `promote` already run; an invalid list, an invalid `name` or an
+  existing directory writes nothing. `propose` never touches the wiki or the
+  ingest log.
+- `PageEdit`, `PageAction` and `WikiPatchSet` are re-exported from
+  `wiki_studio.api` and, together with the `api` functions, the result
+  dataclasses and the patch-set directory format, declared public under
+  semantic versioning (`api.__all__` lists the surface).
+- `docs/patch-set-format.md`: the on-disk patch-set format (`plan.json`,
+  `preview/`, `.ingest-snapshot/`) and what `promote` does with it.
+- `wiki_studio.schema`: the page schema as code. `PAGE_TYPES: dict[str, PageTypeSpec]`
+  (`directory`, `required_sections`, `promotable`, `sources_required`) for the
+  ten page types of `page-types.md`, plus the derived `VALID_PAGE_TYPES`,
+  `PAGE_TYPE_DIRS`, `PROMOTABLE_PAGE_TYPES`, `SOURCELESS_PAGE_TYPES` and
+  `REQUIRED_KEYS`. A test parses `page-types.md` and fails when the two
+  disagree.
+
+### Changed
+
+- `wiki_studio/schema/` is now a package (it gained `__init__.py`); the six
+  markdown documents stay there and are loaded as before. `lint.VALID_PAGE_TYPES`,
+  `lint.PAGE_TYPE_DIRS` and `lint.REQUIRED_KEYS` are re-exports of the schema
+  module; the linter, the prompt composer, the edit validator and the audit
+  record builder read the schema module instead of their own copies of the
+  page-type tables. Lint and validation messages are unchanged.
+- For consumers probing for the module: on 0.1.0 `import wiki_studio.schema`
+  succeeds as an empty namespace package; test for `wiki_studio.schema.PAGE_TYPES`.
+
+### Fixed
+
+- `docs/consumers.md`: the memkernel recipe ran `memkernel wiki_export`, which
+  is not a shell command (`wiki_export` is memkernel's MCP tool). The recipe
+  now shows the library call and the propose → promote flow a memkernel ≥ 0.5
+  bridge uses.
+
 ## [0.1.0] — 2026-10-12
 
 The extraction release. The maintainer that lived in
