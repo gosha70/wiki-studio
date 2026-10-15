@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import datetime
 import os
+import re
 import shutil
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -98,6 +99,10 @@ _FILE_BACK_SLUG = "query-fileback"
 
 # Recorded as ``backend`` in plan.json when a library caller proposes edits directly.
 PROPOSE_BACKEND = "api"
+
+# A proposal name: one path component of letters, digits, '.', '_' and '-', not
+# starting with '.' (hidden names such as ``.applied`` are the archive's).
+_PROPOSAL_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 
 ALLOW_OUT_OF_REPO_HINT = "Pass --allow-out-of-repo to override (only when ingesting external artifacts deliberately)."
 ALLOW_OUT_OF_REPO_PROMOTE_HINT = (
@@ -385,13 +390,17 @@ def propose(
     rendered into the audit archive by ``promote``. The ingest log is not
     touched: nothing was ingested.
 
-    Raises ``ValueError`` when ``name`` is not a single, non-hidden path
-    component, ``ContractViolationError`` when the edits are invalid (including
-    an empty list), and ``OutputWriteError`` when the directory already exists
-    or cannot be written. Returns the absolute directory path.
+    Raises ``ValueError`` when ``name`` is not one path component of letters,
+    digits, ``.``, ``_`` and ``-`` that does not start with ``.``,
+    ``ContractViolationError`` when the edits are invalid (including an empty
+    list), and ``OutputWriteError`` when the directory already exists or
+    cannot be written (a partially written directory is removed). Returns the
+    absolute directory path.
     """
-    if not name or name.startswith(".") or Path(name).name != name:
-        raise ValueError(f"name must be a single path component that does not start with '.', got {name!r}")
+    if not _PROPOSAL_NAME_RE.match(name):
+        raise ValueError(
+            f"name must be one path component of letters, digits, '.', '_' and '-' not starting with '.', got {name!r}"
+        )
     patch = WikiPatchSet(edits=list(edits), source_path=source, backend=backend, rationale=rationale)
     set_errors = validate_patch_set(patch)
     if set_errors:
@@ -408,6 +417,7 @@ def propose(
         written = write_patch_set_dir(patch, output_dir)
         _write_ingest_snapshot(written)
     except OSError as exc:
+        shutil.rmtree(output_dir, ignore_errors=True)
         raise OutputWriteError(f"could not write patch-set dir at {output_dir}: {exc}") from exc
     return written
 

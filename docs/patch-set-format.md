@@ -21,8 +21,9 @@ versioned with the package (see "Stability" in `wiki_studio.api`).
 `<proposals-dir>` is `WikiPaths.proposals_dir` (`doc_internal/proposals` by
 default; `--proposals-dir` / `WIKI_STUDIO_PROPOSALS_DIR` override it). `ingest`
 names the directory `<YYYY-MM-DD>-<source stem>`; `propose` uses the `name`
-the caller passes. A name is one path component and may not start with `.`
-(hidden names such as `.applied` are reserved for the archive).
+the caller passes: one path component of letters, digits, `.`, `_` and `-`,
+not starting with `.` (hidden names such as `.applied` are reserved for the
+archive).
 
 ## `plan.json`
 
@@ -93,11 +94,12 @@ files before promoting; `promote` records the difference against
 ## Writing one from a library
 
 ```python
+from pathlib import Path
 from wiki_studio import api
 from wiki_studio.api import PageEdit
 from wiki_studio.paths import WikiPaths
 
-paths = WikiPaths.resolve(wiki_dir="knowledge/wiki")
+paths = WikiPaths.for_root(Path.cwd(), wiki_dir=Path("knowledge/wiki"))
 edits = [
     PageEdit("concepts/retry-budget.md", "create", page_markdown, "New concept."),
     PageEdit("index.md", "append-index", "- [Retry budget](concepts/retry-budget.md) — draft.", "Index it."),
@@ -109,7 +111,9 @@ api.promote(proposal, paths)
 
 `propose` runs step 2 above before writing and raises
 `ContractViolationError` with every problem listed, so a bad edit never
-reaches disk. It refuses to overwrite an existing directory
-(`OutputWriteError`). Validation is against the live wiki: propose and promote
-patch-sets one at a time rather than proposing several that depend on each
-other.
+reaches disk. For `append-index` and `append-log` edits that check is only
+that the content is non-empty; the target file must exist at promote time.
+`propose` refuses to overwrite an existing directory (`OutputWriteError`)
+and removes a directory it could only partly write. Validation is against the
+live wiki: propose and promote patch-sets one at a time rather than proposing
+several that depend on each other.

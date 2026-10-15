@@ -80,13 +80,19 @@ def _required_sections(block: list[str]) -> tuple[str, ...]:
                 match = _SECTION_BULLET_RE.match(bullet)
                 if match:
                     names.append(match.group(1))
-            return tuple(names)
-        text = []
-        for part in block[i:]:
-            if part.strip() == "":
-                break
-            text.append(part)
-        return tuple(_INLINE_SECTION_RE.findall(" ".join(text)))
+            found = tuple(names)
+        else:
+            text = []
+            for part in block[i:]:
+                if part.strip() == "":
+                    break
+                text.append(part)
+            found = tuple(_INLINE_SECTION_RE.findall(" ".join(text)))
+        if not found:
+            raise AssertionError(
+                f"page-types.md: {block[0]!r} has a '{_REQUIRED_MARKER}' marker but no parsable sections"
+            )
+        return found
     return ()
 
 

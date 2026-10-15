@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import unittest
+from unittest.mock import patch
 
 from tests.test_api import _LayoutCase
 from wiki_studio import api, proposal
@@ -151,9 +152,21 @@ class TestProposeRejects(_LayoutCase):
         self._assert_nothing_written()
 
     def test_name_must_be_one_visible_path_component(self) -> None:
-        for bad in ("", ".", "..", "a/b", "sub/", ".applied", ".hidden"):
+        for bad in ("", ".", "..", "a/b", "sub/", "a\\b", "with space", "nul\0byte", ".applied", ".hidden"):
             with self.subTest(name=bad), self.assertRaises(ValueError):
                 api.propose(_edits(), self.paths, name=bad)
+        self._assert_nothing_written()
+        for good in ("2026-10-15-memkernel-export", "v0.2.0_draft", "A1"):
+            with self.subTest(name=good):
+                api.propose(_edits(), self.paths, name=good)
+
+    def test_write_failure_removes_the_partial_directory(self) -> None:
+        def boom(_: object) -> None:
+            raise OSError("disk full")
+
+        with patch.object(api, "_write_ingest_snapshot", boom), self.assertRaises(OutputWriteError) as ctx:
+            api.propose(_edits(), self.paths, name=NAME)
+        self.assertIn("disk full", str(ctx.exception))
         self._assert_nothing_written()
 
     def test_existing_directory_is_not_overwritten(self) -> None:
