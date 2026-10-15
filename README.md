@@ -17,7 +17,7 @@ The code was extracted from
 ```bash
 pip install wiki-studio          # Python 3.11–3.13, no runtime dependencies
 wiki-studio --help
-wiki-studio --version           # 0.1.0
+wiki-studio --version           # 0.2.0
 ```
 
 From a checkout: `poetry install`, then `poetry run wiki-studio --help`.
@@ -168,6 +168,13 @@ shared with memkernel's `WikiExporter` and `WikiImporter`; changing
 frontmatter keys, page types or directory names needs a decision record
 in `docs/adr/`.
 
+The same facts are available as code in `wiki_studio.schema`: `PAGE_TYPES`
+maps each page type to a `PageTypeSpec` (`directory`, `required_sections`,
+`promotable`, `sources_required`), and `VALID_PAGE_TYPES`, `PAGE_TYPE_DIRS`
+and `REQUIRED_KEYS` are derived from it. The linter and the validators read
+this module; a consumer that keeps its own copy can test it against
+`PAGE_TYPES`, and a test here keeps the module in step with `page-types.md`.
+
 ## Library
 
 ```python
@@ -191,9 +198,31 @@ print(report.passed, report.violations, report.health.findings)
 api.audit_flush(paths, dry_run=True)                   # AuditFlushResult
 ```
 
+A caller that composes pages itself (memkernel's exporter, a migration
+script) hands them to `propose` and gets a proposal directory `promote`
+accepts, so they pass the same gate as a backend's draft:
+
+```python
+from wiki_studio.api import PageEdit
+
+edits = [
+    PageEdit("concepts/retry-budget.md", "create", page_markdown, "New concept."),
+    PageEdit("index.md", "append-index", "- [Retry budget](concepts/retry-budget.md) — draft.", "Index it."),
+    PageEdit("log.md", "append-log", "- 2026-10-15 — created retry-budget (concept): draft.", "Log it."),
+]
+proposal = api.propose(edits, paths, name="2026-10-15-retry-budget")   # Path; ContractViolationError on bad edits
+api.promote(proposal, paths)
+```
+
 The functions raise the exceptions in `wiki_studio.errors`; each carries the
 exit code the CLI would use. `backend` may be a name, `None` (resolution
 order as above) or any object with `call(prompt) -> dict`.
+
+The `api` functions and their keywords, the result dataclasses, `PageEdit`,
+`PageAction`, `WikiPatchSet` and the proposal directory format
+([`docs/patch-set-format.md`](docs/patch-set-format.md)) are public and
+follow semantic versioning: removals and renames only in a major version,
+additions with defaults in a minor one.
 
 Consumer recipes for code-copilot-team, memkernel and document-assistant
 are in [`docs/consumers.md`](docs/consumers.md).

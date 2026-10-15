@@ -33,7 +33,7 @@ developers, once):
 
 ```yaml
       - name: Install the wiki maintainer
-        run: pip install "wiki-studio==0.1.0"
+        run: pip install "wiki-studio==0.2.0"
 ```
 
 `tests/test-wiki-ingest.sh` passes unchanged: the verbs, flags and exit
@@ -60,24 +60,29 @@ over the packaged copy whenever `<wiki-dir>/schema/` exists).
 memkernel's `WikiExporter` writes draft pages in the same schema
 (`status: draft`, the extra keys `memkernel_ref` and `memory_type`, a
 `memkernel://<project>/<ref>` source). Point both tools at the same
-directory and lint after every export:
+directory and lint after every export. `wiki_export` is one of memkernel's
+MCP tools, not a shell command: call it from the agent session, or run the
+exporter from Python.
 
 ```bash
 export MEMKERNEL_WIKI_DIR="$PWD/knowledge/wiki"
 export WIKI_STUDIO_WIKI_DIR="$MEMKERNEL_WIKI_DIR"
+```
 
-memkernel wiki_export            # writes draft pages, index and log entries
+```python
+from pathlib import Path
+from memkernel.factory import build_service
+from memkernel.wiki.sync import WikiExporter
+
+WikiExporter(build_service(), Path("knowledge/wiki")).export()   # draft pages, index and log entries
+```
+
+```bash
 wiki-studio lint                     # zero violations expected
 wiki-studio lint --health            # stale sources, weak orphans, missing cross-links
 ```
 
-The fixture `tests/fixtures/wiki/` in this repository contains three
-exporter-shaped pages (`decision`, `concept`, `workflow`); the test suite
-asserts they lint clean, which pins the schema contract between the two
-packages. Changing frontmatter keys, page types or directory names needs a
-decision record in `docs/adr/` here first.
-
-From Python:
+From Python, the lint result is typed:
 
 ```python
 import os
@@ -90,6 +95,46 @@ result = api.lint(paths, health=True)
 for violation in result.violations:
     print(violation)
 ```
+
+### Through the promote gate (memkernel ≥ 0.5, wiki-studio ≥ 0.2)
+
+With the `memkernel[wiki]` extra installed, the exporter no longer writes
+the wiki itself: it hands its pages to `api.propose` and applies them with
+`api.promote`, so a page that fails the structural lint never lands and the
+wiki is left untouched. The same flow, written out:
+
+```python
+from pathlib import Path
+from wiki_studio import api
+from wiki_studio.api import PageEdit
+from wiki_studio.paths import WikiPaths
+
+paths = WikiPaths.for_root(Path.cwd(), wiki_dir=Path("knowledge/wiki"))
+edits = [
+    PageEdit("concepts/retry-budget.md", "create", page_markdown, "Draft compiled from memory mem-1."),
+    PageEdit("index.md", "append-index", "- [Retry budget](concepts/retry-budget.md) — draft (fact).", "Index it."),
+    PageEdit("log.md", "append-log", "- 2026-10-15 — created `retry-budget` (concept): from mem-1", "Log it."),
+]
+proposal = api.propose(edits, paths, name="2026-10-15-memkernel-export", source="memkernel")
+api.promote(proposal, paths)        # PromoteResult; PromoteValidationError leaves the wiki untouched
+```
+
+`propose` validates the edits before writing anything (the same checks
+`ingest` and `promote` run) and raises `ContractViolationError` listing every
+problem. The directory it writes is described in
+[`patch-set-format.md`](patch-set-format.md).
+
+memkernel keeps its own `PAGE_SECTIONS`, `EXPORT_MAP` and `IMPORT_MAP` so the
+bridge works without the extra; with it installed, a contract test compares
+them with `wiki_studio.schema.PAGE_TYPES` (directory and required H2
+sections per page type). On 0.1.0 `import wiki_studio.schema` succeeds as an
+empty namespace package, so probe for `PAGE_TYPES`, not for the import.
+
+The fixture `tests/fixtures/wiki/` in this repository contains three
+exporter-shaped pages (`decision`, `concept`, `workflow`); the test suite
+asserts they lint clean, which pins the schema contract between the two
+packages. Changing frontmatter keys, page types or directory names needs a
+decision record in `docs/adr/` here first.
 
 ## document-assistant
 
