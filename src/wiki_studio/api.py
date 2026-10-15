@@ -411,8 +411,14 @@ def propose(
             "patch-set failed per-edit semantic validation:\n  - " + "\n  - ".join(per_edit_errors)
         )
     output_dir = paths.proposals_dir / name
-    if output_dir.exists():
-        raise OutputWriteError(f"proposal dir already exists: {output_dir}")
+    try:
+        # Creating the directory is the collision check: it must not exist, and
+        # from here on it is ours to remove if a later write fails.
+        output_dir.mkdir(parents=True, exist_ok=False)
+    except FileExistsError as exc:
+        raise OutputWriteError(f"proposal dir already exists: {output_dir}") from exc
+    except OSError as exc:
+        raise OutputWriteError(f"could not create patch-set dir at {output_dir}: {exc}") from exc
     try:
         written = write_patch_set_dir(patch, output_dir)
         _write_ingest_snapshot(written)
