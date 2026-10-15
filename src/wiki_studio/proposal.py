@@ -8,6 +8,12 @@
 # WikiPatchSet / PageEdit are the multi-page Phase-1 types: a single ingest
 # can now produce many edits in one patch-set, the curator reviews them as
 # a unit, and ``wiki promote`` (Phase 2) applies the patch-set atomically.
+#
+# Stability: PageEdit, PageAction and WikiPatchSet are public (re-exported by
+# ``wiki_studio.api``) and follow semantic versioning — a consumer such as
+# memkernel builds them and hands them to ``api.propose``. Fields are only
+# removed or renamed in a major version; a minor version may add fields with
+# defaults. The on-disk form is documented in ``docs/patch-set-format.md``.
 
 from __future__ import annotations
 

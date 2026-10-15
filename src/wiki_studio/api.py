@@ -1,6 +1,6 @@
 # Copyright (c) 2026 EGOGE
 # SPDX-License-Identifier: Apache-2.0
-"""wiki_studio.api — the library surface: ``ingest``, ``promote``, ``query``, ``lint``, ``audit_flush``.
+"""wiki_studio.api — the library surface: ``ingest``, ``propose``, ``promote``, ``query``, ``lint``, ``audit_flush``.
 
 Each function takes a :class:`~wiki_studio.paths.WikiPaths`, returns a typed result
 and raises the exceptions in :mod:`wiki_studio.errors`. Nothing here prints; the
@@ -17,6 +17,15 @@ Example::
     result = api.ingest(Path("notes/incident.md"), paths, backend="test")
     api.promote(result.written, paths)
     print(api.query("what caused the outage?", paths, backend="test").answer.answer)
+
+Stability
+---------
+The functions in this module, their keyword names, the result dataclasses,
+the edit model (:class:`PageEdit`, :data:`PageAction`, :class:`WikiPatchSet`)
+and the patch-set directory format that :func:`propose` writes and
+:func:`promote` reads (``docs/patch-set-format.md``) are public and follow
+semantic versioning: fields and keywords are only removed or renamed in a
+major version; a minor version may add fields with defaults.
 """
 
 from __future__ import annotations
@@ -33,14 +42,25 @@ from .audit_flush import FlushResult, flush_state
 from .audit_lint import validate_audit_tree
 from .backends import resolve_backend
 from .backends.copilot_cli import CopilotCliBackend
-from .errors import OutputWriteError, PathOutsideRootError, SourceMissingError
+from .errors import ContractViolationError, OutputWriteError, PathOutsideRootError, SourceMissingError
 from .health_lint import lint_health
 from .ingestor import DefaultIngestor
 from .ingestor_multi import DefaultMultiIngestor, write_patch_set_dir
 from .lint import lint_wiki, list_pages
 from .promoter import PromoteResult
 from .promoter import promote as _promote
-from .proposal import IngestLogRecord, IngestProposal, IngestRequest, QueryAnswer, WikiPatchSet, render_proposal_file
+from .proposal import (
+    IngestLogRecord,
+    IngestProposal,
+    IngestRequest,
+    PageAction,
+    PageEdit,
+    QueryAnswer,
+    WikiPatchSet,
+    render_proposal_file,
+    validate_page_edit_semantics,
+    validate_patch_set,
+)
 from .querier import DefaultQuerier
 
 if TYPE_CHECKING:
@@ -48,11 +68,36 @@ if TYPE_CHECKING:
     from .ingestor import Backend
     from .paths import WikiPaths
 
+__all__ = [
+    "ALLOW_OUT_OF_REPO_HINT",
+    "ALLOW_OUT_OF_REPO_PROMOTE_HINT",
+    "PROPOSE_BACKEND",
+    "AuditFlushResult",
+    "IngestResult",
+    "LintResult",
+    "PageAction",
+    "PageEdit",
+    "PromoteResult",
+    "QueryResult",
+    "WikiPatchSet",
+    "audit_flush",
+    "backend_display_name",
+    "ingest",
+    "lint",
+    "prepare_backend",
+    "promote",
+    "propose",
+    "query",
+]
+
 # The env var the legacy single-source ingestor reads its task hint from.
 _TASK_ENV = "WIKI_INGEST_TASK"
 _GATE_ONLY_TASK = "gate-only"
 _SNAPSHOT_DIR_NAME = ".ingest-snapshot"
 _FILE_BACK_SLUG = "query-fileback"
+
+# Recorded as ``backend`` in plan.json when a library caller proposes edits directly.
+PROPOSE_BACKEND = "api"
 
 ALLOW_OUT_OF_REPO_HINT = "Pass --allow-out-of-repo to override (only when ingesting external artifacts deliberately)."
 ALLOW_OUT_OF_REPO_PROMOTE_HINT = (
@@ -315,6 +360,56 @@ def _ingest_multi(
     )
     append_ingest_log(paths, record)
     return IngestResult(disposition, written, edits, patch.rationale, dry_run, False, patch, None, record)
+
+
+# ── propose ───────────────────────────────────────────────────
+
+
+def propose(
+    edits: list[PageEdit],
+    paths: WikiPaths,
+    *,
+    name: str,
+    source: str = "",
+    rationale: str = "",
+    backend: str = PROPOSE_BACKEND,
+) -> Path:
+    """Write ``edits`` as a patch-set directory ``<proposals_dir>/<name>/`` for :func:`promote`.
+
+    The directory has the format ``ingest`` writes (``docs/patch-set-format.md``):
+    ``plan.json``, one ``preview/<path>`` per edit and an ``.ingest-snapshot/``
+    copy. The edits are validated first with the same two checks ``ingest`` and
+    ``promote`` run (set-level invariants, then per-edit frontmatter and
+    placement against the live wiki); nothing is written when they fail.
+    ``source``, ``rationale`` and ``backend`` are recorded in ``plan.json`` and
+    rendered into the audit archive by ``promote``. The ingest log is not
+    touched: nothing was ingested.
+
+    Raises ``ValueError`` when ``name`` is not a single, non-hidden path
+    component, ``ContractViolationError`` when the edits are invalid (including
+    an empty list), and ``OutputWriteError`` when the directory already exists
+    or cannot be written. Returns the absolute directory path.
+    """
+    if not name or name.startswith(".") or Path(name).name != name:
+        raise ValueError(f"name must be a single path component that does not start with '.', got {name!r}")
+    patch = WikiPatchSet(edits=list(edits), source_path=source, backend=backend, rationale=rationale)
+    set_errors = validate_patch_set(patch)
+    if set_errors:
+        raise ContractViolationError("patch-set failed set-level validation:\n  - " + "\n  - ".join(set_errors))
+    per_edit_errors = [error for edit in patch.edits for error in validate_page_edit_semantics(edit, paths)]
+    if per_edit_errors:
+        raise ContractViolationError(
+            "patch-set failed per-edit semantic validation:\n  - " + "\n  - ".join(per_edit_errors)
+        )
+    output_dir = paths.proposals_dir / name
+    if output_dir.exists():
+        raise OutputWriteError(f"proposal dir already exists: {output_dir}")
+    try:
+        written = write_patch_set_dir(patch, output_dir)
+        _write_ingest_snapshot(written)
+    except OSError as exc:
+        raise OutputWriteError(f"could not write patch-set dir at {output_dir}: {exc}") from exc
+    return written
 
 
 # ── promote ───────────────────────────────────────────────────
