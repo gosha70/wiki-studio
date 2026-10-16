@@ -1,0 +1,183 @@
+[
+  {
+    "id": "q01",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. No Python version compatibility range is stated."
+  },
+  {
+    "id": "q02",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. No embedding-model download or first-connection startup behavior is described."
+  },
+  {
+    "id": "q03",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. No Kiro workspace configuration files or their roles are listed."
+  },
+  {
+    "id": "q04",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. No default MCP HTTP listen address is specified; the HTTP alternative concerns RLM Studio, not the memkernel MCP transport."
+  },
+  {
+    "id": "q05",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. No project-root setting for resolving code source paths is named."
+  },
+  {
+    "id": "q06",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. No migration or derived defaults for older tier/importance metadata are described."
+  },
+  {
+    "id": "q07",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. The rejected SQLite store alternative is described, but the reason for rejecting separate collections per memory tier is not."
+  },
+  {
+    "id": "q08",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. No mapping from memory types to exported wiki page types is given."
+  },
+  {
+    "id": "q09",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. No wiki-import supersession behavior for changed curated pages is described."
+  },
+  {
+    "id": "q10",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. The RLM adapter is optional, but there is no rationale for extracting the wiki maintainer into a separate package."
+  },
+  {
+    "id": "q11",
+    "gold": "decisions/rlm-studio-document-layer.md",
+    "reason": "Under \"Decision\": `auto` picks `direct` under 8K tokens and `rlm` above that."
+  },
+  {
+    "id": "q12",
+    "gold": "decisions/rlm-studio-document-layer.md",
+    "reason": "Under \"Decision\": `get` on a `document` returns the summary and the `rlm://` id, never the body."
+  },
+  {
+    "id": "q13",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. No observation TTL formula or expiry-clock timestamp is given."
+  },
+  {
+    "id": "q14",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. Hybrid search is mentioned, but no recall scoring weights or pure-relevance configuration are given."
+  },
+  {
+    "id": "q15",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. Hooks are mentioned as a cost of HTTP integration, but post-compaction reinjection contents are not described."
+  },
+  {
+    "id": "q16",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. No feature/phase tagging convention for CCT agents is provided."
+  },
+  {
+    "id": "q17",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. No haa host-side memory-tool placement or persistence directory is specified."
+  },
+  {
+    "id": "q18",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. RLM Studio is identified as MIT, but document-assistant relicensing before RAG extraction is not discussed."
+  },
+  {
+    "id": "q19",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. ragkit is mentioned as a future component, but the old repository license and archive prerequisites are not discussed."
+  },
+  {
+    "id": "q20",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. No LongMemEval benchmark categories are named."
+  },
+  {
+    "id": "q21",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. No HRM reproduction or ARC Prize analysis is discussed."
+  },
+  {
+    "id": "q22",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. The page names an EmbeddingPort shim and possible HybridSearchService contribution to RLM Studio, not the ASTChunker and RRF contributions to ragkit asked about."
+  },
+  {
+    "id": "q23",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. An implementation order is listed, but the published-artifact condition for starting a dependent cross-repository step is not stated."
+  },
+  {
+    "id": "q24",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. Reasoner-backed consolidation is described, but neither candidate-ranking nor recall-ranking formulas are given, so the comparison cannot be answered. No other plausible content page exists in the frozen wiki; index.md and log.md only summarize the ADR-009 promotion. No distractor was generated, and none is invented for this assignment.",
+    "distractors": []
+  },
+  {
+    "id": "q25",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. The decision separates document storage from memory storage, but does not establish wiki-versus-vector-store authority for curated knowledge. No other plausible content page exists in the frozen wiki; index.md and log.md only summarize the ADR-009 promotion. No distractor was generated, and none is invented for this assignment.",
+    "distractors": []
+  },
+  {
+    "id": "q26",
+    "gold": "decisions/rlm-studio-document-layer.md",
+    "reason": "Under \"Alternatives considered\": This keeps memkernel's process light, but adds a server to run and a session to manage for every hook. In-process `interact()` is simpler for a single user. No other plausible content page exists in the frozen wiki; index.md and log.md only summarize the ADR-009 promotion. No distractor was generated, and none is invented for this assignment.",
+    "distractors": []
+  },
+  {
+    "id": "q27",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. An embedding adapter is discussed, but no document-assistant embedding-provenance helper is identified. No other plausible content page exists in the frozen wiki; index.md and log.md only summarize the ADR-009 promotion. No distractor was generated, and none is invented for this assignment.",
+    "distractors": []
+  },
+  {
+    "id": "q28",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. No shipped code-revalidation granularity or deferred per-chunk invalidation is described. No other plausible content page exists in the frozen wiki; index.md and log.md only summarize the ADR-009 promotion. No distractor was generated, and none is invented for this assignment.",
+    "distractors": []
+  },
+  {
+    "id": "q29",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. No haa project-identifier derivation is specified. No other plausible content page exists in the frozen wiki; index.md and log.md only summarize the ADR-009 promotion. No distractor was generated, and none is invented for this assignment.",
+    "distractors": []
+  },
+  {
+    "id": "q30",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. No at-rest encryption cipher is specified; this was preregistered as absent from the corpus."
+  },
+  {
+    "id": "q31",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. No backup recovery point objective is specified; this was preregistered as absent from the corpus."
+  },
+  {
+    "id": "q32",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. The HTTP alternative has no concurrent-client capacity or latency target; this was preregistered as absent from the corpus."
+  },
+  {
+    "id": "q33",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. No legal-corpus navigation benchmark or hit rate is reported; this was preregistered as absent from the corpus."
+  },
+  {
+    "id": "q34",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. No OAuth scopes for MCP clients are listed; this was preregistered as absent from the corpus."
+  },
+  {
+    "id": "q35",
+    "gold": null,
+    "reason": "Checked decisions/rlm-studio-document-layer.md, index.md, and log.md. Token/cost usage is mentioned as an ask result, but no cloud hosting price for a million memories is quoted; this was preregistered as absent from the corpus."
+  }
+]

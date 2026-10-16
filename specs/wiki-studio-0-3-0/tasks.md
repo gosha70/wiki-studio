@@ -22,8 +22,9 @@ Run finding: all ten documents were attempted once; one promoted, eight failed
 path validation, and one timed out. Claude's inherited Stop hook ran tests
 with the evaluation paths, contaminating the audit/query logs. All output is
 preserved; the manifest marks the fixture `requires_review`. US1 execution is
-complete, but benchmark validity is unresolved. See
-`eval/navigation/ingest-notes.md` before gold assignment or publication.
+complete. The owner approved proceeding with layer-1 metrics on this baseline
+while retaining `requires_review` and its caveats; gold assignment is now
+complete. See `eval/navigation/ingest-notes.md` before publication.
 
 ---
 
@@ -31,7 +32,7 @@ complete, but benchmark validity is unresolved. See
 
 | # | [P] | Task | File(s) | Owner | Done |
 |---|-----|------|---------|-------|------|
-| 4 | | Assign `gold.json` by reading the frozen wiki: `gold` (page containing the answer, `null` otherwise; `absent` → `null`), `reason` (heading or quoted sentence; for `null`, pages checked), `distractors` for `competing` (FR-004) | `eval/navigation/gold.json` | owner | [ ] |
+| 4 | | Assign `gold.json` by reading the frozen wiki: `gold` (page containing the answer, `null` otherwise; `absent` → `null`), `reason` (heading or quoted sentence; for `null`, pages checked), `distractors` for `competing` (FR-004) | `eval/navigation/gold.json` | owner | [x] |
 | 5 | | `run.py` (stdlib): load fixture; one `count_words` for every count; call `querier._select_query_candidates` with `max_pages=5`; compute `ingest_coverage`, `hit_at_1`, `hit_at_max`, `distractor_outranks`, `absent_empty`, `absent_pages_loaded`, `gold_unreachable`, `answered_by_index`, `wiki_words`, `grep_words` per the grep rule (question split by `[a-z0-9][a-z0-9-]*`, stop list, ≥ 3 chars, `\b` whole-word case-insensitive, 2 lines context, merged ranges), `grep_empty` ids excluded from the ratio, medians/means/totals; write JSON to stdout (FR-005, FR-006) | `eval/navigation/run.py`, `eval/navigation/__init__.py` | build | [ ] |
 | 6 | | Commit `results.json`; test asserts `run.py` output equals it; test that `questions.json` sha256 matches the manifest; exclude `eval/` from wheel (`pyproject` `exclude`) and from coverage (FR-007, FR-011) | `eval/navigation/results.json`, `tests/test_navigation_eval.py`, `pyproject.toml` | build | [ ] |
 | 7a | [P] | Fix the `ingest` help strings in `cli.py` (multi-page is the default; `--legacy-single-source` selects the v1 generator); help text only, CLI contract tests green (FR-012) | `src/wiki_studio/cli.py` | build | [ ] |

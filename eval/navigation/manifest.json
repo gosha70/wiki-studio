@@ -245,7 +245,9 @@
       "unexpected_query_records": 45,
       "query_log": "eval/navigation/doc_internal/wiki-query-log.jsonl",
       "wall_time_caveat": "Per-document wall time includes Claude lifecycle hooks and their test runs; it is not isolated model inference time.",
-      "handling": "Preserved all output unchanged. No cleanup, repair, retry, or regeneration. Do not treat this as an uncontaminated benchmark fixture without review."
+      "handling": "Preserved all output unchanged. No cleanup, repair, retry, or regeneration. Do not treat this as an uncontaminated benchmark fixture without review.",
+      "schema_copy_note": "wiki/schema/__init__.py was copied along with the packaged Markdown schema during initialization. It is preserved unchanged; structural lint and page selection exclude schema/.",
+      "owner_assessment": "2026-10-16: proceed with layer-1 component metrics on this baseline. Contamination is confined to audit/query logs, neither used by page selection; promoted content matches the archived proposal. Retain requires_review and disclose the caveat. Token cost is unavailable; wall time includes hooks and is not inference cost."
     },
     "summary": {
       "documents_attempted": 10,

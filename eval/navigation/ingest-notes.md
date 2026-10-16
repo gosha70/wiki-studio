@@ -46,7 +46,30 @@ match the proposal. Per-document wall time includes lifecycle-hook work,
 including the test suite; it must not be presented as pure inference cost.
 
 The manifest marks validity `requires_review`. Do not publish this run as an
-uncontaminated benchmark. Gold assignment and metric implementation have not
-started. A future run with isolated backend hooks/settings would require an
+uncontaminated benchmark. At the time of the run freeze, gold assignment and metric implementation
+had not started. A future run with isolated backend hooks/settings would require an
 explicitly revised protocol and a separately identified fixture; this run
 must not be silently regenerated to improve its outcome.
+
+## Layer-1 continuation (owner assessment, 2026-10-16)
+
+The owner approved continuing component measurements on this unchanged
+baseline, retaining `requires_review` and disclosing the contamination.
+Audit and query logs are not inputs to page selection. Model token cost is
+unavailable; measured wall time includes hooks and is not inference cost.
+`wiki/schema/__init__.py` was copied with the packaged Markdown during
+initialization and is retained; schema files are excluded from selection.
+
+Gold was assigned by reading all three frozen content pages, without running
+selection or using raw-source answers to fill gaps. `gold.json` contains one
+entry for each of the 35 preregistered question IDs, with verbatim evidence
+for q11, q12 and q26 and explicit missing-answer reasons for the other 32.
+The question-based ingest coverage is 3/29 (10.34%); the six absent questions
+are excluded from that denominator. No answer exists only in the index, and
+the gold decision page is linked from the index.
+
+The one gold-bearing competing question, q26, has no surviving distractor.
+All six competing entries therefore have empty distractor lists, with the
+reason stated explicitly. A zero distractor-outranks value here would not
+show that the selector successfully discriminates between competing pages.
+Metrics and the README evidence section remain for the build phase.
