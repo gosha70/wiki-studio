@@ -35,8 +35,10 @@ caveats they need (issue #10, mirror of memkernel #17).
   prefix and eight of ten ingests in the navigation evaluation's run 1 failed
   validation. The multi-page response instructions and the response schema
   now state the rule, and the exact configured prefix is removed once before
-  the unchanged validators run. Run 1's numbers were measured on 0.2.0 and
-  are kept as measured.
+  the unchanged validators run, unless the path already has a valid
+  wiki-relative shape (a wiki directory named `concepts` keeps
+  `concepts/x.md`). Run 1's numbers were measured on 0.2.0 and are kept as
+  measured.
 
 ### Changed
 

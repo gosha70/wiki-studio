@@ -128,7 +128,9 @@ Backends see wiki files under a heading named after the wiki directory
 (`knowledge/wiki/index.md`, or `wiki/index.md` for a custom location);
 every edit path they return is relative to that directory. If a backend
 copies that exact heading prefix into a path, it is removed once before
-validation; no other prefix is normalised.
+validation; no other prefix is normalised, and a path that already has a
+valid shape (`<page-dir>/<name>.md` or a root `<name>.md`) is left alone, so
+a wiki directory named like a page directory (`concepts`) still works.
 
 ## Exit codes
 

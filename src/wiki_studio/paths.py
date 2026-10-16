@@ -19,6 +19,11 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from .schema import PAGE_TYPE_DIRS, ROOT_DIR
+
+# The directories a page may live in, one level below the wiki root.
+_PAGE_DIRS: frozenset[str] = frozenset(d for d in PAGE_TYPE_DIRS.values() if d != ROOT_DIR)
+
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
@@ -38,6 +43,18 @@ AUDIT_DIR_NAME = ".audit"
 AUDIT_LOG_NAME = "ingest-log.md"
 SCHEMA_DIR_NAME = "schema"
 APPLIED_DIR_NAME = ".applied"
+
+
+def looks_wiki_relative(path: str) -> bool:
+    """True when ``path`` has the shape of a wiki page path: ``<page-dir>/<name>.md`` or a root ``<name>.md``.
+
+    Only the shape is judged (the page directories of the schema, one level deep,
+    or a root-level markdown file); content and placement are the validators' job.
+    """
+    parts = path.split("/")
+    if len(parts) == 1:
+        return parts[0].endswith(".md")
+    return len(parts) == 2 and parts[0] in _PAGE_DIRS and parts[1].endswith(".md")
 
 
 def git_toplevel(cwd: Path | None = None) -> Path | None:
@@ -181,16 +198,32 @@ class WikiPaths:
         except ValueError:
             return self.wiki_dir.name
 
-    def strip_wiki_label(self, path: str) -> str:
+    def strip_wiki_label(self, path: str, *, must_exist: bool = False) -> str:
         """Remove one leading ``<wiki_label>/`` from a path a backend returned, and nothing else.
 
         Prompts show wiki files as ``<label>/<path>``; a model that copies the label
         into an edit path is corrected here for that exact prefix only, before the
-        usual validation. ``wiki/wiki/x.md`` with label ``wiki`` becomes
+        usual validation. A path that already has a valid wiki-relative shape is
+        never touched: with the wiki directory itself named ``concepts``, the page
+        ``concepts/x.md`` keeps its one ``concepts/`` while ``concepts/concepts/x.md``
+        loses the copied one. ``wiki/wiki/x.md`` with label ``wiki`` becomes
         ``wiki/x.md`` and then fails validation as it should.
+
+        ``must_exist`` is for edits whose target already exists (``update``,
+        ``append-log``, ``append-index``): in the collision case, when the path
+        as given does not exist under the wiki but the stripped one does, the
+        prefix was copied and is removed (label ``decisions``: a copied
+        ``decisions/index.md`` becomes ``index.md`` when only the root index exists).
         """
         prefix = self.wiki_label + "/"
-        return path[len(prefix) :] if path.startswith(prefix) else path
+        if not path.startswith(prefix):
+            return path
+        stripped = path[len(prefix) :]
+        if looks_wiki_relative(path):
+            if must_exist and not (self.wiki_dir / path).exists() and (self.wiki_dir / stripped).exists():
+                return stripped
+            return path
+        return stripped
 
     def relative_to_root(self, path: Path) -> str:
         """``path`` relative to the root as POSIX when it is under the root, else as given."""

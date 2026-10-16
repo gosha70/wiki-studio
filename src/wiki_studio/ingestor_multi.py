@@ -120,7 +120,11 @@ class DefaultMultiIngestor:
                 PageEdit(
                     # The prompt labels wiki files "<label>/<path>"; a copied label is
                     # removed here, exactly once, before per-edit validation (issue #11).
-                    path=self._paths.strip_wiki_label(str(raw_edit["path"])),
+                    # Targets of update/append edits already exist, which settles the
+                    # case where the wiki directory is named like a page directory.
+                    path=self._paths.strip_wiki_label(
+                        str(raw_edit["path"]), must_exist=str(raw_edit.get("action")) != "create"
+                    ),
                     action=raw_edit["action"],
                     new_content=str(raw_edit["new_content"]),
                     rationale=str(raw_edit["rationale"]),

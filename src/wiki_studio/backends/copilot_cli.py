@@ -245,10 +245,13 @@ def _render_plain_text_prompt(backend_prompt: dict[str, Any], wiki_label: str = 
     if wiki_state:
         # Multi-page ingest: the wiki headings above carry the label; edit paths must not.
         lines.append("")
+        # Phrased so it stays right when the wiki directory is itself named like a
+        # page directory (label "concepts"): do not repeat the prefix, rather than
+        # "never start with it".
         lines.append(
             f"Every edit 'path' is relative to the wiki directory, which the headings above show as "
-            f"'{wiki_label}/'. Write 'decisions/<slug>.md', 'concepts/<slug>.md', 'index.md' or 'log.md'; "
-            f"never start a path with '{wiki_label}/'."
+            f"'{wiki_label}/'. Do not repeat that prefix: write 'decisions/<slug>.md', not "
+            f"'{wiki_label}/decisions/<slug>.md'; likewise 'concepts/<slug>.md', 'index.md' and 'log.md'."
         )
     if task == "gate-only":
         lines.append("")

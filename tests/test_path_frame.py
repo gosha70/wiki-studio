@@ -18,7 +18,7 @@ from wiki_studio import api
 from wiki_studio.backends.copilot_cli import _render_plain_text_prompt
 from wiki_studio.errors import ContractViolationError
 from wiki_studio.ingestor_multi import DefaultMultiIngestor
-from wiki_studio.paths import ENV_WIKI_DIR, WikiPaths
+from wiki_studio.paths import ENV_WIKI_DIR, WikiPaths, looks_wiki_relative
 from wiki_studio.prompt import _PATCH_SET_RESPONSE_SCHEMA, compose_multi_prompt, compose_prompt, load_schema_files
 from wiki_studio.proposal import IngestRequest
 from wiki_studio.wiki_state import load_wiki_state
@@ -79,6 +79,44 @@ class TestStripWikiLabel(unittest.TestCase):
         self.assertEqual(paths.strip_wiki_label("wiki"), "wiki")
         self.assertEqual(paths.strip_wiki_label("index.md"), "index.md")
 
+    def test_label_equal_to_a_page_directory_keeps_valid_paths(self) -> None:
+        # Reviewer's case on PR #12: the wiki directory is itself named like a page directory.
+        for label in ("concepts", "decisions", "glossary"):
+            paths = WikiPaths.for_root(Path("/proj"), wiki_dir=Path("/proj") / label)
+            with self.subTest(label=label):
+                self.assertEqual(paths.strip_wiki_label(f"{label}/x.md"), f"{label}/x.md")
+                self.assertEqual(paths.strip_wiki_label(f"{label}/index.md"), f"{label}/index.md")
+                self.assertEqual(paths.strip_wiki_label(f"{label}/{label}/x.md"), f"{label}/x.md")
+                self.assertEqual(paths.strip_wiki_label(f"{label}/decisions/d.md"), "decisions/d.md")
+                self.assertEqual(paths.strip_wiki_label(f"{label}/index.md"), f"{label}/index.md")
+                self.assertEqual(paths.strip_wiki_label("index.md"), "index.md")
+
+    def test_must_exist_settles_the_collision_by_what_is_on_disk(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = _layout_with_wiki_at(Path(tmp), "decisions")
+            # Only the root index exists: a copied 'decisions/index.md' means 'index.md'.
+            self.assertEqual(paths.strip_wiki_label("decisions/index.md", must_exist=True), "index.md")
+            self.assertEqual(paths.strip_wiki_label("decisions/log.md", must_exist=True), "log.md")
+            # Without the existence hint the valid shape wins.
+            self.assertEqual(paths.strip_wiki_label("decisions/index.md"), "decisions/index.md")
+            # A nested index that really exists is kept even with the hint.
+            (paths.wiki_dir / "decisions").mkdir()
+            (paths.wiki_dir / "decisions" / "index.md").write_text("---\n", encoding="utf-8")
+            self.assertEqual(paths.strip_wiki_label("decisions/index.md", must_exist=True), "decisions/index.md")
+            # Neither exists: nothing to prefer, the shape rule applies.
+            self.assertEqual(paths.strip_wiki_label("decisions/y.md", must_exist=True), "decisions/y.md")
+
+    def test_looks_wiki_relative_judges_shape_only(self) -> None:
+        self.assertTrue(looks_wiki_relative("concepts/x.md"))
+        self.assertTrue(looks_wiki_relative("glossary/index.md"))
+        self.assertTrue(looks_wiki_relative("index.md"))
+        self.assertTrue(looks_wiki_relative("anything.md"))
+        self.assertFalse(looks_wiki_relative("wiki/concepts/x.md"))
+        self.assertFalse(looks_wiki_relative("wiki/index.md"))
+        self.assertFalse(looks_wiki_relative("knowledge/wiki/index.md"))
+        self.assertFalse(looks_wiki_relative("concepts/x.txt"))
+        self.assertFalse(looks_wiki_relative("concepts"))
+
     def test_nested_and_root_labels(self) -> None:
         nested = WikiPaths.for_root(Path("/proj"))
         self.assertEqual(nested.strip_wiki_label("knowledge/wiki/decisions/d.md"), "decisions/d.md")
@@ -112,6 +150,22 @@ class TestMultiIngestForgivesTheLabel(unittest.TestCase):
     def test_unprefixed_paths_are_untouched(self) -> None:
         paths = _layout_with_wiki_at(self.tmp, "wiki")
         self.assertEqual(self._ingest(paths, ""), ["concepts/x.md", "index.md", "log.md"])
+
+    def test_wiki_named_like_a_page_directory(self) -> None:
+        # A correct 'concepts/x.md' must survive when the wiki directory is '<root>/concepts';
+        # a copied 'concepts/concepts/x.md' is still corrected.
+        paths = _layout_with_wiki_at(self.tmp, "concepts")
+        self.assertEqual(paths.wiki_label, "concepts")
+        self.assertEqual(self._ingest(paths, ""), ["concepts/x.md", "index.md", "log.md"])
+        result = api.ingest(paths.root / "sample-incident.md", paths, backend=_PrefixingBackend(""))
+        self.assertEqual(result.edits, ("concepts/x.md", "index.md", "log.md"))
+        assert result.written is not None
+        self.assertIn("concepts/x.md", api.promote(result.written, paths).applied_paths)
+        self.assertTrue((paths.wiki_dir / "concepts" / "x.md").is_file())
+
+    def test_wiki_named_like_a_page_directory_with_a_copied_label(self) -> None:
+        paths = _layout_with_wiki_at(self.tmp, "decisions")
+        self.assertEqual(self._ingest(paths, "decisions/"), ["concepts/x.md", "index.md", "log.md"])
 
     def test_double_prefix_still_fails_validation(self) -> None:
         paths = _layout_with_wiki_at(self.tmp, "wiki")
@@ -151,15 +205,33 @@ class TestPromptStatesTheFrame(unittest.TestCase):
         )
         rendered = _render_plain_text_prompt(prompt, wiki_label=self.paths.wiki_label)
         self.assertIn("--- wiki/index.md ---", rendered)
-        self.assertIn("never start a path with 'wiki/'", rendered)
+        self.assertIn("not 'wiki/decisions/<slug>.md'", rendered)
         self.assertIn("relative to the wiki directory", rendered)
+        self.assertNotIn("never start", rendered)
+
+    def test_prompt_stays_correct_when_the_label_is_a_page_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = _layout_with_wiki_at(Path(tmp), "concepts")
+            source = paths.root / "sample-incident.md"
+            content = source.read_text(encoding="utf-8")
+            prompt = compose_multi_prompt(
+                source_path=source,
+                source_content=content,
+                schema_files=load_schema_files(paths),
+                wiki_state=load_wiki_state(paths=paths, source_path=source, source_content=content),
+                source_kind="file",
+            )
+            rendered = _render_plain_text_prompt(prompt, wiki_label=paths.wiki_label)
+        self.assertIn("not 'concepts/decisions/<slug>.md'", rendered)
+        self.assertIn("'concepts/<slug>.md'", rendered)
+        self.assertNotIn("never start a path with 'concepts/'", rendered)
         self.assertIn("Never prefixed with the wiki directory's name", rendered)
 
     def test_legacy_prompt_is_unchanged(self) -> None:
         source = self.paths.root / "sample-incident.md"
         prompt = compose_prompt(source, source.read_text(encoding="utf-8"), load_schema_files(self.paths))
         rendered = _render_plain_text_prompt(prompt, wiki_label=self.paths.wiki_label)
-        self.assertNotIn("never start a path with", rendered)
+        self.assertNotIn("Do not repeat that prefix", rendered)
 
     def test_schema_path_property_carries_the_rule(self) -> None:
         path_property = _PATCH_SET_RESPONSE_SCHEMA["properties"]["edits"]["items"]["properties"]["path"]
