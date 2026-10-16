@@ -259,8 +259,9 @@ of context before and after, windows merged per file, and count the words.
 
 Read these numbers with their caveats. Run 1 promoted one document in ten:
 eight ingests failed validation because the model returned paths prefixed
-with the wiki directory's name, a contract gap in the prompt recorded under
-"Known issues" in the CHANGELOG, and one timed out. The three navigation numbers therefore rest on three
+with the wiki directory's name, a contract gap in the prompt
+([issue #11](https://github.com/gosha70/wiki-studio/issues/11)), and one
+timed out. The three navigation numbers therefore rest on three
 questions and one page, and the coverage number is the finding. The corpus
 shares its vocabulary with the wiki schema, and the question writer knows
 the scorer. During the run, a Claude Code Stop hook executed this

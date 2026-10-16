@@ -41,9 +41,10 @@ caveats they need (issue #10, mirror of memkernel #17).
 - Run 1 of the navigation evaluation promoted one document in ten: eight
   ingests failed validation because the model answered with paths prefixed by
   the wiki directory's name (`wiki/decisions/…`), which the prompt shows in
-  its file headings but never tells the model to omit. The fix is a prompt
-  contract change (state that `path` is wiki-relative, strip a leading
-  `<wiki-label>/` defensively) in a later release; the run is kept as measured.
+  its file headings but never tells the model to omit. Fix tracked as issue
+  #11 (state that `path` is wiki-relative, strip the exact configured label
+  prefix before the existing validation, expose the resolved layout) for a
+  later release; the run is kept as measured.
 - The `claude` text-mode backend exposes no token counts, so ingest cost is
   reported as wall time only. In run 1 a Claude Code Stop hook ran this
   repository's test suite inside each backend call with the fixture's paths
