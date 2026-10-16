@@ -129,6 +129,12 @@ CHANGELOG and version.
 ### Task 4: Mutation gate suite (US4, conditional)
 Only as generated variants of the archived patch-sets; otherwise dropped.
 
+### Task 5: Run 2 (US5, amendment of 2026-10-16, release gate)
+Same questions and corpus, separate `run2/` fixture, hooks isolated and
+verified by a probe before any attempt, model and settings pinned, one
+attempt per document; `run.py --shared`; both runs in the README. The gate
+is a completed, reproducible run, not a score. Run 1 is never touched.
+
 ## Risks
 
 - **Vocabulary alignment.** memkernel's docs share the wiki's words; hit rates
@@ -144,5 +150,9 @@ Only as generated variants of the archived patch-sets; otherwise dropped.
   eliminated, and said so.
 - **Backend cost reporting.** The copilot CLI may not expose tokens; the
   manifest then records wall time and the README says tokens were unavailable.
+- **Hook isolation can silently fail.** Run 1's contamination came from a
+  user Stop hook inside the backend subprocess. Run 2 verifies isolation with
+  a recorded probe before any attempt is consumed; a failed probe is fixed
+  and repeated, never an ingest.
 - **Corpus licence.** Apache-2.0 with attribution in NOTICE; the copied files
   are unmodified.

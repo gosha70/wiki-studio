@@ -61,6 +61,12 @@ memkernel's adapter run.
 **When** mutation operators derive known-bad variants and the originals are replayed
 **Then** the suite reports false accepts on mutants and false rejects on originals; if this cannot be built as a generated corpus, it is left out rather than hand-written
 
+### US5: A clean second measurement gates the release (Priority: HIGH, amendment of 2026-10-16)
+
+**Given** run 1 (measured on 0.2.0, one document in ten promoted, logs and wall time contaminated by a Stop hook) and the issue #11 fix merged
+**When** the owner runs the one-time ingest again under a revised, recorded protocol: same frozen questions and corpus, a separate fixture directory, Claude hooks isolated from the backend and that isolation verified by a probe before any attempt is consumed, model and settings pinned, the one-attempt rule unchanged
+**Then** run 2 is a completed, reproducible measurement published next to run 1 with both runs' denominators and caveats, run 1 is unchanged, and 0.3.0 is released only after that; the gate is the completed measurement, not any score
+
 ## Requirements
 
 - **FR-001 (corpus)**: `eval/navigation/corpus/` MUST contain `README.md` and every `docs/**/*.md` of `gosha70/memkernel` at tag `v0.4.0`, copied verbatim with paths preserved; `eval/navigation/manifest.json` MUST record `corpus_repo`, `corpus_tag`, `corpus_commit` (the tag's commit SHA) and `corpus_files` (path and sha256 each). `NOTICE` MUST gain an entry naming memkernel, its Apache-2.0 licence and the copied paths. `v0.4.0` is the latest tag; no earlier tag predates the wiki bridge (every tag from `v0.2.0` carries ADR-008 and the same nine docs, all mentioning the wiki), so no choice of tag avoids the vocabulary alignment. A later feature may add a second, unrelated corpus; this one is reported as vocabulary-aligned (FR-010).
@@ -75,6 +81,10 @@ memkernel's adapter run.
 - **FR-010 (README evidence section)**: `README.md` MUST gain an "Evidence" section stating the three numbers with their definitions, the unit stated next to them as whitespace-separated words (never "tokens", which would invite comparison with model tokens), labelled component metrics (not agent-level), noting the corpus is vocabulary-aligned with the wiki schema (memkernel's docs use "page", "wiki", "ingest", "export"), linking the mirror issue for layer 2, and making no claim about agent cost or quality. `CHANGELOG.md` gets `[0.3.0]`; version `0.3.0` in `pyproject.toml`, `__init__.py` and the version test.
 - **FR-011 (hygiene)**: No runtime dependency; `eval/` is excluded from the wheel and from coverage; the script and tests carry the licence header; nothing under `eval/` reads this repository's own tree except the committed fixture.
 - **FR-012 (ingest help text)**: The `ingest` verb's help in `cli.py` still says "Phase 0: requires --legacy-single-source … multi-page ingest lands in Phase 1" and calls the legacy flag required; multi-page ingest has been the default since 0.1.0 and the build runs that exact command. The two help strings MUST say that multi-page is the default and the flag selects the v1 single-source generator. Help text only; no flag, verb or exit code changes, and the CLI contract tests stay green.
+- **FR-013 (run 2 fixture)**: `eval/navigation/run2/` MUST hold its own `wiki/`, `proposals/`, `manifest.json`, `gold.json`, `results.json`, `ingest-logs/` and `ingest-notes.md`. The corpus, `questions.json` and `stopwords.txt` are run 1's files in `eval/navigation/`, used in place and not copied; run 2's manifest MUST record their sha256 and a test MUST assert they equal run 1's manifest values. No file of run 1 changes.
+- **FR-014 (hook isolation, verified before any attempt)**: The backend subprocess MUST be isolated from Claude Code user hooks by a recorded method (a dedicated `CLAUDE_CONFIG_DIR` whose settings define no hooks, or an opt-out variable the hook honours), and the isolation MUST be verified by a probe before the first ingest: one `claude -p` call with the run's exact environment and a trivial prompt, after which run 2's audit log, query log and proposals directory are byte-identical to before (or still absent) and no test-suite process was started. The probe's command, environment, output and verdict are recorded in the manifest as `isolation_probe`. A failed probe consumes no attempt: fix the isolation and probe again; only a passed probe may be followed by ingest.
+- **FR-015 (pinned run)**: Run 2's manifest MUST record the wiki-studio commit the ingest ran from (a descendant of the issue #11 fix's merge commit) and version, the Claude Code version, the model (`ANTHROPIC_MODEL` set to a concrete model identifier when the CLI accepts one; otherwise the alias plus whatever the CLI reports), the backend timeout, every `WIKI_STUDIO_*` value and the command, all fixed before the first attempt and unchanged after it. FR-003's one-attempt rule applies unchanged, including its single retry for a failure that produced nothing. Document order and command are those of run 1 except the paths.
+- **FR-016 (both runs published)**: `run.py` MUST accept `--shared <dir>` for the corpus, question set and stop list when the fixture directory lacks them; run 2's `results.json` is committed and asserted by the determinism test alongside run 1's. The README Evidence table MUST show run 1 and run 2 side by side with each run's denominators (answerable questions, questions with gold, questions in the ratio) and caveats; run 1's column and text are unchanged. The release gate is a completed, reproducible run 2 (manifest complete with a passed probe, one attempt per document, determinism test green), not any particular value.
 
 ## Constraints / What NOT to Build
 
@@ -84,6 +94,7 @@ memkernel's adapter run.
 - No regeneration of the wiki in CI, no model call in CI.
 - No efficiency claim in the README beyond the three component numbers and their caveats.
 - No second corpus in this release; the vocabulary-alignment caveat is stated instead.
+- Run 2 does not replace run 1 and is not rerun for a better score: one protocol, one run, published as it comes out. No change to code, prompt, settings or questions between the isolation probe and the last document.
 
 ## Key Entities
 
@@ -102,3 +113,5 @@ memkernel's adapter run.
 5. The README Evidence section states the numbers in words, the grep rule verbatim, the corpus caveat and the layer 2 link, and nothing else about efficiency.
 6. NOTICE attributes memkernel; the wheel does not contain `eval/`.
 7. Gate: ruff, format, mypy, coverage ≥ 80 percent (with `eval/` excluded) green.
+8. Run 2: `eval/navigation/run2/manifest.json` records a passed `isolation_probe` dated before the first attempt, exactly one attempt per document (or two with a `transport_error`), a wiki-studio commit that descends from the #11 fix's merge, and the model and settings; run 1's files are byte-identical to their state before run 2.
+9. `python -m eval.navigation.run eval/navigation/run2 --shared eval/navigation` reproduces run 2's `results.json`; the README shows both runs with their denominators and caveats; the tag is cut only after that.
