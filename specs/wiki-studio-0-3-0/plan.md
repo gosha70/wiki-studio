@@ -7,7 +7,9 @@ status: draft
 date: 2026-10-15
 collaboration_mode: single
 origin:
+  issue: 10
   urls:
+    - https://github.com/gosha70/wiki-studio/issues/10
     - https://github.com/gosha70/memkernel/issues/17
     - https://github.com/gosha70/memkernel/blob/feature/memkernel-0-5/specs/memkernel-0-5/spec.md
     - https://github.com/GiulioDER/agent-memory-bench
@@ -97,8 +99,9 @@ its effect in the diff; no pass/fail threshold is set.
 eval/navigation/corpus/**            memkernel v0.4.0 docs, verbatim
 eval/navigation/questions.json       preregistered (committed before the wiki)
 eval/navigation/stopwords.txt        the grep rule's stop list
-eval/navigation/wiki/**              frozen wiki with .audit/ and proposals/.applied/
-eval/navigation/manifest.json        corpus pin, ingest record, commits
+eval/navigation/wiki/**              frozen wiki with its .audit/ tree (WIKI_STUDIO_WIKI_DIR)
+eval/navigation/proposals/**         every proposal, promoted ones under .applied/ (WIKI_STUDIO_PROPOSALS_DIR)
+eval/navigation/manifest.json        corpus pin, ingest record (one attempt per document), commits
 eval/navigation/gold.json            assigned after freezing
 eval/navigation/run.py               the three metrics (stdlib)
 eval/navigation/results.json         committed output
@@ -114,7 +117,9 @@ Copy and pin the corpus; NOTICE; write and commit `questions.json` and
 `stopwords.txt` in their own commit before any ingest.
 
 ### Task 2: Frozen wiki (US1)
-One-time ingest + promote per document; manifest; commit the tree.
+One-time ingest + promote per document with root, wiki dir and proposals dir
+all set explicitly; one attempt per document, nothing edited by hand,
+rejections recorded; manifest; commit the tree.
 
 ### Task 3: Gold, script, determinism test, README (US2 part, US3)
 `gold.json`; `run.py`; `results.json`; the test; README Evidence section;
