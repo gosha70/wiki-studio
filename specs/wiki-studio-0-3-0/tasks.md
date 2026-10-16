@@ -65,7 +65,7 @@ complete. See `eval/navigation/ingest-notes.md` before publication.
 
 **Checkpoint US5** — verify before the tag:
 - [ ] `run2/manifest.json`: `isolation_probe.passed` true and dated before the first attempt; one entry per document
-- [ ] `git diff --stat <before-run-2>..HEAD -- eval/navigation/corpus eval/navigation/questions.json eval/navigation/stopwords.txt eval/navigation/wiki eval/navigation/gold.json eval/navigation/results.json` is empty
+- [x] `git diff --stat 4d224df..HEAD -- eval/navigation/corpus eval/navigation/questions.json eval/navigation/stopwords.txt eval/navigation/wiki eval/navigation/gold.json eval/navigation/results.json` is empty
 - [ ] determinism test green for both runs; README shows both
 
 ## Final Verification

@@ -63,12 +63,14 @@ caveats they need (issue #10, mirror of memkernel #17).
 - Run 1 of the navigation evaluation was measured on 0.2.0, before the
   issue #11 fix above, and promoted one document in ten; it is kept as
   measured. Run 2, on the fixed code, promoted seven.
-- In run 2 the three documents that did not promote failed on a second
-  prompt contract gap: the model answered with `index.md` as a full page
-  edit (`page_type: index`, no sources) instead of an `append-index` line, and
-  the validators rejected it. The prompt tells the model to "add a link from
-  the appropriate section of index.md" but not which action that is. To be
-  filed and fixed in a later release; run 2 is kept as measured.
+- In run 2 the three documents that did not promote were rejected by the
+  per-edit validator, correctly: the model answered with `index.md` as a full
+  page edit (`frontmatter page_type 'index' is not promotable for
+  create/update`; `'sources:' must be a non-empty list`) instead of an
+  `append-index` line. The validator did its job; the gap is in the prompt,
+  which tells the model to "add a link from the appropriate section of
+  index.md" without naming the action. To be filed and fixed in a later
+  release; run 2 is kept as measured.
 - The `claude` text-mode backend exposes no token counts, so ingest cost is
   reported as wall time only. In run 1 a Claude Code Stop hook ran this
   repository's test suite inside each backend call with the fixture's paths

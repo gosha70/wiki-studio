@@ -94,7 +94,8 @@ def _ratio(numerator: int, denominator: int) -> float | None:
 def _shared_file(fixture_dir: Path, shared_dir: Path | None, name: str) -> Path:
     """A fixture's own copy wins; otherwise the shared one (run 2 uses run 1's corpus, questions and stop list)."""
     own = fixture_dir / name
-    if own.exists() or shared_dir is None:
+    present = own.is_file() or (own.is_dir() and any(own.iterdir()))  # an empty directory does not shadow
+    if present or shared_dir is None:
         return own
     return shared_dir / name
 

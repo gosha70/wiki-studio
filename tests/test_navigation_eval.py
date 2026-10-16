@@ -19,10 +19,8 @@ from wiki_studio.lint import lint_wiki
 
 FIXTURE = Path(__file__).resolve().parents[1] / "eval" / "navigation"
 RUN2 = FIXTURE / "run2"
-# Run 2 (spec US5) shares run 1's corpus, questions and stop list and is asserted once it exists.
-RUNS: list[tuple[str, Path, Path]] = [("run1", FIXTURE, FIXTURE)]
-if (RUN2 / "results.json").is_file():
-    RUNS.append(("run2", RUN2, FIXTURE))
+# Run 2 (spec US5) shares run 1's corpus, questions and stop list; both runs are always asserted (FR-016).
+RUNS: list[tuple[str, Path, Path]] = [("run1", FIXTURE, FIXTURE), ("run2", RUN2, FIXTURE)]
 
 
 def _sha256(path: Path) -> str:
@@ -94,8 +92,6 @@ class TestResultsAreReproduced(unittest.TestCase):
 
     def test_run2_shares_run1_inputs_unchanged(self) -> None:
         # FR-013: run 2 records the shared files' checksums and they equal run 1's manifest values.
-        if not (RUN2 / "manifest.json").is_file():
-            self.skipTest("run 2 has not been recorded yet (spec US5)")
         run1 = json.loads((FIXTURE / "manifest.json").read_text(encoding="utf-8"))
         run2 = json.loads((RUN2 / "manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(run2["questions_sha256"], run1["questions_sha256"])

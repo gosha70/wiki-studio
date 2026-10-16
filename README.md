@@ -271,7 +271,7 @@ is in whitespace-separated words, not model tokens.
 | Documents promoted, of the 10 in the corpus | 1 | 7 |
 | Ingest coverage: answerable questions (29 of 35; 6 have no answer in the corpus) whose answer landed in some page | 3 of 29 (10.3%) | 21 of 29 (72.4%) |
 | Navigation hit at 1 / at 5, over questions with a gold page | 3 of 3 / 3 of 3 | 3 of 21 (14.3%) / 10 of 21 (47.6%) |
-| Competing questions where a distractor outranks the gold page | 0 of 1 | 2 of 4 |
+| Competing questions where a distractor outranks the gold page (denominator: the 6 competing questions that have a gold page in that run) | 0 of 1 | 2 of 4 |
 | Words loaded by `query` (index plus selected pages) vs the grep rule, over the questions with gold (none had empty grep output) | 2,286 vs 16,706; median ratio 0.16 | 40,647 vs 110,895; median ratio 0.33 |
 | Questions the corpus cannot answer: empty selection / mean pages loaded | 4 of 6 / 0.33 | 1 of 6 / 4.0 |
 | Ingest cost per document (tokens not exposed by the `claude` backend) | wall time not isolated (see below) | 52 s mean wall time, isolated (probe passed) |
@@ -307,7 +307,10 @@ bookkeeping). The model was pinned by full name, `claude-opus-5-5`, where run
 three that did not (ADR-009, licensing, sibling-projects) failed on a
 different contract gap than run 1: the model returned `index.md` as a full
 page edit instead of an `append-index` line, which the validators correctly
-rejected. That gap is recorded under "Known issues" in the CHANGELOG. The
+rejected. That is a known, still unfixed prompt gap, recorded under "Known
+issues" in the CHANGELOG for a later release; it is independent of the #11
+fix and would affect run 1's corpus the same way, so the rise from one
+promoted document to seven is the #11 fix, and the ceiling is not yet ten. The
 navigation numbers now rest on 21 questions over nine content pages, and
 they are the finding: with more pages, the token-overlap selector puts the
 gold page first in one case out of seven and within the top five in about

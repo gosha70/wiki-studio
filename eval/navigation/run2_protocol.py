@@ -158,7 +158,10 @@ def _pytest_processes(probe_pid: int) -> list[tuple[int, str, bool]]:
 
     A pytest whose parent chain reaches the probe's process was started by a hook
     inside that call; any other pytest (another session's hook, a developer's
-    shell) is unrelated to this measurement and only recorded.
+    shell) is unrelated to this measurement and only recorded. The chain is read
+    from one ``ps`` snapshot, so a hook child whose intermediate shell has already
+    exited (and was reparented) can be misclassified as unrelated; the byte
+    comparison of the fixture is the decisive check, this watch is the second.
     """
     ps = subprocess.run(["ps", "-axo", "pid=,ppid=,command="], capture_output=True, text=True)
     parent: dict[int, int] = {}
@@ -294,6 +297,10 @@ def ingest(run_dir: Path, backend: str) -> int:
             file=sys.stderr,
         )
         return 2
+    stems = [Path(e["path"]).stem for e in manifest["corpus_files"]]
+    if len(set(stems)) != len(stems):
+        print("ingest: two corpus files share a stem; their proposal directories would collide", file=sys.stderr)
+        return 2
     _fresh_wiki(run_dir)
 
     pinned: dict[str, Any] = {
@@ -368,7 +375,12 @@ def ingest(run_dir: Path, backend: str) -> int:
                 # The backend returned nothing: the one permitted retry (FR-003).
                 doc["transport_error"] = {"exit_code": code, "stderr": err.strip().splitlines()[-1:] or [""]}
                 continue
-            doc["disposition"] = "reject" if code == 1 else f"ingest_error (exit {code})"
+            if code == 1:
+                doc["disposition"] = "reject"
+            elif code == 0:
+                doc["disposition"] = "ingest_error (exit 0 but no proposal directory written)"
+            else:
+                doc["disposition"] = f"ingest_error (exit {code})"
             doc["proposal_dir"] = proposal_dir.name if written else None
             break
 
@@ -403,6 +415,8 @@ def ingest(run_dir: Path, backend: str) -> int:
         "promoted": sum(d["disposition"] == "accept" and d["promote_error"] is None for d in pinned["documents"]),
         "retries": sum(d["attempts"] == 2 for d in pinned["documents"]),
         "total_wall_seconds": round(sum(d["wall_seconds"] for d in pinned["documents"]), 3),
+        # A lint failure is recorded, never repaired (FR-003); the run still completes.
+        "lint_clean": lcode == 0,
     }
     _save_manifest(run_dir, manifest)
     notes = run_dir / "ingest-notes.md"
