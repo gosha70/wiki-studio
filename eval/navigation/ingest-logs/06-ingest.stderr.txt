@@ -1,0 +1,2 @@
+error: contract violation: WikiPatchSet failed per-edit semantic validation:
+  - wiki/workflows/memkernel-harness-integration.md: page_type 'workflow' should live under workflows/ but path is in wiki/workflows/

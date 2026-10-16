@@ -1,0 +1,6 @@
+applied 5 edit(s) from 2026-10-15-ADR-009-rlm-studio-for-documents; archived to /Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/proposals/.applied/2026-10-15-ADR-009-rlm-studio-for-documents.
+  + wiki/log.md
+  + wiki/index.md
+  + wiki/decisions/rlm-studio-document-layer.md
+  + wiki/.audit/proposals/2026-10-15-ADR-009-rlm-studio-for-documents/proposal.md
+  + wiki/.audit/proposals/2026-10-15-ADR-009-rlm-studio-for-documents/plan.json

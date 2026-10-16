@@ -1,0 +1,1 @@
+/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/proposals/2026-10-15-ADR-009-rlm-studio-for-documents

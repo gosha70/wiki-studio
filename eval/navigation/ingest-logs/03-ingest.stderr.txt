@@ -1,0 +1,3 @@
+error: contract violation: WikiPatchSet failed per-edit semantic validation:
+  - wiki/decisions/llm-wiki-as-semantic-layer.md: page_type 'decision' should live under decisions/ but path is in wiki/decisions/
+  - wiki/concepts/memkernel-wiki-bridge.md: page_type 'concept' should live under concepts/ but path is in wiki/concepts/

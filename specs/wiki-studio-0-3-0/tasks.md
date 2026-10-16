@@ -9,14 +9,21 @@
 | # | [P] | Task | File(s) | Owner | Done |
 |---|-----|------|---------|-------|------|
 | 1 | | Copy `README.md` and `docs/**/*.md` from memkernel `v0.4.0` verbatim; write `manifest.json` (`corpus_repo`, `corpus_tag`, `corpus_commit`, `corpus_files` with sha256); NOTICE entry; `stopwords.txt` generated verbatim from the querier's `_STOPWORDS` with its sha256 in the manifest (FR-001, FR-006) | `eval/navigation/corpus/**`, `eval/navigation/manifest.json`, `eval/navigation/stopwords.txt`, `NOTICE` | build | [x] |
-| 2 | | Write `questions.json` (≥ 30; ≥ 5 `competing`; ≥ 5 `absent`; `source` path+heading) from the pinned corpus. **Two commits, before any ingest:** (a) the question file plus its sha256 as `questions_sha256` in the manifest, nothing else; (b) that commit's hash as `questions_commit` in the manifest (a commit cannot contain its own hash) (FR-002). The stop list is already frozen by task 1 and is not edited. | `eval/navigation/questions.json`, `eval/navigation/manifest.json` | owner | [ ] |
-| 3 | | One-time ingest with `WIKI_STUDIO_ROOT=eval/navigation WIKI_STUDIO_WIKI_DIR=eval/navigation/wiki WIKI_STUDIO_PROPOSALS_DIR=eval/navigation/proposals`: empty wiki (index, log, packaged schema), then per corpus file in order `wiki-studio ingest <file> --backend claude` + `wiki-studio promote <proposal-dir>`, **one attempt each (one retry only when the backend returned nothing, recorded as `attempts`/`transport_error`), nothing edited by hand, rejections and promote errors recorded and left as they are**; record backend, model, date, version and per-document cost in the manifest; commit `wiki/` (with `.audit/`) and `proposals/` (with `.applied/`) (FR-003) | `eval/navigation/wiki/**`, `eval/navigation/proposals/**`, `eval/navigation/manifest.json` | owner | [ ] |
+| 2 | | Write `questions.json` (≥ 30; ≥ 5 `competing`; ≥ 5 `absent`; `source` path+heading) from the pinned corpus. **Two commits, before any ingest:** (a) the question file plus its sha256 as `questions_sha256` in the manifest, nothing else; (b) that commit's hash as `questions_commit` in the manifest (a commit cannot contain its own hash) (FR-002). The stop list is already frozen by task 1 and is not edited. | `eval/navigation/questions.json`, `eval/navigation/manifest.json` | owner | [x] |
+| 3 | | One-time ingest with `WIKI_STUDIO_ROOT=eval/navigation WIKI_STUDIO_WIKI_DIR=eval/navigation/wiki WIKI_STUDIO_PROPOSALS_DIR=eval/navigation/proposals`: empty wiki (index, log, packaged schema), then per corpus file in order `wiki-studio ingest <file> --backend claude` + `wiki-studio promote <proposal-dir>`, **one attempt each (one retry only when the backend returned nothing, recorded as `attempts`/`transport_error`), nothing edited by hand, rejections and promote errors recorded and left as they are**; record backend, model, date, version and per-document cost in the manifest; commit `wiki/` (with `.audit/`) and `proposals/` (with `.applied/`) (FR-003) | `eval/navigation/wiki/**`, `eval/navigation/proposals/**`, `eval/navigation/manifest.json` | owner | [x] |
 
 **Checkpoint US1** — verify before continuing:
-- [ ] `git merge-base --is-ancestor <questions_commit> HEAD` succeeds and `questions.json` is unchanged since it
-- [ ] `wiki-studio lint --root eval/navigation --wiki-dir eval/navigation/wiki` exits 0 on the frozen wiki as produced; if not, the findings are recorded in the manifest, not repaired
-- [ ] the manifest lists every corpus document exactly once
-- [ ] NOTICE names memkernel and the copied paths
+- [x] `git merge-base --is-ancestor <questions_commit> HEAD` succeeds and `questions.json` is unchanged since it
+- [x] `wiki-studio lint --root eval/navigation --wiki-dir eval/navigation/wiki` exits 0 on the frozen wiki as produced; if not, the findings are recorded in the manifest, not repaired
+- [x] the manifest lists every corpus document exactly once
+- [x] NOTICE names memkernel and the copied paths
+
+Run finding: all ten documents were attempted once; one promoted, eight failed
+path validation, and one timed out. Claude's inherited Stop hook ran tests
+with the evaluation paths, contaminating the audit/query logs. All output is
+preserved; the manifest marks the fixture `requires_review`. US1 execution is
+complete, but benchmark validity is unresolved. See
+`eval/navigation/ingest-notes.md` before gold assignment or publication.
 
 ---
 

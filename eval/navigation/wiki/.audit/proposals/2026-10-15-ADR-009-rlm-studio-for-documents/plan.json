@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "source_path": "eval/navigation/corpus/docs/adr/ADR-009-rlm-studio-for-documents.md",
+  "backend": "claude",
+  "rationale": "Gate passed. (1) Reusable: ADR-009 sets a lasting architecture rule. memkernel keeps memories, and RLM Studio stores documents and answers questions about them through ask(). Future contributors need this when working on the document type, the ask tool, the memkernel[rlm] extra or consolidation. (2) Citable: repo file eval/navigation/corpus/docs/adr/ADR-009-rlm-studio-for-documents.md at 8b7f14d. (3) Non-duplicative: the wiki is empty apart from index and log. (4) New-contributor-relevant: it explains why get() on a document returns only a summary, and what 'hybrid mode' means. The source is an ADR, so I created one decision page and added the index link and a log entry. No concept or glossary pages were split out, because the decision page covers the topic and one source does not justify more pages.",
+  "edits": [
+    {
+      "path": "decisions/rlm-studio-document-layer.md",
+      "action": "create",
+      "rationale": "This ADR is a decision record, so I created a new decision page for it. No existing page covers how documents are stored in memkernel versus RLM Studio.",
+      "preview": "preview/decisions/rlm-studio-document-layer.md"
+    },
+    {
+      "path": "index.md",
+      "action": "append-index",
+      "rationale": "The new page must be reachable from index.md.",
+      "preview": "preview/index.md"
+    },
+    {
+      "path": "log.md",
+      "action": "append-log",
+      "rationale": "Required dated log entry for the new page.",
+      "preview": "preview/log.md"
+    }
+  ]
+}
