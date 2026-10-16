@@ -84,10 +84,9 @@ class TestPromptStatesTheIndexLogRule(unittest.TestCase):
         self.assertIn("never rewrite them", rendered)
 
     def test_rule_lists_exactly_the_promotable_types(self) -> None:
-        for page_type in PROMOTABLE_PAGE_TYPES:
-            self.assertIn(page_type, INDEX_LOG_ACTION_RULE)
-        for root_type in ("overview", "log,", "index,"):
-            self.assertNotIn(f" {root_type}", INDEX_LOG_ACTION_RULE.split("content pages")[1])
+        # The rule ends with the promotable types in parentheses; that list is exactly the schema's.
+        listed = INDEX_LOG_ACTION_RULE.rstrip(".").rsplit("(", 1)[1].rstrip(")")
+        self.assertEqual(listed.split(", "), sorted(PROMOTABLE_PAGE_TYPES))
 
     def test_schema_carries_the_rule(self) -> None:
         item = _PATCH_SET_RESPONSE_SCHEMA["properties"]["edits"]["items"]["properties"]
