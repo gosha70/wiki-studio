@@ -3,7 +3,7 @@
 
 [tool.poetry]
 name = "wiki-studio"
-version = "0.2.0"
+version = "0.3.0"
 description = "Karpathy-pattern LLM wiki maintainer: ingest, promote, query, lint and audit a curated markdown knowledge base."
 authors = ["EGOGE <i.am.goga@gmail.com>"]
 license = "Apache-2.0"
@@ -46,7 +46,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.ruff]
 line-length = 120
 target-version = "py311"
-src = ["src", "tests"]
+src = ["src", "tests", "."]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "A", "SIM", "TCH"]

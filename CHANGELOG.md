@@ -6,6 +6,41 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-10-16
+
+The evidence release: the first measured numbers about the tool, with the
+caveats they need (issue #10, mirror of memkernel #17).
+
+### Added
+
+- `eval/navigation/`: a frozen corpus (memkernel's documentation at tag
+  `v0.4.0`, attributed in NOTICE), a question set committed before any
+  ingest ran, a wiki the tool produced from the corpus once through its own
+  gate, gold pages assigned afterwards with a written reason each, and
+  `run.py`, a stdlib script reporting ingest coverage, navigation hit rate at
+  1 and at 5, and words loaded by `query` against a written-down grep rule.
+  `tests/test_navigation_eval.py` asserts the script reproduces the committed
+  `results.json` and that the fixture is the preregistered one.
+- README "Evidence" section with run 1's numbers and caveats.
+
+### Changed
+
+- `ingest --help` no longer says multi-page ingest "lands in Phase 1" or that
+  `--legacy-single-source` is required; multi-page has been the default since
+  0.1.0. Help text only.
+
+### Known issues
+
+- Run 1 of the navigation evaluation promoted one document in ten: eight
+  ingests failed validation because the model answered with paths prefixed by
+  the wiki directory's name (`wiki/decisions/…`), which the prompt shows in
+  its file headings but never tells the model to omit. The fix is a prompt
+  contract change (state that `path` is wiki-relative, strip a leading
+  `<wiki-label>/` defensively) in a later release; the run is kept as measured.
+- The `claude` text-mode backend exposes no token counts, so ingest cost is
+  reported as wall time only, and in run 1 that time includes a Stop hook's
+  test run (`eval/navigation/ingest-notes.md`).
+
 ## [0.2.0] — 2026-10-15
 
 The memkernel release: the two contracts memkernel 0.5's `memkernel[wiki]`

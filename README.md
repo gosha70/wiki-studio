@@ -17,7 +17,7 @@ The code was extracted from
 ```bash
 pip install wiki-studio          # Python 3.11–3.13, no runtime dependencies
 wiki-studio --help
-wiki-studio --version           # 0.2.0
+wiki-studio --version           # 0.3.0
 ```
 
 From a checkout: `poetry install`, then `poetry run wiki-studio --help`.
@@ -226,6 +226,51 @@ additions with defaults in a minor one.
 
 Consumer recipes for code-copilot-team, memkernel and document-assistant
 are in [`docs/consumers.md`](docs/consumers.md).
+
+## Evidence
+
+What is measured so far is one component, not an agent: the querier's
+page selection, which runs without a model (token overlap of the question
+with each index-linked page's slug, path and first 400 characters, top 5).
+The fixture under `eval/navigation/` is memkernel's documentation at tag
+`v0.4.0` (ten files, attributed in NOTICE), a question set written from
+those files and committed before any ingest, and a wiki that `wiki-studio
+ingest` and `promote` produced from them once, through the normal gate, with
+one attempt per document and nothing edited by hand. Gold pages were
+assigned afterwards by reading the frozen wiki. `python -m eval.navigation.run`
+reproduces every number below; CI asserts them against
+`eval/navigation/results.json`. Every count is in whitespace-separated
+words, not model tokens.
+
+| Number | Run 1 (2026-10-16) |
+|---|---|
+| Ingest coverage: questions whose answer landed in some page | 3 of 29 (10.3%) |
+| Navigation hit at 1 / at 5, over questions with a gold page | 3 of 3 / 3 of 3 |
+| Words loaded by `query` (index plus selected pages) vs the grep rule | 2,286 vs 16,706; median ratio 0.16 |
+| Questions the corpus cannot answer: empty selection / mean pages loaded | 4 of 6 / 0.33 |
+| Ingest cost per document | tokens not exposed by the `claude` backend; wall time recorded but not isolated (see below) |
+
+The grep rule, the negative control: lower-case the question, split it
+with the querier's own token pattern `[a-z0-9][a-z0-9-]*`, drop the
+querier's own stop list (`eval/navigation/stopwords.txt`) and words shorter
+than three characters, then over every corpus file take each line that
+matches any remaining word whole-word and case-insensitively, with two lines
+of context before and after, windows merged per file, and count the words.
+
+Read these numbers with their caveats. Run 1 promoted one document in ten:
+eight ingests failed validation because the model returned paths prefixed
+with the wiki directory's name, a contract gap in the prompt recorded under
+"Known issues" in the CHANGELOG, and one timed out. The three navigation numbers therefore rest on three
+questions and one page, and the coverage number is the finding. The corpus
+shares its vocabulary with the wiki schema, and the question writer knows
+the scorer. During the run, a Claude Code Stop hook executed this
+repository's test suite inside each backend call with the fixture's paths
+inherited; that added test records to the fixture's audit and query logs
+(preserved, not cleaned) and inflated per-document wall time, so the run is
+marked `requires_review` in `eval/navigation/manifest.json` and documented in
+`eval/navigation/ingest-notes.md`. Agent-level evidence, an arm in
+`agent-memory-bench` next to memkernel's, is tracked in
+[issue #10](https://github.com/gosha70/wiki-studio/issues/10).
 
 ## Development
 
