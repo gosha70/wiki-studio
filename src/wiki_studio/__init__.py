@@ -2,4 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 """wiki_studio — Karpathy-pattern LLM wiki maintainer (ingest, promote, query, lint, audit-flush)."""
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"

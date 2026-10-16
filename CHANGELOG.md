@@ -6,6 +6,36 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.1] — 2026-10-16
+
+### Fixed
+
+- Multi-page ingest no longer leaves the model to guess how `index.md` and
+  `log.md` change (issue #15). In run 2 of the navigation evaluation, three of
+  ten documents were rejected because the model returned `index.md` as a full
+  page edit (`page_type: index`, no sources) instead of an `append-index`
+  line. The prompt now says that the root `index.md` changes only through a
+  one-line `append-index` edit and `log.md` only through a one-line
+  `append-log` edit, never as a full page and never with frontmatter; that a
+  `<dir>/index.md` which is itself a content page (`glossary/index.md`) is
+  edited with `create` or `update`; and that `create` and `update` are only
+  for content pages; the response schema's `action` and
+  `new_content` carry the same rule. The validator is unchanged: a full-page
+  index edit is still a contract violation (exit 4). Run 2 is kept as
+  measured on 0.3.0.
+
+### Added
+
+- `py.typed`: the package declares its type hints (PEP 561), so type
+  checkers in consuming projects (memkernel) read them without a per-package
+  override.
+
+### Changed
+
+- The README banner points at the image at this release's tag, so the PyPI
+  page shows it (0.3.0's page cannot; PyPI descriptions are frozen per
+  version) and stays intact if the file later moves.
+
 ## [0.3.0] — 2026-10-16
 
 The evidence release: the first measured numbers about the tool, with the

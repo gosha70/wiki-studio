@@ -29,6 +29,7 @@ from typing import Any
 
 from ..errors import BackendInvocationError, BackendNotFoundError
 from ..paths import DEFAULT_WIKI_DIR
+from ..prompt import INDEX_LOG_ACTION_RULE
 from .json_extract import extract_json_object
 
 # Reference content rendered into the prompt — source body, candidate
@@ -207,8 +208,10 @@ def _render_plain_text_prompt(backend_prompt: dict[str, Any], wiki_label: str = 
             "working memory. Integrate the new source with what is "
             "already here: prefer updating an existing page over "
             "creating a duplicate; append a one-line dated entry to "
-            "log.md; add a link from the appropriate section of "
-            "index.md whenever you create a new page."
+            "log.md with an 'append-log' edit; add a one-line link to "
+            "index.md with an 'append-index' edit whenever you create a "
+            "new page. index.md and log.md are shown in full below for "
+            "reference only: never rewrite them."
         )
         lines.append("")
         index_md = wiki_state.get("index_md", "")
@@ -253,6 +256,9 @@ def _render_plain_text_prompt(backend_prompt: dict[str, Any], wiki_label: str = 
             f"'{wiki_label}/'. Do not repeat that prefix: write 'decisions/<slug>.md', not "
             f"'{wiki_label}/decisions/<slug>.md'; likewise 'concepts/<slug>.md', 'index.md' and 'log.md'."
         )
+        # Issue #15: the validator only accepts index/log changes as one-line appends.
+        lines.append("")
+        lines.append(INDEX_LOG_ACTION_RULE)
     if task == "gate-only":
         lines.append("")
         lines.append(
