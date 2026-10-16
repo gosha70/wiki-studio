@@ -118,8 +118,9 @@ Copy and pin the corpus; NOTICE; write and commit `questions.json` and
 
 ### Task 2: Frozen wiki (US1)
 One-time ingest + promote per document with root, wiki dir and proposals dir
-all set explicitly; one attempt per document, nothing edited by hand,
-rejections recorded; manifest; commit the tree.
+all set explicitly; one attempt per document (one retry only when the backend
+returned nothing, recorded), nothing edited by hand, rejections recorded;
+manifest; commit the tree.
 
 ### Task 3: Gold, script, determinism test, README (US2 part, US3)
 `gold.json`; `run.py`; `results.json`; the test; README Evidence section;
