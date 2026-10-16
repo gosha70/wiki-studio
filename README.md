@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/wiki-studio-banner.png" alt="Wiki-Studio — Turn information into living knowledge." width="760">
+  <img src="https://raw.githubusercontent.com/gosha70/wiki-studio/main/docs/assets/wiki-studio-banner.png" alt="Wiki-Studio — Turn information into living knowledge." width="760">
 </p>
 
 Karpathy-pattern LLM wiki maintainer: a curated markdown knowledge base
