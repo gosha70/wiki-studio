@@ -3,7 +3,7 @@ spec_mode: full
 feature_id: wiki-studio-0-3-0
 risk_category: feature
 justification: "Published numbers about the tool's own efficiency; the design must be fixed before the data exists so the measurement cannot be shaped by the result."
-status: draft
+status: approved
 date: 2026-10-15
 collaboration_mode: single
 origin:

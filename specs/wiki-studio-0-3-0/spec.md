@@ -2,7 +2,7 @@
 spec_mode: full
 feature_id: wiki-studio-0-3-0
 risk_category: feature
-status: draft
+status: approved
 date: 2026-10-15
 ---
 
