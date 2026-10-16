@@ -48,7 +48,7 @@
   ],
   "stopwords_source": "src/wiki_studio/wiki_state.py::_STOPWORDS (the querier's own stop list), copied verbatim; see stopwords.txt header",
   "questions_commit": null,
-  "questions_sha256": null,
+  "questions_sha256": "30390468555e11ce9fbeb2e259997e266979d502dd6c3833373620f468ee760d",
   "stopwords_sha256": "e55cb41493293a01c3408d29b5eb70408f189b5dc7aac50a486412ac4b449851",
   "ingest": null
 }
