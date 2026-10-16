@@ -474,7 +474,7 @@ def main(argv: list[str] | None = None) -> int:
     if code == 0 and commit:
         sha = _commit_run(
             run_dir,
-            "eval: run 2 one-time ingest under the US5 protocol (run 2 artifacts only, as recorded by run2_protocol.py)",
+            "eval: run 2 one-time ingest under the US5 protocol (run 2 artifacts only, recorded by run2_protocol.py)",
         )
         print(f"committed run 2 as {sha}")
     return code
