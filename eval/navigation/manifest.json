@@ -1,0 +1,261 @@
+{
+  "corpus_repo": "https://github.com/gosha70/memkernel",
+  "corpus_tag": "v0.4.0",
+  "corpus_commit": "1beebf7bfdf77fc52eb7c0cb534eca1017416304",
+  "corpus_license": "Apache-2.0",
+  "corpus_copied_on": "2026-10-15",
+  "corpus_files": [
+    {
+      "path": "README.md",
+      "sha256": "819e2638daf9b91efb97c4e5b3d777a3117d660cada232514200bd6ab69524fa"
+    },
+    {
+      "path": "docs/adr/ADR-007-tiered-memory.md",
+      "sha256": "ad9b472e06c7c3889e020073d51d375ff8a334b02b4a5f6a5c8fd27cb82f76e0"
+    },
+    {
+      "path": "docs/adr/ADR-008-llm-wiki-as-semantic-layer.md",
+      "sha256": "84d93d69820f924a54f5b8285d5cf6f3c67d895a44a5e699963f7e2f1fc81f5e"
+    },
+    {
+      "path": "docs/adr/ADR-009-rlm-studio-for-documents.md",
+      "sha256": "c5192106f0da21a959c6ac04e154195e31eb86e1fa9d82f97eb616a2cd9d5c5c"
+    },
+    {
+      "path": "docs/architecture/memory-tiers.md",
+      "sha256": "a73e489fa442895f0ab3cc1c4787a6eb71296eb6f284c8e7801fb3de5b1a1cff"
+    },
+    {
+      "path": "docs/integration/harness-integration.md",
+      "sha256": "018269343518cd794d0e1897e2aee582db2320d3d5ee040465f5dd4e3df04d29"
+    },
+    {
+      "path": "docs/licensing.md",
+      "sha256": "9617df2ddce8aa5219d30599da58179f717ad428ebe1af47b26051fcae802b88"
+    },
+    {
+      "path": "docs/research/memory-literature-review.md",
+      "sha256": "225b93aafe3477be3fe5fd29505cde6548c5ea0f49a1c39c034ee6557e9902b3"
+    },
+    {
+      "path": "docs/research/sibling-projects.md",
+      "sha256": "acd7668d466d5da9b8476c5ec18cdd9daf33897eb4bbfc1bc56c0d3d750105f2"
+    },
+    {
+      "path": "docs/roadmap.md",
+      "sha256": "50c35dd125b95485d66884421fcd65b018ee2bbf2bd1a2317588e7bfdb2aa697"
+    }
+  ],
+  "stopwords_source": "src/wiki_studio/wiki_state.py::_STOPWORDS (the querier's own stop list), copied verbatim; see stopwords.txt header",
+  "questions_commit": "c99be655d3dedb54f8eed497dd6262555805b383",
+  "questions_sha256": "30390468555e11ce9fbeb2e259997e266979d502dd6c3833373620f468ee760d",
+  "stopwords_sha256": "e55cb41493293a01c3408d29b5eb70408f189b5dc7aac50a486412ac4b449851",
+  "ingest": {
+    "backend": "claude",
+    "model": "opus",
+    "model_source": "ANTHROPIC_MODEL=opus (pinned to the existing Claude settings model alias for every document; resolved model ID unavailable through the text adapter)",
+    "ingest_date": "2026-10-16",
+    "started_at": "2026-10-16T03:48:55.046874+00:00",
+    "wiki_studio_version": "0.2.0",
+    "claude_version": "2.1.300 (Claude Code)",
+    "pre_ingest_commit": "b42b5b7060791a85af049dcc858b2651ff852c00",
+    "backend_timeout_seconds": 120,
+    "command": [
+      "python",
+      "-m",
+      "wiki_studio",
+      "ingest",
+      "<corpus-file>",
+      "--backend",
+      "claude"
+    ],
+    "locations": {
+      "WIKI_STUDIO_ROOT": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation",
+      "WIKI_STUDIO_WIKI_DIR": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/wiki",
+      "WIKI_STUDIO_PROPOSALS_DIR": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/proposals"
+    },
+    "tokens_note": "The shipped text-mode Claude adapter does not expose token usage.",
+    "documents": [
+      {
+        "source": "README.md",
+        "attempts": 1,
+        "transport_error": null,
+        "proposal_dir": null,
+        "disposition": "ingest_error",
+        "promote_error": null,
+        "pages_written": [],
+        "wall_seconds": 120.119,
+        "tokens_in": null,
+        "tokens_out": null,
+        "ingest_exit_code": 3,
+        "ingest_wall_seconds": 120.118,
+        "ingest_error": "error: backend invocation failed: Backend 'claude' timed out after 120s. stderr: <no stderr>",
+        "retry_note": "No retry: the adapter does not establish that no backend content was returned."
+      },
+      {
+        "source": "docs/adr/ADR-007-tiered-memory.md",
+        "attempts": 1,
+        "transport_error": null,
+        "proposal_dir": null,
+        "disposition": "ingest_error",
+        "promote_error": null,
+        "pages_written": [],
+        "wall_seconds": 40.079,
+        "tokens_in": null,
+        "tokens_out": null,
+        "ingest_exit_code": 4,
+        "ingest_wall_seconds": 40.079,
+        "ingest_error": "error: contract violation: WikiPatchSet failed per-edit semantic validation:\n  - wiki/decisions/tiered-memory-supersession-and-decay.md: page_type 'decision' should live under decisions/ but path is in wiki/decisions/"
+      },
+      {
+        "source": "docs/adr/ADR-008-llm-wiki-as-semantic-layer.md",
+        "attempts": 1,
+        "transport_error": null,
+        "proposal_dir": null,
+        "disposition": "ingest_error",
+        "promote_error": null,
+        "pages_written": [],
+        "wall_seconds": 49.818,
+        "tokens_in": null,
+        "tokens_out": null,
+        "ingest_exit_code": 4,
+        "ingest_wall_seconds": 49.818,
+        "ingest_error": "error: contract violation: WikiPatchSet failed per-edit semantic validation:\n  - wiki/decisions/llm-wiki-as-semantic-layer.md: page_type 'decision' should live under decisions/ but path is in wiki/decisions/\n  - wiki/concepts/memkernel-wiki-bridge.md: page_type 'concept' should live under concepts/ but path is in wiki/concepts/"
+      },
+      {
+        "source": "docs/adr/ADR-009-rlm-studio-for-documents.md",
+        "attempts": 1,
+        "transport_error": null,
+        "proposal_dir": "eval/navigation/proposals/.applied/2026-10-15-ADR-009-rlm-studio-for-documents",
+        "disposition": "accept",
+        "promote_error": null,
+        "pages_written": [
+          "decisions/rlm-studio-document-layer.md",
+          "index.md",
+          "log.md"
+        ],
+        "wall_seconds": 40.762,
+        "tokens_in": null,
+        "tokens_out": null,
+        "ingest_exit_code": 0,
+        "ingest_wall_seconds": 40.662,
+        "promote_exit_code": 0
+      },
+      {
+        "source": "docs/architecture/memory-tiers.md",
+        "attempts": 1,
+        "transport_error": null,
+        "proposal_dir": null,
+        "disposition": "ingest_error",
+        "promote_error": null,
+        "pages_written": [],
+        "wall_seconds": 50.596,
+        "tokens_in": null,
+        "tokens_out": null,
+        "ingest_exit_code": 4,
+        "ingest_wall_seconds": 50.596,
+        "ingest_error": "error: contract violation: WikiPatchSet failed per-edit semantic validation:\n  - wiki/concepts/memory-tiers.md: page_type 'concept' should live under concepts/ but path is in wiki/concepts/"
+      },
+      {
+        "source": "docs/integration/harness-integration.md",
+        "attempts": 1,
+        "transport_error": null,
+        "proposal_dir": null,
+        "disposition": "ingest_error",
+        "promote_error": null,
+        "pages_written": [],
+        "wall_seconds": 48.632,
+        "tokens_in": null,
+        "tokens_out": null,
+        "ingest_exit_code": 4,
+        "ingest_wall_seconds": 48.632,
+        "ingest_error": "error: contract violation: WikiPatchSet failed per-edit semantic validation:\n  - wiki/workflows/memkernel-harness-integration.md: page_type 'workflow' should live under workflows/ but path is in wiki/workflows/"
+      },
+      {
+        "source": "docs/licensing.md",
+        "attempts": 1,
+        "transport_error": null,
+        "proposal_dir": null,
+        "disposition": "ingest_error",
+        "promote_error": null,
+        "pages_written": [],
+        "wall_seconds": 42.491,
+        "tokens_in": null,
+        "tokens_out": null,
+        "ingest_exit_code": 4,
+        "ingest_wall_seconds": 42.491,
+        "ingest_error": "error: contract violation: WikiPatchSet failed per-edit semantic validation:\n  - wiki/decisions/ecosystem-licensing.md: page_type 'decision' should live under decisions/ but path is in wiki/decisions/"
+      },
+      {
+        "source": "docs/research/memory-literature-review.md",
+        "attempts": 1,
+        "transport_error": null,
+        "proposal_dir": null,
+        "disposition": "ingest_error",
+        "promote_error": null,
+        "pages_written": [],
+        "wall_seconds": 48.241,
+        "tokens_in": null,
+        "tokens_out": null,
+        "ingest_exit_code": 4,
+        "ingest_wall_seconds": 48.241,
+        "ingest_error": "error: contract violation: WikiPatchSet failed per-edit semantic validation:\n  - wiki/concepts/agent-memory-literature-review.md: page_type 'concept' should live under concepts/ but path is in wiki/concepts/"
+      },
+      {
+        "source": "docs/research/sibling-projects.md",
+        "attempts": 1,
+        "transport_error": null,
+        "proposal_dir": null,
+        "disposition": "ingest_error",
+        "promote_error": null,
+        "pages_written": [],
+        "wall_seconds": 63.552,
+        "tokens_in": null,
+        "tokens_out": null,
+        "ingest_exit_code": 4,
+        "ingest_wall_seconds": 63.552,
+        "ingest_error": "error: contract violation: WikiPatchSet failed per-edit semantic validation:\n  - wiki/decisions/sibling-projects-decoupling.md: page_type 'decision' should live under decisions/ but path is in wiki/decisions/\n  - wiki/decisions/rlm-studio-document-layer.md: page_type 'decision' should live under decisions/ but path is in wiki/decisions/\n  - wiki/decisions/rlm-studio-document-layer.md: update target does not exist at wiki/wiki/decisions/rlm-studio-document-layer.md; use action 'create' for new pages"
+      },
+      {
+        "source": "docs/roadmap.md",
+        "attempts": 1,
+        "transport_error": null,
+        "proposal_dir": null,
+        "disposition": "ingest_error",
+        "promote_error": null,
+        "pages_written": [],
+        "wall_seconds": 60.954,
+        "tokens_in": null,
+        "tokens_out": null,
+        "ingest_exit_code": 4,
+        "ingest_wall_seconds": 60.954,
+        "ingest_error": "error: contract violation: WikiPatchSet failed per-edit semantic validation:\n  - wiki/concepts/memkernel-roadmap.md: page_type 'concept' should live under concepts/ but path is in wiki/concepts/\n  - wiki/decisions/rlm-studio-document-layer.md: page_type 'decision' should live under decisions/ but path is in wiki/decisions/\n  - wiki/decisions/rlm-studio-document-layer.md: update target does not exist at wiki/wiki/decisions/rlm-studio-document-layer.md; use action 'create' for new pages"
+      }
+    ],
+    "lint": {
+      "exit_code": 0,
+      "stdout": "\nlinted 3 pages, 0 violations\n\naudit-format: clean.\n",
+      "stderr": ""
+    },
+    "completed_at": "2026-10-16T03:58:20.475748+00:00",
+    "validity": {
+      "status": "requires_review",
+      "finding": "Claude inherited the user Stop hook verify-on-stop.sh, which runs the repository test suite. Those tests inherited the explicit WIKI_STUDIO_* locations and appended test-backend records to the experimental audit log and test query records to the query log.",
+      "unexpected_test_audit_records": 9,
+      "unexpected_query_records": 45,
+      "query_log": "eval/navigation/doc_internal/wiki-query-log.jsonl",
+      "wall_time_caveat": "Per-document wall time includes Claude lifecycle hooks and their test runs; it is not isolated model inference time.",
+      "handling": "Preserved all output unchanged. No cleanup, repair, retry, or regeneration. Do not treat this as an uncontaminated benchmark fixture without review.",
+      "schema_copy_note": "wiki/schema/__init__.py was copied along with the packaged Markdown schema during initialization. It is preserved unchanged; structural lint and page selection exclude schema/.",
+      "owner_assessment": "2026-10-16: proceed with layer-1 component metrics on this baseline. Contamination is confined to audit/query logs, neither used by page selection; promoted content matches the archived proposal. Retain requires_review and disclose the caveat. Token cost is unavailable; wall time includes hooks and is not inference cost."
+    },
+    "summary": {
+      "documents_attempted": 10,
+      "promoted": 1,
+      "contract_validation_failures": 8,
+      "timeouts": 1,
+      "retries": 0,
+      "total_wall_seconds": 565.244
+    }
+  }
+}

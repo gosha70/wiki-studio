@@ -120,9 +120,9 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     p_ingest = sub.add_parser(
         "ingest",
         parents=[common],
-        help="Run the ingest gate against a source file. "
-        "Phase 0: requires --legacy-single-source for the v1 path; "
-        "multi-page ingest lands in Phase 1.",
+        help="Run the ingest gate against a source file and write a proposal. "
+        "Multi-page by default (a patch-set directory); "
+        "--legacy-single-source runs the v1 single-page generator.",
     )
     p_ingest.add_argument(
         "source",
@@ -132,7 +132,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     p_ingest.add_argument(
         "--legacy-single-source",
         action="store_true",
-        help="Run the v1 single-source proposal generator. Required in Phase 0 (multi-page ingest is Phase 1).",
+        help="Run the v1 single-source proposal generator instead of the default multi-page ingest.",
     )
     p_ingest.add_argument(
         "--backend",

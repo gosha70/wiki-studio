@@ -1,0 +1,2 @@
+error: contract violation: WikiPatchSet failed per-edit semantic validation:
+  - wiki/decisions/ecosystem-licensing.md: page_type 'decision' should live under decisions/ but path is in wiki/decisions/

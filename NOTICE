@@ -17,3 +17,11 @@ License, Version 2.0 and copyright (c) 2026 EGOGE:
 at commit df2c29212e3bed8b547f47bf7976105a6a4678c0 of that repository.
 
 The page schema is shared with gosha70/memkernel (https://github.com/gosha70/memkernel).
+
+This repository includes, as an evaluation corpus and not as part of the
+distributed package, documentation copied verbatim from gosha70/memkernel
+(https://github.com/gosha70/memkernel), MemKernel, copyright 2026 EGOGE,
+licensed under the Apache License, Version 2.0, at tag v0.4.0 (commit
+1beebf7bfdf77fc52eb7c0cb534eca1017416304): README.md and docs/**/*.md,
+now eval/navigation/corpus/ with paths preserved. Per-file checksums are
+in eval/navigation/manifest.json. These files are excluded from the wheel.

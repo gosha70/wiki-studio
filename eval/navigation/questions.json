@@ -1,0 +1,299 @@
+[
+  {
+    "id": "q01",
+    "question": "Which Python versions can install memkernel 0.4.0?",
+    "kind": "single",
+    "source": {
+      "path": "README.md",
+      "heading": "Requirements"
+    }
+  },
+  {
+    "id": "q02",
+    "question": "Why does the first connection to the memory server take longer than later connections?",
+    "kind": "single",
+    "source": {
+      "path": "README.md",
+      "heading": "1. Register the MCP server"
+    }
+  },
+  {
+    "id": "q03",
+    "question": "Which three workspace files configure MemKernel for Kiro, and what does each do?",
+    "kind": "single",
+    "source": {
+      "path": "README.md",
+      "heading": "Add to Kiro"
+    }
+  },
+  {
+    "id": "q04",
+    "question": "What address does the streamable HTTP MCP server listen on by default?",
+    "kind": "single",
+    "source": {
+      "path": "README.md",
+      "heading": "Streamable HTTP"
+    }
+  },
+  {
+    "id": "q05",
+    "question": "What project setting anchors relative source paths when checking stored code?",
+    "kind": "single",
+    "source": {
+      "path": "README.md",
+      "heading": "Configuration"
+    }
+  },
+  {
+    "id": "q06",
+    "question": "How are older records without tier and importance metadata handled?",
+    "kind": "single",
+    "source": {
+      "path": "docs/adr/ADR-007-tiered-memory.md",
+      "heading": "Decision"
+    }
+  },
+  {
+    "id": "q07",
+    "question": "Why was a separate collection for each memory tier rejected?",
+    "kind": "single",
+    "source": {
+      "path": "docs/adr/ADR-007-tiered-memory.md",
+      "heading": "Alternatives considered"
+    }
+  },
+  {
+    "id": "q08",
+    "question": "Which memory types become workflow and concept pages during wiki export?",
+    "kind": "single",
+    "source": {
+      "path": "docs/adr/ADR-008-llm-wiki-as-semantic-layer.md",
+      "heading": "Decision"
+    }
+  },
+  {
+    "id": "q09",
+    "question": "When a curated wiki page changes, what does the importer do to the previously indexed memory?",
+    "kind": "single",
+    "source": {
+      "path": "docs/adr/ADR-008-llm-wiki-as-semantic-layer.md",
+      "heading": "Decision"
+    }
+  },
+  {
+    "id": "q10",
+    "question": "Why should the wiki maintainer be a separate package instead of part of memkernel?",
+    "kind": "single",
+    "source": {
+      "path": "docs/adr/ADR-008-llm-wiki-as-semantic-layer.md",
+      "heading": "Alternatives considered"
+    }
+  },
+  {
+    "id": "q11",
+    "question": "At what content size does the documented auto mode switch from direct reading to RLM exploration?",
+    "kind": "single",
+    "source": {
+      "path": "docs/adr/ADR-009-rlm-studio-for-documents.md",
+      "heading": "Context"
+    }
+  },
+  {
+    "id": "q12",
+    "question": "What does get return for a document memory instead of the full document body?",
+    "kind": "single",
+    "source": {
+      "path": "docs/adr/ADR-009-rlm-studio-for-documents.md",
+      "heading": "Decision"
+    }
+  },
+  {
+    "id": "q13",
+    "question": "What formula extends an observation lifetime after repeated recall, and which timestamp starts the expiry clock?",
+    "kind": "single",
+    "source": {
+      "path": "docs/architecture/memory-tiers.md",
+      "heading": "Forgetting"
+    }
+  },
+  {
+    "id": "q14",
+    "question": "How can a harness configure recall to rank purely by relevance?",
+    "kind": "single",
+    "source": {
+      "path": "docs/architecture/memory-tiers.md",
+      "heading": "Recall scoring"
+    }
+  },
+  {
+    "id": "q15",
+    "question": "What information is injected after compaction to help the agent resume work?",
+    "kind": "single",
+    "source": {
+      "path": "docs/architecture/memory-tiers.md",
+      "heading": "6. Session protocol (what the harness should do)"
+    }
+  },
+  {
+    "id": "q16",
+    "question": "Which tags should CCT phase agents attach to memories so recall can be scoped to a feature and phase?",
+    "kind": "single",
+    "source": {
+      "path": "docs/integration/harness-integration.md",
+      "heading": "code-copilot-team (CCT)"
+    }
+  },
+  {
+    "id": "q17",
+    "question": "Why must haa memory tools run on the host, and where should their store be persisted?",
+    "kind": "single",
+    "source": {
+      "path": "docs/integration/harness-integration.md",
+      "heading": "haa"
+    }
+  },
+  {
+    "id": "q18",
+    "question": "What must happen to document-assistant licensing before its RAG code is extracted?",
+    "kind": "single",
+    "source": {
+      "path": "docs/licensing.md",
+      "heading": "Recommendation"
+    }
+  },
+  {
+    "id": "q19",
+    "question": "What should be done about the old ragkit repository license before archiving it?",
+    "kind": "single",
+    "source": {
+      "path": "docs/licensing.md",
+      "heading": "Recommendation"
+    }
+  },
+  {
+    "id": "q20",
+    "question": "Which two LongMemEval categories does the literature review recommend adding before trusting headline retrieval numbers?",
+    "kind": "single",
+    "source": {
+      "path": "docs/research/memory-literature-review.md",
+      "heading": "4. Benchmarks"
+    }
+  },
+  {
+    "id": "q21",
+    "question": "What did the ARC Prize reproduction identify as the main source of HRM gains?",
+    "kind": "single",
+    "source": {
+      "path": "docs/research/memory-literature-review.md",
+      "heading": "1. Hierarchical reasoning: HRM and TRM"
+    }
+  },
+  {
+    "id": "q22",
+    "question": "Which two retrieval components does memkernel contribute to the shared ragkit extraction?",
+    "kind": "single",
+    "source": {
+      "path": "docs/research/sibling-projects.md",
+      "heading": "What memkernel gives away"
+    }
+  },
+  {
+    "id": "q23",
+    "question": "What event permits the next step of the cross-repository delivery sequence to begin?",
+    "kind": "single",
+    "source": {
+      "path": "docs/roadmap.md",
+      "heading": "Cross-repository sequence"
+    }
+  },
+  {
+    "id": "q24",
+    "question": "How does ranking consolidation candidates differ from ranking recall results?",
+    "kind": "competing",
+    "source": {
+      "path": "docs/architecture/memory-tiers.md",
+      "heading": "3. Mechanisms and where they live"
+    }
+  },
+  {
+    "id": "q25",
+    "question": "Which side is authoritative for curated knowledge: the wiki pages or the vector store?",
+    "kind": "competing",
+    "source": {
+      "path": "docs/adr/ADR-008-llm-wiki-as-semantic-layer.md",
+      "heading": "Decision"
+    }
+  },
+  {
+    "id": "q26",
+    "question": "Why was an in-process RLM Studio integration chosen over calling its HTTP server?",
+    "kind": "competing",
+    "source": {
+      "path": "docs/adr/ADR-009-rlm-studio-for-documents.md",
+      "heading": "Alternatives considered"
+    }
+  },
+  {
+    "id": "q27",
+    "question": "Which document-assistant helper detects an embedding model change instead of silently mixing vector spaces?",
+    "kind": "competing",
+    "source": {
+      "path": "docs/research/sibling-projects.md",
+      "heading": "What memkernel copies now (each < 120 lines, dependency-light)"
+    }
+  },
+  {
+    "id": "q28",
+    "question": "Which code revalidation granularity shipped in 0.4, and which finer granularity remains open?",
+    "kind": "competing",
+    "source": {
+      "path": "docs/roadmap.md",
+      "heading": "0.4 — code revalidation, store health (shipped)"
+    }
+  },
+  {
+    "id": "q29",
+    "question": "For haa integration, how should the project identifier be derived so it shares memory with Claude Code?",
+    "kind": "competing",
+    "source": {
+      "path": "docs/integration/harness-integration.md",
+      "heading": "haa"
+    }
+  },
+  {
+    "id": "q30",
+    "question": "Which encryption cipher protects the persisted memory store at rest?",
+    "kind": "absent",
+    "source": null
+  },
+  {
+    "id": "q31",
+    "question": "What is the documented recovery point objective for restoring the memory store from backups?",
+    "kind": "absent",
+    "source": null
+  },
+  {
+    "id": "q32",
+    "question": "How many concurrent clients can the HTTP memory server sustain at its published latency target?",
+    "kind": "absent",
+    "source": null
+  },
+  {
+    "id": "q33",
+    "question": "What is the measured navigation hit rate of wiki-studio on a legal-document corpus?",
+    "kind": "absent",
+    "source": null
+  },
+  {
+    "id": "q34",
+    "question": "Which OAuth scopes are required for a remote MCP client to access memkernel?",
+    "kind": "absent",
+    "source": null
+  },
+  {
+    "id": "q35",
+    "question": "What monthly cloud hosting price is quoted for a million stored memories?",
+    "kind": "absent",
+    "source": null
+  }
+]

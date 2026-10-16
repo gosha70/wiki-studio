@@ -1,0 +1,4 @@
+error: contract violation: WikiPatchSet failed per-edit semantic validation:
+  - wiki/concepts/memkernel-roadmap.md: page_type 'concept' should live under concepts/ but path is in wiki/concepts/
+  - wiki/decisions/rlm-studio-document-layer.md: page_type 'decision' should live under decisions/ but path is in wiki/decisions/
+  - wiki/decisions/rlm-studio-document-layer.md: update target does not exist at wiki/wiki/decisions/rlm-studio-document-layer.md; use action 'create' for new pages

@@ -6,6 +6,52 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-10-16
+
+The evidence release: the first measured numbers about the tool, with the
+caveats they need (issue #10, mirror of memkernel #17).
+
+### Added
+
+- `eval/navigation/`: a frozen corpus (memkernel's documentation at tag
+  `v0.4.0`, attributed in NOTICE), a question set committed before any
+  ingest ran, a wiki the tool produced from the corpus once through its own
+  gate, gold pages assigned afterwards with a written reason each, and
+  `run.py`, a stdlib script reporting ingest coverage, navigation hit rate at
+  1 and at 5, and words loaded by `query` against a written-down grep rule.
+  `tests/test_navigation_eval.py` asserts the script reproduces the committed
+  `results.json` and that the fixture is the preregistered one.
+- README "Evidence" section with run 1's numbers and caveats.
+
+### Changed
+
+- `ingest --help` no longer says multi-page ingest "lands in Phase 1" or that
+  `--legacy-single-source` is required; multi-page has been the default since
+  0.1.0. Help text only.
+
+### Not built
+
+- The mutation suite for the promote gate (spec US4) is dropped for this
+  release under its own condition: run 1 archived a single patch-set, too few
+  to generate a corpus from, and a hand-written one would duplicate the unit
+  tests.
+
+### Known issues
+
+- Run 1 of the navigation evaluation promoted one document in ten: eight
+  ingests failed validation because the model answered with paths prefixed by
+  the wiki directory's name (`wiki/decisions/…`), which the prompt shows in
+  its file headings but never tells the model to omit. Fix tracked as issue
+  #11 (state that `path` is wiki-relative, strip the exact configured label
+  prefix before the existing validation, expose the resolved layout) for a
+  later release; the run is kept as measured.
+- The `claude` text-mode backend exposes no token counts, so ingest cost is
+  reported as wall time only. In run 1 a Claude Code Stop hook ran this
+  repository's test suite inside each backend call with the fixture's paths
+  inherited, which inflated wall time and added test records to the fixture's
+  audit and query logs; everything is preserved and the manifest marks the
+  run `requires_review` (`eval/navigation/ingest-notes.md`).
+
 ## [0.2.0] — 2026-10-15
 
 The memkernel release: the two contracts memkernel 0.5's `memkernel[wiki]`
