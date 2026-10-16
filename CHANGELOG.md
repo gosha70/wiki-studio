@@ -14,10 +14,12 @@ uses [Semantic Versioning](https://semver.org/).
   `log.md` change (issue #15). In run 2 of the navigation evaluation, three of
   ten documents were rejected because the model returned `index.md` as a full
   page edit (`page_type: index`, no sources) instead of an `append-index`
-  line. The prompt now says that `index.md` changes only through a one-line
-  `append-index` edit and `log.md` only through a one-line `append-log` edit,
-  never as a full page and never with frontmatter, and that `create` and
-  `update` are only for content pages; the response schema's `action` and
+  line. The prompt now says that the root `index.md` changes only through a
+  one-line `append-index` edit and `log.md` only through a one-line
+  `append-log` edit, never as a full page and never with frontmatter; that a
+  `<dir>/index.md` which is itself a content page (`glossary/index.md`) is
+  edited with `create` or `update`; and that `create` and `update` are only
+  for content pages; the response schema's `action` and
   `new_content` carry the same rule. The validator is unchanged: a full-page
   index edit is still a contract violation (exit 4). Run 2 is kept as
   measured on 0.3.0.

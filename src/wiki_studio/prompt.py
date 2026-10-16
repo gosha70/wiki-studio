@@ -69,12 +69,12 @@ _RESPONSE_SCHEMA = {
 # Issue #15: what the validators already enforce, stated to the model. One copy, used by the
 # multi-page response instructions and the patch-set response schema.
 INDEX_LOG_ACTION_RULE = (
-    "index.md (and any <dir>/index.md) changes only through an 'append-index' edit and log.md only "
-    "through an 'append-log' edit; their 'new_content' is the single line to append (one index bullet "
-    "such as '- [Title](concepts/<slug>.md) — summary', or one dated log entry), never a full page and "
-    "never frontmatter. 'create' and 'update' are only for content pages ("
-    + ", ".join(sorted(PROMOTABLE_PAGE_TYPES))
-    + ")."
+    "The root index.md changes only through an 'append-index' edit and log.md only through an "
+    "'append-log' edit; their 'new_content' is the single line to append (one index bullet such as "
+    "'- [Title](concepts/<slug>.md) — summary', or one dated log entry), never a full page and never "
+    "frontmatter. A '<dir>/index.md' that is itself a content page, such as glossary/index.md with "
+    "page_type glossary, is edited like any content page with 'create' or 'update'. 'create' and "
+    "'update' are only for content pages (" + ", ".join(sorted(PROMOTABLE_PAGE_TYPES)) + ")."
 )
 
 _PATCH_SET_RESPONSE_SCHEMA = {

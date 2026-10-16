@@ -123,6 +123,32 @@ class TestFullPageIndexEditStaysRejected(unittest.TestCase):
         self.assertIn("page_type 'index' is not promotable for create/update", message)
         self.assertIn("'sources:' must be a non-empty list", message)
 
+    def test_rule_scopes_appends_to_the_root_index_and_allows_content_index_pages(self) -> None:
+        self.assertIn("The root index.md changes only through an 'append-index' edit", INDEX_LOG_ACTION_RULE)
+        self.assertIn(
+            "glossary/index.md with page_type glossary, is edited like any content page", INDEX_LOG_ACTION_RULE
+        )
+        self.assertNotIn("any <dir>/index.md) changes only", INDEX_LOG_ACTION_RULE)
+
+    def test_full_page_glossary_index_update_is_valid(self) -> None:
+        # Review of PR #16: glossary/index.md is a content page (page_type glossary); a full-page
+        # update must stay valid, which the rule now says too.
+        glossary = self.paths.wiki_dir / "glossary"
+        glossary.mkdir()
+        page = (
+            "---\npage_type: glossary\nslug: glossary\ntitle: Glossary\nstatus: draft\nlast_reviewed: 2026-10-16\n"
+            "sources:\n  - path: sample-incident.md\n    sha: abc1234\n---\n\n# Glossary\n\n### Term\n\nMeaning.\n"
+        )
+        (glossary / "index.md").write_text(page, encoding="utf-8")
+        updated = page.replace("Meaning.", "Meaning, revised.")
+        edits = self._ingest(
+            {"path": "index.md", "action": "append-index", "new_content": "- [X](concepts/x.md) — x.", "rationale": "r"}
+        )
+        self.assertIn("append-index:index.md", edits)
+        backend = _Backend({"path": "glossary/index.md", "action": "update", "new_content": updated, "rationale": "r"})
+        patch = DefaultMultiIngestor(backend=backend, paths=self.paths).ingest_multi(self.request)
+        self.assertIn("update:glossary/index.md", [f"{e.action}:{e.path}" for e in patch.edits])
+
     def test_append_index_line_is_accepted(self) -> None:
         edits = self._ingest(
             {"path": "index.md", "action": "append-index", "new_content": "- [X](concepts/x.md) — x.", "rationale": "r"}
