@@ -108,6 +108,25 @@ def _version(cmd: list[str]) -> str:
         return f"unavailable: {exc}"
 
 
+def _settings_model() -> str | None:
+    """The model Claude Code's user settings pin, if any (what an unset ANTHROPIC_MODEL falls back to)."""
+    settings = Path.home() / ".claude" / "settings.json"
+    if not settings.is_file():
+        return None
+    try:
+        value = json.loads(settings.read_text(encoding="utf-8")).get("model")
+    except (OSError, json.JSONDecodeError):
+        return None
+    return str(value) if value else None
+
+
+def _commit_run(run_dir: Path, message: str) -> str:
+    """Commit everything under ``run_dir`` as produced; returns the short SHA."""
+    subprocess.run(["git", "add", "--", str(run_dir)], cwd=REPO_ROOT, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", message], cwd=REPO_ROOT, check=True)
+    return _git("rev-parse", "--short", "HEAD")
+
+
 def _fresh_wiki(run_dir: Path) -> None:
     wiki = run_dir / "wiki"
     wiki.mkdir(parents=True, exist_ok=True)
@@ -216,9 +235,15 @@ def ingest(run_dir: Path, backend: str) -> int:
         print("ingest: this run is already recorded; a run is never regenerated (FR-003)", file=sys.stderr)
         return 2
     env = _run_env(run_dir)
+    model_source = "env ANTHROPIC_MODEL"
     if backend == "claude" and not env.get("ANTHROPIC_MODEL"):
-        print("ingest: set ANTHROPIC_MODEL to the concrete model identifier before the first attempt", file=sys.stderr)
-        return 2
+        # Not set: pin whatever Claude Code's own settings pin (run 1 ran on this alias) and say so.
+        settings_model = _settings_model()
+        if not settings_model:
+            print("ingest: set ANTHROPIC_MODEL (no model in ~/.claude/settings.json to fall back on)", file=sys.stderr)
+            return 2
+        env["ANTHROPIC_MODEL"] = settings_model
+        model_source = "~/.claude/settings.json model (ANTHROPIC_MODEL was unset)"
     head = _git("rev-parse", "HEAD")
     descends = (
         subprocess.run(["git", "merge-base", "--is-ancestor", FIX_MERGE_COMMIT, "HEAD"], cwd=REPO_ROOT).returncode == 0
@@ -237,6 +262,7 @@ def ingest(run_dir: Path, backend: str) -> int:
     pinned: dict[str, Any] = {
         "backend": backend,
         "model": env.get("ANTHROPIC_MODEL"),
+        "model_source": model_source,
         "ingest_date": datetime.date.today().isoformat(),
         "started_at": _now(),
         "wiki_studio_commit": head,
@@ -355,14 +381,20 @@ def ingest(run_dir: Path, backend: str) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
-    if not args or args[0] not in ("probe", "ingest"):
-        print("usage: python -m eval.navigation.run2_protocol probe|ingest")
-        print("       [--run-dir DIR] [--backend NAME] [--claude BIN]")
+    if not args or args[0] not in ("probe", "ingest", "all"):
+        print("usage: python -m eval.navigation.run2_protocol probe|ingest|all")
+        print("       [--run-dir DIR] [--backend NAME] [--claude BIN] [--commit]")
+        print("  all: probe, then ingest if it passed; --commit commits run 2 as produced")
         return 2
     step, rest = args[0], args[1:]
-    run_dir, backend, claude_binary = DEFAULT_RUN_DIR, "claude", "claude"
+    run_dir, backend, claude_binary, commit = DEFAULT_RUN_DIR, "claude", "claude", False
     while rest:
-        flag, value = rest[0], rest[1] if len(rest) > 1 else None
+        flag = rest[0]
+        if flag == "--commit":
+            commit = True
+            rest = rest[1:]
+            continue
+        value = rest[1] if len(rest) > 1 else None
         if flag == "--run-dir" and value:
             run_dir = Path(value).resolve()
         elif flag == "--backend" and value:
@@ -373,7 +405,18 @@ def main(argv: list[str] | None = None) -> int:
             print(f"unknown or incomplete option: {flag}", file=sys.stderr)
             return 2
         rest = rest[2:]
-    return probe(run_dir, claude_binary) if step == "probe" else ingest(run_dir, backend)
+    if step == "probe":
+        return probe(run_dir, claude_binary)
+    if step == "all":
+        if os.environ.get("HOOK_SKIP") != "1" and not os.environ.get("CLAUDE_CONFIG_DIR"):
+            os.environ["HOOK_SKIP"] = "1"  # the Stop hook honours it; recorded in the probe's env
+        if probe(run_dir, claude_binary) != 0:
+            return 1
+    code = ingest(run_dir, backend)
+    if code == 0 and commit:
+        sha = _commit_run(run_dir, "eval: run 2 one-time ingest under the US5 protocol (recorded by run2_protocol.py)")
+        print(f"committed run 2 as {sha}")
+    return code
 
 
 if __name__ == "__main__":
