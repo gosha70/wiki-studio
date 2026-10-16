@@ -193,6 +193,23 @@ def compute(fixture_dir: Path = FIXTURE_DIR, shared_dir: Path | None = None) -> 
             "answered_by_index": answered_by_index,
             "competing_evaluated": len(competing),
             "distractor_outranks": _ratio(sum(outranked(e) for e in competing), len(competing)),
+            "empty_selection": [e["id"] for e in evaluated if not e["selected"]],
+            "mean_pages_selected": round(statistics.fmean(len(e["selected"]) for e in evaluated), DECIMALS)
+            if evaluated
+            else None,
+            "index_linked_pages": len(index_links),
+            # Derived baseline, not a measurement: the same number of pages per question drawn
+            # at random from the index-linked pages. At 1: 1/N when anything was selected.
+            "random_hit_at_1": round(
+                statistics.fmean((1 / len(index_links) if e["selected"] else 0.0) for e in evaluated), DECIMALS
+            )
+            if evaluated and index_links
+            else None,
+            "random_hit_at_max": round(
+                statistics.fmean(len(e["selected"]) / len(index_links) for e in evaluated), DECIMALS
+            )
+            if evaluated and index_links
+            else None,
         },
         "absent": {
             "evaluated": len(absent),

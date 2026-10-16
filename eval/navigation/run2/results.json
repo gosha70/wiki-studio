@@ -16,10 +16,21 @@
     "answered_by_index": [],
     "competing_evaluated": 4,
     "distractor_outranks": 0.5,
+    "empty_selection": [
+      "q06",
+      "q13",
+      "q16",
+      "q21",
+      "q24"
+    ],
     "evaluated": 21,
     "gold_unreachable": [],
     "hit_at_1": 0.1429,
-    "hit_at_max": 0.4762
+    "hit_at_max": 0.4762,
+    "index_linked_pages": 9,
+    "mean_pages_selected": 2.2381,
+    "random_hit_at_1": 0.0847,
+    "random_hit_at_max": 0.2487
   },
   "parameters": {
     "context_lines": 2,

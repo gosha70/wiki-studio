@@ -271,7 +271,7 @@ is in whitespace-separated words, not model tokens.
 | Documents promoted, of the 10 in the corpus | 1 | 7 |
 | Ingest coverage: answerable questions (29 of 35; 6 have no answer in the corpus) whose answer landed in some page | 3 of 29 (10.3%) | 21 of 29 (72.4%) |
 | Navigation hit at 1 / at 5, over questions with a gold page | 3 of 3 / 3 of 3 | 3 of 21 (14.3%) / 10 of 21 (47.6%) |
-| Competing questions where a distractor outranks the gold page (denominator: the 6 competing questions that have a gold page in that run) | 0 of 1 | 2 of 4 |
+| Competing questions where a distractor outranks the gold page (denominator: those of the 6 competing questions that have a gold page in that run: 1 in run 1, 4 in run 2) | 0 of 1 | 2 of 4 |
 | Words loaded by `query` (index plus selected pages) vs the grep rule, over the questions with gold (none had empty grep output) | 2,286 vs 16,706; median ratio 0.16 | 40,647 vs 110,895; median ratio 0.33 |
 | Questions the corpus cannot answer: empty selection / mean pages loaded | 4 of 6 / 0.33 | 1 of 6 / 4.0 |
 | Ingest cost per document (tokens not exposed by the `claude` backend) | wall time not isolated (see below) | 52 s mean wall time, isolated (probe passed) |
@@ -308,14 +308,30 @@ three that did not (ADR-009, licensing, sibling-projects) failed on a
 different contract gap than run 1: the model returned `index.md` as a full
 page edit instead of an `append-index` line, which the validators correctly
 rejected. That is a known, still unfixed prompt gap, recorded under "Known
-issues" in the CHANGELOG for a later release; it is independent of the #11
-fix and would affect run 1's corpus the same way, so the rise from one
-promoted document to seven is the #11 fix, and the ceiling is not yet ten. The
+issues" in the CHANGELOG for a later release. What two runs can show is
+narrower than a cause: none of run 2's failures was the path-prefix defect
+that #11 fixed, and run 2 also differed from run 1 in the pinned model name,
+the hook isolation and the absence of a timeout, so the rise from one
+promoted document to seven is not attributed to the fix alone. One scoring
+note: for q25 the gold reason records that the distractor page also states
+the answer; the selector ranked that page first, which the frozen rule
+counts as a miss at 1 and as a distractor outranking gold. The rule is kept
+as preregistered; had any page carrying the answer counted, hit at 1 would
+be 4 of 21 and distractor-outranks 1 of 4 (q24 has the same kind of
+distractor but selected nothing, so it is unaffected). The
 navigation numbers now rest on 21 questions over nine content pages, and
 they are the finding: with more pages, the token-overlap selector puts the
 gold page first in one case out of seven and within the top five in about
 half, and a question the corpus cannot answer now loads four pages on
-average. The corpus and the question writer caveats from run 1 apply
+average. Two facts make "about half" readable. The selector loads few pages:
+2.24 on average for the 21 answerable questions, and for five of them (q06,
+q13, q16, q21, q24) nothing beyond the index, because no index-linked page
+shared a word with the question; those five are misses by construction and
+a finding in their own right. And a derived baseline, computed in
+`results.json` and not a measurement: drawing the same number of pages per
+question at random from the nine index-linked pages would hit at 1 about
+8.5% of the time and within the loaded set about 25%, against the observed
+14.3% and 47.6%. The corpus and the question writer caveats from run 1 apply
 unchanged. Agent-level evidence, an arm in `agent-memory-bench` next to
 memkernel's, is tracked in
 [issue #10](https://github.com/gosha70/wiki-studio/issues/10).
