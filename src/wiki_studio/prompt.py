@@ -78,7 +78,13 @@ _PATCH_SET_RESPONSE_SCHEMA = {
                 "type": "object",
                 "required": ["path", "action", "new_content", "rationale"],
                 "properties": {
-                    "path": {"type": "string"},
+                    "path": {
+                        "type": "string",
+                        "description": (
+                            "Relative to the wiki directory: 'concepts/<slug>.md', 'index.md', 'log.md'. "
+                            "Never prefixed with the wiki directory's name."
+                        ),
+                    },
                     "action": {"enum": ["create", "update", "append-log", "append-index"]},
                     "new_content": {"type": "string"},
                     "rationale": {"type": "string"},

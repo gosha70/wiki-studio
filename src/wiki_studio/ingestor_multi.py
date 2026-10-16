@@ -118,7 +118,9 @@ class DefaultMultiIngestor:
                     raise ContractViolationError(f"WikiPatchSet.edits[*] missing required key: {required!r}")
             edits.append(
                 PageEdit(
-                    path=str(raw_edit["path"]),
+                    # The prompt labels wiki files "<label>/<path>"; a copied label is
+                    # removed here, exactly once, before per-edit validation (issue #11).
+                    path=self._paths.strip_wiki_label(str(raw_edit["path"])),
                     action=raw_edit["action"],
                     new_content=str(raw_edit["new_content"]),
                     rationale=str(raw_edit["rationale"]),

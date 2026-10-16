@@ -24,6 +24,8 @@
 from __future__ import annotations
 
 import argparse
+import json
+import os
 import sys
 from pathlib import Path
 
@@ -97,8 +99,8 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="wiki-studio",
         description=(
-            "Karpathy-pattern LLM Wiki maintainer. Five verbs: "
-            "ingest|promote|query|lint|audit-flush. "
+            "Karpathy-pattern LLM Wiki maintainer. Six verbs: "
+            "ingest|promote|query|lint|audit-flush|info. "
             "``wiki-studio <verb> --help`` for per-verb help."
         ),
         epilog=(
@@ -300,6 +302,15 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         "Exits 0 after the divergence + malformed gates.",
     )
 
+    # ── info ───────────────────────────────────────────────────
+    p_info = sub.add_parser(
+        "info",
+        parents=[common],
+        help="Print the resolved layout (root, wiki dir, proposals dir, logs, schema copy) and where each "
+        "location came from: flag, WIKI_STUDIO_* variable or default. Read-only; exits 0.",
+    )
+    p_info.add_argument("--json", action="store_true", help="Print the same facts as one JSON object.")
+
     return parser
 
 
@@ -442,7 +453,65 @@ def _do_audit_flush(args: argparse.Namespace) -> int:
     return 0
 
 
-_VERBS = ("ingest", "promote", "query", "lint", "audit-flush")
+_SOURCE_FLAG = "flag"
+_SOURCE_DEFAULT = "default"
+_SCHEMA_PACKAGED = "packaged"
+_SCHEMA_PROJECT = "project copy"
+
+
+def _location_source(flag_value: object, env_name: str) -> str:
+    """Where a resolved location came from, in the precedence order ``WikiPaths.resolve`` uses."""
+    if flag_value:
+        return _SOURCE_FLAG
+    if os.environ.get(env_name):
+        return f"env {env_name}"
+    return _SOURCE_DEFAULT
+
+
+def _do_info(args: argparse.Namespace) -> int:
+    """Print the resolved layout and the source of each location; writes nothing."""
+    paths = _paths_from_args(args)
+    root_source = _location_source(getattr(args, "root", None), ENV_ROOT)
+    wiki_source = _location_source(getattr(args, "wiki_dir", None), ENV_WIKI_DIR)
+    proposals_source = _location_source(getattr(args, "proposals_dir", None), ENV_PROPOSALS_DIR)
+    layout = "default" if wiki_source == _SOURCE_DEFAULT and proposals_source == _SOURCE_DEFAULT else "custom"
+    schema = _SCHEMA_PROJECT if paths.schema_dir.is_dir() else _SCHEMA_PACKAGED
+    wiki_exists = paths.wiki_dir.is_dir()
+    proposals_exist = paths.proposals_dir.is_dir()
+    info = {
+        "layout": layout,
+        "root": str(paths.root),
+        "root_source": root_source,
+        "wiki_dir": str(paths.wiki_dir),
+        "wiki_dir_source": wiki_source,
+        "wiki_dir_exists": wiki_exists,
+        "wiki_label": paths.wiki_label,
+        "proposals_dir": str(paths.proposals_dir),
+        "proposals_dir_source": proposals_source,
+        "proposals_dir_exists": proposals_exist,
+        "query_log": str(paths.query_log),
+        "audit_log": str(paths.audit_log),
+        "schema": schema,
+        "schema_dir": str(paths.schema_dir),
+    }
+    if args.json:
+        print(json.dumps(info, indent=2))
+        return 0
+
+    def state(exists: bool) -> str:
+        return "exists" if exists else "missing"
+
+    print(f"layout: {layout}")
+    print(f"root: {paths.root}  ({root_source})")
+    print(f"wiki-dir: {paths.wiki_dir}  ({wiki_source}; label '{paths.wiki_label}'; {state(wiki_exists)})")
+    print(f"proposals-dir: {paths.proposals_dir}  ({proposals_source}; {state(proposals_exist)})")
+    print(f"query-log: {paths.query_log}")
+    print(f"audit-log: {paths.audit_log}")
+    print(f"schema: {schema}" + (f" at {paths.schema_dir}" if schema == _SCHEMA_PROJECT else ""))
+    return 0
+
+
+_VERBS = ("ingest", "promote", "query", "lint", "audit-flush", "info")
 
 # Global options that take a value; their value is not a positional for the legacy shim.
 _GLOBAL_VALUE_OPTIONS = ("--root", "--wiki-dir", "--proposals-dir")
@@ -511,6 +580,7 @@ def main(argv: list[str] | None = None) -> int:
         "query": _do_query,
         "lint": _do_lint,
         "audit-flush": _do_audit_flush,
+        "info": _do_info,
     }
     handler = dispatch.get(args.verb)
     if handler is None:

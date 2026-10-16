@@ -111,6 +111,24 @@ Commits pending lines of the ingest audit log. The only verb that runs
 |---|---|
 | `--dry-run` | report the pending line count and blob SHA without committing |
 
+### `wiki-studio info`
+
+Prints the resolved layout before anything runs: `layout: default` or
+`custom`, the root, wiki and proposals directories with where each came
+from (`flag`, `env WIKI_STUDIO_…` or `default`) and whether they exist, the
+query and audit logs, and which schema copy applies (`packaged` or the
+project's `<wiki-dir>/schema/`). Read-only, exit 0. `--version` stays a
+single line.
+
+| Flag | Effect |
+|---|---|
+| `--json` | the same facts as one JSON object |
+
+Backends see wiki files under a heading named after the wiki directory
+(`knowledge/wiki/index.md`, or `wiki/index.md` for a custom location);
+every edit path they return is relative to that directory, and a copied
+heading prefix is removed, exactly once, before validation.
+
 ## Exit codes
 
 | Code | Meaning |
@@ -260,8 +278,8 @@ of context before and after, windows merged per file, and count the words.
 Read these numbers with their caveats. Run 1 promoted one document in ten:
 eight ingests failed validation because the model returned paths prefixed
 with the wiki directory's name, a contract gap in the prompt
-([issue #11](https://github.com/gosha70/wiki-studio/issues/11)), and one
-timed out. The three navigation numbers therefore rest on three
+([issue #11](https://github.com/gosha70/wiki-studio/issues/11), fixed in
+this release; run 1 was measured on 0.2.0), and one timed out. The three navigation numbers therefore rest on three
 questions and one page, and the coverage number is the finding. The corpus
 shares its vocabulary with the wiki schema, and the question writer knows
 the scorer. During the run, a Claude Code Stop hook executed this

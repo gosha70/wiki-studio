@@ -181,6 +181,17 @@ class WikiPaths:
         except ValueError:
             return self.wiki_dir.name
 
+    def strip_wiki_label(self, path: str) -> str:
+        """Remove one leading ``<wiki_label>/`` from a path a backend returned, and nothing else.
+
+        Prompts show wiki files as ``<label>/<path>``; a model that copies the label
+        into an edit path is corrected here for that exact prefix only, before the
+        usual validation. ``wiki/wiki/x.md`` with label ``wiki`` becomes
+        ``wiki/x.md`` and then fails validation as it should.
+        """
+        prefix = self.wiki_label + "/"
+        return path[len(prefix) :] if path.startswith(prefix) else path
+
     def relative_to_root(self, path: Path) -> str:
         """``path`` relative to the root as POSIX when it is under the root, else as given."""
         try:

@@ -242,6 +242,14 @@ def _render_plain_text_prompt(backend_prompt: dict[str, Any], wiki_label: str = 
         "The reference schema below is shown in a ```text fence (which "
         "is not captured by the extractor)."
     )
+    if wiki_state:
+        # Multi-page ingest: the wiki headings above carry the label; edit paths must not.
+        lines.append("")
+        lines.append(
+            f"Every edit 'path' is relative to the wiki directory, which the headings above show as "
+            f"'{wiki_label}/'. Write 'decisions/<slug>.md', 'concepts/<slug>.md', 'index.md' or 'log.md'; "
+            f"never start a path with '{wiki_label}/'."
+        )
     if task == "gate-only":
         lines.append("")
         lines.append(
