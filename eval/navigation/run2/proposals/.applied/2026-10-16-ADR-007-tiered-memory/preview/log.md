@@ -1,0 +1,1 @@
+- 2026-10-16 — create memkernel-tiered-memory-decision (decision): ADR-007 rationale, alternatives and consequences for tiered memory; update memkernel-tiered-memory (concept) with code auto-supersession, access tracking and the consolidation ranking from ADR-007

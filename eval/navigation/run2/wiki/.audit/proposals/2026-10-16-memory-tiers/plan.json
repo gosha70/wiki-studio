@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "source_path": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/corpus/docs/architecture/memory-tiers.md",
+  "backend": "claude",
+  "rationale": "Gate passes. (1) Reusable: the design document explains why MemKernel's memory tiers work the way they do. It covers the CoALA/Roynard framing, the fast-state/slow-state analogy to HRM, and the JEPA-style dedup proxy. It also maps each mechanism to its source in the literature and to the code that implements it, gives the exact recall and forgetting formulas with per-type half-lives, and states the division of labour between server and agent and the non-goals. Future contributors working on memkernel or the wiki bridge will need all of this. (2) Citable: repo file eval/navigation/corpus/docs/architecture/memory-tiers.md. (3) Non-duplicative: the concept page memkernel-tiered-memory already covers tiers, retention and scoring, and it names this document as its design reference without citing it. The right move is to update that page, not create a new one. The ADR-007 decision page already records the decision and the rejected alternatives, so it is left unchanged. (4) New-contributor-relevant: the mechanism-to-code map and the non-goals are what a newcomer needs to find their way around the code and avoid re-proposing deferred work. Edits: update the concept page and append one log line. No new page is created, so index.md is unchanged.",
+  "edits": [
+    {
+      "path": "concepts/memkernel-tiered-memory.md",
+      "action": "update",
+      "rationale": "The design document extends the existing concept page, which already listed it as the design reference without citing it. The update adds it as a source and folds in the problem statement, the CoALA/Roynard framing, the HRM and JEPA analogies, the exact recall and expiry formulas with per-type half-lives, the server-versus-agent split, the expanded session protocol, the non-goals, and the code locations from its mechanism table. It also adds a Related link to ADR-008, since the design document defers to it for the wiki twin.",
+      "preview": "preview/concepts/memkernel-tiered-memory.md"
+    },
+    {
+      "path": "log.md",
+      "action": "append-log",
+      "rationale": "Record the update in the log, one dated line per wiki edit.",
+      "preview": "preview/log.md"
+    }
+  ]
+}

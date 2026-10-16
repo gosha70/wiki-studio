@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "source_path": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/corpus/README.md",
+  "backend": "claude",
+  "rationale": "Gate passed. (1) Reusable: the README describes MemKernel's memory model, MCP tools, setup, configuration and wiki bridge, and contributors will need these in later sessions. (2) Citable: repo file eval/navigation/corpus/README.md at 8b7f14d. (3) Non-duplicative: the wiki is empty apart from index and log. (4) New-contributor-relevant: anyone using or integrating MemKernel needs the tier model, the setup procedure and the install fixes. The source covers four separate topics, so this patch creates four pages, links each from index.md and adds one log line per page: the tiered memory model (concept), registering MemKernel with Claude Code (workflow), fixing install and first-connection problems (playbook), and the LLM-wiki bridge with revalidation (concept).",
+  "edits": [
+    {
+      "path": "concepts/memkernel-tiered-memory.md",
+      "action": "create",
+      "rationale": "This is the core mental model of the source: tiers, types, retention and the recall scoring formula. It is durable knowledge rather than a procedure, so it is a concept page.",
+      "preview": "preview/concepts/memkernel-tiered-memory.md"
+    },
+    {
+      "path": "workflows/memkernel-claude-code-setup.md",
+      "action": "create",
+      "rationale": "The install and registration procedure is a numbered, end-to-end path, so it is a workflow page.",
+      "preview": "preview/workflows/memkernel-claude-code-setup.md"
+    },
+    {
+      "path": "playbooks/memkernel-install-troubleshooting.md",
+      "action": "create",
+      "rationale": "The README's troubleshooting block describes recurring failures and their fixes, which matches the playbook type.",
+      "preview": "preview/playbooks/memkernel-install-troubleshooting.md"
+    },
+    {
+      "path": "concepts/memkernel-wiki-bridge-and-health.md",
+      "action": "create",
+      "rationale": "The wiki bridge is the integration point with this project's page schema and deserves its own concept page. Revalidation and health are closely related store-integrity mechanisms, so they are grouped on the same page.",
+      "preview": "preview/concepts/memkernel-wiki-bridge-and-health.md"
+    },
+    {
+      "path": "index.md",
+      "action": "append-index",
+      "rationale": "Links all four new pages from index.md so they are reachable.",
+      "preview": "preview/index.md"
+    },
+    {
+      "path": "log.md",
+      "action": "append-log",
+      "rationale": "Adds one dated log line for each page created.",
+      "preview": "preview/log.md"
+    }
+  ]
+}

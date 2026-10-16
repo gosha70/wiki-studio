@@ -1,0 +1,1 @@
+- 2026-10-16 — create memkernel-harness-integration (concept): CCT and haa integration plan (factory, MemoryLifecycle component, phase-agent tiers and tags, namespaces, wiki round-trip), with plan-time statements flagged as possibly stale; update memkernel-claude-code-setup (workflow) with a Related link

@@ -1,0 +1,1 @@
+- 2026-10-16 — update memkernel-tiered-memory (concept): cite the memory-tiers design doc; add the CoALA/Roynard framing, HRM slow/fast and JEPA dedup analogies, exact recall and expiry formulas with half-lives, server-bookkeeping/agent-synthesis split, mechanism-to-code pointers and non-goals

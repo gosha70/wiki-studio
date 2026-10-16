@@ -1,0 +1,7 @@
+applied 6 edit(s) from 2026-10-16-memory-literature-review; archived to /Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/run2/proposals/.applied/2026-10-16-memory-literature-review.
+  + wiki/log.md
+  + wiki/index.md
+  + wiki/decisions/memkernel-tiered-memory-decision.md
+  + wiki/concepts/memkernel-memory-literature-review.md
+  + wiki/.audit/proposals/2026-10-16-memory-literature-review/proposal.md
+  + wiki/.audit/proposals/2026-10-16-memory-literature-review/plan.json

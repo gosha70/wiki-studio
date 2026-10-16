@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "source_path": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/corpus/docs/integration/harness-integration.md",
+  "backend": "claude",
+  "rationale": "Gate passes. (1) Reusable: the source explains how MemKernel plugs into two harnesses, code-copilot-team (CCT) and haa. It covers the factory entry point, the tier vocabulary for phase agents, feature/phase tagging, the wiki round-trip, namespace rules and the MemoryLifecycle component contract. Anyone wiring memory into a harness will need this. (2) Citable: it is a repo file in the corpus. (3) Non-duplicative: no existing page covers harness integration. The tiered-memory concept and the Claude Code setup workflow only mention MemoryLifecycle and the hooks in passing. (4) Relevant to new contributors: it explains how the tools fit together. The source is a dated plan (2026-10-11), not a validated procedure, so it becomes a draft concept page and not a workflow. Some statements are dated and may now be stale, such as 'not yet on PyPI' and 'MemoryLifecycle is roadmap 0.3'. Other wiki pages describe PyPI installation and an existing lifecycle.py, so the new page flags these as plan-time statements. The Claude Code setup workflow gets a Related link to the new page so the new page is linked from more than one place.",
+  "edits": [
+    {
+      "path": "concepts/memkernel-harness-integration.md",
+      "action": "create",
+      "rationale": "No existing page covers embedding MemKernel in harnesses, the phase-agent tagging convention, the namespace scheme or the MemoryLifecycle component contract. The source is a dated plan, so the page is a draft concept and it flags the plan-time statements that conflict with the README-based pages.",
+      "preview": "preview/concepts/memkernel-harness-integration.md"
+    },
+    {
+      "path": "workflows/memkernel-claude-code-setup.md",
+      "action": "update",
+      "rationale": "Adds a Related link to the new harness-integration page. That page covers the next steps after basic registration: embedding MemKernel in CCT's phase agents and in haa's loop. The steps and the rest of the page are unchanged.",
+      "preview": "preview/workflows/memkernel-claude-code-setup.md"
+    },
+    {
+      "path": "index.md",
+      "action": "append-index",
+      "rationale": "Links the new concept page from the Concepts section so it is reachable from the index.",
+      "preview": "preview/index.md"
+    },
+    {
+      "path": "log.md",
+      "action": "append-log",
+      "rationale": "One dated log entry that records the new page and the related-link update.",
+      "preview": "preview/log.md"
+    }
+  ]
+}

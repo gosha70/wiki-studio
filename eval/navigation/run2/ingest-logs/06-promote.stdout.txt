@@ -1,0 +1,7 @@
+applied 6 edit(s) from 2026-10-16-harness-integration; archived to /Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/run2/proposals/.applied/2026-10-16-harness-integration.
+  + wiki/log.md
+  + wiki/index.md
+  + wiki/workflows/memkernel-claude-code-setup.md
+  + wiki/concepts/memkernel-harness-integration.md
+  + wiki/.audit/proposals/2026-10-16-harness-integration/proposal.md
+  + wiki/.audit/proposals/2026-10-16-harness-integration/plan.json

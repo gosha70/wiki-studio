@@ -1,0 +1,1 @@
+- 2026-10-16 — create memkernel-wiki-semantic-layer-decision (decision): ADR-008 rationale for the wiki as source of truth of curated long-term memory, the bridge mapping and the ai-wiki extraction; update memkernel-wiki-bridge-and-health (concept) with the type mappings, import tags and memkernel_ref traceability from ADR-008

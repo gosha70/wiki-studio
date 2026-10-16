@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "source_path": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/corpus/docs/adr/ADR-007-tiered-memory.md",
+  "backend": "claude",
+  "rationale": "Gate passes. (1) Reusable: ADR-007 records why MemKernel splits memory into tiers, uses supersession for facts and decay for experience, and keeps the LLM out of the server. Anyone changing retention, recall or consolidation needs this. (2) Citable: repo file eval/navigation/corpus/docs/adr/ADR-007-tiered-memory.md at 8b7f14d. (3) Non-duplicative: concepts/memkernel-tiered-memory already describes how the tiers work (from the README), but not the decision, its context, the rejected alternatives or the consequences. So I am adding a new decisions/ page and updating the concept page with what the ADR refines, without restating it: the 0.4 automatic supersession of code memories by source, the durable superseded_by marker, the exact consolidation ranking importance × (1 + access_count), recall/get writing access stats with touch=False on maintenance paths, and backward-compatible metadata. (4) New-contributor-relevant: a newcomer asking 'why not one TTL / LLM consolidation / a graph / separate collections?' should find the answer here. Edits: create the decision page, update the concept page, add an index link, add a log line.",
+  "edits": [
+    {
+      "path": "decisions/memkernel-tiered-memory-decision.md",
+      "action": "create",
+      "rationale": "No existing page records the rationale, context, rejected alternatives or consequences of the tiered design. A decisions/ page is the schema's home for an ADR. Status and date live in the frontmatter, so there are no Status/Date H2s.",
+      "preview": "preview/decisions/memkernel-tiered-memory-decision.md"
+    },
+    {
+      "path": "concepts/memkernel-tiered-memory.md",
+      "action": "update",
+      "rationale": "The ADR refines the concept page with facts the README did not give. Added: automatic code supersession by source and the durable superseded_by marker (0.4); access tracking on recall/get, with touch=False on maintenance paths; no recency decay for long-term memories; the exact candidate ranking importance × (1 + access_count), which replaces 'importance × recall count'; no LLM inside the server; backward-compatible metadata. Also added the ADR as a source and a Related link to the new decision page.",
+      "preview": "preview/concepts/memkernel-tiered-memory.md"
+    },
+    {
+      "path": "index.md",
+      "action": "append-index",
+      "rationale": "Makes the new decision page reachable from index.md under a new Decisions section.",
+      "preview": "preview/index.md"
+    },
+    {
+      "path": "log.md",
+      "action": "append-log",
+      "rationale": "One dated log entry, as the log format requires, recording the create and the related update.",
+      "preview": "preview/log.md"
+    }
+  ]
+}
