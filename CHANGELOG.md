@@ -28,9 +28,20 @@ ready arm for memkernel's lifecycle suite (issue #10, layer 2).
   percent of memkernel's block length, the list of memkernel changes needed).
   Adopting and running it happens in memkernel.
 
+### Fixed
+
+- `promote` no longer leaves a proposal behind when the archive already holds
+  one with the same name: it is archived next to it as `<name>-2`, `-3`, ...
+  (as `.audit/proposals/` already did), and the CLI no longer prints
+  "archived to" for a move that did not happen. Old behaviour, reachable once
+  `propose --from` made repeated same-day recordings routine.
+
 ### Changed
 
 - README banner pinned to the `v0.4.0` tag.
+- `propose --from` names a proposal `<date>-<HHMMSS>-<dir-name>`, with a
+  numeric suffix if that name is taken, so repeated recordings never collide.
+- `find` on a wiki without `index.md` exits 5 and points at `init`.
 
 ## [0.3.1] — 2026-10-16
 

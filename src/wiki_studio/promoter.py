@@ -497,17 +497,21 @@ def _commit_stage_to_wiki(stage_dir: Path, paths: WikiPaths) -> list[str]:
 
 
 def _archive_proposals_dir(proposals_dir: Path, paths: WikiPaths) -> Path:
-    """Move the proposals dir into ``<proposals_dir>/.applied/``.
+    """Move the proposals dir into ``<proposals_dir>/.applied/`` and return where it went.
 
-    The .applied/ subdir serves as an audit trail. Idempotent: a second call with the same
-    dir is a no-op when the dir has already been archived.
+    The .applied/ subdir serves as an audit trail. A directory already archived is never
+    reached here (``promote`` returns early for paths under ``.applied/``), so an existing
+    entry with the same name is a different, earlier proposal: this one is archived next to
+    it as ``<name>-2``, ``<name>-3``, ... (the same rule ``.audit/proposals/`` uses), never
+    left behind.
     """
     applied_root = paths.applied_dir
     applied_root.mkdir(parents=True, exist_ok=True)
     target = applied_root / proposals_dir.name
-    if target.exists():
-        # Archived already; nothing to do.
-        return target
+    suffix = 2
+    while target.exists():
+        target = applied_root / f"{proposals_dir.name}-{suffix}"
+        suffix += 1
     shutil.move(str(proposals_dir), str(target))
     return target
 

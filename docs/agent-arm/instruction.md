@@ -14,16 +14,16 @@ find ranks pages by the words they share with your question, so use the words
 of the task itself.
 
 ### Recording knowledge
-Do not edit files under knowledge/wiki/ directly. Write a draft directory laid
-out like the wiki, then land it through the gate:
+Do not edit files under knowledge/wiki/ directly. For each recording, write a
+fresh draft directory laid out like the wiki, then land it through the gate:
   wiki-studio init                  (once, if index.md or log.md is missing)
-  mkdir -p "${TMPDIR:-/tmp}/wiki-draft/decisions"
-  ${TMPDIR:-/tmp}/wiki-draft/decisions/<slug>.md   a page: frontmatter with page_type,
-      slug (the file name), title, status: draft, last_reviewed (YYYY-MM-DD) and
-      sources (at least one "- path: <file>"), then the body
-  ${TMPDIR:-/tmp}/wiki-draft/index.md   one line: - [Title](decisions/<slug>.md) — summary
-  ${TMPDIR:-/tmp}/wiki-draft/log.md     one line: - YYYY-MM-DD — created <slug> (decision)
-  wiki-studio propose --from "${TMPDIR:-/tmp}/wiki-draft" --promote
+  D=$(mktemp -d); mkdir -p "$D/decisions"
+  $D/decisions/<slug>.md   a page: frontmatter with page_type, slug (the file
+      name), title, status: draft, last_reviewed (YYYY-MM-DD) and sources (at
+      least one "- path: <file>"), then the body
+  $D/index.md   one line: - [Title](decisions/<slug>.md) — summary
+  $D/log.md     one line: - YYYY-MM-DD — created <slug> (decision)
+  wiki-studio propose --from "$D" --promote
 If propose refuses the draft, fix what it names and run it again. Use the
 directory that fits the knowledge: decisions/ for a choice made, concepts/
 for how something works, workflows/ for a procedure.

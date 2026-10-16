@@ -575,9 +575,14 @@ def find(question: str, paths: WikiPaths, *, max_pages: int = DEFAULT_MAX_QUERY_
 
     The result is what a model would be given to read: ``index.md`` plus up to
     ``max_pages`` index-linked pages ranked by word overlap with the question.
-    An empty ``pages`` means no index-linked page shares a word with it.
+    An empty ``pages`` means no index-linked page shares a word with it. Raises
+    ``SourceMissingError`` (exit 5) when the wiki has no ``index.md``.
     """
-    _index_md, selected, contents = _select_query_candidates(paths, question, max_pages)
+    index_md, selected, contents = _select_query_candidates(paths, question, max_pages)
+    if not index_md:
+        raise SourceMissingError(
+            f"{paths.wiki_label}/index.md not found; nothing to find. Run `wiki-studio init` to create the wiki."
+        )
     pages = tuple(
         FoundPage(path=rel, file=paths.wiki_dir / rel, title=_page_title(contents[rel], Path(rel).stem))
         for rel in selected

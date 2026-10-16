@@ -152,8 +152,64 @@ class TestProposeFromDir(_Workspace):
         from wiki_studio.cli import _default_proposal_name
 
         name = _default_proposal_name(self.root / "my draft (v2)!")
-        self.assertRegex(name, r"^\d{4}-\d{2}-\d{2}-my-draft-v2$")
-        self.assertRegex(_default_proposal_name(self.root / "..."), r"^\d{4}-\d{2}-\d{2}-agent$")
+        self.assertRegex(name, r"^\d{4}-\d{2}-\d{2}-\d{6}-my-draft-v2$")
+        self.assertRegex(_default_proposal_name(self.root / "..."), r"^\d{4}-\d{2}-\d{2}-\d{6}-agent$")
+
+    def test_default_name_never_reuses_an_existing_or_archived_proposal(self) -> None:
+        from wiki_studio.cli import _default_proposal_name
+
+        base = _default_proposal_name(self.root / "draft")
+        (self.paths.proposals_dir / base).mkdir(parents=True)
+        (self.paths.proposals_dir / ".applied" / f"{base}-2").mkdir(parents=True)
+        name = _default_proposal_name(self.root / "draft", self.paths.proposals_dir)
+        self.assertIn(name, (f"{base}-3", _default_proposal_name(self.root / "draft")))  # clock may tick
+
+
+class TestRepeatedRecordings(_Workspace):
+    """PR #19 review: three recordings in one day from the same draft path all land and archive."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        api.init(self.paths)
+
+    def test_three_recordings_from_one_draft_path(self) -> None:
+        draft = self.root / "wiki-draft"
+        for n in (1, 2, 3):
+            slug = f"decision-{n}"
+            page = DECISION.replace("slug: retry-backoff", f"slug: {slug}").replace(
+                "title: Retry backoff", f"title: D{n}"
+            )
+            for old in draft.rglob("*"):
+                if old.is_file():
+                    old.unlink()
+            (draft / "decisions").mkdir(parents=True, exist_ok=True)
+            (draft / "decisions" / f"{slug}.md").write_text(page, encoding="utf-8")
+            (draft / "index.md").write_text(f"- [D{n}](decisions/{slug}.md)\n", encoding="utf-8")
+            result = self.cli("propose", "--from", str(draft), "--promote")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("archived to", result.stdout)
+        self.assertEqual(
+            sorted(p.name for p in (self.paths.wiki_dir / "decisions").iterdir()),
+            ["decision-1.md", "decision-2.md", "decision-3.md"],
+        )
+        self.assertEqual([p for p in self.paths.proposals_dir.iterdir() if p.name != ".applied"], [])
+        self.assertEqual(len(list((self.paths.proposals_dir / ".applied").iterdir())), 3)
+
+    def test_archive_clash_is_archived_next_to_it(self) -> None:
+        # Two proposals with the same explicit name on different days of the archive.
+        for n in (1, 2):
+            slug = f"clash-{n}"
+            page = DECISION.replace("slug: retry-backoff", f"slug: {slug}")
+            draft = self.write_draft(
+                {f"decisions/{slug}.md": page, "index.md": f"- [C](decisions/{slug}.md)\n"}, name=f"d{n}"
+            )
+            written = api.propose(api.edits_from_dir(draft, self.paths), self.paths, name=f"same-{n}")
+            target = self.paths.proposals_dir / "same"
+            written.rename(target)
+            result = api.promote(target, self.paths)
+            expected = "same" if n == 1 else "same-2"
+            self.assertEqual(result.archived_dir, self.paths.applied_dir / expected)
+            self.assertFalse(target.exists())
 
     def test_default_name_is_dated_and_safe(self) -> None:
         draft = self.write_draft(
@@ -191,6 +247,12 @@ class TestFind(_Workspace):
         self.assertIn("knowledge/wiki/decisions/retry-backoff.md  Retry backoff", text.stdout)
         payload = json.loads(self.cli("find", "retry backoff", "--json").stdout)
         self.assertEqual(payload["pages"][0]["path"], "decisions/retry-backoff.md")
+
+    def test_missing_index_is_an_error_pointing_at_init(self) -> None:
+        (self.paths.wiki_dir / "index.md").unlink()
+        result = self.cli("find", "retry backoff")
+        self.assertEqual(result.returncode, 5)
+        self.assertIn("wiki-studio init", result.stderr)
 
     def test_no_match_says_so(self) -> None:
         result = self.cli("find", "kubernetes ingress annotations")

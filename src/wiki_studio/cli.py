@@ -332,7 +332,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         "The first line of output is the proposal directory.",
     )
     p_propose.add_argument("--from", dest="source_dir", type=Path, required=True, help="Directory of files.")
-    p_propose.add_argument("--name", help="Proposal directory name (default: <date>-<from-dir-name>).")
+    p_propose.add_argument("--name", help="Proposal directory name (default: <date>-<time>-<from-dir-name>, unique).")
     p_propose.add_argument("--rationale", default="", help="Why, recorded in plan.json and the audit archive.")
     p_propose.add_argument("--promote", action="store_true", help="Promote the patch-set right after writing it.")
 
@@ -405,7 +405,12 @@ def _do_promote(args: argparse.Namespace) -> int:
         print(f"no-op: {args.proposal_dir.name} already applied (no changes to write).")
         return 0
     print(
-        f"applied {len(result.applied_paths)} edit(s) from {args.proposal_dir.name}; archived to {result.archived_dir}."
+        f"applied {len(result.applied_paths)} edit(s) from {args.proposal_dir.name}; "
+        + (
+            f"archived to {result.archived_dir}."
+            if result.archived_dir
+            else "not archived (move failed; left in place)."
+        )
     )
     for p in result.applied_paths:
         print(f"  + {paths.wiki_label}/{p}")
@@ -560,16 +565,24 @@ def _do_init(args: argparse.Namespace) -> int:
     return 0
 
 
-def _default_proposal_name(source_dir: Path) -> str:
+def _default_proposal_name(source_dir: Path, proposals_dir: Path | None = None) -> str:
+    """``<date>-<HHMMSS>-<dir-name>``, sanitised; ``-2``, ``-3``, ... if that directory already exists."""
+    now = datetime.datetime.now()
     stem = re.sub(r"[^A-Za-z0-9._-]+", "-", source_dir.resolve().name).strip(".-") or "agent"
-    return f"{datetime.date.today().isoformat()}-{stem}"
+    base = f"{now.date().isoformat()}-{now.strftime('%H%M%S')}-{stem}"
+    if proposals_dir is None:
+        return base
+    name, suffix = base, 2
+    while (proposals_dir / name).exists() or (proposals_dir / ".applied" / name).exists():
+        name, suffix = f"{base}-{suffix}", suffix + 1
+    return name
 
 
 def _do_propose(args: argparse.Namespace) -> int:
     """Patch-set from agent-written files (no backend); optionally promote it."""
     paths = _paths_from_args(args)
     edits = api.edits_from_dir(args.source_dir, paths, rationale=args.rationale)
-    name = args.name or _default_proposal_name(args.source_dir)
+    name = args.name or _default_proposal_name(args.source_dir, paths.proposals_dir)
     written = api.propose(edits, paths, name=name, source=str(args.source_dir), rationale=args.rationale, backend="cli")
     print(str(written))
     for edit in edits:
@@ -577,7 +590,10 @@ def _do_propose(args: argparse.Namespace) -> int:
     if not args.promote:
         return 0
     result = api.promote(written, paths)
-    print(f"applied {len(result.applied_paths)} edit(s); archived to {result.archived_dir}.")
+    archived = (
+        f"archived to {result.archived_dir}." if result.archived_dir else "not archived (move failed; left in place)."
+    )
+    print(f"applied {len(result.applied_paths)} edit(s); {archived}")
     return 0
 
 

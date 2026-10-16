@@ -16,7 +16,7 @@ repository, by its owner.
 
 The config uses the same keys and values as the other non-memkernel arms: the six
 base tools (the CLI is used through Bash), no MCP server, no hooks, nothing
-persisted. The instruction is 1,847 bytes, within 5 percent of memkernel's own
+persisted. The instruction is 1,769 bytes, within 5 percent of memkernel's own
 block (1,832), the same rule its `placebo` arm follows, so prompt length is not a
 difference between the two treated arms.
 
@@ -25,8 +25,9 @@ difference between the two treated arms.
 - **Session start:** `wiki-studio info`, then `wiki-studio find "<task>"`, then read
   `knowledge/wiki/index.md` and the listed pages. `find` is the querier's page
   selection without a model; it writes nothing.
-- **Recording:** write a draft directory laid out like the wiki (a page, one index
-  line, one log line), then `wiki-studio propose --from <draft> --promote`, which
+- **Recording:** write a fresh draft directory (`D=$(mktemp -d)`, so nothing from
+  an earlier recording or task is re-sent) laid out like the wiki (a page, one index
+  line, one log line), then `wiki-studio propose --from "$D" --promote`, which
   validates the page and lands it through the lint-gated promote, or refuses it
   with the reason. `wiki-studio init` first when `log.md` is missing.
 - **Never:** `wiki-studio ingest` or `wiki-studio query`. Both start a second
@@ -66,9 +67,10 @@ names the six) and in code. Adding the arm needs, in memkernel:
    (`TREATMENT = "memkernel"` is hard-coded).
 5. Tests: `EXPECTED` in `test_lifecycle_arms.py`, the arm list in
    `test_lifecycle_records.py`, and the demo expectations.
-6. A diagnostic worth adding: count Bash calls that run `wiki-studio ingest` or
-   `wiki-studio query` per session, so a breach of the "never" rule is visible in
-   the receipts rather than hidden in a nested model's cost.
+6. Two diagnostics worth adding, so a breach of the instruction is visible in the
+   receipts: Bash calls that run `wiki-studio ingest` or `wiki-studio query` (a
+   nested model whose cost the receipts would not see), and Write or Edit calls
+   whose path is under `knowledge/wiki/` (pages that bypassed the gate).
 
 When to add it is memkernel's decision: before its 0.5 code freeze (the arm then
 enters the preregistered run) or in the next version after 0.5's run (the 0.5
