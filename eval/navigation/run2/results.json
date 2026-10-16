@@ -1,0 +1,622 @@
+{
+  "absent": {
+    "absent_empty": 0.1667,
+    "absent_pages_loaded": 4.0,
+    "evaluated": 6
+  },
+  "counts": {
+    "absent": 6,
+    "competing": 6,
+    "questions": 35,
+    "single": 23,
+    "with_gold": 21
+  },
+  "ingest_coverage": 0.7241,
+  "navigation": {
+    "answered_by_index": [],
+    "competing_evaluated": 4,
+    "distractor_outranks": 0.5,
+    "evaluated": 21,
+    "gold_unreachable": [],
+    "hit_at_1": 0.1429,
+    "hit_at_max": 0.4762
+  },
+  "parameters": {
+    "context_lines": 2,
+    "max_pages": 5,
+    "min_word_length": 3
+  },
+  "per_question": [
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "gold": "workflows/memkernel-claude-code-setup.md",
+      "gold_unreachable": false,
+      "grep_words": 5275,
+      "hit_at_1": false,
+      "hit_at_max": true,
+      "id": "q01",
+      "kind": "single",
+      "selected": [
+        "playbooks/memkernel-install-troubleshooting.md",
+        "concepts/memkernel-tiered-memory.md",
+        "concepts/memkernel-wiki-bridge-and-health.md",
+        "workflows/memkernel-claude-code-setup.md",
+        "decisions/memkernel-tiered-memory-decision.md"
+      ],
+      "wiki_words": 3394
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "gold": "workflows/memkernel-claude-code-setup.md",
+      "gold_unreachable": false,
+      "grep_words": 6419,
+      "hit_at_1": false,
+      "hit_at_max": false,
+      "id": "q02",
+      "kind": "single",
+      "selected": [
+        "concepts/memkernel-tiered-memory.md",
+        "decisions/memkernel-tiered-memory-decision.md",
+        "decisions/memkernel-wiki-semantic-layer-decision.md",
+        "concepts/memkernel-memory-literature-review.md"
+      ],
+      "wiki_words": 3815
+    },
+    {
+      "distractors": [],
+      "excluded_reason": "no_gold",
+      "gold": null,
+      "gold_unreachable": null,
+      "grep_words": null,
+      "hit_at_1": null,
+      "hit_at_max": null,
+      "id": "q03",
+      "kind": "single",
+      "selected": [
+        "concepts/memkernel-tiered-memory.md",
+        "concepts/memkernel-wiki-bridge-and-health.md",
+        "workflows/memkernel-claude-code-setup.md",
+        "playbooks/memkernel-install-troubleshooting.md",
+        "decisions/memkernel-tiered-memory-decision.md"
+      ],
+      "wiki_words": null
+    },
+    {
+      "distractors": [],
+      "excluded_reason": "no_gold",
+      "gold": null,
+      "gold_unreachable": null,
+      "grep_words": null,
+      "hit_at_1": null,
+      "hit_at_max": null,
+      "id": "q04",
+      "kind": "single",
+      "selected": [],
+      "wiki_words": null
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "gold": "concepts/memkernel-wiki-bridge-and-health.md",
+      "gold_unreachable": false,
+      "grep_words": 5804,
+      "hit_at_1": false,
+      "hit_at_max": false,
+      "id": "q05",
+      "kind": "single",
+      "selected": [
+        "workflows/memkernel-claude-code-setup.md"
+      ],
+      "wiki_words": 601
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "gold": "decisions/memkernel-tiered-memory-decision.md",
+      "gold_unreachable": false,
+      "grep_words": 3762,
+      "hit_at_1": false,
+      "hit_at_max": false,
+      "id": "q06",
+      "kind": "single",
+      "selected": [],
+      "wiki_words": 250
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "gold": "decisions/memkernel-tiered-memory-decision.md",
+      "gold_unreachable": false,
+      "grep_words": 5963,
+      "hit_at_1": false,
+      "hit_at_max": true,
+      "id": "q07",
+      "kind": "single",
+      "selected": [
+        "concepts/memkernel-tiered-memory.md",
+        "decisions/memkernel-tiered-memory-decision.md",
+        "decisions/memkernel-wiki-semantic-layer-decision.md",
+        "concepts/memkernel-memory-literature-review.md"
+      ],
+      "wiki_words": 3815
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "gold": "decisions/memkernel-wiki-semantic-layer-decision.md",
+      "gold_unreachable": false,
+      "grep_words": 6168,
+      "hit_at_1": false,
+      "hit_at_max": true,
+      "id": "q08",
+      "kind": "single",
+      "selected": [
+        "concepts/memkernel-tiered-memory.md",
+        "concepts/memkernel-wiki-bridge-and-health.md",
+        "decisions/memkernel-wiki-semantic-layer-decision.md",
+        "concepts/memkernel-memory-literature-review.md",
+        "workflows/memkernel-claude-code-setup.md"
+      ],
+      "wiki_words": 4055
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "gold": "decisions/memkernel-wiki-semantic-layer-decision.md",
+      "gold_unreachable": false,
+      "grep_words": 7170,
+      "hit_at_1": true,
+      "hit_at_max": true,
+      "id": "q09",
+      "kind": "single",
+      "selected": [
+        "decisions/memkernel-wiki-semantic-layer-decision.md",
+        "concepts/memkernel-tiered-memory.md",
+        "concepts/memkernel-wiki-bridge-and-health.md",
+        "workflows/memkernel-claude-code-setup.md",
+        "decisions/memkernel-tiered-memory-decision.md"
+      ],
+      "wiki_words": 3910
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "gold": "decisions/memkernel-wiki-semantic-layer-decision.md",
+      "gold_unreachable": false,
+      "grep_words": 6914,
+      "hit_at_1": false,
+      "hit_at_max": true,
+      "id": "q10",
+      "kind": "single",
+      "selected": [
+        "concepts/memkernel-wiki-bridge-and-health.md",
+        "decisions/memkernel-wiki-semantic-layer-decision.md",
+        "concepts/memkernel-tiered-memory.md",
+        "workflows/memkernel-claude-code-setup.md",
+        "playbooks/memkernel-install-troubleshooting.md"
+      ],
+      "wiki_words": 3543
+    },
+    {
+      "distractors": [],
+      "excluded_reason": "no_gold",
+      "gold": null,
+      "gold_unreachable": null,
+      "grep_words": null,
+      "hit_at_1": null,
+      "hit_at_max": null,
+      "id": "q11",
+      "kind": "single",
+      "selected": [],
+      "wiki_words": null
+    },
+    {
+      "distractors": [],
+      "excluded_reason": "no_gold",
+      "gold": null,
+      "gold_unreachable": null,
+      "grep_words": null,
+      "hit_at_1": null,
+      "hit_at_max": null,
+      "id": "q12",
+      "kind": "single",
+      "selected": [
+        "concepts/memkernel-tiered-memory.md",
+        "decisions/memkernel-tiered-memory-decision.md",
+        "decisions/memkernel-wiki-semantic-layer-decision.md",
+        "concepts/memkernel-memory-literature-review.md"
+      ],
+      "wiki_words": null
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "gold": "concepts/memkernel-tiered-memory.md",
+      "gold_unreachable": false,
+      "grep_words": 4847,
+      "hit_at_1": false,
+      "hit_at_max": false,
+      "id": "q13",
+      "kind": "single",
+      "selected": [],
+      "wiki_words": 250
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "gold": "concepts/memkernel-tiered-memory.md",
+      "gold_unreachable": false,
+      "grep_words": 4881,
+      "hit_at_1": false,
+      "hit_at_max": false,
+      "id": "q14",
+      "kind": "single",
+      "selected": [
+        "concepts/memkernel-harness-integration.md"
+      ],
+      "wiki_words": 1180
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "gold": "concepts/memkernel-tiered-memory.md",
+      "gold_unreachable": false,
+      "grep_words": 3683,
+      "hit_at_1": false,
+      "hit_at_max": false,
+      "id": "q15",
+      "kind": "single",
+      "selected": [
+        "concepts/memkernel-harness-integration.md"
+      ],
+      "wiki_words": 1180
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "gold": "concepts/memkernel-harness-integration.md",
+      "gold_unreachable": false,
+      "grep_words": 6130,
+      "hit_at_1": false,
+      "hit_at_max": false,
+      "id": "q16",
+      "kind": "single",
+      "selected": [],
+      "wiki_words": 250
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "gold": "concepts/memkernel-harness-integration.md",
+      "gold_unreachable": false,
+      "grep_words": 7474,
+      "hit_at_1": false,
+      "hit_at_max": true,
+      "id": "q17",
+      "kind": "single",
+      "selected": [
+        "concepts/memkernel-tiered-memory.md",
+        "concepts/memkernel-wiki-bridge-and-health.md",
+        "decisions/memkernel-tiered-memory-decision.md",
+        "decisions/memkernel-wiki-semantic-layer-decision.md",
+        "concepts/memkernel-harness-integration.md"
+      ],
+      "wiki_words": 4489
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "gold": "concepts/memkernel-roadmap.md",
+      "gold_unreachable": false,
+      "grep_words": 6021,
+      "hit_at_1": false,
+      "hit_at_max": false,
+      "id": "q18",
+      "kind": "single",
+      "selected": [
+        "workflows/memkernel-claude-code-setup.md"
+      ],
+      "wiki_words": 601
+    },
+    {
+      "distractors": [],
+      "excluded_reason": "no_gold",
+      "gold": null,
+      "gold_unreachable": null,
+      "grep_words": null,
+      "hit_at_1": null,
+      "hit_at_max": null,
+      "id": "q19",
+      "kind": "single",
+      "selected": [],
+      "wiki_words": null
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "gold": "concepts/memkernel-memory-literature-review.md",
+      "gold_unreachable": false,
+      "grep_words": 3270,
+      "hit_at_1": true,
+      "hit_at_max": true,
+      "id": "q20",
+      "kind": "single",
+      "selected": [
+        "concepts/memkernel-memory-literature-review.md"
+      ],
+      "wiki_words": 1084
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "gold": "concepts/memkernel-memory-literature-review.md",
+      "gold_unreachable": false,
+      "grep_words": 3141,
+      "hit_at_1": false,
+      "hit_at_max": false,
+      "id": "q21",
+      "kind": "single",
+      "selected": [],
+      "wiki_words": 250
+    },
+    {
+      "distractors": [],
+      "excluded_reason": "no_gold",
+      "gold": null,
+      "gold_unreachable": null,
+      "grep_words": null,
+      "hit_at_1": null,
+      "hit_at_max": null,
+      "id": "q22",
+      "kind": "single",
+      "selected": [
+        "concepts/memkernel-tiered-memory.md",
+        "concepts/memkernel-wiki-bridge-and-health.md",
+        "workflows/memkernel-claude-code-setup.md",
+        "playbooks/memkernel-install-troubleshooting.md",
+        "decisions/memkernel-tiered-memory-decision.md"
+      ],
+      "wiki_words": null
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "gold": "concepts/memkernel-roadmap.md",
+      "gold_unreachable": false,
+      "grep_words": 1973,
+      "hit_at_1": true,
+      "hit_at_max": true,
+      "id": "q23",
+      "kind": "single",
+      "selected": [
+        "concepts/memkernel-roadmap.md"
+      ],
+      "wiki_words": 1201
+    },
+    {
+      "distractors": [
+        "decisions/memkernel-tiered-memory-decision.md"
+      ],
+      "excluded_reason": null,
+      "gold": "concepts/memkernel-tiered-memory.md",
+      "gold_unreachable": false,
+      "grep_words": 4858,
+      "hit_at_1": false,
+      "hit_at_max": false,
+      "id": "q24",
+      "kind": "competing",
+      "selected": [],
+      "wiki_words": 250
+    },
+    {
+      "distractors": [
+        "concepts/memkernel-wiki-bridge-and-health.md"
+      ],
+      "excluded_reason": null,
+      "gold": "decisions/memkernel-wiki-semantic-layer-decision.md",
+      "gold_unreachable": false,
+      "grep_words": 5125,
+      "hit_at_1": false,
+      "hit_at_max": true,
+      "id": "q25",
+      "kind": "competing",
+      "selected": [
+        "concepts/memkernel-wiki-bridge-and-health.md",
+        "decisions/memkernel-wiki-semantic-layer-decision.md"
+      ],
+      "wiki_words": 1666
+    },
+    {
+      "distractors": [
+        "concepts/memkernel-roadmap.md",
+        "concepts/memkernel-harness-integration.md"
+      ],
+      "excluded_reason": "no_gold",
+      "gold": null,
+      "gold_unreachable": null,
+      "grep_words": null,
+      "hit_at_1": null,
+      "hit_at_max": null,
+      "id": "q26",
+      "kind": "competing",
+      "selected": [
+        "concepts/memkernel-harness-integration.md"
+      ],
+      "wiki_words": null
+    },
+    {
+      "distractors": [
+        "concepts/memkernel-roadmap.md",
+        "concepts/memkernel-tiered-memory.md"
+      ],
+      "excluded_reason": "no_gold",
+      "gold": null,
+      "gold_unreachable": null,
+      "grep_words": null,
+      "hit_at_1": null,
+      "hit_at_max": null,
+      "id": "q27",
+      "kind": "competing",
+      "selected": [
+        "concepts/memkernel-tiered-memory.md"
+      ],
+      "wiki_words": null
+    },
+    {
+      "distractors": [
+        "concepts/memkernel-wiki-bridge-and-health.md"
+      ],
+      "excluded_reason": null,
+      "gold": "concepts/memkernel-roadmap.md",
+      "gold_unreachable": false,
+      "grep_words": 4469,
+      "hit_at_1": false,
+      "hit_at_max": false,
+      "id": "q28",
+      "kind": "competing",
+      "selected": [
+        "workflows/memkernel-claude-code-setup.md"
+      ],
+      "wiki_words": 601
+    },
+    {
+      "distractors": [
+        "workflows/memkernel-claude-code-setup.md"
+      ],
+      "excluded_reason": null,
+      "gold": "concepts/memkernel-harness-integration.md",
+      "gold_unreachable": false,
+      "grep_words": 7548,
+      "hit_at_1": false,
+      "hit_at_max": true,
+      "id": "q29",
+      "kind": "competing",
+      "selected": [
+        "workflows/memkernel-claude-code-setup.md",
+        "concepts/memkernel-harness-integration.md",
+        "concepts/memkernel-tiered-memory.md",
+        "decisions/memkernel-tiered-memory-decision.md",
+        "decisions/memkernel-wiki-semantic-layer-decision.md"
+      ],
+      "wiki_words": 4262
+    },
+    {
+      "distractors": [],
+      "excluded_reason": "absent",
+      "gold": null,
+      "gold_unreachable": null,
+      "grep_words": null,
+      "hit_at_1": null,
+      "hit_at_max": null,
+      "id": "q30",
+      "kind": "absent",
+      "selected": [
+        "concepts/memkernel-tiered-memory.md",
+        "concepts/memkernel-wiki-bridge-and-health.md",
+        "decisions/memkernel-tiered-memory-decision.md",
+        "decisions/memkernel-wiki-semantic-layer-decision.md",
+        "concepts/memkernel-memory-literature-review.md"
+      ],
+      "wiki_words": null
+    },
+    {
+      "distractors": [],
+      "excluded_reason": "absent",
+      "gold": null,
+      "gold_unreachable": null,
+      "grep_words": null,
+      "hit_at_1": null,
+      "hit_at_max": null,
+      "id": "q31",
+      "kind": "absent",
+      "selected": [
+        "concepts/memkernel-tiered-memory.md",
+        "concepts/memkernel-wiki-bridge-and-health.md",
+        "decisions/memkernel-tiered-memory-decision.md",
+        "decisions/memkernel-wiki-semantic-layer-decision.md",
+        "concepts/memkernel-memory-literature-review.md"
+      ],
+      "wiki_words": null
+    },
+    {
+      "distractors": [],
+      "excluded_reason": "absent",
+      "gold": null,
+      "gold_unreachable": null,
+      "grep_words": null,
+      "hit_at_1": null,
+      "hit_at_max": null,
+      "id": "q32",
+      "kind": "absent",
+      "selected": [
+        "concepts/memkernel-tiered-memory.md",
+        "decisions/memkernel-tiered-memory-decision.md",
+        "decisions/memkernel-wiki-semantic-layer-decision.md",
+        "concepts/memkernel-memory-literature-review.md"
+      ],
+      "wiki_words": null
+    },
+    {
+      "distractors": [],
+      "excluded_reason": "absent",
+      "gold": null,
+      "gold_unreachable": null,
+      "grep_words": null,
+      "hit_at_1": null,
+      "hit_at_max": null,
+      "id": "q33",
+      "kind": "absent",
+      "selected": [
+        "concepts/memkernel-tiered-memory.md",
+        "concepts/memkernel-wiki-bridge-and-health.md",
+        "workflows/memkernel-claude-code-setup.md",
+        "playbooks/memkernel-install-troubleshooting.md",
+        "decisions/memkernel-tiered-memory-decision.md"
+      ],
+      "wiki_words": null
+    },
+    {
+      "distractors": [],
+      "excluded_reason": "absent",
+      "gold": null,
+      "gold_unreachable": null,
+      "grep_words": null,
+      "hit_at_1": null,
+      "hit_at_max": null,
+      "id": "q34",
+      "kind": "absent",
+      "selected": [
+        "concepts/memkernel-tiered-memory.md",
+        "concepts/memkernel-wiki-bridge-and-health.md",
+        "workflows/memkernel-claude-code-setup.md",
+        "playbooks/memkernel-install-troubleshooting.md",
+        "decisions/memkernel-tiered-memory-decision.md"
+      ],
+      "wiki_words": null
+    },
+    {
+      "distractors": [],
+      "excluded_reason": "absent",
+      "gold": null,
+      "gold_unreachable": null,
+      "grep_words": null,
+      "hit_at_1": null,
+      "hit_at_max": null,
+      "id": "q35",
+      "kind": "absent",
+      "selected": [],
+      "wiki_words": null
+    }
+  ],
+  "unit": "whitespace-separated words (len(text.split())), not model tokens",
+  "words": {
+    "evaluated": 21,
+    "grep_empty": [],
+    "grep_words_total": 110895,
+    "ratio_mean": 0.3435,
+    "ratio_median": 0.3251,
+    "wiki_words_total": 40647
+  }
+}

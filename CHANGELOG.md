@@ -21,7 +21,12 @@ caveats they need (issue #10, mirror of memkernel #17).
   1 and at 5, and words loaded by `query` against a written-down grep rule.
   `tests/test_navigation_eval.py` asserts the script reproduces the committed
   `results.json` and that the fixture is the preregistered one.
-- README "Evidence" section with run 1's numbers and caveats.
+- README "Evidence" section with run 1's numbers and caveats, and run 2's
+  next to them: `eval/navigation/run2/` is a second measurement on the 0.3.0
+  code under a revised protocol (`eval/navigation/run2_protocol.py`: Claude
+  hooks isolated and verified by a recorded probe before any attempt, commit,
+  versions, model and settings pinned, one attempt per document), with the
+  same questions, corpus and stop list used in place. Run 1 is unchanged.
 - `wiki-studio info`: prints the resolved layout (default or custom; root,
   wiki and proposals directories with their source, flag, variable or
   default, and whether they exist; logs; which schema copy applies), or the
@@ -57,7 +62,13 @@ caveats they need (issue #10, mirror of memkernel #17).
 
 - Run 1 of the navigation evaluation was measured on 0.2.0, before the
   issue #11 fix above, and promoted one document in ten; it is kept as
-  measured. A second run under a revised protocol follows separately.
+  measured. Run 2, on the fixed code, promoted seven.
+- In run 2 the three documents that did not promote failed on a second
+  prompt contract gap: the model answered with `index.md` as a full page
+  edit (`page_type: index`, no sources) instead of an `append-index` line, and
+  the validators rejected it. The prompt tells the model to "add a link from
+  the appropriate section of index.md" but not which action that is. To be
+  filed and fixed in a later release; run 2 is kept as measured.
 - The `claude` text-mode backend exposes no token counts, so ingest cost is
   reported as wall time only. In run 1 a Claude Code Stop hook ran this
   repository's test suite inside each backend call with the fixture's paths

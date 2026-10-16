@@ -101,7 +101,9 @@ class TestResultsAreReproduced(unittest.TestCase):
         self.assertEqual(run2["questions_sha256"], run1["questions_sha256"])
         self.assertEqual(run2["stopwords_sha256"], run1["stopwords_sha256"])
         self.assertEqual(run2["corpus_files"], run1["corpus_files"])
-        self.assertTrue(run2["ingest"]["isolation_probe"]["passed"])
+        self.assertTrue(run2["isolation_probe"]["passed"])
+        self.assertEqual(run2["ingest"]["summary"]["documents_attempted"], len(run1["corpus_files"]))
+        self.assertTrue(all(d["attempts"] == 1 or d["transport_error"] for d in run2["ingest"]["documents"]))
         for shared in ("corpus", "questions.json", "stopwords.txt"):
             self.assertFalse((RUN2 / shared).exists(), f"run 2 must use run 1's {shared} in place, not a copy")
 

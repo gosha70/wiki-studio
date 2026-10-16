@@ -258,18 +258,23 @@ The fixture under `eval/navigation/` is memkernel's documentation at tag
 those files and committed before any ingest, and a wiki that `wiki-studio
 ingest` and `promote` produced from them once, through the normal gate, with
 one attempt per document and nothing edited by hand. Gold pages were
-assigned afterwards by reading the frozen wiki. `python -m eval.navigation.run`
-reproduces every number below; CI asserts them against
-`eval/navigation/results.json`. Every count is in whitespace-separated
-words, not model tokens.
+assigned afterwards by reading the frozen wiki. Two runs exist, with the
+same questions, corpus and stop list: run 1 on 0.2.0, run 2 on the 0.3.0
+code after the issue #11 fix under a revised protocol (`eval/navigation/run2/`).
+`python -m eval.navigation.run` reproduces run 1 and
+`python -m eval.navigation.run eval/navigation/run2 --shared eval/navigation`
+run 2; CI asserts both against their committed `results.json`. Every count
+is in whitespace-separated words, not model tokens.
 
-| Number | Run 1 (2026-10-16) |
-|---|---|
-| Ingest coverage: answerable questions (29 of 35; 6 have no answer in the corpus) whose answer landed in some page | 3 of 29 (10.3%) |
-| Navigation hit at 1 / at 5, over questions with a gold page | 3 of 3 / 3 of 3 |
-| Words loaded by `query` (index plus selected pages) vs the grep rule, over the same 3 questions (none had empty grep output) | 2,286 vs 16,706; median ratio 0.16 |
-| Questions the corpus cannot answer: empty selection / mean pages loaded | 4 of 6 / 0.33 |
-| Ingest cost per document | tokens not exposed by the `claude` backend; wall time recorded but not isolated (see below) |
+| Number | Run 1 (2026-10-16, on 0.2.0) | Run 2 (2026-10-16, on 0.3.0 at 61b3d9b) |
+|---|---|---|
+| Documents promoted, of the 10 in the corpus | 1 | 7 |
+| Ingest coverage: answerable questions (29 of 35; 6 have no answer in the corpus) whose answer landed in some page | 3 of 29 (10.3%) | 21 of 29 (72.4%) |
+| Navigation hit at 1 / at 5, over questions with a gold page | 3 of 3 / 3 of 3 | 3 of 21 (14.3%) / 10 of 21 (47.6%) |
+| Competing questions where a distractor outranks the gold page | 0 of 1 | 2 of 4 |
+| Words loaded by `query` (index plus selected pages) vs the grep rule, over the questions with gold (none had empty grep output) | 2,286 vs 16,706; median ratio 0.16 | 40,647 vs 110,895; median ratio 0.33 |
+| Questions the corpus cannot answer: empty selection / mean pages loaded | 4 of 6 / 0.33 | 1 of 6 / 4.0 |
+| Ingest cost per document (tokens not exposed by the `claude` backend) | wall time not isolated (see below) | 52 s mean wall time, isolated (probe passed) |
 
 The grep rule, the negative control: lower-case the question, split it
 with the querier's own token pattern `[a-z0-9][a-z0-9-]*`, drop the
@@ -290,8 +295,26 @@ repository's test suite inside each backend call with the fixture's paths
 inherited; that added test records to the fixture's audit and query logs
 (preserved, not cleaned) and inflated per-document wall time, so the run is
 marked `requires_review` in `eval/navigation/manifest.json` and documented in
-`eval/navigation/ingest-notes.md`. Agent-level evidence, an arm in
-`agent-memory-bench` next to memkernel's, is tracked in
+`eval/navigation/ingest-notes.md`.
+
+Run 2 is the clean measurement: the Stop hook was kept out of the backend
+calls and that was verified by a recorded probe before the first attempt
+(`run2/manifest.json`, `isolation_probe`), the commit, versions, model and
+settings were pinned before the first attempt, one attempt per document, no
+retries, nothing edited (`eval/navigation/run2_protocol.py` did the
+bookkeeping). The model was pinned by full name, `claude-opus-5-5`, where run
+1 used the alias `opus`; both are recorded. Seven documents promoted; the
+three that did not (ADR-009, licensing, sibling-projects) failed on a
+different contract gap than run 1: the model returned `index.md` as a full
+page edit instead of an `append-index` line, which the validators correctly
+rejected. That gap is recorded under "Known issues" in the CHANGELOG. The
+navigation numbers now rest on 21 questions over nine content pages, and
+they are the finding: with more pages, the token-overlap selector puts the
+gold page first in one case out of seven and within the top five in about
+half, and a question the corpus cannot answer now loads four pages on
+average. The corpus and the question writer caveats from run 1 apply
+unchanged. Agent-level evidence, an arm in `agent-memory-bench` next to
+memkernel's, is tracked in
 [issue #10](https://github.com/gosha70/wiki-studio/issues/10).
 
 ## Development
