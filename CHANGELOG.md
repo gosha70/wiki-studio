@@ -22,6 +22,23 @@ caveats they need (issue #10, mirror of memkernel #17).
   `tests/test_navigation_eval.py` asserts the script reproduces the committed
   `results.json` and that the fixture is the preregistered one.
 - README "Evidence" section with run 1's numbers and caveats.
+- `wiki-studio info`: prints the resolved layout (default or custom; root,
+  wiki and proposals directories with their source, flag, variable or
+  default, and whether they exist; logs; which schema copy applies), or the
+  same as JSON with `--json`. Read-only, exit 0. `--version` is unchanged.
+
+### Fixed
+
+- Ingest at a custom wiki location (issue #11). The prompt shows wiki files
+  under `<wiki-dir>/…` headings but never said that edit paths are relative
+  to the wiki directory; with a one-word directory name the model copied the
+  prefix and eight of ten ingests in the navigation evaluation's run 1 failed
+  validation. The multi-page response instructions and the response schema
+  now state the rule, and the exact configured prefix is removed once before
+  the unchanged validators run, unless the path already has a valid
+  wiki-relative shape (a wiki directory named `concepts` keeps
+  `concepts/x.md`). Run 1's numbers were measured on 0.2.0 and are kept as
+  measured.
 
 ### Changed
 
@@ -38,13 +55,9 @@ caveats they need (issue #10, mirror of memkernel #17).
 
 ### Known issues
 
-- Run 1 of the navigation evaluation promoted one document in ten: eight
-  ingests failed validation because the model answered with paths prefixed by
-  the wiki directory's name (`wiki/decisions/…`), which the prompt shows in
-  its file headings but never tells the model to omit. Fix tracked as issue
-  #11 (state that `path` is wiki-relative, strip the exact configured label
-  prefix before the existing validation, expose the resolved layout) for a
-  later release; the run is kept as measured.
+- Run 1 of the navigation evaluation was measured on 0.2.0, before the
+  issue #11 fix above, and promoted one document in ten; it is kept as
+  measured. A second run under a revised protocol follows separately.
 - The `claude` text-mode backend exposes no token counts, so ingest cost is
   reported as wall time only. In run 1 a Claude Code Stop hook ran this
   repository's test suite inside each backend call with the fixture's paths
