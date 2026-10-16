@@ -182,9 +182,14 @@ class TestInfoVerb(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("layout: default", result.stdout)
         self.assertIn("knowledge/wiki", result.stdout)
-        self.assertIn("(default", result.stdout)
-        self.assertIn("exists", result.stdout)
+        self.assertIn(f"root: {self.root}  (default)", result.stdout)
+        self.assertIn("(default; label 'knowledge/wiki'; exists)", result.stdout)
         self.assertIn("schema: packaged", result.stdout)
+
+    def test_overridden_root_is_custom(self) -> None:
+        result = run_cli("info", "--root", str(self.root), cwd=self.root)
+        self.assertIn("layout: custom", result.stdout)
+        self.assertIn("(flag)", result.stdout)
 
     def test_custom_layout_names_the_source(self) -> None:
         kb = self.root / "kb"
@@ -197,8 +202,7 @@ class TestInfoVerb(unittest.TestCase):
         self.assertIn("label 'kb'", result.stdout)
         flagged = run_cli("info", "--proposals-dir", "inbox", cwd=self.root)
         self.assertIn("layout: custom", flagged.stdout)
-        self.assertIn("(flag", flagged.stdout)
-        self.assertIn("missing", flagged.stdout)
+        self.assertIn("(flag; missing)", flagged.stdout)
 
     def test_json_output(self) -> None:
         result = run_cli("info", "--json", "--wiki-dir", "kb", cwd=self.root)

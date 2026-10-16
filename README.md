@@ -116,9 +116,9 @@ Commits pending lines of the ingest audit log. The only verb that runs
 Prints the resolved layout before anything runs: `layout: default` or
 `custom`, the root, wiki and proposals directories with where each came
 from (`flag`, `env WIKI_STUDIO_…` or `default`) and whether they exist, the
-query and audit logs, and which schema copy applies (`packaged` or the
-project's `<wiki-dir>/schema/`). Read-only, exit 0. `--version` stays a
-single line.
+query and audit logs, and which schema copy applies (`packaged`, or
+`project` for a copy at `<wiki-dir>/schema/`). Overriding the root also
+counts as custom. Read-only, exit 0. `--version` stays a single line.
 
 | Flag | Effect |
 |---|---|
@@ -126,8 +126,9 @@ single line.
 
 Backends see wiki files under a heading named after the wiki directory
 (`knowledge/wiki/index.md`, or `wiki/index.md` for a custom location);
-every edit path they return is relative to that directory, and a copied
-heading prefix is removed, exactly once, before validation.
+every edit path they return is relative to that directory. If a backend
+copies that exact heading prefix into a path, it is removed once before
+validation; no other prefix is normalised.
 
 ## Exit codes
 

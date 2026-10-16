@@ -456,7 +456,7 @@ def _do_audit_flush(args: argparse.Namespace) -> int:
 _SOURCE_FLAG = "flag"
 _SOURCE_DEFAULT = "default"
 _SCHEMA_PACKAGED = "packaged"
-_SCHEMA_PROJECT = "project copy"
+_SCHEMA_PROJECT = "project"
 
 
 def _location_source(flag_value: object, env_name: str) -> str:
@@ -474,7 +474,9 @@ def _do_info(args: argparse.Namespace) -> int:
     root_source = _location_source(getattr(args, "root", None), ENV_ROOT)
     wiki_source = _location_source(getattr(args, "wiki_dir", None), ENV_WIKI_DIR)
     proposals_source = _location_source(getattr(args, "proposals_dir", None), ENV_PROPOSALS_DIR)
-    layout = "default" if wiki_source == _SOURCE_DEFAULT and proposals_source == _SOURCE_DEFAULT else "custom"
+    # Any overridden location makes the layout custom: a moved root moves everything under it.
+    sources = (root_source, wiki_source, proposals_source)
+    layout = "default" if all(s == _SOURCE_DEFAULT for s in sources) else "custom"
     schema = _SCHEMA_PROJECT if paths.schema_dir.is_dir() else _SCHEMA_PACKAGED
     wiki_exists = paths.wiki_dir.is_dir()
     proposals_exist = paths.proposals_dir.is_dir()
@@ -507,7 +509,7 @@ def _do_info(args: argparse.Namespace) -> int:
     print(f"proposals-dir: {paths.proposals_dir}  ({proposals_source}; {state(proposals_exist)})")
     print(f"query-log: {paths.query_log}")
     print(f"audit-log: {paths.audit_log}")
-    print(f"schema: {schema}" + (f" at {paths.schema_dir}" if schema == _SCHEMA_PROJECT else ""))
+    print(f"schema: {schema}" + (f" copy at {paths.schema_dir}" if schema == _SCHEMA_PROJECT else ""))
     return 0
 
 
