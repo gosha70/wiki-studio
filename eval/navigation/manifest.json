@@ -1,0 +1,54 @@
+{
+  "corpus_repo": "https://github.com/gosha70/memkernel",
+  "corpus_tag": "v0.4.0",
+  "corpus_commit": "1beebf7bfdf77fc52eb7c0cb534eca1017416304",
+  "corpus_license": "Apache-2.0",
+  "corpus_copied_on": "2026-10-15",
+  "corpus_files": [
+    {
+      "path": "README.md",
+      "sha256": "819e2638daf9b91efb97c4e5b3d777a3117d660cada232514200bd6ab69524fa"
+    },
+    {
+      "path": "docs/adr/ADR-007-tiered-memory.md",
+      "sha256": "ad9b472e06c7c3889e020073d51d375ff8a334b02b4a5f6a5c8fd27cb82f76e0"
+    },
+    {
+      "path": "docs/adr/ADR-008-llm-wiki-as-semantic-layer.md",
+      "sha256": "84d93d69820f924a54f5b8285d5cf6f3c67d895a44a5e699963f7e2f1fc81f5e"
+    },
+    {
+      "path": "docs/adr/ADR-009-rlm-studio-for-documents.md",
+      "sha256": "c5192106f0da21a959c6ac04e154195e31eb86e1fa9d82f97eb616a2cd9d5c5c"
+    },
+    {
+      "path": "docs/architecture/memory-tiers.md",
+      "sha256": "a73e489fa442895f0ab3cc1c4787a6eb71296eb6f284c8e7801fb3de5b1a1cff"
+    },
+    {
+      "path": "docs/integration/harness-integration.md",
+      "sha256": "018269343518cd794d0e1897e2aee582db2320d3d5ee040465f5dd4e3df04d29"
+    },
+    {
+      "path": "docs/licensing.md",
+      "sha256": "9617df2ddce8aa5219d30599da58179f717ad428ebe1af47b26051fcae802b88"
+    },
+    {
+      "path": "docs/research/memory-literature-review.md",
+      "sha256": "225b93aafe3477be3fe5fd29505cde6548c5ea0f49a1c39c034ee6557e9902b3"
+    },
+    {
+      "path": "docs/research/sibling-projects.md",
+      "sha256": "acd7668d466d5da9b8476c5ec18cdd9daf33897eb4bbfc1bc56c0d3d750105f2"
+    },
+    {
+      "path": "docs/roadmap.md",
+      "sha256": "50c35dd125b95485d66884421fcd65b018ee2bbf2bd1a2317588e7bfdb2aa697"
+    }
+  ],
+  "stopwords_source": "src/wiki_studio/wiki_state.py::_STOPWORDS (the querier's own stop list), copied verbatim; see stopwords.txt header",
+  "questions_commit": null,
+  "questions_sha256": null,
+  "stopwords_sha256": "e55cb41493293a01c3408d29b5eb70408f189b5dc7aac50a486412ac4b449851",
+  "ingest": null
+}

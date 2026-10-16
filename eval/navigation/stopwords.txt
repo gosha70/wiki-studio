@@ -1,0 +1,32 @@
+# Stop list for the grep baseline of eval/navigation (wiki-studio 0.3.0, FR-006).
+# Copied verbatim from src/wiki_studio/wiki_state.py::_STOPWORDS, the set the
+# querier itself drops when scoring pages, so both sides treat common words alike.
+# Querier token pattern: [a-z0-9][a-z0-9-]*
+# Frozen with the question set; never edited once results exist.
+a
+an
+and
+are
+as
+at
+be
+by
+for
+from
+has
+have
+in
+is
+it
+its
+of
+on
+or
+that
+the
+this
+to
+was
+were
+which
+with
