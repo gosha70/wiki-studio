@@ -153,6 +153,37 @@ def _shared_record() -> dict[str, Any]:
     }
 
 
+def _pytest_processes(probe_pid: int) -> list[tuple[int, str, bool]]:
+    """Every running pytest as ``(pid, command, started under the probe call)``.
+
+    A pytest whose parent chain reaches the probe's process was started by a hook
+    inside that call; any other pytest (another session's hook, a developer's
+    shell) is unrelated to this measurement and only recorded.
+    """
+    ps = subprocess.run(["ps", "-axo", "pid=,ppid=,command="], capture_output=True, text=True)
+    parent: dict[int, int] = {}
+    commands: dict[int, str] = {}
+    for line in ps.stdout.splitlines():
+        parts = line.strip().split(None, 2)
+        if len(parts) < 2:
+            continue
+        pid, ppid = int(parts[0]), int(parts[1])
+        parent[pid] = ppid
+        commands[pid] = parts[2] if len(parts) == 3 else ""
+    found: list[tuple[int, str, bool]] = []
+    for pid, cmd in commands.items():
+        if "pytest" not in cmd:
+            continue
+        ancestor, hops, under = pid, 0, False
+        while ancestor in parent and hops < 64:
+            if ancestor == probe_pid:
+                under = True
+                break
+            ancestor, hops = parent[ancestor], hops + 1
+        found.append((pid, cmd, under))
+    return found
+
+
 # ── probe ─────────────────────────────────────────────────────
 
 
@@ -173,15 +204,19 @@ def probe(run_dir: Path, claude_binary: str) -> int:
     command = [claude_binary, "-p", PROBE_PROMPT]
     started = _now()
     proc = subprocess.Popen(command, env=env, cwd=run_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    pytest_seen = False
+    hook_pytest: list[str] = []  # pytest processes descending from the probe call: the hook fired
+    unrelated_pytest: list[str] = []  # pytest elsewhere on the machine (another session): informational
     while proc.poll() is None:
-        ps = subprocess.run(["pgrep", "-fl", "pytest"], capture_output=True, text=True)
-        if ps.stdout.strip():
-            pytest_seen = True
+        for pid, cmd, under_probe in _pytest_processes(proc.pid):
+            line = f"{pid} {cmd}"
+            target = hook_pytest if under_probe else unrelated_pytest
+            if line not in target:
+                target.append(line)
         time.sleep(0.5)
     stdout, stderr = proc.communicate()
     after = {name: _tree_hash(path) for name, path in watched.items()}
     unchanged = before == after
+    pytest_seen = bool(hook_pytest)
     passed = unchanged and not pytest_seen and proc.returncode == 0
     record = {
         "started_at": started,
@@ -195,6 +230,8 @@ def probe(run_dir: Path, claude_binary: str) -> int:
         "hashes_after": after,
         "unchanged": unchanged,
         "pytest_seen": pytest_seen,
+        "pytest_under_probe": hook_pytest,
+        "pytest_unrelated": unrelated_pytest,
         "passed": passed,
     }
     manifest = _load_manifest(run_dir)
