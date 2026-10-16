@@ -38,8 +38,11 @@ caveats they need (issue #10, mirror of memkernel #17).
   contract change (state that `path` is wiki-relative, strip a leading
   `<wiki-label>/` defensively) in a later release; the run is kept as measured.
 - The `claude` text-mode backend exposes no token counts, so ingest cost is
-  reported as wall time only, and in run 1 that time includes a Stop hook's
-  test run (`eval/navigation/ingest-notes.md`).
+  reported as wall time only. In run 1 a Claude Code Stop hook ran this
+  repository's test suite inside each backend call with the fixture's paths
+  inherited, which inflated wall time and added test records to the fixture's
+  audit and query logs; everything is preserved and the manifest marks the
+  run `requires_review` (`eval/navigation/ingest-notes.md`).
 
 ## [0.2.0] — 2026-10-15
 

@@ -244,9 +244,9 @@ words, not model tokens.
 
 | Number | Run 1 (2026-10-16) |
 |---|---|
-| Ingest coverage: questions whose answer landed in some page | 3 of 29 (10.3%) |
+| Ingest coverage: answerable questions (29 of 35; 6 have no answer in the corpus) whose answer landed in some page | 3 of 29 (10.3%) |
 | Navigation hit at 1 / at 5, over questions with a gold page | 3 of 3 / 3 of 3 |
-| Words loaded by `query` (index plus selected pages) vs the grep rule | 2,286 vs 16,706; median ratio 0.16 |
+| Words loaded by `query` (index plus selected pages) vs the grep rule, over the same 3 questions (none had empty grep output) | 2,286 vs 16,706; median ratio 0.16 |
 | Questions the corpus cannot answer: empty selection / mean pages loaded | 4 of 6 / 0.33 |
 | Ingest cost per document | tokens not exposed by the `claude` backend; wall time recorded but not isolated (see below) |
 

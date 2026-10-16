@@ -41,7 +41,25 @@ class TestFixtureIsThePreregisteredOne(unittest.TestCase):
     def test_stop_list_is_the_queriers(self) -> None:
         from wiki_studio.wiki_state import _STOPWORDS
 
-        self.assertEqual(run.load_stopwords(FIXTURE / "stopwords.txt"), _STOPWORDS)
+        self.assertEqual(
+            run.load_stopwords(FIXTURE / "stopwords.txt"),
+            _STOPWORDS,
+            "the querier's stop list changed after the fixture was frozen: keep stopwords.txt as it is "
+            "(FR-006) and record the divergence in eval/navigation/manifest.json instead",
+        )
+
+    def test_missing_gold_entry_is_a_clear_error(self) -> None:
+        import shutil
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            copy = Path(tmp) / "fixture"
+            shutil.copytree(FIXTURE, copy, ignore=shutil.ignore_patterns("proposals", "ingest-logs", "__pycache__"))
+            gold = [g for g in json.loads((copy / "gold.json").read_text(encoding="utf-8")) if g["id"] != "q01"]
+            (copy / "gold.json").write_text(json.dumps(gold), encoding="utf-8")
+            with self.assertRaises(ValueError) as ctx:
+                run.compute(copy)
+        self.assertIn("q01", str(ctx.exception))
 
     def test_every_question_has_a_gold_entry_with_a_reason(self) -> None:
         questions = json.loads((FIXTURE / "questions.json").read_text(encoding="utf-8"))
@@ -77,6 +95,15 @@ class TestGrepRule(unittest.TestCase):
 
     def test_count_words_is_whitespace_split(self) -> None:
         self.assertEqual(run.count_words("a  b\nc\t d "), 4)
+
+    def test_main_rejects_extra_arguments(self) -> None:
+        import contextlib
+        import io
+
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            self.assertEqual(run.main(["one", "two"]), 2)
+        self.assertIn("usage", err.getvalue())
 
 
 if __name__ == "__main__":

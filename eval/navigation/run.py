@@ -14,7 +14,6 @@ Every count is ``count_words``: whitespace-separated words, not model tokens.
 
 from __future__ import annotations
 
-import hashlib
 import json
 import re
 import statistics
@@ -44,10 +43,6 @@ def count_words(text: str) -> int:
     return len(text.split())
 
 
-def sha256_of(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
 def load_stopwords(path: Path) -> frozenset[str]:
     """One word per line; ``#`` lines are the provenance header."""
     words = (line.strip() for line in path.read_text(encoding="utf-8").splitlines())
@@ -74,7 +69,12 @@ def _merge_ranges(hits: list[int], last_line: int) -> list[tuple[int, int]]:
 
 def grep_words(words: list[str], corpus_dir: Path) -> int:
     """Words an agent with grep would read: every line matching any word, whole-word and case-insensitive,
-    with ``CONTEXT_LINES`` lines before and after, overlapping windows merged per file, over every corpus file."""
+    with ``CONTEXT_LINES`` lines before and after, overlapping windows merged per file, over every corpus file.
+
+    "Whole word" is ``\\b…\\b`` with ``re.escape``, the same word constituents as ``grep -w``
+    (letters, digits, underscore); a hyphenated word such as ``page-type`` therefore also
+    matches inside ``page-type-export``, exactly as ``grep -w`` would.
+    """
     if not words:
         return 0
     patterns = [re.compile(r"\b" + re.escape(w) + r"\b", re.IGNORECASE) for w in words]
@@ -95,6 +95,9 @@ def compute(fixture_dir: Path = FIXTURE_DIR) -> dict[str, Any]:
     """The evaluation over ``fixture_dir`` (questions, gold, stop list, corpus, frozen wiki)."""
     questions: list[dict[str, Any]] = json.loads((fixture_dir / "questions.json").read_text(encoding="utf-8"))
     gold_by_id = {g["id"]: g for g in json.loads((fixture_dir / "gold.json").read_text(encoding="utf-8"))}
+    missing = [q["id"] for q in questions if q["id"] not in gold_by_id]
+    if missing:
+        raise ValueError(f"gold.json has no entry for question(s): {', '.join(missing)}")
     stopwords = load_stopwords(fixture_dir / "stopwords.txt")
     corpus_dir = fixture_dir / "corpus"
     wiki_dir = fixture_dir / "wiki"
@@ -112,13 +115,24 @@ def compute(fixture_dir: Path = FIXTURE_DIR) -> dict[str, Any]:
             "gold": gold,
             "distractors": list(gold_entry.get("distractors") or []),
             "selected": list(selected),
+            # Why a question carries no hit/word numbers: "absent" (no answer in the corpus),
+            # "no_gold" (ingest wrote no page with the answer), "answered_by_index" (always loaded).
+            "excluded_reason": (
+                KIND_ABSENT
+                if q["kind"] == KIND_ABSENT
+                else "no_gold"
+                if gold is None
+                else "answered_by_index"
+                if gold == INDEX_NAME
+                else None
+            ),
             "hit_at_1": None,
             "hit_at_max": None,
             "gold_unreachable": None,
             "wiki_words": None,
             "grep_words": None,
         }
-        if gold is not None and gold != INDEX_NAME:
+        if entry["excluded_reason"] is None:
             entry["hit_at_1"] = bool(selected) and selected[0] == gold
             entry["hit_at_max"] = gold in selected
             entry["gold_unreachable"] = gold not in index_links
@@ -134,6 +148,9 @@ def compute(fixture_dir: Path = FIXTURE_DIR) -> dict[str, Any]:
     competing = [e for e in evaluated if e["kind"] == KIND_COMPETING]
 
     def outranked(e: dict[str, Any]) -> bool:
+        # FR-005: "any distractor is ranked above gold". A gold page outside the
+        # selection ranks below every selected page, so a selected distractor
+        # outranks it then too; that case is also visible as a miss at max.
         sel: list[str] = e["selected"]
         gold_pos = sel.index(e["gold"]) if e["gold"] in sel else len(sel)
         return any(d in sel and sel.index(d) < gold_pos for d in e["distractors"])
@@ -181,7 +198,12 @@ def compute(fixture_dir: Path = FIXTURE_DIR) -> dict[str, Any]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    fixture = Path(argv[0]) if argv else FIXTURE_DIR
+    """``run.py [fixture-dir]``: print the evaluation as JSON."""
+    args = list(argv) if argv is not None else []
+    if len(args) > 1:
+        sys.stderr.write("usage: python -m eval.navigation.run [fixture-dir]\n")
+        return 2
+    fixture = Path(args[0]) if args else FIXTURE_DIR
     sys.stdout.write(json.dumps(compute(fixture), indent=2, sort_keys=True) + "\n")
     return 0
 

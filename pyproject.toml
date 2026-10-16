@@ -46,7 +46,10 @@ build-backend = "poetry.core.masonry.api"
 [tool.ruff]
 line-length = 120
 target-version = "py311"
-src = ["src", "tests", "."]
+src = ["src", "tests"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["wiki_studio", "tests", "eval"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "A", "SIM", "TCH"]
