@@ -115,8 +115,10 @@ def compute(fixture_dir: Path = FIXTURE_DIR) -> dict[str, Any]:
             "gold": gold,
             "distractors": list(gold_entry.get("distractors") or []),
             "selected": list(selected),
-            # Why a question carries no hit/word numbers: "absent" (no answer in the corpus),
-            # "no_gold" (ingest wrote no page with the answer), "answered_by_index" (always loaded).
+            # Why a question carries no hit numbers: "absent" (no answer in the corpus), "no_gold"
+            # (ingest wrote no page with the answer), "answered_by_index" (the index is always
+            # loaded, FR-004). Word counts (FR-006) are computed for every question with gold,
+            # index-only answers included.
             "excluded_reason": (
                 KIND_ABSENT
                 if q["kind"] == KIND_ABSENT
@@ -132,12 +134,14 @@ def compute(fixture_dir: Path = FIXTURE_DIR) -> dict[str, Any]:
             "wiki_words": None,
             "grep_words": None,
         }
-        if entry["excluded_reason"] is None:
+        has_gold = q["kind"] != KIND_ABSENT and gold is not None
+        if has_gold:
+            entry["wiki_words"] = count_words(index_md) + sum(count_words(contents[p]) for p in selected)
+            entry["grep_words"] = grep_words(question_words(q["question"], stopwords), corpus_dir)
+        if has_gold and gold != INDEX_NAME:
             entry["hit_at_1"] = bool(selected) and selected[0] == gold
             entry["hit_at_max"] = gold in selected
             entry["gold_unreachable"] = gold not in index_links
-            entry["wiki_words"] = count_words(index_md) + sum(count_words(contents[p]) for p in selected)
-            entry["grep_words"] = grep_words(question_words(q["question"], stopwords), corpus_dir)
         per_question.append(entry)
 
     non_absent = [e for e in per_question if e["kind"] != KIND_ABSENT]
@@ -155,7 +159,8 @@ def compute(fixture_dir: Path = FIXTURE_DIR) -> dict[str, Any]:
         gold_pos = sel.index(e["gold"]) if e["gold"] in sel else len(sel)
         return any(d in sel and sel.index(d) < gold_pos for d in e["distractors"])
 
-    ratio_set = [e for e in evaluated if e["grep_words"]]
+    # Word metrics are over every question with gold (FR-006); only the hit rates drop index-only answers.
+    ratio_set = [e for e in with_gold if e["grep_words"]]
     ratios = [e["wiki_words"] / e["grep_words"] for e in ratio_set]
 
     return {
@@ -187,7 +192,7 @@ def compute(fixture_dir: Path = FIXTURE_DIR) -> dict[str, Any]:
         },
         "words": {
             "evaluated": len(ratio_set),
-            "grep_empty": [e["id"] for e in evaluated if not e["grep_words"]],
+            "grep_empty": [e["id"] for e in with_gold if not e["grep_words"]],
             "wiki_words_total": sum(e["wiki_words"] for e in ratio_set),
             "grep_words_total": sum(e["grep_words"] for e in ratio_set),
             "ratio_median": round(statistics.median(ratios), DECIMALS) if ratios else None,

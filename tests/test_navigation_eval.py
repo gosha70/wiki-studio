@@ -84,6 +84,32 @@ class TestResultsAreReproduced(unittest.TestCase):
         self.assertEqual(run.compute(FIXTURE), run.compute(FIXTURE))
 
 
+class TestIndexOnlyAnswers(unittest.TestCase):
+    def test_index_only_gold_counts_for_words_but_not_for_hits(self) -> None:
+        # FR-004: excluded from the hit rates (the index is always loaded); FR-006: words still counted.
+        import shutil
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            copy = Path(tmp) / "fixture"
+            shutil.copytree(FIXTURE, copy, ignore=shutil.ignore_patterns("proposals", "ingest-logs", "__pycache__"))
+            gold = json.loads((copy / "gold.json").read_text(encoding="utf-8"))
+            for g in gold:
+                if g["id"] == "q11":
+                    g["gold"] = run.INDEX_NAME
+            (copy / "gold.json").write_text(json.dumps(gold), encoding="utf-8")
+            result = run.compute(copy)
+        q11 = next(e for e in result["per_question"] if e["id"] == "q11")
+        self.assertEqual(q11["excluded_reason"], "answered_by_index")
+        self.assertIsNone(q11["hit_at_1"])
+        self.assertGreater(q11["wiki_words"], 0)
+        self.assertGreater(q11["grep_words"], 0)
+        self.assertEqual(result["navigation"]["answered_by_index"], ["q11"])
+        self.assertEqual(result["navigation"]["evaluated"], 2)
+        self.assertEqual(result["words"]["evaluated"], 3)
+        self.assertEqual(result["counts"]["with_gold"], 3)
+
+
 class TestGrepRule(unittest.TestCase):
     def test_question_words_use_the_queriers_pattern_and_stop_list(self) -> None:
         words = run.question_words("What does `get` return for a page_type export?", frozenset({"what", "for"}))
