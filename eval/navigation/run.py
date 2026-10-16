@@ -91,15 +91,25 @@ def _ratio(numerator: int, denominator: int) -> float | None:
     return round(numerator / denominator, DECIMALS) if denominator else None
 
 
-def compute(fixture_dir: Path = FIXTURE_DIR) -> dict[str, Any]:
-    """The evaluation over ``fixture_dir`` (questions, gold, stop list, corpus, frozen wiki)."""
-    questions: list[dict[str, Any]] = json.loads((fixture_dir / "questions.json").read_text(encoding="utf-8"))
+def _shared_file(fixture_dir: Path, shared_dir: Path | None, name: str) -> Path:
+    """A fixture's own copy wins; otherwise the shared one (run 2 uses run 1's corpus, questions and stop list)."""
+    own = fixture_dir / name
+    if own.exists() or shared_dir is None:
+        return own
+    return shared_dir / name
+
+
+def compute(fixture_dir: Path = FIXTURE_DIR, shared_dir: Path | None = None) -> dict[str, Any]:
+    """The evaluation over ``fixture_dir`` (gold, frozen wiki) with its own or ``shared_dir``'s questions,
+    stop list and corpus."""
+    questions_path = _shared_file(fixture_dir, shared_dir, "questions.json")
+    questions: list[dict[str, Any]] = json.loads(questions_path.read_text(encoding="utf-8"))
     gold_by_id = {g["id"]: g for g in json.loads((fixture_dir / "gold.json").read_text(encoding="utf-8"))}
     missing = [q["id"] for q in questions if q["id"] not in gold_by_id]
     if missing:
         raise ValueError(f"gold.json has no entry for question(s): {', '.join(missing)}")
-    stopwords = load_stopwords(fixture_dir / "stopwords.txt")
-    corpus_dir = fixture_dir / "corpus"
+    stopwords = load_stopwords(_shared_file(fixture_dir, shared_dir, "stopwords.txt"))
+    corpus_dir = _shared_file(fixture_dir, shared_dir, "corpus")
     wiki_dir = fixture_dir / "wiki"
     paths = WikiPaths.for_root(fixture_dir, wiki_dir=wiki_dir, proposals_dir=fixture_dir / "proposals")
     index_links = set(_extract_index_links((wiki_dir / INDEX_NAME).read_text(encoding="utf-8")))
@@ -203,13 +213,23 @@ def compute(fixture_dir: Path = FIXTURE_DIR) -> dict[str, Any]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """``run.py [fixture-dir]``: print the evaluation as JSON."""
+    """``run.py [fixture-dir] [--shared DIR]``: print the evaluation as JSON."""
     args = list(argv) if argv is not None else []
-    if len(args) > 1:
-        sys.stderr.write("usage: python -m eval.navigation.run [fixture-dir]\n")
+    positionals: list[str] = []
+    shared: Path | None = None
+    i = 0
+    while i < len(args):
+        if args[i] == "--shared" and i + 1 < len(args):
+            shared = Path(args[i + 1])
+            i += 2
+            continue
+        positionals.append(args[i])
+        i += 1
+    if len(positionals) > 1 or any(p.startswith("-") for p in positionals):
+        sys.stderr.write("usage: python -m eval.navigation.run [fixture-dir] [--shared DIR]\n")
         return 2
-    fixture = Path(args[0]) if args else FIXTURE_DIR
-    sys.stdout.write(json.dumps(compute(fixture), indent=2, sort_keys=True) + "\n")
+    fixture = Path(positionals[0]) if positionals else FIXTURE_DIR
+    sys.stdout.write(json.dumps(compute(fixture, shared_dir=shared), indent=2, sort_keys=True) + "\n")
     return 0
 
 
