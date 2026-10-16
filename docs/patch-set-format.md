@@ -66,7 +66,7 @@ file; `promote` accepts both.
 | `edits[].path` | Wiki-relative target: `concepts/<slug>.md` for `create`/`update`; `index.md`, `<dir>/index.md` for `append-index`; `log.md` for `append-log`. Relative, no `..`. |
 | `edits[].action` | `create`, `update`, `append-log` or `append-index` (`PageAction`). |
 | `edits[].rationale` | One-line justification for this edit. |
-| `edits[].preview` | Where the content lives, always `preview/<path>`. |
+| `edits[].preview` | Where the content lives: `preview/<path>`; a second, third ... edit to the same path (several `append-index` or `append-log` lines) gets `preview/<path>.2`, `.3`, ... in edit order (`.2` is the second edit to that path, not a revision). Always read the pointer. |
 
 The content itself is not in `plan.json`: `preview/<path>` holds the full
 page (frontmatter and body) for `create` and `update`, or the line(s) to

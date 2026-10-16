@@ -173,7 +173,11 @@ def write_patch_set_dir(
     Layout:
         <output_dir>/
             plan.json                    — full patch-set as JSON
-            preview/<edit.path>.md       — one preview file per edit
+            preview/<edit.path>          — one preview file per edit; a second,
+                                           third ... edit to the same path (several
+                                           append-index or append-log lines) gets
+                                           preview/<edit.path>.2, .3, ... so no
+                                           edit's content overwrites another's
 
     Returns the absolute path of <output_dir>.
     Raises OSError if the filesystem operations fail; the caller maps
@@ -182,6 +186,15 @@ def write_patch_set_dir(
     output_dir.mkdir(parents=True, exist_ok=True)
     preview_dir = output_dir / "preview"
     preview_dir.mkdir(exist_ok=True)
+
+    # Issue #18: one preview file per edit, not per path. plan.json points each
+    # edit at its own file, and promote reads the pointer, so order is kept.
+    seen: dict[str, int] = {}
+    preview_rels: list[str] = []
+    for edit in patch.edits:
+        seen[edit.path] = seen.get(edit.path, 0) + 1
+        n = seen[edit.path]
+        preview_rels.append(f"preview/{edit.path}" if n == 1 else f"preview/{edit.path}.{n}")
 
     plan = {
         "version": 1,
@@ -196,19 +209,19 @@ def write_patch_set_dir(
                 # new_content is stored in the preview file; the plan.json
                 # stays small + grep-friendly. Curator reads the preview
                 # to see the full content.
-                "preview": f"preview/{e.path}",
+                "preview": rel,
             }
-            for e in patch.edits
+            for e, rel in zip(patch.edits, preview_rels, strict=True)
         ],
     }
     (output_dir / "plan.json").write_text(
         json.dumps(plan, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
-    for edit in patch.edits:
-        # preview/<path>.md — replicate the wiki's directory shape so the
-        # curator can diff against the live wiki later.
-        preview_path = preview_dir / edit.path
+    for edit, rel in zip(patch.edits, preview_rels, strict=True):
+        # preview/<path> replicates the wiki's directory shape so the curator
+        # can diff against the live wiki later.
+        preview_path = output_dir / rel
         preview_path.parent.mkdir(parents=True, exist_ok=True)
         preview_path.write_text(edit.new_content, encoding="utf-8")
     return output_dir.resolve()
