@@ -30,6 +30,15 @@ ready arm for memkernel's lifecycle suite (issue #10, layer 2).
 
 ### Fixed
 
+- Several `append-index` or `append-log` edits to the same file in one
+  patch-set are all applied, in order (issue #18). The patch-set writer gave
+  every edit the preview file `preview/<path>`, so a second edit to the same
+  path overwrote the first and only the last line survived; promote then
+  rejected the earlier pages as orphans. Each edit now has its own preview
+  file (`preview/<path>`, then `preview/<path>.2`, `.3`, ...), which `plan.json`
+  already points at. This affected `ingest`, `api.propose` and the new
+  `propose --from` with a multi-line `index.md` or `log.md` since 0.1.0. The
+  workaround of joining lines into one edit keeps working.
 - `promote` no longer leaves a proposal behind when the archive already holds
   one with the same name: it is archived next to it as `<name>-2`, `-3`, ...
   (as `.audit/proposals/` already did), and the CLI no longer prints
