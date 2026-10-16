@@ -1,0 +1,7 @@
+applied 6 edit(s) from 2026-10-16-ADR-008-llm-wiki-as-semantic-layer; archived to /Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/run2/proposals/.applied/2026-10-16-ADR-008-llm-wiki-as-semantic-layer.
+  + wiki/log.md
+  + wiki/index.md
+  + wiki/decisions/memkernel-wiki-semantic-layer-decision.md
+  + wiki/concepts/memkernel-wiki-bridge-and-health.md
+  + wiki/.audit/proposals/2026-10-16-ADR-008-llm-wiki-as-semantic-layer/proposal.md
+  + wiki/.audit/proposals/2026-10-16-ADR-008-llm-wiki-as-semantic-layer/plan.json

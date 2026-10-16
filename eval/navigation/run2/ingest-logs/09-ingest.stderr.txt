@@ -1,0 +1,3 @@
+error: contract violation: WikiPatchSet failed per-edit semantic validation:
+  - index.md: frontmatter page_type 'index' is not promotable for create/update; must be one of: concept, decision, glossary, incident, open-question, playbook, workflow. Root-only types (index, log, overview) are touched via append-index / append-log.
+  - index.md: frontmatter 'sources:' must be a non-empty list (citation-rules.md: 'A wiki page without sources is a rumor.')

@@ -1,0 +1,9 @@
+applied 8 edit(s) from 2026-10-16-README; archived to /Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/run2/proposals/.applied/2026-10-16-README.
+  + wiki/log.md
+  + wiki/index.md
+  + wiki/workflows/memkernel-claude-code-setup.md
+  + wiki/playbooks/memkernel-install-troubleshooting.md
+  + wiki/concepts/memkernel-wiki-bridge-and-health.md
+  + wiki/concepts/memkernel-tiered-memory.md
+  + wiki/.audit/proposals/2026-10-16-README/proposal.md
+  + wiki/.audit/proposals/2026-10-16-README/plan.json

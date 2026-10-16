@@ -1,0 +1,1 @@
+- [Agent-memory literature behind MemKernel's design (2024–2026 review)](concepts/memkernel-memory-literature-review.md): what MemKernel takes from MemGPT, Mem0, Zep, Generative Agents, MemoryBank and others; Roynard's supersession-vs-decay split; contested HRM results; benchmark caveats; eight adopted implications and what is deferred

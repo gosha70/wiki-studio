@@ -1,0 +1,1 @@
+- [ADR-008: an LLM wiki is the human-readable form of long-term memory](decisions/memkernel-wiki-semantic-layer-decision.md): wiki is the source of truth for curated knowledge, the store is its index; export/import mapping; extract the wiki tooling into ai-wiki; rejected alternatives

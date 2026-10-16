@@ -1,0 +1,1 @@
+- 2026-10-16 — create memkernel-roadmap (concept): release checklists for 0.2–0.5, the order of work across repositories gated on published artefacts, and the research backlog from the MemKernel roadmap

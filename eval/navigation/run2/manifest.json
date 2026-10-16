@@ -1,0 +1,371 @@
+{
+  "shared_from": "eval/navigation (run 1's corpus, questions and stop list, used in place)",
+  "corpus_repo": "https://github.com/gosha70/memkernel",
+  "corpus_tag": "v0.4.0",
+  "corpus_commit": "1beebf7bfdf77fc52eb7c0cb534eca1017416304",
+  "corpus_files": [
+    {
+      "path": "README.md",
+      "sha256": "819e2638daf9b91efb97c4e5b3d777a3117d660cada232514200bd6ab69524fa"
+    },
+    {
+      "path": "docs/adr/ADR-007-tiered-memory.md",
+      "sha256": "ad9b472e06c7c3889e020073d51d375ff8a334b02b4a5f6a5c8fd27cb82f76e0"
+    },
+    {
+      "path": "docs/adr/ADR-008-llm-wiki-as-semantic-layer.md",
+      "sha256": "84d93d69820f924a54f5b8285d5cf6f3c67d895a44a5e699963f7e2f1fc81f5e"
+    },
+    {
+      "path": "docs/adr/ADR-009-rlm-studio-for-documents.md",
+      "sha256": "c5192106f0da21a959c6ac04e154195e31eb86e1fa9d82f97eb616a2cd9d5c5c"
+    },
+    {
+      "path": "docs/architecture/memory-tiers.md",
+      "sha256": "a73e489fa442895f0ab3cc1c4787a6eb71296eb6f284c8e7801fb3de5b1a1cff"
+    },
+    {
+      "path": "docs/integration/harness-integration.md",
+      "sha256": "018269343518cd794d0e1897e2aee582db2320d3d5ee040465f5dd4e3df04d29"
+    },
+    {
+      "path": "docs/licensing.md",
+      "sha256": "9617df2ddce8aa5219d30599da58179f717ad428ebe1af47b26051fcae802b88"
+    },
+    {
+      "path": "docs/research/memory-literature-review.md",
+      "sha256": "225b93aafe3477be3fe5fd29505cde6548c5ea0f49a1c39c034ee6557e9902b3"
+    },
+    {
+      "path": "docs/research/sibling-projects.md",
+      "sha256": "acd7668d466d5da9b8476c5ec18cdd9daf33897eb4bbfc1bc56c0d3d750105f2"
+    },
+    {
+      "path": "docs/roadmap.md",
+      "sha256": "50c35dd125b95485d66884421fcd65b018ee2bbf2bd1a2317588e7bfdb2aa697"
+    }
+  ],
+  "questions_commit": "c99be655d3dedb54f8eed497dd6262555805b383",
+  "questions_sha256": "30390468555e11ce9fbeb2e259997e266979d502dd6c3833373620f468ee760d",
+  "stopwords_sha256": "e55cb41493293a01c3408d29b5eb70408f189b5dc7aac50a486412ac4b449851",
+  "probes": [
+    {
+      "started_at": "2026-10-16T15:50:53.078441+00:00",
+      "finished_at": "2026-10-16T15:50:59.622900+00:00",
+      "command": [
+        "claude",
+        "-p",
+        "Reply with the single word OK."
+      ],
+      "env": {
+        "HOOK_SKIP": "1",
+        "CLAUDE_CONFIG_DIR": null,
+        "ANTHROPIC_MODEL": "claude-opus-5-5",
+        "WIKI_STUDIO_ROOT": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/run2",
+        "WIKI_STUDIO_WIKI_DIR": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/run2/wiki",
+        "WIKI_STUDIO_PROPOSALS_DIR": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/run2/proposals"
+      },
+      "exit_code": 0,
+      "stdout": "OK",
+      "stderr": "",
+      "hashes_before": {
+        "audit_log": "",
+        "query_log": "",
+        "proposals": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "wiki": "fd6eee8a3778fb933a64271d47f4fb01aeaa33dbcb784ad4bf8b9251ff13ed60"
+      },
+      "hashes_after": {
+        "audit_log": "",
+        "query_log": "",
+        "proposals": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "wiki": "fd6eee8a3778fb933a64271d47f4fb01aeaa33dbcb784ad4bf8b9251ff13ed60"
+      },
+      "unchanged": true,
+      "pytest_seen": false,
+      "passed": true
+    },
+    {
+      "started_at": "2026-10-16T15:57:55.329977+00:00",
+      "finished_at": "2026-10-16T15:58:01.209889+00:00",
+      "command": [
+        "claude",
+        "-p",
+        "Reply with the single word OK."
+      ],
+      "env": {
+        "HOOK_SKIP": "1",
+        "CLAUDE_CONFIG_DIR": null,
+        "ANTHROPIC_MODEL": "claude-opus-5-5",
+        "WIKI_STUDIO_ROOT": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/run2",
+        "WIKI_STUDIO_WIKI_DIR": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/run2/wiki",
+        "WIKI_STUDIO_PROPOSALS_DIR": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/run2/proposals"
+      },
+      "exit_code": 0,
+      "stdout": "OK",
+      "stderr": "",
+      "hashes_before": {
+        "audit_log": "",
+        "query_log": "",
+        "proposals": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "wiki": "fd6eee8a3778fb933a64271d47f4fb01aeaa33dbcb784ad4bf8b9251ff13ed60"
+      },
+      "hashes_after": {
+        "audit_log": "",
+        "query_log": "",
+        "proposals": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "wiki": "fd6eee8a3778fb933a64271d47f4fb01aeaa33dbcb784ad4bf8b9251ff13ed60"
+      },
+      "unchanged": true,
+      "pytest_seen": false,
+      "pytest_under_probe": [],
+      "pytest_unrelated": [
+        "43639 /opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/Resources/Python.app/Contents/MacOS/Python /Users/gosha/.local/bin/poetry run pytest --tb=short -q",
+        "43639 /opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/Resources/Python.app/Contents/MacOS/Python /Users/gosha/Library/Caches/pypoetry/virtualenvs/memkernel-HqecXUkJ-py3.13/bin/pytest --tb=short -q"
+      ],
+      "passed": true
+    }
+  ],
+  "isolation_probe": {
+    "started_at": "2026-10-16T15:57:55.329977+00:00",
+    "finished_at": "2026-10-16T15:58:01.209889+00:00",
+    "command": [
+      "claude",
+      "-p",
+      "Reply with the single word OK."
+    ],
+    "env": {
+      "HOOK_SKIP": "1",
+      "CLAUDE_CONFIG_DIR": null,
+      "ANTHROPIC_MODEL": "claude-opus-5-5",
+      "WIKI_STUDIO_ROOT": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/run2",
+      "WIKI_STUDIO_WIKI_DIR": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/run2/wiki",
+      "WIKI_STUDIO_PROPOSALS_DIR": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/run2/proposals"
+    },
+    "exit_code": 0,
+    "stdout": "OK",
+    "stderr": "",
+    "hashes_before": {
+      "audit_log": "",
+      "query_log": "",
+      "proposals": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wiki": "fd6eee8a3778fb933a64271d47f4fb01aeaa33dbcb784ad4bf8b9251ff13ed60"
+    },
+    "hashes_after": {
+      "audit_log": "",
+      "query_log": "",
+      "proposals": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wiki": "fd6eee8a3778fb933a64271d47f4fb01aeaa33dbcb784ad4bf8b9251ff13ed60"
+    },
+    "unchanged": true,
+    "pytest_seen": false,
+    "pytest_under_probe": [],
+    "pytest_unrelated": [
+      "43639 /opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/Resources/Python.app/Contents/MacOS/Python /Users/gosha/.local/bin/poetry run pytest --tb=short -q",
+      "43639 /opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/Resources/Python.app/Contents/MacOS/Python /Users/gosha/Library/Caches/pypoetry/virtualenvs/memkernel-HqecXUkJ-py3.13/bin/pytest --tb=short -q"
+    ],
+    "passed": true
+  },
+  "ingest": {
+    "backend": "claude",
+    "model": "claude-opus-5-5",
+    "model_source": "env ANTHROPIC_MODEL",
+    "ingest_date": "2026-10-16",
+    "started_at": "2026-10-16T15:58:01.243105+00:00",
+    "wiki_studio_commit": "61b3d9b030f1684472d58fca2cbbd46a558f4dd9",
+    "wiki_studio_version": "0.3.0",
+    "claude_version": "2.1.300 (Claude Code)",
+    "backend_timeout_seconds": 120,
+    "command": [
+      "python",
+      "-m",
+      "wiki_studio",
+      "ingest",
+      "<corpus-file>",
+      "--backend",
+      "claude",
+      "--allow-out-of-repo"
+    ],
+    "locations": {
+      "WIKI_STUDIO_ROOT": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/run2",
+      "WIKI_STUDIO_WIKI_DIR": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/run2/wiki",
+      "WIKI_STUDIO_PROPOSALS_DIR": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/run2/proposals"
+    },
+    "env": {
+      "HOOK_SKIP": "1",
+      "CLAUDE_CONFIG_DIR": null,
+      "ANTHROPIC_MODEL": "claude-opus-5-5",
+      "WIKI_STUDIO_ROOT": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/run2",
+      "WIKI_STUDIO_WIKI_DIR": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/run2/wiki",
+      "WIKI_STUDIO_PROPOSALS_DIR": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/run2/proposals"
+    },
+    "tokens_note": "The text-mode copilot-CLI backends do not expose token usage; wall time only.",
+    "documents": [
+      {
+        "path": "README.md",
+        "attempts": 1,
+        "transport_error": null,
+        "proposal_dir": "2026-10-16-README",
+        "disposition": "accept",
+        "promote_error": null,
+        "pages_written": [
+          "concepts/memkernel-tiered-memory.md",
+          "workflows/memkernel-claude-code-setup.md",
+          "playbooks/memkernel-install-troubleshooting.md",
+          "concepts/memkernel-wiki-bridge-and-health.md",
+          "index.md",
+          "log.md"
+        ],
+        "wall_seconds": 58.873,
+        "tokens_in": null,
+        "tokens_out": null
+      },
+      {
+        "path": "docs/adr/ADR-007-tiered-memory.md",
+        "attempts": 1,
+        "transport_error": null,
+        "proposal_dir": "2026-10-16-ADR-007-tiered-memory",
+        "disposition": "accept",
+        "promote_error": null,
+        "pages_written": [
+          "decisions/memkernel-tiered-memory-decision.md",
+          "concepts/memkernel-tiered-memory.md",
+          "index.md",
+          "log.md"
+        ],
+        "wall_seconds": 49.791,
+        "tokens_in": null,
+        "tokens_out": null
+      },
+      {
+        "path": "docs/adr/ADR-008-llm-wiki-as-semantic-layer.md",
+        "attempts": 1,
+        "transport_error": null,
+        "proposal_dir": "2026-10-16-ADR-008-llm-wiki-as-semantic-layer",
+        "disposition": "accept",
+        "promote_error": null,
+        "pages_written": [
+          "decisions/memkernel-wiki-semantic-layer-decision.md",
+          "concepts/memkernel-wiki-bridge-and-health.md",
+          "log.md",
+          "index.md"
+        ],
+        "wall_seconds": 44.926,
+        "tokens_in": null,
+        "tokens_out": null
+      },
+      {
+        "path": "docs/adr/ADR-009-rlm-studio-for-documents.md",
+        "attempts": 1,
+        "transport_error": null,
+        "proposal_dir": null,
+        "disposition": "ingest_error (exit 4)",
+        "promote_error": null,
+        "pages_written": [],
+        "wall_seconds": 65.293,
+        "tokens_in": null,
+        "tokens_out": null
+      },
+      {
+        "path": "docs/architecture/memory-tiers.md",
+        "attempts": 1,
+        "transport_error": null,
+        "proposal_dir": "2026-10-16-memory-tiers",
+        "disposition": "accept",
+        "promote_error": null,
+        "pages_written": [
+          "concepts/memkernel-tiered-memory.md",
+          "log.md"
+        ],
+        "wall_seconds": 45.267,
+        "tokens_in": null,
+        "tokens_out": null
+      },
+      {
+        "path": "docs/integration/harness-integration.md",
+        "attempts": 1,
+        "transport_error": null,
+        "proposal_dir": "2026-10-16-harness-integration",
+        "disposition": "accept",
+        "promote_error": null,
+        "pages_written": [
+          "concepts/memkernel-harness-integration.md",
+          "workflows/memkernel-claude-code-setup.md",
+          "index.md",
+          "log.md"
+        ],
+        "wall_seconds": 52.183,
+        "tokens_in": null,
+        "tokens_out": null
+      },
+      {
+        "path": "docs/licensing.md",
+        "attempts": 1,
+        "transport_error": null,
+        "proposal_dir": null,
+        "disposition": "ingest_error (exit 4)",
+        "promote_error": null,
+        "pages_written": [],
+        "wall_seconds": 39.79,
+        "tokens_in": null,
+        "tokens_out": null
+      },
+      {
+        "path": "docs/research/memory-literature-review.md",
+        "attempts": 1,
+        "transport_error": null,
+        "proposal_dir": "2026-10-16-memory-literature-review",
+        "disposition": "accept",
+        "promote_error": null,
+        "pages_written": [
+          "concepts/memkernel-memory-literature-review.md",
+          "decisions/memkernel-tiered-memory-decision.md",
+          "index.md",
+          "log.md"
+        ],
+        "wall_seconds": 51.659,
+        "tokens_in": null,
+        "tokens_out": null
+      },
+      {
+        "path": "docs/research/sibling-projects.md",
+        "attempts": 1,
+        "transport_error": null,
+        "proposal_dir": null,
+        "disposition": "ingest_error (exit 4)",
+        "promote_error": null,
+        "pages_written": [],
+        "wall_seconds": 72.582,
+        "tokens_in": null,
+        "tokens_out": null
+      },
+      {
+        "path": "docs/roadmap.md",
+        "attempts": 1,
+        "transport_error": null,
+        "proposal_dir": "2026-10-16-roadmap",
+        "disposition": "accept",
+        "promote_error": null,
+        "pages_written": [
+          "concepts/memkernel-roadmap.md",
+          "index.md",
+          "log.md"
+        ],
+        "wall_seconds": 42.775,
+        "tokens_in": null,
+        "tokens_out": null
+      }
+    ],
+    "lint": {
+      "exit_code": 0,
+      "stdout": "\nlinted 11 pages, 0 violations\n\naudit-format: clean.\n",
+      "stderr": ""
+    },
+    "completed_at": "2026-10-16T16:06:44.584536+00:00",
+    "summary": {
+      "documents_attempted": 10,
+      "promoted": 7,
+      "retries": 0,
+      "total_wall_seconds": 523.139
+    }
+  }
+}

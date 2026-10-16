@@ -1,0 +1,6 @@
+applied 5 edit(s) from 2026-10-16-roadmap; archived to /Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/run2/proposals/.applied/2026-10-16-roadmap.
+  + wiki/log.md
+  + wiki/index.md
+  + wiki/concepts/memkernel-roadmap.md
+  + wiki/.audit/proposals/2026-10-16-roadmap/proposal.md
+  + wiki/.audit/proposals/2026-10-16-roadmap/plan.json

@@ -1,0 +1,1 @@
+/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/run2/proposals/2026-10-16-ADR-008-llm-wiki-as-semantic-layer

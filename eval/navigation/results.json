@@ -16,10 +16,15 @@
     "answered_by_index": [],
     "competing_evaluated": 1,
     "distractor_outranks": 0.0,
+    "empty_selection": [],
     "evaluated": 3,
     "gold_unreachable": [],
     "hit_at_1": 1.0,
-    "hit_at_max": 1.0
+    "hit_at_max": 1.0,
+    "index_linked_pages": 1,
+    "mean_pages_selected": 1.0,
+    "random_hit_at_1": 1.0,
+    "random_hit_at_max": 1.0
   },
   "parameters": {
     "context_lines": 2,

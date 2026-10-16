@@ -1,0 +1,1 @@
+- [MemKernel roadmap and the cross-repository release sequence](concepts/memkernel-roadmap.md): 0.2–0.5 release status (0.4 shipped, 0.3 open), hardening adapted from sibling projects, the eight-step order of work across repositories gated on published artefacts, and the research backlog

@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "source_path": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/corpus/docs/roadmap.md",
+  "backend": "claude",
+  "rationale": "Gate passed. (1) Reusable: the roadmap gives the release plan for memkernel 0.2 to 0.5 and the order of work across seven repositories, gated on dependencies. Contributors to memkernel, ai-wiki, rlm-studio, haa and CCT will need this in future sessions. (2) Citable: repo file eval/navigation/corpus/docs/roadmap.md, grounded at the corpus SHA the other pages use. (3) Non-duplicative: no page covers the roadmap or the order of work across repos. The existing pages only mention a few roadmap items in passing, such as the 'roadmap CLI' and 'roadmap 0.3' in harness-integration, and the open follow-ups in ADR-007. (4) New-contributor-relevant: it answers what is shipped, what is next and what blocks what. One new concept page is created and linked from index.md, and log.md gets an entry. Existing pages are not rewritten. Instead, the new page says which of their statements the roadmap confirms or updates: in harness-integration, MemoryLifecycle and the ports are still open 0.3 items, and PyPI and the CHANGELOG are still open 0.2 items.",
+  "edits": [
+    {
+      "path": "concepts/memkernel-roadmap.md",
+      "action": "create",
+      "rationale": "No page covers the roadmap or the release sequence across repositories. Its subject is the project's direction and dependencies, which is durable orientation knowledge, so it is a concept page.",
+      "preview": "preview/concepts/memkernel-roadmap.md"
+    },
+    {
+      "path": "index.md",
+      "action": "append-index",
+      "rationale": "Links the new page from index.md so it is reachable. It joins the Concepts list that ends the index.",
+      "preview": "preview/index.md"
+    },
+    {
+      "path": "log.md",
+      "action": "append-log",
+      "rationale": "Required log entry for the new page.",
+      "preview": "preview/log.md"
+    }
+  ]
+}

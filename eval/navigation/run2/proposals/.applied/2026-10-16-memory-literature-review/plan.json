@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "source_path": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/corpus/docs/research/memory-literature-review.md",
+  "backend": "claude",
+  "rationale": "Gate passes. (1) Reusable: the review is the evidence base behind ADR-007 and the memory-tiers design. It records which external mechanisms MemKernel adopted, deferred or treated as speculative, and anyone extending the memory model will need that. (2) Citable: it is a repo file at eval/navigation/corpus/docs/research/memory-literature-review.md. (3) Non-duplicative: the existing pages only mention it in passing ('lives at docs/research/memory-literature-review.md in the memkernel repo'). No page holds the per-system comparison, the benchmark landscape, the contested status of HRM, the arXiv 2604.11364 correction or the eight adopted design implications. (4) New-contributor-relevant: it explains why MemKernel looks the way it does and which literature claims are weak. One new concept page is created. ADR-007 is updated to point at it, because the ADR cites this review as its context. The index and log are appended.",
+  "edits": [
+    {
+      "path": "concepts/memkernel-memory-literature-review.md",
+      "action": "create",
+      "rationale": "No existing page covers the literature review itself. This page records the per-source adoption decisions, the contested and speculative status of several sources, the Roynard misattribution trap, the benchmark caveats and the eight adopted implications.",
+      "preview": "preview/concepts/memkernel-memory-literature-review.md"
+    },
+    {
+      "path": "decisions/memkernel-tiered-memory-decision.md",
+      "action": "update",
+      "rationale": "ADR-007 cites this review as its context. The update points the Context section and the Related list at the new literature-review page so readers can follow the evidence. All other content is unchanged.",
+      "preview": "preview/decisions/memkernel-tiered-memory-decision.md"
+    },
+    {
+      "path": "index.md",
+      "action": "append-index",
+      "rationale": "Makes the new concept page reachable from the index. The line is appended under the trailing Concepts section.",
+      "preview": "preview/index.md"
+    },
+    {
+      "path": "log.md",
+      "action": "append-log",
+      "rationale": "Adds the required dated log entry for this patch-set.",
+      "preview": "preview/log.md"
+    }
+  ]
+}

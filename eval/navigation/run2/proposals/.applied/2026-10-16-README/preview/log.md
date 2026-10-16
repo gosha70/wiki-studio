@@ -1,0 +1,4 @@
+- 2026-10-16 — create memkernel-tiered-memory (concept): tiers, types, retention and recall scoring from the MemKernel README
+- 2026-10-16 — create memkernel-claude-code-setup (workflow): install and MCP registration procedure from the MemKernel README
+- 2026-10-16 — create memkernel-install-troubleshooting (playbook): install failures and their fixes from the MemKernel README
+- 2026-10-16 — create memkernel-wiki-bridge-and-health (concept): wiki export/import, revalidation and health audit from the MemKernel README

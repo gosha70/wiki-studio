@@ -53,6 +53,21 @@ complete. See `eval/navigation/ingest-notes.md` before publication.
 
 ---
 
+## US5: Run 2 under the revised protocol (release gate)
+
+| # | [P] | Task | File(s) | Owner | Done |
+|---|-----|------|---------|-------|------|
+| 9 | | `run.py --shared <dir>`: corpus, questions and stop list from `<dir>` when the fixture lacks them; determinism and fixture tests parametrized over `eval/navigation` (run 1) and `eval/navigation/run2`; a test asserts run 2's manifest records the shared files' sha256 equal to run 1's (FR-013, FR-016) | `eval/navigation/run.py`, `tests/test_navigation_eval.py` | build | [x] |
+| 10 | | Isolate hooks from the backend (recorded method: `HOOK_SKIP=1` honoured by the Stop hook, or `CLAUDE_CONFIG_DIR`), then the probe via `python -m eval.navigation.run2_protocol probe`: one `claude -p` call with the run's environment, a trivial prompt, before/after hashes of run 2's logs, wiki and proposals dir, a watch for any pytest process, `isolation_probe` recorded in `run2/manifest.json`; repeat until it passes, consuming no attempt (FR-014) | `eval/navigation/run2_protocol.py`, `eval/navigation/run2/manifest.json` | owner | [x] |
+| 11 | | `python -m eval.navigation.run2_protocol ingest` (refuses without a passed probe, with uncommitted `src/`, without `ANTHROPIC_MODEL`, or on a recorded run): pins and records commit (descendant of the #11 merge), versions, model, timeout, `WIKI_STUDIO_*` values and command before the first attempt; then the one-time ingest in run 1's order with `WIKI_STUDIO_ROOT=eval/navigation/run2 WIKI_STUDIO_WIKI_DIR=eval/navigation/run2/wiki WIKI_STUDIO_PROPOSALS_DIR=eval/navigation/run2/proposals` and the command `python -m wiki_studio ingest eval/navigation/corpus/<file> --backend claude --allow-out-of-repo` (the sources lie outside run 2's root; without the flag `ingest` exits 7 before any backend call), one attempt per document (FR-003 retry rule unchanged), nothing edited; commit `run2/wiki`, `run2/proposals`, `run2/ingest-logs`, `run2/ingest-notes.md`, manifest (FR-015) | `eval/navigation/run2/**` | owner | [x] |
+| 12 | | Assign `run2/gold.json` by reading the frozen run 2 wiki, a reason per entry; questions unchanged (FR-004) | `eval/navigation/run2/gold.json` | owner | [x] |
+| 13 | | Commit `run2/results.json`; README Evidence table with run 1 and run 2 side by side, denominators and caveats per run, run 1 text unchanged; CHANGELOG note (FR-016) | `eval/navigation/run2/results.json`, `README.md`, `CHANGELOG.md` | build | [x] |
+
+**Checkpoint US5** — verify before the tag:
+- [ ] `run2/manifest.json`: `isolation_probe.passed` true and dated before the first attempt; one entry per document
+- [x] `git diff --stat 4d224df..HEAD -- eval/navigation/corpus eval/navigation/questions.json eval/navigation/stopwords.txt eval/navigation/wiki eval/navigation/gold.json eval/navigation/results.json` is empty
+- [ ] determinism test green for both runs; README shows both
+
 ## Final Verification
 
 - [ ] Type checker: 0 errors; linter: 0 errors; coverage ≥ 80 percent with `eval/` excluded

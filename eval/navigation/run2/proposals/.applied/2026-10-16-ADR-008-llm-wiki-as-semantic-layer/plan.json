@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "source_path": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/corpus/docs/adr/ADR-008-llm-wiki-as-semantic-layer.md",
+  "backend": "claude",
+  "rationale": "Gate passes. (1) Reusable: ADR-008 explains why MemKernel's long-term tier has two representations, a vector store and a wiki, and which one is the source of truth. It also gives the type mapping between them and the reason the wiki tooling moves into a standalone repo. Future contributors to memkernel, ai-wiki and code-copilot-team will need this. (2) Citable: it is a repo file in the eval corpus. (3) Non-duplicative: the existing concept page memkernel-wiki-bridge-and-health describes how export and import work, taken from the README. It only points to ADR-008 by path and does not record the decision, the alternatives or the consequences. No decision page covers it, so this patch creates one, matching how ADR-007 got its own decision page. (4) New-contributor-relevant: anyone working on the wiki bridge or the ai-wiki extraction needs this rationale. Patch-set: create decisions/memkernel-wiki-semantic-layer-decision.md. Update the concept page with what the ADR adds beyond the README: the memory-type to page-type mapping, the import tags, skipping deprecated pages, the memkernel_ref frontmatter, imported memories carrying the page path as source, and the citation to ADR-008. Append a log entry and link the new page from index.md under Decisions.",
+  "edits": [
+    {
+      "path": "decisions/memkernel-wiki-semantic-layer-decision.md",
+      "action": "create",
+      "rationale": "No existing page records ADR-008's decision, context, alternatives or consequences. A decision page matches the page type and mirrors the ADR-007 page.",
+      "preview": "preview/decisions/memkernel-wiki-semantic-layer-decision.md"
+    },
+    {
+      "path": "concepts/memkernel-wiki-bridge-and-health.md",
+      "action": "update",
+      "rationale": "The page gains what ADR-008 adds beyond the README: the source-of-truth split, both type mappings, the import tags, skipping deprecated pages, memkernel_ref and the source back-link. It also cites ADR-008 and links the new decision page.",
+      "preview": "preview/concepts/memkernel-wiki-bridge-and-health.md"
+    },
+    {
+      "path": "log.md",
+      "action": "append-log",
+      "rationale": "This is the required dated log entry for the new page and the concept update.",
+      "preview": "preview/log.md"
+    },
+    {
+      "path": "index.md",
+      "action": "append-index",
+      "rationale": "This links the new decision page from the Decisions section so it can be reached from index.md.",
+      "preview": "preview/index.md"
+    }
+  ]
+}

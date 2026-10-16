@@ -1,0 +1,1 @@
+- 2026-10-16 — create memkernel-memory-literature-review (concept): per-system adoption table, contested/speculative transfers, benchmarks and the eight design implications from the memkernel literature review; update memkernel-tiered-memory-decision (decision) with a pointer to it

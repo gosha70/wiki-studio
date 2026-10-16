@@ -18,6 +18,9 @@ from eval.navigation import run
 from wiki_studio.lint import lint_wiki
 
 FIXTURE = Path(__file__).resolve().parents[1] / "eval" / "navigation"
+RUN2 = FIXTURE / "run2"
+# Run 2 (spec US5) shares run 1's corpus, questions and stop list; both runs are always asserted (FR-016).
+RUNS: list[tuple[str, Path, Path]] = [("run1", FIXTURE, FIXTURE), ("run2", RUN2, FIXTURE)]
 
 
 def _sha256(path: Path) -> str:
@@ -77,11 +80,28 @@ class TestFixtureIsThePreregisteredOne(unittest.TestCase):
 
 class TestResultsAreReproduced(unittest.TestCase):
     def test_script_output_equals_committed_results(self) -> None:
-        committed = json.loads((FIXTURE / "results.json").read_text(encoding="utf-8"))
-        self.assertEqual(run.compute(FIXTURE), committed)
+        for name, fixture, shared in RUNS:
+            with self.subTest(run=name):
+                committed = json.loads((fixture / "results.json").read_text(encoding="utf-8"))
+                self.assertEqual(run.compute(fixture, shared_dir=shared), committed)
 
     def test_compute_is_stable_across_runs(self) -> None:
-        self.assertEqual(run.compute(FIXTURE), run.compute(FIXTURE))
+        for name, fixture, shared in RUNS:
+            with self.subTest(run=name):
+                self.assertEqual(run.compute(fixture, shared_dir=shared), run.compute(fixture, shared_dir=shared))
+
+    def test_run2_shares_run1_inputs_unchanged(self) -> None:
+        # FR-013: run 2 records the shared files' checksums and they equal run 1's manifest values.
+        run1 = json.loads((FIXTURE / "manifest.json").read_text(encoding="utf-8"))
+        run2 = json.loads((RUN2 / "manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(run2["questions_sha256"], run1["questions_sha256"])
+        self.assertEqual(run2["stopwords_sha256"], run1["stopwords_sha256"])
+        self.assertEqual(run2["corpus_files"], run1["corpus_files"])
+        self.assertTrue(run2["isolation_probe"]["passed"])
+        self.assertEqual(run2["ingest"]["summary"]["documents_attempted"], len(run1["corpus_files"]))
+        self.assertTrue(all(d["attempts"] == 1 or d["transport_error"] for d in run2["ingest"]["documents"]))
+        for shared in ("corpus", "questions.json", "stopwords.txt"):
+            self.assertFalse((RUN2 / shared).exists(), f"run 2 must use run 1's {shared} in place, not a copy")
 
 
 class TestIndexOnlyAnswers(unittest.TestCase):
@@ -121,6 +141,18 @@ class TestGrepRule(unittest.TestCase):
 
     def test_count_words_is_whitespace_split(self) -> None:
         self.assertEqual(run.count_words("a  b\nc\t d "), 4)
+
+    def test_shared_inputs_resolve_to_run1_when_the_fixture_lacks_them(self) -> None:
+        import shutil
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            run2 = Path(tmp) / "run2"
+            shutil.copytree(FIXTURE / "wiki", run2 / "wiki")
+            shutil.copy(FIXTURE / "gold.json", run2 / "gold.json")
+            self.assertEqual(run.compute(run2, shared_dir=FIXTURE), run.compute(FIXTURE))
+            with self.assertRaises(FileNotFoundError):
+                run.compute(run2)
 
     def test_main_rejects_extra_arguments(self) -> None:
         import contextlib
