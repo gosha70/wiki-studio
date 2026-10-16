@@ -1,0 +1,197 @@
+[
+  {
+    "id": "q01",
+    "gold": "workflows/memkernel-claude-code-setup.md",
+    "reason": "Under \"Steps\", step 1 states Python 3.11–3.13 and the package constraint `Requires-Python >=3.11,<3.14`."
+  },
+  {
+    "id": "q02",
+    "gold": "workflows/memkernel-claude-code-setup.md",
+    "reason": "Under \"Steps\", step 8 explains that build_service() downloads the roughly 90 MB all-MiniLM-L6-v2 embedding model at server startup before any tool call. The install playbook also explains the one-time download and cache warming."
+  },
+  {
+    "id": "q03",
+    "gold": null,
+    "reason": "Checked all nine content pages plus index.md and log.md. workflows/memkernel-claude-code-setup.md, \"Steps\" 7, lists settings/mcp.json, steering/memory.md and hooks/memkernel.json, but does not describe their individual Kiro roles. The Claude-specific steps do not supply the missing Kiro hook events or server-entry details. No page contains the complete answer."
+  },
+  {
+    "id": "q04",
+    "gold": null,
+    "reason": "Checked all nine content pages plus index.md and log.md. The setup workflow mentions the separate admin API on port 8766, but no page gives the default streamable HTTP MCP listen address. It cannot be inferred from the admin API address."
+  },
+  {
+    "id": "q05",
+    "gold": "concepts/memkernel-wiki-bridge-and-health.md",
+    "reason": "Under \"Key ideas\", \"Revalidation triggers\" states: \"Sources resolve under MEMKERNEL_PROJECT_ROOT, and nothing outside that root is ever read.\""
+  },
+  {
+    "id": "q06",
+    "gold": "decisions/memkernel-tiered-memory-decision.md",
+    "reason": "Under \"Decision\", item 5 states that the new metadata is optional on read and gets derived defaults, so records written by 0.1.x still load."
+  },
+  {
+    "id": "q07",
+    "gold": "decisions/memkernel-tiered-memory-decision.md",
+    "reason": "Under \"Alternatives considered\", \"A separate collection per tier\" is rejected because it breaks cross-tier recall and the idempotent dedup key; the design instead filters metadata within one collection."
+  },
+  {
+    "id": "q08",
+    "gold": "decisions/memkernel-wiki-semantic-layer-decision.md",
+    "reason": "Under \"Decision\", \"Type mapping\" states export `convention` and `fact` → `concept`, and `procedure` → `workflow`."
+  },
+  {
+    "id": "q09",
+    "gold": "decisions/memkernel-wiki-semantic-layer-decision.md",
+    "reason": "Under \"Decision\", the WikiImporter description states: \"A changed page supersedes the memory made from its earlier version.\""
+  },
+  {
+    "id": "q10",
+    "gold": "decisions/memkernel-wiki-semantic-layer-decision.md",
+    "reason": "Under \"Alternatives considered\", putting wiki tooling inside memkernel would tie a memory server to markdown maintenance and an LLM backend, and make CCT depend on memkernel for work unrelated to memory. Leaving it inside CCT would prevent reuse by memkernel and document-assistant."
+  },
+  {
+    "id": "q11",
+    "gold": null,
+    "reason": "Checked all nine content pages plus index.md and log.md. concepts/memkernel-roadmap.md names auto, Direct, RAG and RLM modes, and concepts/memkernel-tiered-memory.md describes document reasoning, but neither gives the 8K-token switching threshold. No ADR-009 decision page was promoted."
+  },
+  {
+    "id": "q12",
+    "gold": null,
+    "reason": "Checked all nine content pages plus index.md and log.md. concepts/memkernel-tiered-memory.md says not to use get to read a document, but does not say that get returns a summary and rlm:// identifier. The roadmap lists document ports and ask modes without the get return contract."
+  },
+  {
+    "id": "q13",
+    "gold": "concepts/memkernel-tiered-memory.md",
+    "reason": "Under \"Key ideas\", \"Retention formula\" gives `ttl = base_ttl × (1 + access_boost × access_count)` and expiration at `now − max(timestamp, last_accessed) > ttl`: the later of creation and last access starts the clock."
+  },
+  {
+    "id": "q14",
+    "gold": "concepts/memkernel-tiered-memory.md",
+    "reason": "Under \"Key ideas\", \"Recall scoring\" gives the relevance/recency/importance weighted sum and states that setting the last two weights to zero gives pure relevance (`MEMKERNEL_RECALL_WEIGHT_*`)."
+  },
+  {
+    "id": "q15",
+    "gold": "concepts/memkernel-tiered-memory.md",
+    "reason": "Under \"Key ideas\", \"Session protocol\" states: \"After compaction, the checkpoint, long-term context and candidates are injected and the agent promotes the keepers.\""
+  },
+  {
+    "id": "q16",
+    "gold": "concepts/memkernel-harness-integration.md",
+    "reason": "Under \"Key ideas\", \"Scope recall with tags\" specifies `tags=[\"feature:<id>\", \"phase:<name>\"]` on every memory."
+  },
+  {
+    "id": "q17",
+    "gold": "concepts/memkernel-harness-integration.md",
+    "reason": "Under \"Key ideas\", \"Host-side memory tools\" says the sandbox cannot see host packages, so memory tools run on the host; keep the Chroma store outside any bind-mounted workspace, for example `MEMKERNEL_CHROMA_PERSIST_PATH=.memkernel/chroma`."
+  },
+  {
+    "id": "q18",
+    "gold": "concepts/memkernel-roadmap.md",
+    "reason": "Under \"Key ideas\", \"Cross-repository sequence\", step 8 states: \"document-assistant is relicensed and becomes ragkit, which waits on a licensing decision.\" This answers the required licensing-before-extraction dependency. The page does not preserve the source document's specific CC-BY-SA-4.0 and contributor-consent details; those details are not required by the wording of this question."
+  },
+  {
+    "id": "q19",
+    "gold": null,
+    "reason": "Checked all nine content pages plus index.md and log.md. concepts/memkernel-roadmap.md discusses the new ragkit extraction, but no page says the old ragkit lacks a LICENSE or that a license must be added before archiving it."
+  },
+  {
+    "id": "q20",
+    "gold": "concepts/memkernel-memory-literature-review.md",
+    "reason": "Under \"Key ideas\", \"Benchmarks are not comparable across vendors\" recommends adding LongMemEval knowledge-update and abstention categories before trusting headline retrieval numbers."
+  },
+  {
+    "id": "q21",
+    "gold": "concepts/memkernel-memory-literature-review.md",
+    "reason": "Under \"Key ideas\", the HRM/TRM bullet says the ARC Prize reproduction attributed the gains to the outer refinement loop with per-pass supervision, not the two-timescale hierarchy."
+  },
+  {
+    "id": "q22",
+    "gold": null,
+    "reason": "Checked all nine content pages plus index.md and log.md. concepts/memkernel-tiered-memory.md describes AST chunking and reciprocal rank fusion as retrieval mechanisms; concepts/memkernel-roadmap.md discusses ragkit extraction. Neither identifies ASTChunker and rrf_fuse as the two memkernel contributions to that extraction. No sibling-projects page was promoted."
+  },
+  {
+    "id": "q23",
+    "gold": "concepts/memkernel-roadmap.md",
+    "reason": "Under \"Key ideas\", \"Publication is the gate between repositories\" states a dependent step starts after a tag or PyPI release: \"A merge is not enough.\""
+  },
+  {
+    "id": "q24",
+    "gold": "concepts/memkernel-tiered-memory.md",
+    "reason": "Under \"Key ideas\", \"Moving knowledge to long-term\" ranks consolidation candidates by `importance × (1 + access_count)`; \"Recall scoring\" instead uses `w_rel·relevance + w_rec·recency + w_imp·importance`. decisions/memkernel-tiered-memory-decision.md also gives both formulas in \"Decision\" and is an alternate answer-bearing page, included as a competing page under the single-gold convention.",
+    "distractors": [
+      "decisions/memkernel-tiered-memory-decision.md"
+    ]
+  },
+  {
+    "id": "q25",
+    "gold": "decisions/memkernel-wiki-semantic-layer-decision.md",
+    "reason": "Under \"Decision\", item 1 states: \"The wiki is the source of truth for curated knowledge. The store is the wiki's index and also holds everything that has not been curated yet.\" concepts/memkernel-wiki-bridge-and-health.md also answers this in \"Summary\" and is an alternate answer-bearing competing page. The index summarizes this too; the answer is not index-only.",
+    "distractors": [
+      "concepts/memkernel-wiki-bridge-and-health.md"
+    ]
+  },
+  {
+    "id": "q26",
+    "gold": null,
+    "reason": "Checked all nine content pages plus index.md and log.md. concepts/memkernel-roadmap.md lists an optional RLM Studio adapter and its public contract, but does not compare in-process interact() with the HTTP server or explain the extra server/session burden. concepts/memkernel-harness-integration.md discusses in-process haa integration, a different boundary. These are plausible competing pages, but neither answers the RLM Studio decision.",
+    "distractors": [
+      "concepts/memkernel-roadmap.md",
+      "concepts/memkernel-harness-integration.md"
+    ]
+  },
+  {
+    "id": "q27",
+    "gold": null,
+    "reason": "Checked all nine content pages plus index.md and log.md. concepts/memkernel-roadmap.md, \"0.3 hardening\", mentions recording the embedding model in Chroma metadata and refusing mixed vector spaces, but does not name chroma_backend.py/get_embedding_provenance. concepts/memkernel-tiered-memory.md discusses embeddings and retrieval without the helper. These are plausible competing pages, but neither identifies the requested helper.",
+    "distractors": [
+      "concepts/memkernel-roadmap.md",
+      "concepts/memkernel-tiered-memory.md"
+    ]
+  },
+  {
+    "id": "q28",
+    "gold": "concepts/memkernel-roadmap.md",
+    "reason": "Under \"Key ideas\", \"0.4, code revalidation and store health (shipped)\" states whole-file hashing shipped while invalidation of individual chunk ranges remains open. concepts/memkernel-wiki-bridge-and-health.md describes whole-file revalidation but omits the deferred chunk-range granularity, making it a plausible incomplete competing page.",
+    "distractors": [
+      "concepts/memkernel-wiki-bridge-and-health.md"
+    ]
+  },
+  {
+    "id": "q29",
+    "gold": "concepts/memkernel-harness-integration.md",
+    "reason": "Under \"Key ideas\", \"Namespaces\" says to derive MEMKERNEL_PROJECT_ID as a slug plus a short hash of the project root; haa and CCT use the same scheme so haa and Claude Code share memory for the same repo. workflows/memkernel-claude-code-setup.md tells the user to set the project ID but omits its derivation.",
+    "distractors": [
+      "workflows/memkernel-claude-code-setup.md"
+    ]
+  },
+  {
+    "id": "q30",
+    "gold": null,
+    "reason": "Checked all nine content pages plus index.md and log.md. No page specifies an at-rest encryption cipher. The setup and harness pages describe store placement only. This question was preregistered as absent."
+  },
+  {
+    "id": "q31",
+    "gold": null,
+    "reason": "Checked all nine content pages plus index.md and log.md. No page specifies a backup recovery point objective. Store health, persistence and troubleshooting are discussed without a recovery-time or data-loss guarantee. This question was preregistered as absent."
+  },
+  {
+    "id": "q32",
+    "gold": null,
+    "reason": "Checked all nine content pages plus index.md and log.md. No page publishes concurrent HTTP client capacity at a latency target. The setup workflow mentions an admin health endpoint, not a capacity benchmark. This question was preregistered as absent."
+  },
+  {
+    "id": "q33",
+    "gold": null,
+    "reason": "Checked all nine content pages plus index.md and log.md. No page reports a legal-document-corpus navigation hit rate for wiki-studio. The wiki decision describes a different library experiment, and the literature page discusses other memory benchmarks. This question was preregistered as absent."
+  },
+  {
+    "id": "q34",
+    "gold": null,
+    "reason": "Checked all nine content pages plus index.md and log.md. No page specifies OAuth scopes for remote MCP access. The setup workflow covers stdio MCP registration and a separate admin HTTP endpoint. This question was preregistered as absent."
+  },
+  {
+    "id": "q35",
+    "gold": null,
+    "reason": "Checked all nine content pages plus index.md and log.md. No page quotes monthly cloud hosting cost for a million memories. The wiki decision mentions a different experiment's generation cost, not hosting. This question was preregistered as absent."
+  }
+]
