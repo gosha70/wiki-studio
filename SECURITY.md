@@ -4,8 +4,8 @@
 
 | Version | Supported |
 |---|---|
-| 0.3.x | yes |
-| 0.2.x, 0.1.x | no (upgrade to 0.3; the library API is a superset) |
+| 0.4.x | yes |
+| 0.3.x, 0.2.x, 0.1.x | no (upgrade to 0.4; the library API is a superset) |
 
 Fixes are released as patch versions of the latest minor line.
 

@@ -24,8 +24,10 @@
 from __future__ import annotations
 
 import argparse
+import datetime
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -99,8 +101,8 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="wiki-studio",
         description=(
-            "Karpathy-pattern LLM Wiki maintainer. Six verbs: "
-            "ingest|promote|query|lint|audit-flush|info. "
+            "Karpathy-pattern LLM Wiki maintainer. Verbs: "
+            "init|ingest|propose|promote|query|find|lint|audit-flush|info. "
             "``wiki-studio <verb> --help`` for per-verb help."
         ),
         epilog=(
@@ -311,6 +313,40 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     )
     p_info.add_argument("--json", action="store_true", help="Print the same facts as one JSON object.")
 
+    # ── init ───────────────────────────────────────────────────
+    p_init = sub.add_parser(
+        "init",
+        parents=[common],
+        help="Create the wiki directory with a minimal index.md and log.md when they are absent "
+        "(promote needs both). Never overwrites; running it twice is a no-op. Exits 0.",
+    )
+    p_init.add_argument("--title", default=api.DEFAULT_WIKI_TITLE, help="Title for a new index.md and log.md.")
+
+    # ── propose ────────────────────────────────────────────────
+    p_propose = sub.add_parser(
+        "propose",
+        parents=[common],
+        help="Write a patch-set from files you wrote yourself, no model involved: --from DIR is laid out "
+        "like the wiki (concepts/<slug>.md, decisions/<slug>.md, ...); DIR/index.md and DIR/log.md hold "
+        "the lines to append, one per line. Validated like ingest output; --promote applies it at once. "
+        "The first line of output is the proposal directory.",
+    )
+    p_propose.add_argument("--from", dest="source_dir", type=Path, required=True, help="Directory of files.")
+    p_propose.add_argument("--name", help="Proposal directory name (default: <date>-<time>-<from-dir-name>, unique).")
+    p_propose.add_argument("--rationale", default="", help="Why, recorded in plan.json and the audit archive.")
+    p_propose.add_argument("--promote", action="store_true", help="Promote the patch-set right after writing it.")
+
+    # ── find ───────────────────────────────────────────────────
+    p_find = sub.add_parser(
+        "find",
+        parents=[common],
+        help="Print the pages query would load for a question (index.md first, then index-linked pages "
+        "ranked by word overlap), without calling a model and without writing the query log.",
+    )
+    p_find.add_argument("question", help="The question, in plain words.")
+    p_find.add_argument("--max-pages", type=int, default=api.DEFAULT_MAX_QUERY_PAGES, help="At most this many pages.")
+    p_find.add_argument("--json", action="store_true", help="Print the result as one JSON object.")
+
     return parser
 
 
@@ -369,7 +405,12 @@ def _do_promote(args: argparse.Namespace) -> int:
         print(f"no-op: {args.proposal_dir.name} already applied (no changes to write).")
         return 0
     print(
-        f"applied {len(result.applied_paths)} edit(s) from {args.proposal_dir.name}; archived to {result.archived_dir}."
+        f"applied {len(result.applied_paths)} edit(s) from {args.proposal_dir.name}; "
+        + (
+            f"archived to {result.archived_dir}."
+            if result.archived_dir
+            else "not archived (move failed; left in place)."
+        )
     )
     for p in result.applied_paths:
         print(f"  + {paths.wiki_label}/{p}")
@@ -513,7 +554,70 @@ def _do_info(args: argparse.Namespace) -> int:
     return 0
 
 
-_VERBS = ("ingest", "promote", "query", "lint", "audit-flush", "info")
+def _do_init(args: argparse.Namespace) -> int:
+    """Create the scaffold the other verbs need; report what was created."""
+    paths = _paths_from_args(args)
+    result = api.init(paths, title=args.title)
+    if result.created:
+        print(f"initialised {paths.wiki_dir}: created {', '.join(result.created)}")
+    else:
+        print(f"already initialised: {paths.wiki_dir} has index.md and log.md")
+    return 0
+
+
+def _default_proposal_name(source_dir: Path, proposals_dir: Path | None = None) -> str:
+    """``<date>-<HHMMSS>-<dir-name>``, sanitised; ``-2``, ``-3``, ... if that directory already exists."""
+    now = datetime.datetime.now()
+    stem = re.sub(r"[^A-Za-z0-9._-]+", "-", source_dir.resolve().name).strip(".-") or "agent"
+    base = f"{now.date().isoformat()}-{now.strftime('%H%M%S')}-{stem}"
+    if proposals_dir is None:
+        return base
+    name, suffix = base, 2
+    while (proposals_dir / name).exists() or (proposals_dir / ".applied" / name).exists():
+        name, suffix = f"{base}-{suffix}", suffix + 1
+    return name
+
+
+def _do_propose(args: argparse.Namespace) -> int:
+    """Patch-set from agent-written files (no backend); optionally promote it."""
+    paths = _paths_from_args(args)
+    edits = api.edits_from_dir(args.source_dir, paths, rationale=args.rationale)
+    name = args.name or _default_proposal_name(args.source_dir, paths.proposals_dir)
+    written = api.propose(edits, paths, name=name, source=str(args.source_dir), rationale=args.rationale, backend="cli")
+    print(str(written))
+    for edit in edits:
+        print(f"  {edit.action} {edit.path}")
+    if not args.promote:
+        return 0
+    result = api.promote(written, paths)
+    archived = (
+        f"archived to {result.archived_dir}." if result.archived_dir else "not archived (move failed; left in place)."
+    )
+    print(f"applied {len(result.applied_paths)} edit(s); {archived}")
+    return 0
+
+
+def _do_find(args: argparse.Namespace) -> int:
+    """Model-free page selection: what query would read."""
+    paths = _paths_from_args(args)
+    result = api.find(args.question, paths, max_pages=args.max_pages)
+    if args.json:
+        payload = {
+            "question": result.question,
+            "index": paths.relative_to_root(result.index),
+            "pages": [{"path": p.path, "file": paths.relative_to_root(p.file), "title": p.title} for p in result.pages],
+        }
+        print(json.dumps(payload, indent=2))
+        return 0
+    print(f"{paths.relative_to_root(result.index)}  (always read first)")
+    for page in result.pages:
+        print(f"{paths.relative_to_root(page.file)}  {page.title}")
+    if not result.pages:
+        print("no index-linked page shares a word with the question; read the index.")
+    return 0
+
+
+_VERBS = ("ingest", "promote", "query", "lint", "audit-flush", "info", "init", "propose", "find")
 
 # Global options that take a value; their value is not a positional for the legacy shim.
 _GLOBAL_VALUE_OPTIONS = ("--root", "--wiki-dir", "--proposals-dir")
@@ -583,6 +687,9 @@ def main(argv: list[str] | None = None) -> int:
         "lint": _do_lint,
         "audit-flush": _do_audit_flush,
         "info": _do_info,
+        "init": _do_init,
+        "propose": _do_propose,
+        "find": _do_find,
     }
     handler = dispatch.get(args.verb)
     if handler is None:

@@ -26,7 +26,7 @@ from wiki_studio.errors import (
     SourceMissingError,
 )
 
-_VERBS = ("ingest", "promote", "query", "lint", "audit-flush", "info")
+_VERBS = ("ingest", "promote", "query", "lint", "audit-flush", "info", "init", "propose", "find")
 
 _PAGE = (
     "---\npage_type: {page_type}\nslug: {slug}\ntitle: {title}\nstatus: stable\n"
@@ -132,7 +132,7 @@ class TestCliHelp(_LayoutCase):
         result = self.run_cli("--version")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), __version__)
-        self.assertEqual(__version__, "0.3.1")
+        self.assertEqual(__version__, "0.4.0")
 
     def test_each_verb_help_exits_zero(self) -> None:
         for verb in _VERBS:

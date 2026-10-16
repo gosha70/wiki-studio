@@ -6,6 +6,43 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-10-16
+
+What an agent needs to use the wiki from a shell with no model backend, and a
+ready arm for memkernel's lifecycle suite (issue #10, layer 2).
+
+### Added
+
+- `wiki-studio init` / `api.init`: create the wiki directory with a minimal
+  `index.md` and `log.md` when absent (promote needs both); never overwrites.
+  Lives in the promoter, which stays the only module that writes into the wiki.
+- `wiki-studio propose --from DIR [--promote]` / `api.edits_from_dir`: pages an
+  agent wrote, laid out like the wiki, become a validated patch-set (`create`,
+  or `update` when the page exists); `DIR/index.md` and `DIR/log.md` hold the
+  lines to append and are refused if they carry frontmatter. `--promote`
+  applies it at once. No backend.
+- `wiki-studio find "<question>"` / `api.find`, `FindResult`, `FoundPage`: the
+  pages `query` would load, without a model and without writing the query log.
+- `docs/agent-arm/`: a `wiki_studio` arm for memkernel's
+  `eval/lifecycle-suite/` (config in its format, an instruction within 5
+  percent of memkernel's block length, the list of memkernel changes needed).
+  Adopting and running it happens in memkernel.
+
+### Fixed
+
+- `promote` no longer leaves a proposal behind when the archive already holds
+  one with the same name: it is archived next to it as `<name>-2`, `-3`, ...
+  (as `.audit/proposals/` already did), and the CLI no longer prints
+  "archived to" for a move that did not happen. Old behaviour, reachable once
+  `propose --from` made repeated same-day recordings routine.
+
+### Changed
+
+- README banner pinned to the `v0.4.0` tag.
+- `propose --from` names a proposal `<date>-<HHMMSS>-<dir-name>`, with a
+  numeric suffix if that name is taken, so repeated recordings never collide.
+- `find` on a wiki without `index.md` exits 5 and points at `init`.
+
 ## [0.3.1] — 2026-10-16
 
 ### Fixed

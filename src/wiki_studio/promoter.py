@@ -497,17 +497,21 @@ def _commit_stage_to_wiki(stage_dir: Path, paths: WikiPaths) -> list[str]:
 
 
 def _archive_proposals_dir(proposals_dir: Path, paths: WikiPaths) -> Path:
-    """Move the proposals dir into ``<proposals_dir>/.applied/``.
+    """Move the proposals dir into ``<proposals_dir>/.applied/`` and return where it went.
 
-    The .applied/ subdir serves as an audit trail. Idempotent: a second call with the same
-    dir is a no-op when the dir has already been archived.
+    The .applied/ subdir serves as an audit trail. A directory already archived is never
+    reached here (``promote`` returns early for paths under ``.applied/``), so an existing
+    entry with the same name is a different, earlier proposal: this one is archived next to
+    it as ``<name>-2``, ``<name>-3``, ... (the same rule ``.audit/proposals/`` uses), never
+    left behind.
     """
     applied_root = paths.applied_dir
     applied_root.mkdir(parents=True, exist_ok=True)
     target = applied_root / proposals_dir.name
-    if target.exists():
-        # Archived already; nothing to do.
-        return target
+    suffix = 2
+    while target.exists():
+        target = applied_root / f"{proposals_dir.name}-{suffix}"
+        suffix += 1
     shutil.move(str(proposals_dir), str(target))
     return target
 
@@ -609,3 +613,50 @@ def promote(
         archived_dir=archived,
         dry_run=False,
     )
+
+
+# ── init: the scaffold every other verb needs ─────────────────
+
+INDEX_NAME = "index.md"
+LOG_NAME = "log.md"
+DEFAULT_WIKI_TITLE = "Wiki"
+
+_INDEX_TEMPLATE = (
+    "---\npage_type: index\nslug: index\ntitle: {title}\nstatus: stable\nlast_reviewed: {date}\n---\n\n# {title}\n"
+)
+_LOG_TEMPLATE = (
+    "---\npage_type: log\nslug: log\ntitle: {title} log\nstatus: stable\nlast_reviewed: {date}\n---\n\n# {title} log\n"
+)
+
+
+@dataclass(frozen=True)
+class InitResult:
+    """What ``init_wiki`` did: the wiki directory and the files it created (wiki-relative)."""
+
+    wiki_dir: Path
+    created: list[str]
+
+
+def init_wiki(paths: WikiPaths, *, title: str = DEFAULT_WIKI_TITLE) -> InitResult:
+    """Create the wiki directory with a minimal ``index.md`` and ``log.md`` when they are absent.
+
+    ``promote`` stages a copy of the wiki and appends index and log lines, so
+    both files must exist before the first patch-set; a fresh wiki gets them
+    here. Existing files are never touched, so running it twice is a no-op.
+    The scaffold lints clean.
+    """
+    import datetime
+
+    today = datetime.date.today().isoformat()
+    paths.wiki_dir.mkdir(parents=True, exist_ok=True)
+    created: list[str] = []
+    for name, template in ((INDEX_NAME, _INDEX_TEMPLATE), (LOG_NAME, _LOG_TEMPLATE)):
+        target = paths.wiki_dir / name
+        try:
+            # Exclusive create: a concurrent init or an existing file wins, never overwritten.
+            with target.open("x", encoding="utf-8") as handle:
+                handle.write(template.format(title=title, date=today))
+        except FileExistsError:
+            continue
+        created.append(name)
+    return InitResult(wiki_dir=paths.wiki_dir, created=created)
