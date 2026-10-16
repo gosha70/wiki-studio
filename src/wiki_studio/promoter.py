@@ -609,3 +609,47 @@ def promote(
         archived_dir=archived,
         dry_run=False,
     )
+
+
+# ── init: the scaffold every other verb needs ─────────────────
+
+INDEX_NAME = "index.md"
+LOG_NAME = "log.md"
+DEFAULT_WIKI_TITLE = "Wiki"
+
+_INDEX_TEMPLATE = (
+    "---\npage_type: index\nslug: index\ntitle: {title}\nstatus: stable\nlast_reviewed: {date}\n---\n\n# {title}\n"
+)
+_LOG_TEMPLATE = (
+    "---\npage_type: log\nslug: log\ntitle: {title} log\nstatus: stable\nlast_reviewed: {date}\n---\n\n# {title} log\n"
+)
+
+
+@dataclass(frozen=True)
+class InitResult:
+    """What ``init_wiki`` did: the wiki directory and the files it created (wiki-relative)."""
+
+    wiki_dir: Path
+    created: list[str]
+
+
+def init_wiki(paths: WikiPaths, *, title: str = DEFAULT_WIKI_TITLE) -> InitResult:
+    """Create the wiki directory with a minimal ``index.md`` and ``log.md`` when they are absent.
+
+    ``promote`` stages a copy of the wiki and appends index and log lines, so
+    both files must exist before the first patch-set; a fresh wiki gets them
+    here. Existing files are never touched, so running it twice is a no-op.
+    The scaffold lints clean.
+    """
+    import datetime
+
+    today = datetime.date.today().isoformat()
+    paths.wiki_dir.mkdir(parents=True, exist_ok=True)
+    created: list[str] = []
+    for name, template in ((INDEX_NAME, _INDEX_TEMPLATE), (LOG_NAME, _LOG_TEMPLATE)):
+        target = paths.wiki_dir / name
+        if target.exists():
+            continue
+        target.write_text(template.format(title=title, date=today), encoding="utf-8")
+        created.append(name)
+    return InitResult(wiki_dir=paths.wiki_dir, created=created)

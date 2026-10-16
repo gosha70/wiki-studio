@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/gosha70/wiki-studio/v0.3.1/docs/assets/wiki-studio-banner.png" alt="Wiki-Studio — Turn information into living knowledge." width="760">
+  <img src="https://raw.githubusercontent.com/gosha70/wiki-studio/v0.4.0/docs/assets/wiki-studio-banner.png" alt="Wiki-Studio — Turn information into living knowledge." width="760">
 </p>
 
 Karpathy-pattern LLM wiki maintainer: a curated markdown knowledge base
@@ -17,7 +17,7 @@ The code was extracted from
 ```bash
 pip install wiki-studio          # Python 3.11–3.13, no runtime dependencies
 wiki-studio --help
-wiki-studio --version           # 0.3.1
+wiki-studio --version           # 0.4.0
 ```
 
 From a checkout: `poetry install`, then `poetry run wiki-studio --help`.
@@ -131,6 +131,39 @@ copies that exact heading prefix into a path, it is removed once before
 validation; no other prefix is normalised, and a path that already has a
 valid shape (`<page-dir>/<name>.md` or a root `<name>.md`) is left alone, so
 a wiki directory named like a page directory (`concepts`) still works.
+
+### `wiki-studio init`
+
+Creates the wiki directory with a minimal `index.md` and `log.md` when they
+are absent (`promote` needs both). Never overwrites; a second run is a no-op.
+`--title` names a new index and log.
+
+### `wiki-studio propose --from <dir>`
+
+Lands pages you wrote yourself through the same gate as `ingest` output, with
+no model. `<dir>` is laid out like the wiki: `decisions/<slug>.md`,
+`concepts/<slug>.md` and so on are pages (a `create`, or an `update` when the
+wiki already has that path, `glossary/index.md` included); `<dir>/index.md`
+and `<dir>/log.md` hold the lines to append, one per line, never a page.
+
+| Flag | Effect |
+|---|---|
+| `--promote` | apply the patch-set right after writing it |
+| `--name NAME` | proposal directory name (default `<date>-<dir-name>`) |
+| `--rationale TEXT` | recorded in `plan.json` and the audit archive |
+
+Invalid pages exit 4 with every problem listed and nothing written.
+
+### `wiki-studio find "<question>"`
+
+Prints what `query` would put in front of a model, without calling one:
+`index.md` first, then up to five index-linked pages ranked by the words they
+share with the question, each with its title. Writes no query log. `--json`
+for a JSON object, `--max-pages N` for a different limit.
+
+`init`, `propose --from` and `find` are what an agent needs to use the wiki
+from a shell with no model backend; `docs/agent-arm/` holds a ready arm for
+memkernel's lifecycle suite built on them (issue #10).
 
 ## Exit codes
 
