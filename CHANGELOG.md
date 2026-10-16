@@ -29,6 +29,13 @@ caveats they need (issue #10, mirror of memkernel #17).
   `--legacy-single-source` is required; multi-page has been the default since
   0.1.0. Help text only.
 
+### Not built
+
+- The mutation suite for the promote gate (spec US4) is dropped for this
+  release under its own condition: run 1 archived a single patch-set, too few
+  to generate a corpus from, and a hand-written one would duplicate the unit
+  tests.
+
 ### Known issues
 
 - Run 1 of the navigation evaluation promoted one document in ten: eight
