@@ -140,7 +140,13 @@ def _fresh_wiki(run_dir: Path) -> None:
 
 
 def _shared_record() -> dict[str, Any]:
+    """Run 1's pins for the shared inputs, re-verified against the files on disk (FR-013)."""
     run1 = json.loads((SHARED_DIR / "manifest.json").read_text(encoding="utf-8"))
+    drifted = [f["path"] for f in run1["corpus_files"] if _sha256(SHARED_DIR / "corpus" / f["path"]) != f["sha256"]]
+    if drifted or _sha256(SHARED_DIR / "questions.json") != run1["questions_sha256"]:
+        raise SystemExit(
+            f"shared inputs differ from run 1's manifest: {drifted or 'questions.json'}; refusing to proceed"
+        )
     return {
         "shared_from": "eval/navigation (run 1's corpus, questions and stop list, used in place)",
         "corpus_repo": run1["corpus_repo"],
@@ -252,8 +258,9 @@ def probe(run_dir: Path, claude_binary: str) -> int:
 # ── ingest ────────────────────────────────────────────────────
 
 
-def _proposal_dir_for(run_dir: Path, source: Path) -> Path:
-    return run_dir / "proposals" / f"{datetime.date.today().isoformat()}-{source.stem}"
+def _proposal_dir_for(run_dir: Path, source: Path, ingest_date: str) -> Path:
+    """Where ``ingest`` writes this source's proposal: ``<date>-<stem>`` with the date pinned at the run's start."""
+    return run_dir / "proposals" / f"{ingest_date}-{source.stem}"
 
 
 def _run_logged(cmd: list[str], env: dict[str, str], log_prefix: Path) -> tuple[int, float, str, str]:
@@ -364,7 +371,7 @@ def ingest(run_dir: Path, backend: str) -> int:
                 prefix,
             )
             doc["wall_seconds"] = round(doc["wall_seconds"] + wall, 3)
-            proposal_dir = _proposal_dir_for(run_dir, source)
+            proposal_dir = _proposal_dir_for(run_dir, source, str(pinned["ingest_date"]))
             written = proposal_dir.is_dir()
             if code == 0 and written:
                 # ingest exits 0 for both outcomes; a gate reject writes an empty patch-set and says so.
@@ -465,7 +472,10 @@ def main(argv: list[str] | None = None) -> int:
             return 1
     code = ingest(run_dir, backend)
     if code == 0 and commit:
-        sha = _commit_run(run_dir, "eval: run 2 one-time ingest under the US5 protocol (recorded by run2_protocol.py)")
+        sha = _commit_run(
+            run_dir,
+            "eval: run 2 one-time ingest under the US5 protocol (run 2 artifacts only, as recorded by run2_protocol.py)",
+        )
         print(f"committed run 2 as {sha}")
     return code
 
