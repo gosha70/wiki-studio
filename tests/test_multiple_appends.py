@@ -77,7 +77,8 @@ class TestIssueRepro(_Wiki):
         written = api.propose(edits, self.paths, name="curated")
         (written / "preview" / "log.md.2").write_text("- 2026-10-16 — second, curated", encoding="utf-8")
         api.promote(written, self.paths)
-        self.assertIn("- 2026-10-16 — second, curated", self.read("log.md"))
+        log = self.read("log.md")
+        self.assertLess(log.index("- 2026-10-16 — first"), log.index("- 2026-10-16 — second, curated"))
         delta = self.paths.wiki_dir / ".audit" / "proposals" / "curated" / "curator-delta.md"
         self.assertIn("second, curated", delta.read_text(encoding="utf-8"))
 

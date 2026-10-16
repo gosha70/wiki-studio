@@ -10,7 +10,7 @@ peer_profile: deepseek
 runner_fingerprint: ae8dc147cf1264834bab35d116b6ab96b06618f438763cde3a90621d78036dba
 verdict: PASS
 blocking_findings_open: 0
-target_ref: feature/wiki-studio-0-4-0
+target_ref: fix/18-multiple-appends
 rounds_completed: 1
 attempt_count: 1
 bypass: false
@@ -25,17 +25,12 @@ bypass: false
 
 ## Summary
 
-The 0.4.0 change adds three model-free CLI verbs (`init`, `propose --from`, `find`) plus library equivalents, tests, and a documentation-only agent arm. The implementation is generally clean and well-tested, but there are correctness concerns around `find`'s reuse of a private querier helper, `edits_from_dir`'s handling of nested `index.md`/`log.md` files, and the `--from` directory being scanned recursively without excluding the wiki itself.
+The fix correctly addresses issue #18 by giving each edit its own preview file (`preview/<path>`, then `.2`, `.3`, ...) and pointing `plan.json` at the per-edit path, so multiple appends to the same file no longer overwrite each other. The implementation is clean, uses `zip(..., strict=True)` to keep the two lists in lockstep, and is well covered by tests including the curator-edit and `propose --from` paths. I found no blocking correctness issues; a few notes on edge cases and documentation.
 
 ## Findings
 
-- [warning] f-71800581: `find` imports and calls the private `_select_query_candidates` from `querier.py`, coupling the new public API to a private symbol; any refactor of the querier's internals silently changes `find`'s contract. (src/wiki_studio/api.py)
-- [warning] f-4bbaf468: The docstring says "``index.md`` holds index bullets and ``log.md`` log entries" without qualifying "at the root"; the code only treats root-level `index.md`/`log.md` as append targets, so a nested `sub/log.md` is a page. Behavior is right, doc is ambiguous. (src/wiki_studio/api.py)
-- [warning] f-cf51134a: `rglob` walks the entire tree; if `--from` points at a directory containing the wiki itself (or a checkout), every wiki page becomes an edit and the command tries to `update` the whole wiki. The overlap guard only checks `source_dir` vs `wiki_dir`, not nested overlap. (src/wiki_studio/api.py)
-- [warning] f-1813920b: The helper assumes frontmatter starts on line 0 and stops at the next `---`; a page with no frontmatter or frontmatter not on line 0 can pick up an unrelated `title:` from prose, and the 50-line truncation silently drops a title in a long frontmatter block. (src/wiki_studio/api.py)
-- [warning] f-a50db75c: The CLI prints the proposal directory as the first stdout line, and `test_default_name_is_dated_and_safe` relies on `result.stdout.splitlines()[0]` being that path — an implicit contract that any future log line printed before it would break. (src/wiki_studio/cli.py)
-- [note] f-8d8be936: The scaffold's `last_reviewed` is set to today's date at creation time, making the index/log immediately "stale" relative to any later review workflow and non-reproducible across runs (relevant to determinism tests). (src/wiki_studio/promoter.py)
-- [note] f-cd96264b: `init_wiki` can raise `UnicodeEncodeError` (unlikely with fixed ASCII templates) or `FileExistsError` from a race between `target.exists()` and `write_text`; the exclusive-open path handles the race, but `api.init` only catches `OSError`, so a `UnicodeEncodeError` would surface unhandled. (src/wiki_studio/promoter.py)
-- [note] f-e2ff624d: The test asserts `written.name.endswith("-draft")` and reads `plan.json`, but does not assert the date prefix format or that the name is sanitized for a directory with spaces/special characters; `_default_proposal_name` sanitization is only partially covered. (tests/test_agent_verbs.py)
-- [note] f-59d47053: The instruction uses `$TMPDIR` without defining it; on systems where `TMPDIR` is unset the shell expands to an empty string and the draft lands at `/wiki-draft/...`, which will fail. The arm is meant to be run by an agent that may not set `TMPDIR`. (docs/agent-arm/instruction.md)
-- [note] f-573c521c: `import datetime` and `import re` are done inside `_default_proposal_name` rather than at module top, inconsistent with the rest of `cli.py` and adding per-call import overhead. (src/wiki_studio/cli.py)
+- [note] f-d6650ea9: The suffix scheme `preview/<path>.2` is derived purely from edit order, not from any existing files on disk. If `write_patch_set_dir` is ever called into a non-empty `output_dir` (e.g. re-proposing into the same directory), stale `preview/<path>.2` files from a prior run could be silently overwritten or left orphaned. Current callers appear to always use fresh dirs, so this is latent, not active. (src/wiki_studio/ingestor_multi.py)
+- [note] f-36b60cbe: For a path like `index.md`, the second preview is `preview/index.md.2`, which is fine, but for a path that already ends in a numeric-looking segment (e.g. `concepts/v2.md`) the `.2` suffix could be confused with a real filename. Since `plan.json` is the source of truth and promote reads the pointer, this is cosmetic only. (src/wiki_studio/ingestor_multi.py)
+- [note] f-3f8907d3: The doc now says "Always read the pointer," which is good, but it does not state that the suffix is assigned by edit order within the patch-set (so `.2` is the second edit to that path, not a version). A one-clause clarification would prevent a curator from assuming `.2` means "revised". (docs/patch-set-format.md)
+- [note] f-808e7a44: The test verifies the curated content lands and appears in `curator-delta.md`, but does not assert that the *first* append (`first`) also landed. A regression where the first preview is dropped while the second is applied would still pass. (tests/test_multiple_appends.py)
+- [note] f-e0f52a9b: Keying by raw `edit.path` assumes paths are normalized/consistent across edits (e.g. no `./index.md` vs `index.md`). If the upstream `PageEdit` construction ever allows non-canonical paths, two edits to the "same" file could get distinct counters and both write `preview/index.md`-style collisions. The patch-set format already forbids `..` and requires wiki-relative paths, so this is defensive only. (src/wiki_studio/ingestor_multi.py)
