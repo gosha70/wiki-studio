@@ -16,7 +16,7 @@ repository, by its owner.
 
 The config uses the same keys and values as the other non-memkernel arms: the six
 base tools (the CLI is used through Bash), no MCP server, no hooks, nothing
-persisted. The instruction is 1,807 bytes, within 5 percent of memkernel's own
+persisted. The instruction is 1,847 bytes, within 5 percent of memkernel's own
 block (1,832), the same rule its `placebo` arm follows, so prompt length is not a
 difference between the two treated arms.
 

@@ -140,6 +140,21 @@ class TestProposeFromDir(_Workspace):
         (self.root / "empty").mkdir()
         self.assertEqual(self.cli("propose", "--from", str(self.root / "empty")).returncode, 4)
 
+    def test_draft_inside_the_wiki_is_refused_and_hidden_dirs_are_skipped(self) -> None:
+        with self.assertRaises(ContractViolationError):
+            api.edits_from_dir(self.paths.wiki_dir, self.paths)
+        draft = self.write_draft(
+            {"decisions/retry-backoff.md": DECISION, ".audit/proposals/x/proposal.md": "# leftover\n"}, name="hidden"
+        )
+        self.assertEqual([e.path for e in api.edits_from_dir(draft, self.paths)], ["decisions/retry-backoff.md"])
+
+    def test_default_name_sanitises_the_directory_name(self) -> None:
+        from wiki_studio.cli import _default_proposal_name
+
+        name = _default_proposal_name(self.root / "my draft (v2)!")
+        self.assertRegex(name, r"^\d{4}-\d{2}-\d{2}-my-draft-v2$")
+        self.assertRegex(_default_proposal_name(self.root / "..."), r"^\d{4}-\d{2}-\d{2}-agent$")
+
     def test_default_name_is_dated_and_safe(self) -> None:
         draft = self.write_draft(
             {"decisions/retry-backoff.md": DECISION, "index.md": "- [R](decisions/retry-backoff.md)\n"}

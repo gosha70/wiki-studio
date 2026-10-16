@@ -24,8 +24,10 @@
 from __future__ import annotations
 
 import argparse
+import datetime
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -326,7 +328,8 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         parents=[common],
         help="Write a patch-set from files you wrote yourself, no model involved: --from DIR is laid out "
         "like the wiki (concepts/<slug>.md, decisions/<slug>.md, ...); DIR/index.md and DIR/log.md hold "
-        "the lines to append, one per line. Validated like ingest output; --promote applies it at once.",
+        "the lines to append, one per line. Validated like ingest output; --promote applies it at once. "
+        "The first line of output is the proposal directory.",
     )
     p_propose.add_argument("--from", dest="source_dir", type=Path, required=True, help="Directory of files.")
     p_propose.add_argument("--name", help="Proposal directory name (default: <date>-<from-dir-name>).")
@@ -558,9 +561,6 @@ def _do_init(args: argparse.Namespace) -> int:
 
 
 def _default_proposal_name(source_dir: Path) -> str:
-    import datetime
-    import re
-
     stem = re.sub(r"[^A-Za-z0-9._-]+", "-", source_dir.resolve().name).strip(".-") or "agent"
     return f"{datetime.date.today().isoformat()}-{stem}"
 

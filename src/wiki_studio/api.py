@@ -496,21 +496,31 @@ def edits_from_dir(source_dir: Path, paths: WikiPaths, *, rationale: str = "") -
 
     Every ``*.md`` file under ``source_dir`` maps to the wiki path it sits at:
     ``index.md`` holds index bullets and ``log.md`` log entries, one per
-    non-empty line, each becoming an ``append-index`` / ``append-log`` edit
+    non-empty line (the root ``index.md`` and ``log.md`` only), each becoming an
+    ``append-index`` / ``append-log`` edit
     (a file there that starts with frontmatter is refused: the root index and
     log are never rewritten); any other file is a content page, a ``create``
     when the wiki has no page at that path and an ``update`` when it has one
     (``glossary/index.md`` included). Validation is :func:`propose`'s.
 
-    Raises ``SourceMissingError`` when ``source_dir`` is not a directory and
-    ``ContractViolationError`` for an index or log file that is a page.
+    Files under hidden directories are skipped. Raises ``SourceMissingError``
+    when ``source_dir`` is not a directory and ``ContractViolationError`` for
+    an index or log file that is a page or a ``source_dir`` that overlaps the wiki.
     """
     root = Path(source_dir)
     if not root.is_dir():
         raise SourceMissingError(f"--from directory not found: {root}")
+    src, wiki = root.resolve(), paths.wiki_dir.resolve()
+    if src == wiki or src.is_relative_to(wiki) or wiki.is_relative_to(src):
+        raise ContractViolationError(
+            f"--from {root} overlaps the wiki directory {paths.wiki_dir}; write drafts somewhere else"
+        )
     why = rationale or f"written by the agent in {root.name}"
     edits: list[PageEdit] = []
     for file in sorted(p for p in root.rglob("*.md") if p.is_file()):
+        rel_parts = file.relative_to(root).parts
+        if any(part.startswith(".") for part in rel_parts):
+            continue  # hidden directories (.audit/, .git/, editor state) are never wiki content
         rel = file.relative_to(root).as_posix()
         text = file.read_text(encoding="utf-8")
         if rel in (INDEX_NAME, LOG_NAME):
@@ -548,7 +558,11 @@ class FindResult:
 
 
 def _page_title(text: str, fallback: str) -> str:
-    for line in text.splitlines()[1:50]:
+    """The frontmatter ``title:``; the fallback when the page has no frontmatter or no title."""
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return fallback
+    for line in lines[1:]:
         if line.strip() == "---":
             break
         if line.startswith("title:"):

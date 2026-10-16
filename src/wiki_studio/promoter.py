@@ -648,8 +648,11 @@ def init_wiki(paths: WikiPaths, *, title: str = DEFAULT_WIKI_TITLE) -> InitResul
     created: list[str] = []
     for name, template in ((INDEX_NAME, _INDEX_TEMPLATE), (LOG_NAME, _LOG_TEMPLATE)):
         target = paths.wiki_dir / name
-        if target.exists():
+        try:
+            # Exclusive create: a concurrent init or an existing file wins, never overwritten.
+            with target.open("x", encoding="utf-8") as handle:
+                handle.write(template.format(title=title, date=today))
+        except FileExistsError:
             continue
-        target.write_text(template.format(title=title, date=today), encoding="utf-8")
         created.append(name)
     return InitResult(wiki_dir=paths.wiki_dir, created=created)

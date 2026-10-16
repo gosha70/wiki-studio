@@ -17,13 +17,13 @@ of the task itself.
 Do not edit files under knowledge/wiki/ directly. Write a draft directory laid
 out like the wiki, then land it through the gate:
   wiki-studio init                  (once, if index.md or log.md is missing)
-  mkdir -p "$TMPDIR/wiki-draft/decisions"
-  $TMPDIR/wiki-draft/decisions/<slug>.md   a page: frontmatter with page_type,
+  mkdir -p "${TMPDIR:-/tmp}/wiki-draft/decisions"
+  ${TMPDIR:-/tmp}/wiki-draft/decisions/<slug>.md   a page: frontmatter with page_type,
       slug (the file name), title, status: draft, last_reviewed (YYYY-MM-DD) and
       sources (at least one "- path: <file>"), then the body
-  $TMPDIR/wiki-draft/index.md   one line: - [Title](decisions/<slug>.md) — summary
-  $TMPDIR/wiki-draft/log.md     one line: - YYYY-MM-DD — created <slug> (decision)
-  wiki-studio propose --from "$TMPDIR/wiki-draft" --promote
+  ${TMPDIR:-/tmp}/wiki-draft/index.md   one line: - [Title](decisions/<slug>.md) — summary
+  ${TMPDIR:-/tmp}/wiki-draft/log.md     one line: - YYYY-MM-DD — created <slug> (decision)
+  wiki-studio propose --from "${TMPDIR:-/tmp}/wiki-draft" --promote
 If propose refuses the draft, fix what it names and run it again. Use the
 directory that fits the knowledge: decisions/ for a choice made, concepts/
 for how something works, workflows/ for a procedure.
