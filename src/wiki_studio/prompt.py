@@ -66,6 +66,17 @@ _RESPONSE_SCHEMA = {
 }
 
 
+# Issue #15: what the validators already enforce, stated to the model. One copy, used by the
+# multi-page response instructions and the patch-set response schema.
+INDEX_LOG_ACTION_RULE = (
+    "index.md (and any <dir>/index.md) changes only through an 'append-index' edit and log.md only "
+    "through an 'append-log' edit; their 'new_content' is the single line to append (one index bullet "
+    "such as '- [Title](concepts/<slug>.md) — summary', or one dated log entry), never a full page and "
+    "never frontmatter. 'create' and 'update' are only for content pages ("
+    + ", ".join(sorted(PROMOTABLE_PAGE_TYPES))
+    + ")."
+)
+
 _PATCH_SET_RESPONSE_SCHEMA = {
     "type": "object",
     "required": ["version", "rationale", "edits"],
@@ -85,8 +96,17 @@ _PATCH_SET_RESPONSE_SCHEMA = {
                             "Never prefixed with the wiki directory's name."
                         ),
                     },
-                    "action": {"enum": ["create", "update", "append-log", "append-index"]},
-                    "new_content": {"type": "string"},
+                    "action": {
+                        "enum": ["create", "update", "append-log", "append-index"],
+                        "description": INDEX_LOG_ACTION_RULE,
+                    },
+                    "new_content": {
+                        "type": "string",
+                        "description": (
+                            "Full page with frontmatter for create/update; exactly one line for append-index "
+                            "and append-log."
+                        ),
+                    },
                     "rationale": {"type": "string"},
                 },
             },
