@@ -10,7 +10,7 @@ peer_profile: deepseek
 runner_fingerprint: ae8dc147cf1264834bab35d116b6ab96b06618f438763cde3a90621d78036dba
 verdict: PASS
 blocking_findings_open: 0
-target_ref: fix/23-preview-normalised-paths
+target_ref: fix/24-propose-allow-out-of-repo
 rounds_completed: 1
 attempt_count: 1
 bypass: false
@@ -25,10 +25,11 @@ bypass: false
 
 ## Summary
 
-The fix correctly normalises edit paths with `posixpath.normpath` before allocating preview files, so `index.md` and `./index.md` no longer collide. The change is minimal, well-tested, and documented. One minor concern about the interaction between normalised preview paths and the raw `edit.path` retained in `plan.json` is worth noting but does not block.
+The fix is small and targeted: `propose` now accepts `--allow-out-of-repo` and forwards it to `api.promote`, matching the flag `promote` already exposes. The added test exercises both the refusal path (exit 7, no wiki mutation) and the allowed path (promotion succeeds, archive lands in the external proposals dir). I found no correctness or security issues in the change itself.
 
 ## Findings
 
-- [note] f-5cbfaaee: `posixpath.normpath` collapses `..` segments (e.g. `a/../index.md` → `index.md`) and leading `./`, but the raw `edit.path` is still written into `plan.json` and presumably validated elsewhere. If validation rejects `..` but not `./`, this is fine; if validation is absent or inconsistent, a path like `foo/../index.md` could normalise to `index.md` and share a preview with a legitimate `index.md` edit while `plan.json` still records the raw path — worth confirming the validator rejects `..` before this point. (src/wiki_studio/ingestor_multi.py)
-- [note] f-e96d70f5: The test asserts the preview filenames and that both appends land in order, but does not assert that `promote` accepts the `./index.md` edit (i.e. that the raw path in `plan.json` is still resolvable). The test does call `api.promote` and checks the resulting index, which implicitly covers this — good — but a direct assertion that the second edit's `path` is preserved as `./index.md` (already present) plus a check that promote did not error is sufficient. No change required; noting for completeness. (tests/test_multiple_appends.py)
-- [note] f-07a2b463: The doc now says `<path>` is normalised, but does not state what normalisation means (e.g. `./` stripped, `..` rejected). A one-clause clarification would help readers understand the boundary between "accepted spelling" and "rejected path". (docs/patch-set-format.md)
+- [note] f-9c38befc: `args.allow_out_of_repo` is read unconditionally; if any other caller constructs a `Namespace` for `_do_propose` without that attribute (e.g., a future internal caller or test harness), it will raise `AttributeError`. Currently safe because argparse always sets it, but the coupling is implicit. (src/wiki_studio/cli.py)
+- [note] f-57c4dd89: The test asserts the refusal message contains `--allow-out-of-repo` but does not assert that the refusal happens *before* the proposal is written to the external dir (i.e., that no orphan proposal dir is left behind on refusal). The CHANGELOG says "It wrote the proposal and then exited 7" — worth pinning that the new behavior still writes the proposal (or not) consistently, so a future refactor doesn't silently change the side-effect ordering. (tests/test_agent_verbs.py)
+- [note] f-475162e3: The README row says "refused with exit 7 otherwise, as by `promote`" — accurate, but does not mention that the proposal itself is still written before the refusal (per the CHANGELOG). Minor: users may be surprised to find a proposal dir on disk after a failed `--promote`. (README.md)
+- [note] f-b2b3596b: The flag is only meaningful with `--promote`; passing it without `--promote` is silently accepted and ignored. This mirrors `promote`'s own semantics but is a small footgun. (src/wiki_studio/cli.py)

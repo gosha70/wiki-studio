@@ -25,6 +25,11 @@ uses [Semantic Versioning](https://semver.org/).
   edits per raw path string, so the second append overwrote the first and
   promote rejected the first page as an orphan. Previews are now allocated by
   normalised path; `./index.md` is still accepted. Affected 0.4.0.
+- `propose --from DIR --promote` works with a proposals directory outside the
+  root (issue #24). It wrote the proposal and then exited 7, telling the user to
+  pass `--allow-out-of-repo`, which `propose` did not accept. `propose` now
+  takes `--allow-out-of-repo` and forwards it to the promote step; without it
+  the refusal is unchanged. Affected 0.4.0.
 
 ## [0.4.0] — 2026-10-16
 
