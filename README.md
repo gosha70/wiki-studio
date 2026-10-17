@@ -149,6 +149,7 @@ and `<dir>/log.md` hold the lines to append, one per line, never a page.
 | Flag | Effect |
 |---|---|
 | `--promote` | apply the patch-set right after writing it |
+| `--allow-out-of-repo` | with `--promote`: accept a proposals directory outside the root (refused with exit 7 otherwise, as by `promote`) |
 | `--name NAME` | proposal directory name (default `<date>-<dir-name>`) |
 | `--rationale TEXT` | recorded in `plan.json` and the audit archive |
 

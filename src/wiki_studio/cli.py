@@ -335,6 +335,12 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     p_propose.add_argument("--name", help="Proposal directory name (default: <date>-<time>-<from-dir-name>, unique).")
     p_propose.add_argument("--rationale", default="", help="Why, recorded in plan.json and the audit archive.")
     p_propose.add_argument("--promote", action="store_true", help="Promote the patch-set right after writing it.")
+    p_propose.add_argument(
+        "--allow-out-of-repo",
+        action="store_true",
+        help="With --promote: allow the proposal directory to be outside the repository tree (a "
+        "--proposals-dir elsewhere). Default: refuse (exit 7), as promote does.",
+    )
 
     # ── find ───────────────────────────────────────────────────
     p_find = sub.add_parser(
@@ -589,7 +595,7 @@ def _do_propose(args: argparse.Namespace) -> int:
         print(f"  {edit.action} {edit.path}")
     if not args.promote:
         return 0
-    result = api.promote(written, paths)
+    result = api.promote(written, paths, allow_out_of_repo=args.allow_out_of_repo)
     archived = (
         f"archived to {result.archived_dir}." if result.archived_dir else "not archived (move failed; left in place)."
     )
