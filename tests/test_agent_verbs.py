@@ -92,6 +92,28 @@ class TestProposeFromDir(_Workspace):
         self.assertIn("decisions/retry-backoff.md", (self.paths.wiki_dir / "index.md").read_text(encoding="utf-8"))
         self.assertEqual(lint_wiki(self.paths.wiki_dir), [])
 
+    def test_promote_into_external_proposals_dir_needs_allow_out_of_repo(self) -> None:
+        """Issue #24: --promote with a --proposals-dir outside the root is refused (exit 7) unless
+        --allow-out-of-repo is given, which propose now accepts and forwards to promote."""
+        outside = Path(self.enterContext(tempfile.TemporaryDirectory(prefix="wiki_studio-outside-"))).resolve()
+        files = {
+            "decisions/retry-backoff.md": DECISION,
+            "index.md": "- [Retry backoff](decisions/retry-backoff.md)\n",
+        }
+        argv = ("propose", "--from", str(self.write_draft(files)), "--proposals-dir", str(outside), "--promote")
+
+        refused = self.cli(*argv, "--name", "refused")
+        self.assertEqual(refused.returncode, 7, refused.stderr)
+        self.assertIn("--allow-out-of-repo", refused.stderr)
+        self.assertFalse((self.paths.wiki_dir / "decisions" / "retry-backoff.md").exists())
+        self.assertTrue((outside / "refused" / "plan.json").is_file(), "the written proposal is kept")
+
+        allowed = self.cli(*argv, "--name", "allowed", "--allow-out-of-repo")
+        self.assertEqual(allowed.returncode, 0, allowed.stderr)
+        self.assertEqual((self.paths.wiki_dir / "decisions" / "retry-backoff.md").read_text(encoding="utf-8"), DECISION)
+        self.assertTrue((outside / ".applied" / "allowed").is_dir())
+        self.assertEqual(lint_wiki(self.paths.wiki_dir), [])
+
     def test_existing_page_becomes_an_update(self) -> None:
         self.cli(
             "propose",

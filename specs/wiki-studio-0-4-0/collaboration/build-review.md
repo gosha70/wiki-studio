@@ -1,6 +1,6 @@
 ---
 feature_id: wiki-studio-0-4-0
-date: 2026-10-16
+date: 2026-10-17
 status: final
 phase: build
 mode: review
@@ -10,7 +10,7 @@ peer_profile: deepseek
 runner_fingerprint: ae8dc147cf1264834bab35d116b6ab96b06618f438763cde3a90621d78036dba
 verdict: PASS
 blocking_findings_open: 0
-target_ref: fix/18-multiple-appends
+target_ref: fix/24-propose-allow-out-of-repo
 rounds_completed: 1
 attempt_count: 1
 bypass: false
@@ -25,12 +25,11 @@ bypass: false
 
 ## Summary
 
-The fix correctly addresses issue #18 by giving each edit its own preview file (`preview/<path>`, then `.2`, `.3`, ...) and pointing `plan.json` at the per-edit path, so multiple appends to the same file no longer overwrite each other. The implementation is clean, uses `zip(..., strict=True)` to keep the two lists in lockstep, and is well covered by tests including the curator-edit and `propose --from` paths. I found no blocking correctness issues; a few notes on edge cases and documentation.
+The fix is small and targeted: `propose` now accepts `--allow-out-of-repo` and forwards it to `api.promote`, matching the flag `promote` already exposes. The added test exercises both the refusal path (exit 7, no wiki mutation) and the allowed path (promotion succeeds, archive lands in the external proposals dir). I found no correctness or security issues in the change itself.
 
 ## Findings
 
-- [note] f-d6650ea9: The suffix scheme `preview/<path>.2` is derived purely from edit order, not from any existing files on disk. If `write_patch_set_dir` is ever called into a non-empty `output_dir` (e.g. re-proposing into the same directory), stale `preview/<path>.2` files from a prior run could be silently overwritten or left orphaned. Current callers appear to always use fresh dirs, so this is latent, not active. (src/wiki_studio/ingestor_multi.py)
-- [note] f-36b60cbe: For a path like `index.md`, the second preview is `preview/index.md.2`, which is fine, but for a path that already ends in a numeric-looking segment (e.g. `concepts/v2.md`) the `.2` suffix could be confused with a real filename. Since `plan.json` is the source of truth and promote reads the pointer, this is cosmetic only. (src/wiki_studio/ingestor_multi.py)
-- [note] f-3f8907d3: The doc now says "Always read the pointer," which is good, but it does not state that the suffix is assigned by edit order within the patch-set (so `.2` is the second edit to that path, not a version). A one-clause clarification would prevent a curator from assuming `.2` means "revised". (docs/patch-set-format.md)
-- [note] f-808e7a44: The test verifies the curated content lands and appears in `curator-delta.md`, but does not assert that the *first* append (`first`) also landed. A regression where the first preview is dropped while the second is applied would still pass. (tests/test_multiple_appends.py)
-- [note] f-e0f52a9b: Keying by raw `edit.path` assumes paths are normalized/consistent across edits (e.g. no `./index.md` vs `index.md`). If the upstream `PageEdit` construction ever allows non-canonical paths, two edits to the "same" file could get distinct counters and both write `preview/index.md`-style collisions. The patch-set format already forbids `..` and requires wiki-relative paths, so this is defensive only. (src/wiki_studio/ingestor_multi.py)
+- [note] f-9c38befc: `args.allow_out_of_repo` is read unconditionally; if any other caller constructs a `Namespace` for `_do_propose` without that attribute (e.g., a future internal caller or test harness), it will raise `AttributeError`. Currently safe because argparse always sets it, but the coupling is implicit. (src/wiki_studio/cli.py)
+- [note] f-57c4dd89: The test asserts the refusal message contains `--allow-out-of-repo` but does not assert that the refusal happens *before* the proposal is written to the external dir (i.e., that no orphan proposal dir is left behind on refusal). The CHANGELOG says "It wrote the proposal and then exited 7" — worth pinning that the new behavior still writes the proposal (or not) consistently, so a future refactor doesn't silently change the side-effect ordering. (tests/test_agent_verbs.py)
+- [note] f-475162e3: The README row says "refused with exit 7 otherwise, as by `promote`" — accurate, but does not mention that the proposal itself is still written before the refusal (per the CHANGELOG). Minor: users may be surprised to find a proposal dir on disk after a failed `--promote`. (README.md)
+- [note] f-b2b3596b: The flag is only meaningful with `--promote`; passing it without `--promote` is silently accepted and ignored. This mirrors `promote`'s own semantics but is a small footgun. (src/wiki_studio/cli.py)

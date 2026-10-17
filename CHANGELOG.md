@@ -6,6 +6,14 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- `propose --from DIR --promote` works with a proposals directory outside the
+  root (issue #24). It wrote the proposal and then exited 7, telling the user to
+  pass `--allow-out-of-repo`, which `propose` did not accept. `propose` now
+  takes `--allow-out-of-repo` and forwards it to the promote step; without it
+  the refusal is unchanged. Affected 0.4.0.
+
 ## [0.4.0] — 2026-10-16
 
 What an agent needs to use the wiki from a shell with no model backend, and a
