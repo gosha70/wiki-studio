@@ -37,14 +37,15 @@ The workspace is not a git checkout, so wiki-studio's root is the session's
 working directory: the wiki is `knowledge/wiki/` (the task's shared artifact) and
 proposals land in `doc_internal/proposals/`, which the runner does not carry over;
 only the promoted wiki (with its `.audit/` record) reaches the next session.
-Checked with the installed 0.4.0 wheel on the lc-wiki fixture shape: session 0
+Checked with the installed 0.4.1 wheel on the lc-wiki fixture shape: session 0
 `init` created the missing log, `propose --from … --promote` landed the page,
 `lint` was clean; session 1, with only `knowledge/wiki/` copied, `find` returned
 the page for a differently worded question.
 
-All three verbs exist from wiki-studio **0.4.0**; pin `wiki-studio==0.4.0` on the run
-machine (for example `pipx install wiki-studio==0.4.0`, so it is on the `PATH` the
-runner passes through).
+All three verbs exist from wiki-studio **0.4.0**; pin `wiki-studio==0.4.1` on the run
+machine (for example `pipx install wiki-studio==0.4.1`, so it is on the `PATH` the
+runner passes through). 0.4.1 keeps promote's rollback whole when a write fails
+part-way (#21), which matters if a write fails during a measured run.
 
 ## Which tasks it can attempt
 

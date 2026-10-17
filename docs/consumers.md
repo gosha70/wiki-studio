@@ -33,7 +33,7 @@ developers, once):
 
 ```yaml
       - name: Install the wiki maintainer
-        run: pip install "wiki-studio==0.4.0"
+        run: pip install "wiki-studio==0.4.1"
 ```
 
 `tests/test-wiki-ingest.sh` passes unchanged: the verbs, flags and exit
