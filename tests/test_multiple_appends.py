@@ -57,6 +57,23 @@ class TestIssueRepro(_Wiki):
         self.assertLess(index.index("- [A](decisions/a.md)"), index.index("- [B](decisions/b.md)"))
         self.assertEqual(lint_wiki(self.paths.wiki_dir), [])
 
+    def test_equivalent_spellings_of_one_path_get_separate_previews(self) -> None:
+        """Issue #23: index.md and ./index.md are one file and must not share a preview."""
+        edits = [
+            PageEdit("decisions/a.md", "create", _page("a"), "r"),
+            PageEdit("decisions/b.md", "create", _page("b"), "r"),
+            PageEdit("index.md", "append-index", "- [A](decisions/a.md)", "r"),
+            PageEdit("./index.md", "append-index", "- [B](decisions/b.md)", "r"),
+        ]
+        written = api.propose(edits, self.paths, name="spellings")
+        plan = json.loads((written / "plan.json").read_text(encoding="utf-8"))
+        self.assertEqual([e["preview"] for e in plan["edits"]][2:], ["preview/index.md", "preview/index.md.2"])
+        self.assertEqual([e["path"] for e in plan["edits"]][3], "./index.md")
+        api.promote(written, self.paths)
+        index = self.read("index.md")
+        self.assertLess(index.index("- [A](decisions/a.md)"), index.index("- [B](decisions/b.md)"))
+        self.assertEqual(lint_wiki(self.paths.wiki_dir), [])
+
     def test_three_append_log_edits_all_land(self) -> None:
         lines = [f"- 2026-10-16 — entry {n}" for n in (1, 2, 3)]
         edits = [PageEdit("log.md", "append-log", line, "r") for line in lines]

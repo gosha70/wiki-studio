@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import os
+import posixpath
 from pathlib import Path
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
@@ -173,7 +174,7 @@ def write_patch_set_dir(
     Layout:
         <output_dir>/
             plan.json                    — full patch-set as JSON
-            preview/<edit.path>          — one preview file per edit; a second,
+            preview/<edit.path>          — one preview file per edit (path normalised); a second,
                                            third ... edit to the same path (several
                                            append-index or append-log lines) gets
                                            preview/<edit.path>.2, .3, ... so no
@@ -189,12 +190,15 @@ def write_patch_set_dir(
 
     # Issue #18: one preview file per edit, not per path. plan.json points each
     # edit at its own file, and promote reads the pointer, so order is kept.
+    # Issue #23: count by normalised path, so equivalent spellings of one file
+    # (index.md, ./index.md) never share a preview file.
     seen: dict[str, int] = {}
     preview_rels: list[str] = []
     for edit in patch.edits:
-        seen[edit.path] = seen.get(edit.path, 0) + 1
-        n = seen[edit.path]
-        preview_rels.append(f"preview/{edit.path}" if n == 1 else f"preview/{edit.path}.{n}")
+        key = posixpath.normpath(edit.path)
+        seen[key] = seen.get(key, 0) + 1
+        n = seen[key]
+        preview_rels.append(f"preview/{key}" if n == 1 else f"preview/{key}.{n}")
 
     plan = {
         "version": 1,

@@ -6,6 +6,14 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Two edits that spell the same file differently (`index.md` and
+  `./index.md`) no longer share a preview file (issue #23). The #18 fix counted
+  edits per raw path string, so the second append overwrote the first and
+  promote rejected the first page as an orphan. Previews are now allocated by
+  normalised path; `./index.md` is still accepted. Affected 0.4.0.
+
 ## [0.4.0] — 2026-10-16
 
 What an agent needs to use the wiki from a shell with no model backend, and a
