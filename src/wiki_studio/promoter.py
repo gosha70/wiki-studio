@@ -359,12 +359,13 @@ def _commit_stage_to_wiki(stage_dir: Path, paths: WikiPaths) -> list[str]:
     partial state if any per-file write fails midway. The strategy:
       1. Plan the writes (collect every (target, new_content) pair
          and snapshot the existing content so we can restore).
-      2. Apply each write, tracking which targets we created vs
-         updated.
-      3. On any OSError during the apply loop, restore originals
-         (rewriting updated files, removing newly-created files),
-         then raise PromoteApplyError. The wiki ends up in its
-         pre-commit state.
+      2. Apply each write, recording each target *before* writing it,
+         so a write that fails part-way is restored too.
+      3. On any exception during the apply loop, restore originals
+         (rewriting updated files, removing newly-created files).
+         An ``Exception`` is raised as PromoteApplyError; anything
+         else (KeyboardInterrupt, SystemExit) is re-raised as is.
+         Either way the wiki ends up in its pre-commit state.
       4. Only on full success does the function return without
          raising.
 
@@ -378,8 +379,9 @@ def _commit_stage_to_wiki(stage_dir: Path, paths: WikiPaths) -> list[str]:
     class _PlannedWrite:
         target: Path
         new_content: str
-        original: str | None  # None ⇒ file did not exist pre-commit (created)
-        original_bytes: bytes | None  # for binary files (plan.json)
+        # Exact pre-commit bytes, restored on rollback (read_text would normalise
+        # CRLF to LF); None ⇒ the file did not exist pre-commit (created).
+        original_bytes: bytes | None
         new_bytes: bytes | None
         rel: str
         is_text: bool
@@ -395,9 +397,10 @@ def _commit_stage_to_wiki(stage_dir: Path, paths: WikiPaths) -> list[str]:
                 continue
             target = wiki_dst / rel
             new_content = staged.read_text(encoding="utf-8")
-            original: str | None = None
+            original_bytes: bytes | None = None
             if target.exists():
                 try:
+                    original_bytes = target.read_bytes()
                     original = target.read_text(encoding="utf-8")
                 except OSError as exc:
                     raise PromoteApplyError(
@@ -409,8 +412,7 @@ def _commit_stage_to_wiki(stage_dir: Path, paths: WikiPaths) -> list[str]:
                 _PlannedWrite(
                     target=target,
                     new_content=new_content,
-                    original=original,
-                    original_bytes=None,
+                    original_bytes=original_bytes,
                     new_bytes=None,
                     rel=rel_str,
                     is_text=True,
@@ -441,7 +443,6 @@ def _commit_stage_to_wiki(stage_dir: Path, paths: WikiPaths) -> list[str]:
                 _PlannedWrite(
                     target=target,
                     new_content="",
-                    original=None,
                     original_bytes=original_bytes,
                     new_bytes=new_bytes,
                     rel=rel_str,
@@ -452,43 +453,42 @@ def _commit_stage_to_wiki(stage_dir: Path, paths: WikiPaths) -> list[str]:
     _collect_md(stage_dir)
     _collect_plan_json(stage_dir)
 
-    # Apply phase — write each file, tracking what we did so we can
-    # roll back on any failure.
+    # Apply phase — write each file, tracking what we touched so we can
+    # roll back on any failure. A target is recorded before its write:
+    # write_text/write_bytes are not atomic, so the in-flight file may be
+    # half-written or truncated and must be restored as well.
     applied: list[_PlannedWrite] = []
     try:
         for plan in planned:
+            applied.append(plan)
             plan.target.parent.mkdir(parents=True, exist_ok=True)
             if plan.is_text:
                 plan.target.write_text(plan.new_content, encoding="utf-8")
             else:
                 assert plan.new_bytes is not None
                 plan.target.write_bytes(plan.new_bytes)
-            applied.append(plan)
-    except OSError as exc:
-        # Roll back every applied write before re-raising. Rollback
+    except BaseException as exc:
+        # Roll back every touched file before re-raising. Rollback
         # itself can fail (rare); we surface both errors.
         rollback_errors: list[str] = []
-        for done in applied:
+        for done in reversed(applied):
             try:
-                if done.original is None and done.original_bytes is None:
+                if done.original_bytes is None:
                     # We created this file; remove it to restore the
                     # pre-commit state.
                     if done.target.exists():
                         done.target.unlink()
-                elif done.is_text:
-                    # We updated this text file; rewrite the original
-                    # contents.
-                    assert done.original is not None
-                    done.target.write_text(done.original, encoding="utf-8")
                 else:
-                    # We updated this binary file; rewrite the original.
-                    assert done.original_bytes is not None
+                    # We updated this file; rewrite its original bytes.
                     done.target.write_bytes(done.original_bytes)
-            except OSError as rb_exc:
+            except Exception as rb_exc:  # one failed restore must not stop the others
                 rollback_errors.append(f"rollback failed for {done.rel}: {rb_exc}")
-        msg = (
-            f"live wiki write failed for {planned[len(applied)].rel}: {exc}; rolled back {len(applied)} prior write(s)."
-        )
+        if not isinstance(exc, Exception):
+            for note in rollback_errors:
+                exc.add_note(note)
+            raise
+        failed = applied[-1].rel
+        msg = f"live wiki write failed for {failed}: {exc}; rolled back {len(applied)} file(s), including {failed}."
         if rollback_errors:
             msg += " Rollback also raised: " + "; ".join(rollback_errors)
         raise PromoteApplyError(msg) from exc

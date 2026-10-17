@@ -179,7 +179,7 @@ memkernel's lifecycle suite built on them (issue #10).
 | 7 | source or proposal path outside the root (`--allow-out-of-repo` overrides) |
 | 8 | verb not implemented |
 | 9 | promote: staged tree failed validation; the wiki is unchanged |
-| 10 | promote: filesystem failure while writing the wiki; prior writes rolled back |
+| 10 | promote: a write into the wiki failed; every file it touched, including the failed one, rolled back |
 | 11 | audit-flush: not a git work tree, append-only invariant violated, malformed log, or git failed |
 
 ## Backends
