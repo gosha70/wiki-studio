@@ -362,10 +362,12 @@ def _commit_stage_to_wiki(stage_dir: Path, paths: WikiPaths) -> list[str]:
       2. Apply each write, recording each target *before* writing it,
          so a write that fails part-way is restored too.
       3. On any exception during the apply loop, restore originals
-         (rewriting updated files, removing newly-created files).
-         An ``Exception`` is raised as PromoteApplyError; anything
-         else (KeyboardInterrupt, SystemExit) is re-raised as is.
-         Either way the wiki ends up in its pre-commit state.
+         (rewriting updated files' original bytes, removing newly
+         created files and directories). An ``Exception`` is raised as
+         PromoteApplyError; anything else (KeyboardInterrupt,
+         SystemExit) is re-raised as is. Either way the wiki ends up in
+         its pre-commit state, unless the rollback itself is interrupted
+         or fails (failures are reported).
       4. Only on full success does the function return without
          raising.
 
@@ -458,9 +460,12 @@ def _commit_stage_to_wiki(stage_dir: Path, paths: WikiPaths) -> list[str]:
     # write_text/write_bytes are not atomic, so the in-flight file may be
     # half-written or truncated and must be restored as well.
     applied: list[_PlannedWrite] = []
+    created_dirs: list[Path] = []
     try:
         for plan in planned:
             applied.append(plan)
+            missing = [d for d in (plan.target.parent, *plan.target.parent.parents) if not d.exists()]
+            created_dirs.extend(reversed(missing))
             plan.target.parent.mkdir(parents=True, exist_ok=True)
             if plan.is_text:
                 plan.target.write_text(plan.new_content, encoding="utf-8")
@@ -483,6 +488,13 @@ def _commit_stage_to_wiki(stage_dir: Path, paths: WikiPaths) -> list[str]:
                     done.target.write_bytes(done.original_bytes)
             except Exception as rb_exc:  # one failed restore must not stop the others
                 rollback_errors.append(f"rollback failed for {done.rel}: {rb_exc}")
+        for directory in reversed(created_dirs):
+            try:
+                directory.rmdir()
+            except FileNotFoundError:
+                pass  # mkdir never got that far
+            except OSError as rb_exc:
+                rollback_errors.append(f"rollback failed for {paths.relative_to_root(directory)}/: {rb_exc}")
         if not isinstance(exc, Exception):
             for note in rollback_errors:
                 exc.add_note(note)

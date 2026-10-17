@@ -1,6 +1,6 @@
 ---
 feature_id: wiki-studio-0-4-0
-date: 2026-10-16
+date: 2026-10-17
 status: final
 phase: build
 mode: review
@@ -10,7 +10,7 @@ peer_profile: deepseek
 runner_fingerprint: ae8dc147cf1264834bab35d116b6ab96b06618f438763cde3a90621d78036dba
 verdict: PASS
 blocking_findings_open: 0
-target_ref: fix/18-multiple-appends
+target_ref: fix/21-promote-rollback
 rounds_completed: 1
 attempt_count: 1
 bypass: false
@@ -25,12 +25,14 @@ bypass: false
 
 ## Summary
 
-The fix correctly addresses issue #18 by giving each edit its own preview file (`preview/<path>`, then `.2`, `.3`, ...) and pointing `plan.json` at the per-edit path, so multiple appends to the same file no longer overwrite each other. The implementation is clean, uses `zip(..., strict=True)` to keep the two lists in lockstep, and is well covered by tests including the curator-edit and `propose --from` paths. I found no blocking correctness issues; a few notes on edge cases and documentation.
+The fix correctly addresses the three defects in issue #21: the in-flight file is now recorded before its write so it gets rolled back, rollback restores exact original bytes (preserving CRLF), and rollback runs on any `BaseException` with `KeyboardInterrupt`/`SystemExit` re-raised after restoration. The test coverage is solid, exercising half-writes, multiple exception types, CRLF preservation, and the new-page removal path. I found no blocking issues; a few notes on edge cases and test robustness.
 
 ## Findings
 
-- [note] f-d6650ea9: The suffix scheme `preview/<path>.2` is derived purely from edit order, not from any existing files on disk. If `write_patch_set_dir` is ever called into a non-empty `output_dir` (e.g. re-proposing into the same directory), stale `preview/<path>.2` files from a prior run could be silently overwritten or left orphaned. Current callers appear to always use fresh dirs, so this is latent, not active. (src/wiki_studio/ingestor_multi.py)
-- [note] f-36b60cbe: For a path like `index.md`, the second preview is `preview/index.md.2`, which is fine, but for a path that already ends in a numeric-looking segment (e.g. `concepts/v2.md`) the `.2` suffix could be confused with a real filename. Since `plan.json` is the source of truth and promote reads the pointer, this is cosmetic only. (src/wiki_studio/ingestor_multi.py)
-- [note] f-3f8907d3: The doc now says "Always read the pointer," which is good, but it does not state that the suffix is assigned by edit order within the patch-set (so `.2` is the second edit to that path, not a version). A one-clause clarification would prevent a curator from assuming `.2` means "revised". (docs/patch-set-format.md)
-- [note] f-808e7a44: The test verifies the curated content lands and appears in `curator-delta.md`, but does not assert that the *first* append (`first`) also landed. A regression where the first preview is dropped while the second is applied would still pass. (tests/test_multiple_appends.py)
-- [note] f-e0f52a9b: Keying by raw `edit.path` assumes paths are normalized/consistent across edits (e.g. no `./index.md` vs `index.md`). If the upstream `PageEdit` construction ever allows non-canonical paths, two edits to the "same" file could get distinct counters and both write `preview/index.md`-style collisions. The patch-set format already forbids `..` and requires wiki-relative paths, so this is defensive only. (src/wiki_studio/ingestor_multi.py)
+- [note] f-0d51e11a: If a target was newly created and the write failed before any bytes landed, `target.exists()` is False and unlink is skipped — correct. But if the write partially created the file and then raised, `exists()` is True and unlink removes it — also correct. However, if `mkdir(parents=True)` succeeded but the write failed, empty parent dirs created by this commit are left behind. This is pre-existing behavior and not a regression, but worth noting for the "exact pre-commit state" claim in the docstring. (src/wiki_studio/promoter.py)
+- [note] f-646976cd: `applied` is guaranteed non-empty here because the append happens before the write that raised, so `applied[-1]` is the failing target. This is correct, but it relies on the invariant that the exception can only originate from inside the loop body after the append. If a future refactor moves the append or adds code before it that can raise, this would IndexError. A brief comment or an explicit `assert applied` would harden it. (src/wiki_studio/promoter.py)
+- [note] f-86b259d6: Catching `Exception` (not `BaseException`) during rollback is the right call — a `KeyboardInterrupt` during rollback should propagate rather than be swallowed into `rollback_errors`. But note that if rollback itself is interrupted by `KeyboardInterrupt`, the original exception's `add_note` path is skipped and the partial rollback state is left. This is an acceptable trade-off (you can't reliably roll back from a second interrupt), but the docstring's "Either way the wiki ends up in its pre-commit state" is slightly stronger than reality under a second interrupt. (src/wiki_studio/promoter.py)
+- [note] f-4b96f296: The `_hit` guard ensures only the first matching write fails, so the rollback's restore of the same target succeeds. Good. However, the test patches `Path.write_text` globally, so if the rollback path for a *different* target also used `write_text` (it now uses `write_bytes`), the guard would still be needed. Since rollback now uses `write_bytes` exclusively, the guard is belt-and-suspenders — fine, but the comment "fail the commit write, not the rollback's restore" is now slightly stale since rollback never calls `write_text`. Minor. (tests/test_e2e.py)
+- [note] f-08ce7fe3: This asserts no `plan.json` was written, but the conditional expression is awkward and the assertion would pass vacuously if `.audit` doesn't exist. It's testing the right thing (plan.json is written last, so a failure before it means none exists), but the expression is hard to read. Also, if `.audit` exists with other files, `rglob("plan.json")` returning `[]` is the real check — the `if exists()` guard is redundant since `rglob` on a non-existent path returns empty anyway in pathlib? (Actually it raises `FileNotFoundError` on some versions — so the guard is defensive.) (tests/test_e2e.py)
+- [note] f-f72f3027: The changelog accurately describes the three defects and the fix. It says "Present since 0.1.0" — worth confirming that's accurate (the `_commit_stage_to_wiki` function and its `OSError`-only rollback presumably date to 0.1.0). If the function was introduced later, this claim would be wrong. (CHANGELOG.md)
+- [note] f-85f6eee8: Removing the `original: str  (src/wiki_studio/promoter.py)

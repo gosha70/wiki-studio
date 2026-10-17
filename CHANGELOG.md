@@ -16,7 +16,8 @@ uses [Semantic Versioning](https://semver.org/).
   encoding error, `KeyboardInterrupt`) left every earlier write in place. And
   rollback rewrote a page from its decoded text, which turned CRLF line endings
   into LF. Each target is now recorded before it is written, rollback restores
-  each file's exact original bytes, and it runs on any exception: an
+  each file's exact original bytes and removes directories the commit created,
+  and it runs on any exception: an
   `Exception` still exits 10, while `KeyboardInterrupt` and `SystemExit` are
   re-raised after the rollback. Present since 0.1.0.
 

@@ -1584,10 +1584,11 @@ class TestE2EPromoteAtomicity(unittest.TestCase):
                 for name in ("index.md", "log.md"):
                     (wiki / name).write_bytes((wiki / name).read_bytes().replace(b"\n", b"\r\n"))
                 pre = {name: (wiki / name).read_bytes() for name in ("index.md", "log.md")}
+                tree_pre = {q.relative_to(wiki): q.is_dir() or q.read_bytes() for q in wiki.rglob("*")}
                 hit: list[Path] = []
 
                 def half_write_then_raise(path, data, *args, _target=wiki / failing, _exc=exc, _hit=hit, **kwargs):
-                    if path == _target and not _hit:  # fail the commit write, not the rollback's restore
+                    if path == _target and not _hit:  # fail the first write only
                         _hit.append(path)
                         real_write(path, data[: len(data) // 2], *args, **kwargs)
                         raise _exc
@@ -1600,7 +1601,8 @@ class TestE2EPromoteAtomicity(unittest.TestCase):
                 for name, original in pre.items():
                     self.assertEqual((wiki / name).read_bytes(), original, f"{name} not restored byte for byte")
                 self.assertFalse((wiki / new_page).exists(), "new page should have been removed")
-                self.assertEqual(list((wiki / ".audit").rglob("plan.json")) if (wiki / ".audit").exists() else [], [])
+                tree_post = {q.relative_to(wiki): q.is_dir() or q.read_bytes() for q in wiki.rglob("*")}
+                self.assertEqual(tree_post, tree_pre, "wiki tree (files, bytes and directories) not restored")
                 self.assertTrue(prop.exists())
                 if expected is PromoteApplyError:
                     self.assertIn(f"live wiki write failed for {failing}", str(ctx.exception))
