@@ -20,6 +20,11 @@ uses [Semantic Versioning](https://semver.org/).
   and it runs on any exception: an
   `Exception` still exits 10, while `KeyboardInterrupt` and `SystemExit` are
   re-raised after the rollback. Present since 0.1.0.
+- Two edits that spell the same file differently (`index.md` and
+  `./index.md`) no longer share a preview file (issue #23). The #18 fix counted
+  edits per raw path string, so the second append overwrote the first and
+  promote rejected the first page as an orphan. Previews are now allocated by
+  normalised path; `./index.md` is still accepted. Affected 0.4.0.
 
 ## [0.4.0] — 2026-10-16
 
