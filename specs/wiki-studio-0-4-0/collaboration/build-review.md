@@ -1,6 +1,6 @@
 ---
 feature_id: wiki-studio-0-4-0
-date: 2026-10-16
+date: 2026-10-17
 status: final
 phase: build
 mode: review
@@ -10,7 +10,7 @@ peer_profile: deepseek
 runner_fingerprint: ae8dc147cf1264834bab35d116b6ab96b06618f438763cde3a90621d78036dba
 verdict: PASS
 blocking_findings_open: 0
-target_ref: fix/18-multiple-appends
+target_ref: fix/23-preview-normalised-paths
 rounds_completed: 1
 attempt_count: 1
 bypass: false
@@ -25,12 +25,10 @@ bypass: false
 
 ## Summary
 
-The fix correctly addresses issue #18 by giving each edit its own preview file (`preview/<path>`, then `.2`, `.3`, ...) and pointing `plan.json` at the per-edit path, so multiple appends to the same file no longer overwrite each other. The implementation is clean, uses `zip(..., strict=True)` to keep the two lists in lockstep, and is well covered by tests including the curator-edit and `propose --from` paths. I found no blocking correctness issues; a few notes on edge cases and documentation.
+The fix correctly normalises edit paths with `posixpath.normpath` before allocating preview files, so `index.md` and `./index.md` no longer collide. The change is minimal, well-tested, and documented. One minor concern about the interaction between normalised preview paths and the raw `edit.path` retained in `plan.json` is worth noting but does not block.
 
 ## Findings
 
-- [note] f-d6650ea9: The suffix scheme `preview/<path>.2` is derived purely from edit order, not from any existing files on disk. If `write_patch_set_dir` is ever called into a non-empty `output_dir` (e.g. re-proposing into the same directory), stale `preview/<path>.2` files from a prior run could be silently overwritten or left orphaned. Current callers appear to always use fresh dirs, so this is latent, not active. (src/wiki_studio/ingestor_multi.py)
-- [note] f-36b60cbe: For a path like `index.md`, the second preview is `preview/index.md.2`, which is fine, but for a path that already ends in a numeric-looking segment (e.g. `concepts/v2.md`) the `.2` suffix could be confused with a real filename. Since `plan.json` is the source of truth and promote reads the pointer, this is cosmetic only. (src/wiki_studio/ingestor_multi.py)
-- [note] f-3f8907d3: The doc now says "Always read the pointer," which is good, but it does not state that the suffix is assigned by edit order within the patch-set (so `.2` is the second edit to that path, not a version). A one-clause clarification would prevent a curator from assuming `.2` means "revised". (docs/patch-set-format.md)
-- [note] f-808e7a44: The test verifies the curated content lands and appears in `curator-delta.md`, but does not assert that the *first* append (`first`) also landed. A regression where the first preview is dropped while the second is applied would still pass. (tests/test_multiple_appends.py)
-- [note] f-e0f52a9b: Keying by raw `edit.path` assumes paths are normalized/consistent across edits (e.g. no `./index.md` vs `index.md`). If the upstream `PageEdit` construction ever allows non-canonical paths, two edits to the "same" file could get distinct counters and both write `preview/index.md`-style collisions. The patch-set format already forbids `..` and requires wiki-relative paths, so this is defensive only. (src/wiki_studio/ingestor_multi.py)
+- [note] f-5cbfaaee: `posixpath.normpath` collapses `..` segments (e.g. `a/../index.md` → `index.md`) and leading `./`, but the raw `edit.path` is still written into `plan.json` and presumably validated elsewhere. If validation rejects `..` but not `./`, this is fine; if validation is absent or inconsistent, a path like `foo/../index.md` could normalise to `index.md` and share a preview with a legitimate `index.md` edit while `plan.json` still records the raw path — worth confirming the validator rejects `..` before this point. (src/wiki_studio/ingestor_multi.py)
+- [note] f-e96d70f5: The test asserts the preview filenames and that both appends land in order, but does not assert that `promote` accepts the `./index.md` edit (i.e. that the raw path in `plan.json` is still resolvable). The test does call `api.promote` and checks the resulting index, which implicitly covers this — good — but a direct assertion that the second edit's `path` is preserved as `./index.md` (already present) plus a check that promote did not error is sufficient. No change required; noting for completeness. (tests/test_multiple_appends.py)
+- [note] f-07a2b463: The doc now says `<path>` is normalised, but does not state what normalisation means (e.g. `./` stripped, `..` rejected). A one-clause clarification would help readers understand the boundary between "accepted spelling" and "rejected path". (docs/patch-set-format.md)
