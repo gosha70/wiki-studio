@@ -1555,6 +1555,59 @@ class TestE2EPromoteAtomicity(unittest.TestCase):
             archived = tmp_root / "doc_internal" / "proposals" / ".applied" / prop.name
             self.assertFalse(archived.exists())
 
+    def test_rollback_covers_in_flight_file_and_any_exception(self) -> None:
+        """Issue #21: the write of one target puts half its content on disk and then raises.
+        Whatever the exception, the wiki ends up in its pre-commit state: the half-written
+        file is restored (or removed if it was new) along with every earlier write, and
+        the proposals dir is not archived. An Exception surfaces as PromoteApplyError;
+        KeyboardInterrupt propagates unchanged after the rollback."""
+        from unittest.mock import patch as _patch
+
+        from wiki_studio.errors import PromoteApplyError
+        from wiki_studio.promoter import promote
+
+        new_page = "incidents/atomicity-fixture.md"
+        cases: list[tuple[str, BaseException, type[BaseException]]] = [
+            ("log.md", OSError("disk full"), PromoteApplyError),
+            (new_page, OSError("disk full"), PromoteApplyError),
+            ("index.md", UnicodeEncodeError("utf-8", "x", 0, 1, "surrogates not allowed"), PromoteApplyError),
+            ("log.md", ValueError("boom"), PromoteApplyError),
+            ("index.md", KeyboardInterrupt(), KeyboardInterrupt),
+        ]
+        real_write = Path.write_text
+        for failing, exc, expected in cases:
+            with self.subTest(failing=failing, exc=type(exc).__name__), tempfile.TemporaryDirectory() as tmp:
+                tmp_root = Path(tmp)
+                wiki = self._build_tmp_repo(tmp_root)
+                prop = self._build_proposals_dir(tmp_root)
+                # CRLF line endings: rollback must restore the exact bytes, not read_text()'s LF form.
+                for name in ("index.md", "log.md"):
+                    (wiki / name).write_bytes((wiki / name).read_bytes().replace(b"\n", b"\r\n"))
+                pre = {name: (wiki / name).read_bytes() for name in ("index.md", "log.md")}
+                tree_pre = {q.relative_to(wiki): q.is_dir() or q.read_bytes() for q in wiki.rglob("*")}
+                hit: list[Path] = []
+
+                def half_write_then_raise(path, data, *args, _target=wiki / failing, _exc=exc, _hit=hit, **kwargs):
+                    if path == _target and not _hit:  # fail the first write only
+                        _hit.append(path)
+                        real_write(path, data[: len(data) // 2], *args, **kwargs)
+                        raise _exc
+                    return real_write(path, data, *args, **kwargs)
+
+                with _patch.object(Path, "write_text", half_write_then_raise), self.assertRaises(expected) as ctx:
+                    promote(prop, WikiPaths.for_root(tmp_root))
+
+                self.assertTrue(hit, f"{failing} was never written")
+                for name, original in pre.items():
+                    self.assertEqual((wiki / name).read_bytes(), original, f"{name} not restored byte for byte")
+                self.assertFalse((wiki / new_page).exists(), "new page should have been removed")
+                tree_post = {q.relative_to(wiki): q.is_dir() or q.read_bytes() for q in wiki.rglob("*")}
+                self.assertEqual(tree_post, tree_pre, "wiki tree (files, bytes and directories) not restored")
+                self.assertTrue(prop.exists())
+                if expected is PromoteApplyError:
+                    self.assertIn(f"live wiki write failed for {failing}", str(ctx.exception))
+                    self.assertIn(f"including {failing}", str(ctx.exception))
+
 
 class TestE2EPromotePathConfinement(unittest.TestCase):
     """Regression: promote refuses proposal dirs outside the repo tree
