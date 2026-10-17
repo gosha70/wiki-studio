@@ -106,6 +106,7 @@ class TestProposeFromDir(_Workspace):
         self.assertEqual(refused.returncode, 7, refused.stderr)
         self.assertIn("--allow-out-of-repo", refused.stderr)
         self.assertFalse((self.paths.wiki_dir / "decisions" / "retry-backoff.md").exists())
+        self.assertTrue((outside / "refused" / "plan.json").is_file(), "the written proposal is kept")
 
         allowed = self.cli(*argv, "--name", "allowed", "--allow-out-of-repo")
         self.assertEqual(allowed.returncode, 0, allowed.stderr)
