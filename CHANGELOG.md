@@ -6,6 +6,11 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.1] — 2026-10-17
+
+Fixes only. The one addition is `propose --allow-out-of-repo` (#24); exit codes,
+the patch-set format and the page schema are unchanged.
+
 ### Fixed
 
 - `promote` keeps its all-or-nothing guarantee when a write into the wiki fails
@@ -30,6 +35,11 @@ uses [Semantic Versioning](https://semver.org/).
   pass `--allow-out-of-repo`, which `propose` did not accept. `propose` now
   takes `--allow-out-of-repo` and forwards it to the promote step; without it
   the refusal is unchanged. Affected 0.4.0.
+
+### Changed
+
+- README banner pinned to the `v0.4.1` tag; the memkernel arm (`docs/agent-arm/`)
+  and the consumer install step pin `wiki-studio==0.4.1`.
 
 ## [0.4.0] — 2026-10-16
 

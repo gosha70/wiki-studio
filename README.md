@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/gosha70/wiki-studio/v0.4.0/docs/assets/wiki-studio-banner.png" alt="Wiki-Studio — Turn information into living knowledge." width="760">
+  <img src="https://raw.githubusercontent.com/gosha70/wiki-studio/v0.4.1/docs/assets/wiki-studio-banner.png" alt="Wiki-Studio — Turn information into living knowledge." width="760">
 </p>
 
 Karpathy-pattern LLM wiki maintainer: a curated markdown knowledge base
@@ -17,7 +17,7 @@ The code was extracted from
 ```bash
 pip install wiki-studio          # Python 3.11–3.13, no runtime dependencies
 wiki-studio --help
-wiki-studio --version           # 0.4.0
+wiki-studio --version           # 0.4.1
 ```
 
 From a checkout: `poetry install`, then `poetry run wiki-studio --help`.
