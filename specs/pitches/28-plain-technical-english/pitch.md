@@ -329,9 +329,12 @@ CLAUDE.md:51, is the first ADR in the repo. It states:
   nothing else) and its **render** rule (`_quote`: wrap in `"` when the
   value has `:#"'[]{}` or edge whitespace, escaping `\` and `"`), both
   copied as fixtures with their source lines cited, and wiki-studio reads
-  again. The terms read before and after must be equal, or both reads
-  must report the same `avoid-format` finding. The memkernel-side test
-  remains a follow-up, not the evidence.
+  again. Accepted values must read back as the same terms. Unsupported
+  values must produce an `avoid-format` finding on the first read and
+  contribute no terms; nothing is guaranteed about what memkernel turns
+  them into (it can strip the very syntax that was refused, e.g.
+  `'plain, term'` re-renders as the valid `plain, term`). The
+  memkernel-side test remains a follow-up, not the evidence.
 - the **follow-up for memkernel's own issue**: add that round-trip test
   for `avoid:`, and decide whether imported glossary memories should carry
   the avoid terms. This is not assumed done in this cycle.
@@ -347,13 +350,14 @@ CLAUDE.md:51, is the first ADR in the repo. It states:
   on a code-copilot-team-layout sample. The shared fixture stays as it is,
   so `test_fixture_wiki.py` is unaffected.
 - Each refused form yields one `avoid-format` finding.
-- Round trip, read → memkernel parse → memkernel render → read:
-  `alignment check, origin check`, `it's, ok`, `"x: y, z"` and
-  `"it's, ok"` come back as the same terms; `the "old" gate` and
-  `C:\cache`, in their raw and memkernel-escaped forms
-  (`"the \"old\" gate"`, `"C:\\cache"`), and the single-quoted values
-  `'it''s, ok'` and `'plain, term'`, each yield an `avoid-format` finding
-  on both reads and contribute no term.
+- Round trip, read → memkernel parse → memkernel render → read: the
+  accepted values `alignment check, origin check`, `it's, ok`,
+  `"x: y, z"` and `"it's, ok"` come back as the same terms.
+- Unsupported values, on their first read only: `the "old" gate` and
+  `C:\cache`, raw and memkernel-escaped (`"the \"old\" gate"`,
+  `"C:\\cache"`), and the single-quoted `'it''s, ok'` and `'plain, term'`,
+  each yield an `avoid-format` finding and contribute no term. No
+  assertion is made about them after a pass through memkernel.
 - A non-glossary page's `avoid:` is ignored.
 - A page that uses only synonyms triggers the missing-cross-link finding
   (issue acceptance criterion).
@@ -658,3 +662,4 @@ The owner accepted the recommendations for questions 4-7, with the review refine
 | 2026-10-20 | shaped | Owner accepted recommendations 4-7 with the review refinements (including the line-wrap rule). No open questions; next is the 0.5.0 spec and plan. |
 | 2026-10-20 | shaped | Review of 816e952 (two P2): S5 now prints fact warnings from `propose` before `--promote`, with CLI tests for both paths (+~0.5h); `avoid` terms may not contain `"` or `\\` (memkernel escapes them and no reader decodes), refused as `avoid-format`; ADR compatibility claim narrowed and tested in this repo with memkernel's quoting rule. Appetite unchanged. |
 | 2026-10-20 | shaped | Review of e2375c0 (one P2): single-quoted `avoid` values refused (`yaml_lite` decodes `''`, memkernel's reader does not, so `'it''s, ok'` read back as `it''s, ok`); the compatibility test now runs the full read → memkernel parse → render → read sequence with both memkernel rules copied as fixtures. Appetite unchanged. |
+| 2026-10-20 | shaped | Review of c945ea1 (one P2): test contract split. Accepted values must survive the full round trip; unsupported values must be refused on the first read with no terms; no guarantee about unsupported values after memkernel, which can strip the refused syntax. |
