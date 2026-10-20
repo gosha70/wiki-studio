@@ -25,8 +25,12 @@ limits (`page-types.md:40-41`), and nothing enforces those limits.
 Synonym drift has a cost you can measure. The missing-cross-links check finds
 entities by slug text (`health_lint.py:185-200`). A page that says "alignment
 check" for `origin-gate` does not count as a mention, so the check cannot
-report the missing link. The origin (Karpathy, 2 Oct 2026, plus a fact-check)
-gives two findings that shape this work:
+report the missing link. The origin is Karpathy's post of 2 Oct 2026, plus a
+fact-check. The post makes two suggestions: constrained prose, and
+throwaway visual artifacts. Issue #28 takes only the first: "One tip: ask
+the model to write '80% of the way to' ASD-STE100 Simplified Technical
+English." So does this pitch (see No-gos). The origin gives two findings that
+shape this work:
 
 - a style rule in a prompt is only a request, so a script must check it;
 - simplification drops facts: about 47% of scored facts were lost under a
@@ -520,6 +524,11 @@ CLAUDE.md:51, is the first ADR in the repo. It states:
 
 ## No-gos
 
+- No visual or interactive artifacts (the post's second suggestion:
+  diagrams, interactive pages, animations). Out of scope for this pitch;
+  a separate issue if wanted. Nothing here blocks diagrams later: the prose
+  scanner skips fenced code (S3), so a Mermaid diagram in a fenced block is
+  never checked as prose.
 - No STE approved-word dictionary or vocabulary check. It is copyrighted,
   and strict vocabulary causes the most fact loss.
 - No LLM calls in any new check, and no new prompt round trips. The cost
@@ -663,3 +672,4 @@ The owner accepted the recommendations for questions 4-7, with the review refine
 | 2026-10-20 | shaped | Review of 816e952 (two P2): S5 now prints fact warnings from `propose` before `--promote`, with CLI tests for both paths (+~0.5h); `avoid` terms may not contain `"` or `\\` (memkernel escapes them and no reader decodes), refused as `avoid-format`; ADR compatibility claim narrowed and tested in this repo with memkernel's quoting rule. Appetite unchanged. |
 | 2026-10-20 | shaped | Review of e2375c0 (one P2): single-quoted `avoid` values refused (`yaml_lite` decodes `''`, memkernel's reader does not, so `'it''s, ok'` read back as `it''s, ok`); the compatibility test now runs the full read → memkernel parse → render → read sequence with both memkernel rules copied as fixtures. Appetite unchanged. |
 | 2026-10-20 | shaped | Review of c945ea1 (one P2): test contract split. Accepted values must survive the full round trip; unsupported values must be refused on the first read with no terms; no guarantee about unsupported values after memkernel, which can strip the refused syntax. |
+| 2026-10-20 | shaped | External review against the whole post: the visual-artifacts half is out of scope by the origin (issue #28 takes only the STE tip). Recorded as a no-go, with the scope boundary stated in the Problem section and the fenced-code skip noted. No scope change. |
