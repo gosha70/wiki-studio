@@ -232,9 +232,16 @@ for the reasons in finding 3.
 
 - *Per-file glossary page (frontmatter):* `avoid: alignment check, origin
   check`. It is one line of comma-separated terms. A term cannot contain a
-  comma, a double quote (`"`) or a backslash (`\`). The whole value may be
-  wrapped in quotes, because memkernel quotes values that contain `:`, `#`,
-  `'`, brackets or braces, and those survive (finding 3). `"` and `\` are
+  comma, a double quote (`"`) or a backslash (`\`). The value is either
+  unquoted or wrapped in **double** quotes; memkernel wraps values that
+  contain `:`, `#`, `'`, brackets or braces in double quotes, and those
+  survive (finding 3). A **single-quoted** value (`'...'`) is refused as an
+  `avoid-format` finding: `yaml_lite` decodes YAML's doubled apostrophe
+  (`'it''s, ok'` reads as `it's, ok`) but memkernel's reader only strips
+  the outer quotes and its renderer then double-quotes the result, so the
+  value reads back as `it''s, ok`. Rejecting the single-quoted form is
+  simpler than matching the two decoders, and an apostrophe needs no
+  quoting (`avoid: it's, ok` reads the same in both). `"` and `\` are
   refused because memkernel's renderer escapes them (`\"`, `\\`) and
   neither memkernel's reader nor `yaml_lite` decodes the escapes, so the
   term would come back changed: `the "old" gate` returns as
@@ -305,18 +312,26 @@ CLAUDE.md:51, is the first ADR in the repo. It states:
     scalar **only if it contains no `"` and no `\`**. memkernel's `_quote`
     escapes those two characters and its `_unquote` does not decode them
     (nor does `yaml_lite`), so a term with either one changes on every
-    round trip. The accepted syntax therefore excludes them (S2), and only
-    for that narrowed syntax does the ADR claim the round trip holds;
+    round trip. Likewise a single-quoted value: `yaml_lite` decodes `''`
+    to `'`, memkernel's `_unquote` does not, so `'it''s, ok'` reads back as
+    `it''s, ok`. The accepted syntax therefore excludes `"` and `\` inside
+    terms and single-quoted values (S2), and only for that narrowed syntax
+    does the ADR claim the round trip holds;
   - whether the Memory model can keep frontmatter extras is not
     determined.
 - the **requirement**: any memkernel path that parses and re-renders an
   existing wiki page must keep unknown top-level scalar keys unchanged. For
-  values in the accepted syntax it does today; values with `"` or `\` it
-  does not (above), which is why they are refused here. Compatibility is
-  established in this repo by a test that applies memkernel's quoting rule
-  (copied as a fixture: wrap in `"` when the value has `:#"'[]{}` or
-  edge whitespace, escaping `\` and `"`) and then `yaml_lite`'s reader;
-  the memkernel-side test remains a follow-up, not the evidence.
+  values in the accepted syntax it does today; values with `"` or `\`, and
+  single-quoted values, it does not (above), which is why they are refused
+  here. Compatibility is established in this repo by a test of the
+  complete sequence: wiki-studio reads the raw value, then memkernel's
+  **parse** rule (`_unquote`: strip one pair of matching outer `"` or `'`,
+  nothing else) and its **render** rule (`_quote`: wrap in `"` when the
+  value has `:#"'[]{}` or edge whitespace, escaping `\` and `"`), both
+  copied as fixtures with their source lines cited, and wiki-studio reads
+  again. The terms read before and after must be equal, or both reads
+  must report the same `avoid-format` finding. The memkernel-side test
+  remains a follow-up, not the evidence.
 - the **follow-up for memkernel's own issue**: add that round-trip test
   for `avoid:`, and decide whether imported glossary memories should carry
   the avoid terms. This is not assumed done in this cycle.
@@ -332,11 +347,13 @@ CLAUDE.md:51, is the first ADR in the repo. It states:
   on a code-copilot-team-layout sample. The shared fixture stays as it is,
   so `test_fixture_wiki.py` is unaffected.
 - Each refused form yields one `avoid-format` finding.
-- Round trip under memkernel's quoting rule: `alignment check, origin
-  check`, `"x: y, z"` and `"it's, ok"` come back unchanged; `the "old" gate`
-  and `C:\cache`, in their raw and memkernel-escaped forms
-  (`"the \"old\" gate"`, `"C:\\cache"`), each yield an `avoid-format`
-  finding and contribute no term.
+- Round trip, read → memkernel parse → memkernel render → read:
+  `alignment check, origin check`, `it's, ok`, `"x: y, z"` and
+  `"it's, ok"` come back as the same terms; `the "old" gate` and
+  `C:\cache`, in their raw and memkernel-escaped forms
+  (`"the \"old\" gate"`, `"C:\\cache"`), and the single-quoted values
+  `'it''s, ok'` and `'plain, term'`, each yield an `avoid-format` finding
+  on both reads and contribute no term.
 - A non-glossary page's `avoid:` is ignored.
 - A page that uses only synonyms triggers the missing-cross-link finding
   (issue acceptance criterion).
@@ -640,3 +657,4 @@ The owner accepted the recommendations for questions 4-7, with the review refine
 | 2026-10-20 | shaped | Second review: recommendations 4-7 accepted by the reviewer with three spec refinements (skip index `Avoid:` lines in prose and mention counts; hyphen counts as a word character on both sides; one report per malformed list across tiers). Scope and estimate unchanged; owner's answers pending. |
 | 2026-10-20 | shaped | Owner accepted recommendations 4-7 with the review refinements (including the line-wrap rule). No open questions; next is the 0.5.0 spec and plan. |
 | 2026-10-20 | shaped | Review of 816e952 (two P2): S5 now prints fact warnings from `propose` before `--promote`, with CLI tests for both paths (+~0.5h); `avoid` terms may not contain `"` or `\\` (memkernel escapes them and no reader decodes), refused as `avoid-format`; ADR compatibility claim narrowed and tested in this repo with memkernel's quoting rule. Appetite unchanged. |
+| 2026-10-20 | shaped | Review of e2375c0 (one P2): single-quoted `avoid` values refused (`yaml_lite` decodes `''`, memkernel's reader does not, so `'it''s, ok'` read back as `it''s, ok`); the compatibility test now runs the full read → memkernel parse → render → read sequence with both memkernel rules copied as fixtures. Appetite unchanged. |
