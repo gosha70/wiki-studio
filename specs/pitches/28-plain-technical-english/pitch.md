@@ -134,7 +134,7 @@ wiki-studio was read at main 8b5c8af and memkernel at its local checkout
 
 ## Appetite
 
-**2w.** For an LLM executor the work is about 14-17 hours across five
+**2w.** For an LLM executor the work is about 14.5-17.5 hours across five
 scopes:
 
 | Scope | Estimate |
@@ -143,7 +143,7 @@ scopes:
 | S2 | 3-4h |
 | S3 | 5-7h |
 | S4 | 2h |
-| S5 | 3h |
+| S5 | 3.5h |
 
 With review rounds that is about 3 agent-days. Two weeks of wall-clock time
 covers the per-phase review loop, roughly two rounds per scope, and the
@@ -232,8 +232,15 @@ for the reasons in finding 3.
 
 - *Per-file glossary page (frontmatter):* `avoid: alignment check, origin
   check`. It is one line of comma-separated terms. A term cannot contain a
-  comma. The whole value may be quoted, because memkernel quotes some values
-  (finding 3).
+  comma, a double quote (`"`) or a backslash (`\`). The whole value may be
+  wrapped in quotes, because memkernel quotes values that contain `:`, `#`,
+  `'`, brackets or braces, and those survive (finding 3). `"` and `\` are
+  refused because memkernel's renderer escapes them (`\"`, `\\`) and
+  neither memkernel's reader nor `yaml_lite` decodes the escapes, so the
+  term would come back changed: `the "old" gate` returns as
+  `the \"old\" gate`, and `C:\cache` as `C:\\cache`. A value that contains
+  either character, escaped or not, is an `avoid-format` finding naming the
+  character; it is never silently altered or dropped.
 - *`glossary/index.md` entry:* the first non-blank line after
   `### <term>` reads `Avoid: alignment check, origin check`. It uses the
   same syntax and the same splitter, and comes before `## Definition` in
@@ -295,12 +302,21 @@ CLAUDE.md:51, is the first ADR in the repo. It states:
   - export never rewrites a glossary page;
   - import drops `avoid:`, because `extra` is not passed to `retain`;
   - a direct `parse_page` and `render_page` call keeps a single-line
-    scalar;
+    scalar **only if it contains no `"` and no `\`**. memkernel's `_quote`
+    escapes those two characters and its `_unquote` does not decode them
+    (nor does `yaml_lite`), so a term with either one changes on every
+    round trip. The accepted syntax therefore excludes them (S2), and only
+    for that narrowed syntax does the ADR claim the round trip holds;
   - whether the Memory model can keep frontmatter extras is not
     determined.
 - the **requirement**: any memkernel path that parses and re-renders an
-  existing wiki page must keep unknown top-level scalar keys unchanged. It
-  does today; a test should pin it.
+  existing wiki page must keep unknown top-level scalar keys unchanged. For
+  values in the accepted syntax it does today; values with `"` or `\` it
+  does not (above), which is why they are refused here. Compatibility is
+  established in this repo by a test that applies memkernel's quoting rule
+  (copied as a fixture: wrap in `"` when the value has `:#"'[]{}` or
+  edge whitespace, escaping `\` and `"`) and then `yaml_lite`'s reader;
+  the memkernel-side test remains a follow-up, not the evidence.
 - the **follow-up for memkernel's own issue**: add that round-trip test
   for `avoid:`, and decide whether imported glossary memories should carry
   the avoid terms. This is not assumed done in this cycle.
@@ -316,6 +332,11 @@ CLAUDE.md:51, is the first ADR in the repo. It states:
   on a code-copilot-team-layout sample. The shared fixture stays as it is,
   so `test_fixture_wiki.py` is unaffected.
 - Each refused form yields one `avoid-format` finding.
+- Round trip under memkernel's quoting rule: `alignment check, origin
+  check`, `"x: y, z"` and `"it's, ok"` come back unchanged; `the "old" gate`
+  and `C:\cache`, in their raw and memkernel-escaped forms
+  (`"the \"old\" gate"`, `"C:\\cache"`), each yield an `avoid-format`
+  finding and contribute no term.
 - A non-glossary page's `avoid:` is ignored.
 - A page that uses only synonyms triggers the missing-cross-link finding
   (issue acceptance criterion).
@@ -378,7 +399,7 @@ CLAUDE.md:51, is the first ADR in the repo. It states:
   `--paths` scoping, no findings inside code or quotes, and `--prose` with
   `--health` together.
 
-### S5: Fact preservation on update (part D), ~3h (citations and identifiers ~2h, units ~1h)
+### S5: Fact preservation on update (part D), ~3.5h (citations and identifiers ~2.5h incl. propose output, units ~1h)
 
 - Add a pure function `removed_facts(old: str, new: str) -> list[str]`,
   with the extractors in `prose_lint.py` or a small `fact_diff.py`. It
@@ -401,13 +422,22 @@ CLAUDE.md:51, is the first ADR in the repo. It states:
   `paths.wiki_dir`. Promote ignores the key (finding 9). This optional key
   is allowed in a minor version (`docs/patch-set-format.md:5-7`,
   `api.py:21-30`).
-- Show the warnings: `_do_ingest`, and query `--file-back`, print
-  `fact-check: <path>: N item(s) removed` to stderr. Document the optional
+- Show the warnings: `_do_ingest`, query `--file-back` and `_do_propose`
+  print `fact-check: <path>: N item(s) removed` (and the items) to stderr.
+  `_do_propose` prints them right after writing the patch-set and
+  **before** its optional promote step, because `propose --from …
+  --promote` is the path the memkernel arm's agent uses and applies the
+  update at once; without this the warnings would never be seen there.
+  Warnings stay advisory: they never change an exit code or stop promote. Document the optional
   key in the `plan.json` key table of `docs/patch-set-format.md`.
 - Tests: `api.propose` with an `update` edit that drops a citation, an
   identifier and a number. Also cover a moved citation and a reflowed
   paragraph, which must produce no warning. The test backend has no update
   path (finding 10).
+- CLI tests for `propose --from` with an `update` that drops a citation:
+  proposal only (warning on stderr, exit 0, nothing applied) and with
+  `--promote` (warning on stderr before the apply line, exit 0, update
+  applied, `fact_warnings` kept in the archived `plan.json`).
 
 ## Decisions taken in shaping (accepted by the owner, 2026-10-20)
 
@@ -609,3 +639,4 @@ The owner accepted the recommendations for questions 4-7, with the review refine
 | 2026-10-20 | shaped | Revised after independent review. One `avoid:` form that survives memkernel, all other forms reported. Index format matched to the real layouts. Whole-word matching for new code. memkernel round trip stated in the ADR. D kept, with only its units extractor trim-able. Questions 1-3 resolved; 4-7 open. |
 | 2026-10-20 | shaped | Second review: recommendations 4-7 accepted by the reviewer with three spec refinements (skip index `Avoid:` lines in prose and mention counts; hyphen counts as a word character on both sides; one report per malformed list across tiers). Scope and estimate unchanged; owner's answers pending. |
 | 2026-10-20 | shaped | Owner accepted recommendations 4-7 with the review refinements (including the line-wrap rule). No open questions; next is the 0.5.0 spec and plan. |
+| 2026-10-20 | shaped | Review of 816e952 (two P2): S5 now prints fact warnings from `propose` before `--promote`, with CLI tests for both paths (+~0.5h); `avoid` terms may not contain `"` or `\\` (memkernel escapes them and no reader decodes), refused as `avoid-format`; ADR compatibility claim narrowed and tested in this repo with memkernel's quoting rule. Appetite unchanged. |
