@@ -2,8 +2,8 @@
 pitch_id: 28-plain-technical-english
 title: "Plain technical English for wiki pages: writing rules, glossary term lock, lint --prose, fact preservation"
 appetite: 2w
-bet_status: shaped
-cycle: ""
+bet_status: bet
+cycle: "01"
 circuit_breaker: "Core is S1-S4 plus S5's citation and identifier checks. If S3 is still uphill at day 5, drop prose checks 3-4. If S5 is not downhill by day 8, drop its numbers-with-units extractor. If S5's citation and identifier checks are not done by day 10, ship 0.5.0 without S1's writing rules and re-pitch A and D together. Never make prose findings block promote, add a dependency, or add an LLM call to stay on schedule."
 shaped_by: "pitch-shaper (Claude Code) for gosha70"
 shaped_date: 2026-10-20
@@ -673,3 +673,4 @@ The owner accepted the recommendations for questions 4-7, with the review refine
 | 2026-10-20 | shaped | Review of e2375c0 (one P2): single-quoted `avoid` values refused (`yaml_lite` decodes `''`, memkernel's reader does not, so `'it''s, ok'` read back as `it''s, ok`); the compatibility test now runs the full read → memkernel parse → render → read sequence with both memkernel rules copied as fixtures. Appetite unchanged. |
 | 2026-10-20 | shaped | Review of c945ea1 (one P2): test contract split. Accepted values must survive the full round trip; unsupported values must be refused on the first read with no terms; no guarantee about unsupported values after memkernel, which can strip the refused syntax. |
 | 2026-10-20 | shaped | External review against the whole post: the visual-artifacts half is out of scope by the origin (issue #28 takes only the STE tip). Recorded as a no-go, with the scope boundary stated in the Problem section and the fenced-code skip noted. No scope change. |
+| 2026-10-20 | shaped → bet | Owner approved the pitch. Cycle 01 (wiki-studio's first); target release 0.5.0. Next: spec and plan in `specs/`. |
