@@ -42,6 +42,9 @@ Required H2 sections:
 - `## Where this shows up` — concrete file paths or features.
 - `## Related` — links to other wiki pages.
 
+Write the body by the writing rules in
+[`ingest-rules.md`](ingest-rules.md#writing-rules).
+
 ### `workflow` — `workflows/<slug>.md`
 "How to do X in this project." A numbered procedure that can be
 walked end-to-end.
@@ -121,6 +124,9 @@ Required H2 sections:
 short entries — in that case it carries `page_type: glossary` and
 each entry is a `### <term>` subsection. Per the slug rule below,
 its `slug:` is `glossary` (the parent directory name), not `index`.
+
+Write each definition by the writing rules in
+[`ingest-rules.md`](ingest-rules.md#writing-rules).
 
 ### `open-question` — `open-questions/<slug>.md`
 Something the project does not yet know but should. Marks the gap

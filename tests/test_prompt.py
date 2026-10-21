@@ -10,7 +10,8 @@ from pathlib import Path
 from tests.conftest import make_repo_layout
 from wiki_studio.errors import ContractViolationError
 from wiki_studio.paths import WikiPaths
-from wiki_studio.prompt import compose_prompt, load_schema_files, parse_response
+from wiki_studio.prompt import compose_multi_prompt, compose_prompt, load_schema_files, parse_response
+from wiki_studio.querier import compose_query_prompt
 
 # A project root with no schema/ of its own, so load_schema_files falls back
 # to the documents packaged with wiki_studio. Built in setUpModule.
@@ -366,6 +367,28 @@ class TestSemanticValidationNegative(unittest.TestCase):
         msg = str(ctx.exception)
         self.assertIn("sources", msg)
         self.assertIn("non-empty", msg)
+
+
+class TestWritingRulesInPrompts(unittest.TestCase):
+    """FR-002: every composed prompt carries the writing rules from ingest-rules.md."""
+
+    def setUp(self) -> None:
+        self.schemas = load_schema_files(_PATHS)
+
+    def test_ingest_rules_has_writing_rules_section(self) -> None:
+        self.assertIn("\n## Writing rules\n", self.schemas["ingest-rules"])
+
+    def test_ingest_multi_prompt_contains_writing_rules(self) -> None:
+        prompt = compose_multi_prompt(Path("some/file.md"), "# Hello\n", self.schemas, wiki_state=None)
+        self.assertIn("## Writing rules", prompt["schema_excerpts"]["ingest_rules"])
+
+    def test_legacy_ingest_prompt_contains_writing_rules(self) -> None:
+        prompt = compose_prompt(Path("some/file.md"), "# Hello\n", self.schemas)
+        self.assertIn("## Writing rules", prompt["schema_excerpts"]["ingest_rules"])
+
+    def test_query_prompt_contains_writing_rules(self) -> None:
+        prompt = compose_query_prompt("What is X?", "# Index\n", {}, self.schemas)
+        self.assertIn("## Writing rules", prompt["schema_excerpts"]["ingest_rules"])
 
 
 class TestSchemaOverride(unittest.TestCase):

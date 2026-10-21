@@ -6,6 +6,26 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Writing rules for wiki prose (issue #28). `schema/ingest-rules.md` gains a
+  `## Writing rules` section: one fact per sentence, at most 25 words per
+  sentence (20 in numbered steps), one instruction per step, active voice, no
+  semicolons, the glossary term for each concept, and a first `## Summary`
+  sentence that states the main claim. A preserve list keeps identifiers,
+  paths, numbers, `path:` citations and the words "if", "unless" and
+  "not verified", and tells the model to split long sentences, not cut them.
+  The ingest, multi-page ingest and query prompts already load
+  `ingest-rules.md`, so all three now carry the rules. `page-types.md`,
+  `WIKI_MAINTAINER.md` and `lint-rules.md` point to the section.
+
+### Upgrade notes
+
+- A wiki with its own `schema/ingest-rules.md` overrides the packaged copy, so
+  its prompts do not get the writing rules. Merge the `## Writing rules`
+  section from the packaged `src/wiki_studio/schema/ingest-rules.md` into the
+  local copy.
+
 ## [0.4.1] — 2026-10-17
 
 Fixes only. The one addition is `propose --allow-out-of-repo` (#24); exit codes,

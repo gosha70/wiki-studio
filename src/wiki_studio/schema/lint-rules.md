@@ -67,8 +67,12 @@ from `index.md` and reports any wiki page not reached.
 
 ## What the linter does NOT check
 
-- **Prose quality.** Whether the writing is good, clear, or
-  helpful.
+- **Prose structure.** The structural lint does not check it.
+  `wiki-studio lint --prose` checks prose structure against the
+  writing rules in [`ingest-rules.md`](ingest-rules.md#writing-rules).
+  Its findings are advisory. They never block `promote`.
+- **Prose quality.** Whether the writing is clear or helpful. No
+  check reads for meaning.
 - **Factual accuracy.** Whether the claims are true.
 - **Source freshness.** Whether `last_reviewed` is recent or
   whether cited file SHAs still match `HEAD`. (A future curator
