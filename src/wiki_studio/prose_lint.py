@@ -19,10 +19,12 @@
 #
 # The prose scanner (scan_page) turns a page into ProseSegments: paragraphs,
 # list items and headings, with code, tables, quotes and comments removed.
-# run_prose_lint runs checks 1-4 of `lint --prose` over them (sentence
-# length, semicolons, filler phrases, Summary and Key-ideas length). The
-# limits live in wiki_studio.schema; lint-rules.md documents them and the
-# scanner's known limits. Findings are advisory.
+# run_prose_lint runs the checks of `lint --prose` over them: 1-4 (sentence
+# length, semicolons, filler phrases, Summary and Key-ideas length) and 5,
+# the term lock (avoid terms on non-glossary pages), plus the avoid-format
+# problems of the glossary. The limits live in wiki_studio.schema;
+# lint-rules.md documents them and the scanner's known limits. Findings are
+# advisory.
 
 from __future__ import annotations
 
@@ -325,6 +327,8 @@ CHECK_SENTENCE_LENGTH = "sentence-length"
 CHECK_SEMICOLON = "semicolon"
 CHECK_FILLER = "filler"
 CHECK_SECTION_LENGTH = "section-length"
+CHECK_TERM_LOCK = "term-lock"
+CHECK_AVOID_FORMAT = "avoid-format"
 
 SUMMARY_SECTION = "summary"
 KEY_IDEAS_SECTION = "key ideas"
@@ -610,25 +614,66 @@ def check_sections(segments: list[ProseSegment]) -> list[ProseFinding]:
     return findings
 
 
-def lint_page_prose(path: str, text: str) -> list[ProseFinding]:
-    """Checks 1-4 on one page, ordered by line."""
+def check_term_lock(segments: list[ProseSegment], avoid_map: dict[str, AvoidEntry]) -> list[ProseFinding]:
+    """Check 5: every avoid term in a prose segment, headings included (FR-013).
+
+    Segments are already masked, so inline code, fences and quotes are never
+    matched. A finding's line is the line the found term starts on.
+    """
+    findings: list[ProseFinding] = []
+    for segment in segments:
+        for entry in avoid_map.values():
+            for term in entry.terms:
+                for match in find_term(segment.text, term):
+                    line = segment.line + segment.text.count("\n", 0, match.start())
+                    found = " ".join(match.group(0).split())
+                    message = f"{found!r} is an avoid term; use the glossary term {entry.canonical!r}"
+                    findings.append(ProseFinding(segment.path, line, CHECK_TERM_LOCK, message))
+    return findings
+
+
+def _is_glossary_page(rel: str, text: str) -> bool:
+    if rel.startswith(f"{GLOSSARY_DIR}/"):
+        return True
+    try:
+        return bool(yaml_lite.parse_frontmatter(text).get("page_type") == GLOSSARY_PAGE_TYPE)
+    except ContractViolationError:
+        return False
+
+
+def lint_page_prose(path: str, text: str, avoid_map: dict[str, AvoidEntry] | None = None) -> list[ProseFinding]:
+    """Checks 1-4 on one page, and check 5 when ``avoid_map`` is given, ordered by line.
+
+    The term lock never runs on a glossary page, which names the avoid terms.
+    """
     segments = scan_page(path, text)
     findings: list[ProseFinding] = []
     for segment in segments:
         findings.extend(check_segment(segment))
     findings.extend(check_sections(segments))
+    if avoid_map and not _is_glossary_page(path, text):
+        findings.extend(check_term_lock(segments, avoid_map))
     return sorted(findings, key=lambda finding: finding.line)
 
 
-def run_prose_lint(wiki_dir: Path, *, paths: Iterable[str | Path] | None = None) -> ProseLintResult:
-    """Run prose checks 1-4 over the wiki's pages (FR-011).
+def run_prose_lint(
+    wiki_dir: Path,
+    *,
+    paths: Iterable[str | Path] | None = None,
+    avoid_format: bool = True,
+) -> ProseLintResult:
+    """Run prose checks 1-5 over the wiki's pages (FR-011, FR-013).
 
     Pages come from the health lint's page list (``schema/``, ``scripts/``
     and ``.audit/`` are excluded); ``log.md`` is exempt as append-only
-    history. ``paths`` (wiki-relative) limits the pages scanned.
+    history. ``paths`` (wiki-relative) limits the pages scanned; the avoid
+    map is always read from the whole glossary. ``avoid_format`` adds the
+    glossary's avoid-format problems on scanned pages; turn it off when the
+    health tier reports them in the same call (FR-005).
     """
     from .health_lint import _list_wiki_pages  # health_lint imports this module
 
+    avoid_map, problems = load_avoid_map(wiki_dir)
     scoped = {Path(p).as_posix() for p in paths} if paths is not None else None
     findings: list[ProseFinding] = []
     checked = 0
@@ -637,5 +682,11 @@ def run_prose_lint(wiki_dir: Path, *, paths: Iterable[str | Path] | None = None)
         if rel == LOG_PAGE or (scoped is not None and rel not in scoped):
             continue
         checked += 1
-        findings.extend(lint_page_prose(rel, _read_text_or_empty(page)))
+        findings.extend(lint_page_prose(rel, _read_text_or_empty(page), avoid_map))
+    if avoid_format:
+        findings.extend(
+            ProseFinding(problem.path, problem.line, CHECK_AVOID_FORMAT, problem.message)
+            for problem in problems
+            if scoped is None or problem.path in scoped
+        )
     return ProseLintResult(findings=findings, pages_checked=checked)

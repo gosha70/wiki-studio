@@ -334,6 +334,17 @@ class TestLintResultPassed(unittest.TestCase):
         self.assertTrue(result(0, 0, True).passed)
         self.assertFalse(result(0, 1, True).passed)
 
+    def test_positional_construction_defaults_prose_to_none(self) -> None:
+        self.assertIsNone(api.LintResult((), 1, (), None, True).prose)
+
+    def test_prose_findings_fail_only_under_strict(self) -> None:
+        from wiki_studio.prose_lint import ProseFinding, ProseLintResult
+
+        prose = ProseLintResult(findings=[ProseFinding("a.md", 1, "semicolon", "m")], pages_checked=1)
+        self.assertTrue(api.LintResult((), 1, (), None, False, prose).passed)
+        self.assertFalse(api.LintResult((), 1, (), None, True, prose).passed)
+        self.assertTrue(api.LintResult((), 1, (), None, True, ProseLintResult([], 1)).passed)
+
 
 if __name__ == "__main__":
     unittest.main()

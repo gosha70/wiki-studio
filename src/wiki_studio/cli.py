@@ -259,7 +259,9 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         help="Run wiki linters. Default: structural (frontmatter, page "
         "types, slugs, placement, links, reachability). --health adds "
         "the knowledge-health pass (contradictions, stale claims, "
-        "weak orphans, missing cross-links).",
+        "weak orphans, missing cross-links). --prose adds the prose "
+        "pass (sentence length, semicolons, filler, section length, "
+        "glossary term lock).",
     )
     p_lint.add_argument(
         "--health",
@@ -269,17 +271,25 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         "warnings); --strict flips to non-zero exit on findings.",
     )
     p_lint.add_argument(
+        "--prose",
+        action="store_true",
+        help="Run the prose checks (plain technical English and the "
+        "glossary term lock) on top of the structural linter. Default "
+        "mode is advisory (exit 0 with stderr warnings); --strict "
+        "flips to non-zero exit on findings.",
+    )
+    p_lint.add_argument(
         "--strict",
         action="store_true",
         help="Make advisory findings fatal (non-zero exit): "
         "audit-format violations (always run) and, with "
-        "--health, any knowledge-health finding.",
+        "--health or --prose, any knowledge-health or prose finding.",
     )
     p_lint.add_argument(
         "--paths",
         nargs="*",
         default=None,
-        help="With --health: scope to specific wiki-relative paths.",
+        help="With --health or --prose: scope to specific wiki-relative paths.",
     )
     p_lint.add_argument(
         "--backend",
@@ -456,13 +466,14 @@ def _do_query(args: argparse.Namespace) -> int:
 
 
 def _do_lint(args: argparse.Namespace) -> int:
-    """Structural lint, the audit-format pass and, with --health, the knowledge-health checks."""
+    """Structural lint, the audit-format pass and, with --health / --prose, the knowledge-health and prose checks."""
     result = api.lint(
         _paths_from_args(args),
         health=args.health,
         strict=args.strict,
         only=args.paths,
         backend=args.backend,
+        prose=args.prose,
     )
     for violation in result.violations:
         print(f"  ✗ {violation}", file=sys.stderr)
@@ -487,6 +498,15 @@ def _do_lint(args: argparse.Namespace) -> int:
             )
             for f in health.findings:
                 print(f"  [{f.kind} / {f.severity}] {', '.join(f.pages)}: {f.description}", file=sys.stderr)
+
+    prose = result.prose
+    if prose is not None:
+        if not prose.findings:
+            print(f"\nprose: clean ({prose.pages_checked} pages checked, 0 findings).")
+        else:
+            print(f"\nprose: {len(prose.findings)} finding(s) across {prose.pages_checked} pages", file=sys.stderr)
+            for finding in prose.findings:
+                print(f"  {finding.path}:{finding.line} [{finding.check}] {finding.message}", file=sys.stderr)
 
     return 0 if result.passed else 1
 

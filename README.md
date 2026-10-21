@@ -98,8 +98,9 @@ The audit tree under `.audit/` is always checked against
 | Flag | Effect |
 |---|---|
 | `--health` | add the knowledge-health checks: stale `path:` sources, weak orphans, missing cross-links and, with a backend, contradictions |
-| `--strict` | audit-format and health findings become fatal (structural violations always are) |
-| `--paths P [P ...]` | with `--health`, scope the findings to these wiki-relative pages |
+| `--prose` | add the prose checks: sentence length, semicolons, filler phrases, Summary and Key-ideas length, and the glossary term lock (an `avoid:` term used instead of its glossary term); advisory, exit 0 unless `--strict` |
+| `--strict` | audit-format, health and prose findings become fatal (structural violations always are) |
+| `--paths P [P ...]` | with `--health` or `--prose`, scope the findings to these wiki-relative pages (the term lock still reads the whole glossary) |
 | `--backend NAME` | with `--health`, the backend for the contradiction check (skipped when omitted) |
 
 ### `wiki-studio audit-flush`

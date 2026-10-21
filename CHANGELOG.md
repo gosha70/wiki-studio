@@ -28,6 +28,14 @@ uses [Semantic Versioning](https://semver.org/).
   avoid terms count as mentions of that page in the missing-cross-links
   check. Existing pages stay valid. Decision record:
   `docs/adr/0001-glossary-avoid-key.md`.
+- `wiki-studio lint --prose` (issue #28): advisory prose checks for sentence
+  length, semicolons, filler phrases, `## Summary` and `## Key ideas` length,
+  and the glossary term lock, which reports each avoid term used on a
+  non-glossary page with its canonical term. Code, tables, quotes and HTML
+  comments are skipped. Findings go to stderr as `path:line [check] message`;
+  the exit code is 0, or 1 under `--strict`. `--paths` limits the pages
+  scanned; the term lock still reads the whole glossary. `api.lint` gains
+  `prose: bool = False` and `LintResult.prose`.
 
 ### Changed
 
