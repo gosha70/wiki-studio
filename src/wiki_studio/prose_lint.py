@@ -16,20 +16,36 @@
 #
 # find_term / contains_term are the one whole-word matcher, used for avoid
 # terms and for entity slugs in health_lint.
+#
+# The prose scanner (scan_page) turns a page into ProseSegments: paragraphs,
+# list items and headings, with code, tables, quotes and comments removed.
+# run_prose_lint runs checks 1-4 of `lint --prose` over them (sentence
+# length, semicolons, filler phrases, Summary and Key-ideas length). The
+# limits live in wiki_studio.schema; lint-rules.md documents them and the
+# scanner's known limits. Findings are advisory.
 
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import TYPE_CHECKING
+from pathlib import Path
+from typing import TYPE_CHECKING, Literal
 
 from . import yaml_lite
 from .errors import ContractViolationError
+from .schema import (
+    FILLER_PHRASES,
+    KEY_IDEA_MAX_SENTENCES,
+    PROSE_ABBREVIATIONS,
+    PROSE_MAX_WORDS,
+    PROSE_MAX_WORDS_NUMBERED,
+    SUMMARY_MAX_SENTENCES,
+)
 from .wiki_state import _read_text_or_empty
 
 if TYPE_CHECKING:
-    from pathlib import Path
+    from collections.abc import Iterable
 
 GLOSSARY_PAGE_TYPE = "glossary"
 GLOSSARY_DIR = "glossary"
@@ -295,3 +311,331 @@ def load_avoid_map(wiki_dir: Path) -> tuple[dict[str, AvoidEntry], list[FormatPr
         if terms:
             avoid_map[entry.canonical] = AvoidEntry(entry.canonical, entry.page, entry.anchor, terms)
     return avoid_map, problems
+
+
+# --- Prose scanner and checks 1-4 (FR-010, FR-011) --------------------------
+
+ProseSegmentKind = Literal["paragraph", "bullet", "numbered", "heading"]
+SEGMENT_PARAGRAPH: ProseSegmentKind = "paragraph"
+SEGMENT_BULLET: ProseSegmentKind = "bullet"
+SEGMENT_NUMBERED: ProseSegmentKind = "numbered"
+SEGMENT_HEADING: ProseSegmentKind = "heading"
+
+CHECK_SENTENCE_LENGTH = "sentence-length"
+CHECK_SEMICOLON = "semicolon"
+CHECK_FILLER = "filler"
+CHECK_SECTION_LENGTH = "section-length"
+
+SUMMARY_SECTION = "summary"
+KEY_IDEAS_SECTION = "key ideas"
+LOG_PAGE = "log.md"
+
+# Masked inline code and bare URLs hold no word character, so the term
+# matcher never sees inside them; each counts as one word.
+CODE_TOKEN = "`…`"
+URL_TOKEN = "<…>"
+
+_HEADING_RE = re.compile(r"^[ \t]{0,3}(#{1,6})[ \t]+(.*?)(?:[ \t]+#+)?[ \t]*$")
+_LIST_ITEM_RE = re.compile(r"^[ \t]*(?:[-*+]|(\d+)[.)])[ \t]+(.*)$")
+_THEMATIC_BREAK_RE = re.compile(r"^[ \t]{0,3}(?:[-*_=][ \t]*){3,}$")
+_INDENTED_CODE_RE = re.compile(r"^(?: {4}|\t)")
+_INLINE_CODE_RE = re.compile(r"(`+)(.+?)\1", re.DOTALL)
+_LINK_RE = re.compile(r"!?\[([^\]]*)\]\([^)]*\)")
+# Trailing punctuation before whitespace stays outside the URL, so a URL can end a sentence.
+_URL_RE = re.compile(r"\b(?:(?:https?|ftp)://|www\.)\S+?(?=[.,;:!?)\]]*(?:\s|$))")
+_ENTITY_RE = re.compile(r"&#?\w+;")
+_SENTENCE_END_RE = re.compile(r"[.!?]+(?=\s+(?:[A-Z`]|$)|$)")
+_WORD_TOKEN_RE = re.compile(r"[^\W_]|…")
+
+
+@dataclass(frozen=True)
+class ProseSegment:
+    """One block of prose on a page, after masking.
+
+    ``line`` is the 1-based line the block starts on; wrapped lines are
+    joined with ``\\n`` so a sentence's line can be recovered. ``section`` is
+    the enclosing ``##`` heading's text ("" before the first one), which
+    check 4 uses to find Summary and Key ideas.
+    """
+
+    path: str
+    line: int
+    kind: ProseSegmentKind
+    text: str
+    section: str = ""
+
+
+@dataclass(frozen=True)
+class Sentence:
+    """One sentence of a segment and the line it starts on."""
+
+    line: int
+    text: str
+
+
+@dataclass(frozen=True)
+class ProseFinding:
+    """One prose problem; ``check`` names the rule and ``line`` is 1-based."""
+
+    path: str
+    line: int
+    check: str
+    message: str
+
+
+@dataclass(frozen=True)
+class ProseLintResult:
+    """Aggregated output of a prose pass."""
+
+    findings: list[ProseFinding]
+    pages_checked: int
+
+
+def mask_inline(text: str) -> str:
+    """Mask inline code and bare URLs as one token each and unwrap ``[text](target)``.
+
+    Line breaks inside a code span are kept so line numbers stay right.
+    """
+    text = _INLINE_CODE_RE.sub(lambda m: CODE_TOKEN + "\n" * m.group(0).count("\n"), text)
+    text = _LINK_RE.sub(lambda m: m.group(1), text)
+    text = _URL_RE.sub(URL_TOKEN, text)
+    return _ENTITY_RE.sub("&", text)
+
+
+def _strip_comment(line: str, in_comment: bool) -> tuple[str, bool]:
+    """Remove HTML comment text from one line; return the rest and the open state."""
+    kept = ""
+    rest = line
+    while rest:
+        if in_comment:
+            end = rest.find("-->")
+            if end < 0:
+                return kept, True
+            rest = rest[end + 3 :]
+            in_comment = False
+        else:
+            start = rest.find("<!--")
+            if start < 0:
+                return kept + rest, False
+            kept += rest[:start]
+            rest = rest[start + 4 :]
+            in_comment = True
+    return kept, in_comment
+
+
+def scan_page(path: str, text: str) -> list[ProseSegment]:
+    """Split a page into prose segments (FR-010).
+
+    Skips frontmatter, fenced code, table rows, blockquotes, HTML comments,
+    a glossary index's ``Avoid:`` lines, thematic breaks, and indented code
+    that follows a blank line outside a list. Consecutive lines join into one
+    paragraph; each list item and each heading is its own segment.
+    """
+    if path == f"{GLOSSARY_DIR}/{GLOSSARY_INDEX}":
+        text = strip_index_avoid_lines(text)
+    lines = text.splitlines()
+    end = _frontmatter_end(lines)
+
+    segments: list[ProseSegment] = []
+    section = ""
+    current: list[str] = []
+    current_kind = SEGMENT_PARAGRAPH
+    current_line = 0
+    fence: str | None = None
+    in_comment = False
+    in_list = False
+    in_indented_code = False
+    previous_blank = True
+
+    def flush() -> None:
+        nonlocal current
+        if current:
+            joined = mask_inline("\n".join(current)).strip()
+            if joined:
+                segments.append(ProseSegment(path, current_line, current_kind, joined, section))
+        current = []
+
+    for index in range(end + 1 if end else 0, len(lines)):
+        lineno = index + 1
+        fence_match = None if in_comment else _FENCE_RE.match(lines[index])
+        if fence is not None:
+            if fence_match and fence_match.group(1) == fence:
+                fence = None
+            continue
+        if fence_match:
+            flush()
+            fence = fence_match.group(1)
+            previous_blank = False
+            continue
+
+        raw, in_comment = _strip_comment(lines[index], in_comment)
+        stripped = raw.strip()
+        if not stripped:
+            flush()
+            previous_blank = True
+            continue
+
+        if in_indented_code:
+            if _INDENTED_CODE_RE.match(raw):
+                continue
+            in_indented_code = False
+        if previous_blank and not in_list and _INDENTED_CODE_RE.match(raw):
+            flush()
+            in_indented_code = True
+            continue
+        after_blank = previous_blank
+        previous_blank = False
+
+        if stripped.startswith(("|", ">")) or _THEMATIC_BREAK_RE.match(raw):
+            flush()
+            continue
+
+        heading = _HEADING_RE.match(raw)
+        if heading:
+            flush()
+            level = len(heading.group(1))
+            if level <= 2:
+                section = heading.group(2) if level == 2 else ""
+            title = mask_inline(heading.group(2)).strip()
+            if title:
+                segments.append(ProseSegment(path, lineno, SEGMENT_HEADING, title, section))
+            in_list = False
+            continue
+
+        item = _LIST_ITEM_RE.match(raw)
+        if item:
+            flush()
+            current_kind = SEGMENT_NUMBERED if item.group(1) else SEGMENT_BULLET
+            current_line = lineno
+            current = [item.group(2).strip()]
+            in_list = True
+            continue
+
+        if current and not after_blank:
+            current.append(stripped)
+            continue
+        if not raw[:1].isspace():
+            in_list = False
+        flush()
+        current_kind = SEGMENT_PARAGRAPH
+        current_line = lineno
+        current = [stripped]
+    flush()
+    return segments
+
+
+def _ends_with_abbreviation(text: str) -> bool:
+    lowered = text.lower()
+    for abbreviation in PROSE_ABBREVIATIONS:
+        if lowered.endswith(abbreviation):
+            before = lowered[: -len(abbreviation)]
+            if not before or not before[-1].isalnum():
+                return True
+    return False
+
+
+def split_sentences(segment: ProseSegment) -> list[Sentence]:
+    """Split a segment at ``[.!?]`` + whitespace + a capital, a backtick or the end.
+
+    A period that ends "e.g.", "i.e.", "etc." or "vs." is not a boundary. A
+    sentence's line is the line its first character is on.
+    """
+    text = segment.text
+    sentences: list[Sentence] = []
+    start = 0
+    for match in _SENTENCE_END_RE.finditer(text):
+        if _ends_with_abbreviation(text[start : match.end()]):
+            continue
+        _append_sentence(sentences, segment, start, match.end())
+        start = match.end()
+    _append_sentence(sentences, segment, start, len(text))
+    return sentences
+
+
+def _append_sentence(sentences: list[Sentence], segment: ProseSegment, start: int, end: int) -> None:
+    chunk = segment.text[start:end]
+    body = chunk.strip()
+    if not body:
+        return
+    offset = start + len(chunk) - len(chunk.lstrip())
+    line = segment.line + segment.text.count("\n", 0, offset)
+    sentences.append(Sentence(line, " ".join(body.split())))
+
+
+def count_words(sentence: str) -> int:
+    """Whitespace-separated tokens that hold a letter, a digit or a masked token."""
+    return sum(1 for token in sentence.split() if _WORD_TOKEN_RE.search(token))
+
+
+def check_segment(segment: ProseSegment) -> list[ProseFinding]:
+    """Checks 1-3 (sentence length, semicolon, filler) on one segment; headings are exempt."""
+    if segment.kind == SEGMENT_HEADING:
+        return []
+    limit = PROSE_MAX_WORDS_NUMBERED if segment.kind == SEGMENT_NUMBERED else PROSE_MAX_WORDS
+    findings: list[ProseFinding] = []
+    for sentence in split_sentences(segment):
+        words = count_words(sentence.text)
+        if words > limit:
+            message = f"sentence has {words} words (limit {limit}); split it"
+            findings.append(ProseFinding(segment.path, sentence.line, CHECK_SENTENCE_LENGTH, message))
+        if ";" in sentence.text:
+            findings.append(ProseFinding(segment.path, sentence.line, CHECK_SEMICOLON, "semicolon; split the sentence"))
+        for phrase in FILLER_PHRASES:
+            if contains_term(sentence.text, phrase):
+                message = f"filler phrase {phrase!r}; remove it or state the fact directly"
+                findings.append(ProseFinding(segment.path, sentence.line, CHECK_FILLER, message))
+    return findings
+
+
+def check_sections(segments: list[ProseSegment]) -> list[ProseFinding]:
+    """Check 4: sentences in ``## Summary`` and in each ``## Key ideas`` bullet."""
+    findings: list[ProseFinding] = []
+    summary: list[ProseSegment] = []
+    for segment in segments:
+        if segment.kind == SEGMENT_HEADING:
+            continue
+        name = segment.section.strip().lower()
+        if name == SUMMARY_SECTION:
+            summary.append(segment)
+        elif name == KEY_IDEAS_SECTION and segment.kind in (SEGMENT_BULLET, SEGMENT_NUMBERED):
+            count = len(split_sentences(segment))
+            if count > KEY_IDEA_MAX_SENTENCES:
+                message = f"Key ideas bullet has {count} sentences (limit {KEY_IDEA_MAX_SENTENCES})"
+                findings.append(ProseFinding(segment.path, segment.line, CHECK_SECTION_LENGTH, message))
+    if summary:
+        count = sum(len(split_sentences(segment)) for segment in summary)
+        if count > SUMMARY_MAX_SENTENCES:
+            message = f"Summary has {count} sentences (limit {SUMMARY_MAX_SENTENCES})"
+            findings.append(ProseFinding(summary[0].path, summary[0].line, CHECK_SECTION_LENGTH, message))
+    return findings
+
+
+def lint_page_prose(path: str, text: str) -> list[ProseFinding]:
+    """Checks 1-4 on one page, ordered by line."""
+    segments = scan_page(path, text)
+    findings: list[ProseFinding] = []
+    for segment in segments:
+        findings.extend(check_segment(segment))
+    findings.extend(check_sections(segments))
+    return sorted(findings, key=lambda finding: finding.line)
+
+
+def run_prose_lint(wiki_dir: Path, *, paths: Iterable[str | Path] | None = None) -> ProseLintResult:
+    """Run prose checks 1-4 over the wiki's pages (FR-011).
+
+    Pages come from the health lint's page list (``schema/``, ``scripts/``
+    and ``.audit/`` are excluded); ``log.md`` is exempt as append-only
+    history. ``paths`` (wiki-relative) limits the pages scanned.
+    """
+    from .health_lint import _list_wiki_pages  # health_lint imports this module
+
+    scoped = {Path(p).as_posix() for p in paths} if paths is not None else None
+    findings: list[ProseFinding] = []
+    checked = 0
+    for page in _list_wiki_pages(wiki_dir):
+        rel = page.relative_to(wiki_dir).as_posix()
+        if rel == LOG_PAGE or (scoped is not None and rel not in scoped):
+            continue
+        checked += 1
+        findings.extend(lint_page_prose(rel, _read_text_or_empty(page)))
+    return ProseLintResult(findings=findings, pages_checked=checked)

@@ -65,6 +65,61 @@ Every page (except `index` and `log`) must be reachable from
 `index.md` via a chain of markdown links. The linter does a BFS
 from `index.md` and reports any wiki page not reached.
 
+## What `lint --prose` checks (advisory)
+
+`wiki-studio lint --prose` reads the prose of every wiki page except
+`log.md` (append-only history) and the excluded `schema/`, `scripts/`
+and `.audit/` trees. It reports each finding as
+`path:line [check] message`. The line is the line where the
+sentence starts. Findings never block `promote`.
+
+| Check | Name | Reports |
+|---|---|---|
+| 1 | `sentence-length` | A sentence over 25 words, or over 20 words in a numbered item. |
+| 2 | `semicolon` | A semicolon in a sentence, after inline code and URLs are masked. |
+| 3 | `filler` | A filler phrase from the list below. |
+| 4 | `section-length` | A `## Summary` of more than 4 sentences, or a `## Key ideas` bullet of more than 2 sentences. |
+
+Headings are exempt from checks 1–4. The limits and the filler list
+are constants in `wiki_studio.schema` (`PROSE_MAX_WORDS`,
+`PROSE_MAX_WORDS_NUMBERED`, `SUMMARY_MAX_SENTENCES`,
+`KEY_IDEA_MAX_SENTENCES`, `FILLER_PHRASES`, `PROSE_ABBREVIATIONS`).
+
+Filler phrases, matched as whole words in any case: "it is important
+to note", "it should be noted", "in order to", "ensure that", "make
+sure that", "please note", "basically".
+
+### How the scanner reads a page
+
+- It skips frontmatter, fenced code (```` ``` ```` and `~~~`), table
+  rows (`|`), blockquotes (`>`), HTML comments, the `Avoid:` lines of
+  `glossary/index.md` and thematic breaks (`---`, `***`).
+- It skips an indented code block (4 spaces or a tab) only when the
+  block follows a blank line outside a list.
+- It joins wrapped lines into one paragraph. Each list item and each
+  heading is its own segment.
+- Inline code counts as one word. A bare URL counts as one word.
+  `[text](target)` counts as `text`.
+- A sentence ends at `.`, `!` or `?` followed by whitespace and then a
+  capital letter, a backtick or the end of the text. A period after
+  "e.g.", "i.e.", "etc." or "vs." does not end a sentence.
+
+### Known limits of the scanner
+
+The scanner is line-based, not a CommonMark parser. Its findings are
+approximate:
+
+- A sentence that starts with a digit or a lowercase word is joined to
+  the sentence before it. Other abbreviations ("Fig.", "Dr.") end a
+  sentence.
+- An indented code block inside a list item, an HTML block other than a
+  comment, and a setext heading are read as prose.
+- A line that starts with `|` or `>` is skipped even when it is not a
+  table row or a quote.
+- An HTML comment marker inside inline code still starts a comment.
+- A list item's text after a blank line is a separate paragraph
+  segment, so check 4 counts only the item's first paragraph.
+
 ## What the linter does NOT check
 
 - **Prose structure.** The structural lint does not check it.
