@@ -3,7 +3,7 @@
 
 [tool.poetry]
 name = "wiki-studio"
-version = "0.4.1"
+version = "0.5.0"
 description = "Karpathy-pattern LLM wiki maintainer: ingest, promote, query, lint and audit a curated markdown knowledge base."
 authors = ["EGOGE <i.am.goga@gmail.com>"]
 license = "Apache-2.0"

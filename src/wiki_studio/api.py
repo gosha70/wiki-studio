@@ -368,7 +368,7 @@ def _ingest_multi(
     today = datetime.date.today().isoformat()
     output_dir = proposals_root / f"{today}-{request.source_path.stem or 'source'}"
     try:
-        written = write_patch_set_dir(patch, output_dir)
+        written = write_patch_set_dir(patch, output_dir, wiki_dir=paths.wiki_dir)
     except OSError as exc:
         raise OutputWriteError(f"could not write patch-set dir at {output_dir}: {exc}") from exc
     if not dry_run and patch.edits:
@@ -443,7 +443,7 @@ def propose(
     except OSError as exc:
         raise OutputWriteError(f"could not create patch-set dir at {output_dir}: {exc}") from exc
     try:
-        written = write_patch_set_dir(patch, output_dir)
+        written = write_patch_set_dir(patch, output_dir, wiki_dir=paths.wiki_dir)
         _write_ingest_snapshot(written)
     except Exception as exc:
         # Any failure, not only OSError: leave no half-written directory behind.
@@ -624,7 +624,7 @@ def query(
     today = datetime.date.today().isoformat()
     out = (output_dir if output_dir is not None else paths.proposals_dir) / f"{today}-{_FILE_BACK_SLUG}"
     try:
-        written = write_patch_set_dir(patch, out)
+        written = write_patch_set_dir(patch, out, wiki_dir=paths.wiki_dir)
     except OSError as exc:
         raise OutputWriteError(f"could not write file-back dir: {exc}") from exc
     return QueryResult(answer=answer, patch=patch, file_back_dir=written)

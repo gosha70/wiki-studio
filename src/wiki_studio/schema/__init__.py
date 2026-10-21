@@ -111,3 +111,6 @@ FILLER_PHRASES: tuple[str, ...] = (
 )
 # A period after these is not a sentence boundary.
 PROSE_ABBREVIATIONS: tuple[str, ...] = ("e.g.", "i.e.", "etc.", "vs.")
+
+# Units a number must carry to count as a fact for the update fact check (fact_diff.py).
+FACT_UNITS: tuple[str, ...] = ("ms", "s", "min", "h", "d", "KB", "MB", "GB", "%", "words", "lines", "tokens")

@@ -378,6 +378,19 @@ def _paths_from_args(args: argparse.Namespace) -> WikiPaths:
 # ── Verb implementations (print only; the work is in wiki_studio.api) ──
 
 
+def _print_fact_warnings(patch_dir: Path | None) -> None:
+    """Print each edit's ``fact_warnings`` from ``<patch_dir>/plan.json`` to stderr; advisory, never an exit code."""
+    plan_path = patch_dir / "plan.json" if patch_dir is not None else None
+    if plan_path is None or not plan_path.is_file():
+        return
+    for edit in json.loads(plan_path.read_text(encoding="utf-8")).get("edits", []):
+        items = edit.get("fact_warnings") or []
+        if items:
+            print(f"fact-check: {edit['path']}: {len(items)} item(s) removed", file=sys.stderr)
+            for item in items:
+                print(f"  - {item}", file=sys.stderr)
+
+
 def _do_ingest(args: argparse.Namespace) -> int:
     """Multi-page ingest by default; --legacy-single-source runs the v1 generator."""
     result = api.ingest(
@@ -400,6 +413,7 @@ def _do_ingest(args: argparse.Namespace) -> int:
         print(f"  rationale: {result.rationale}", file=sys.stderr)
         return 0
     print(str(result.written))
+    _print_fact_warnings(result.written)
     return 0
 
 
@@ -462,6 +476,7 @@ def _do_query(args: argparse.Namespace) -> int:
             print("(--file-back: empty patch-set; nothing to file back)", file=sys.stderr)
         else:
             print(f"--- file-back patch-set: {result.file_back_dir}", file=sys.stderr)
+            _print_fact_warnings(result.file_back_dir)
     return 0
 
 
@@ -613,6 +628,8 @@ def _do_propose(args: argparse.Namespace) -> int:
     print(str(written))
     for edit in edits:
         print(f"  {edit.action} {edit.path}")
+    # Before the optional promote, so the curator sees what an update drops before it lands.
+    _print_fact_warnings(written)
     if not args.promote:
         return 0
     result = api.promote(written, paths, allow_out_of_repo=args.allow_out_of_repo)

@@ -6,6 +6,14 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-10-20
+
+Plain technical English for wiki pages (closes #28): writing rules in the
+prompts, a glossary term lock, advisory prose checks and fact-preservation
+warnings on updates. Exit codes are unchanged; the patch-set format and the
+page schema gain one optional key each; `promote` is never blocked by the new
+findings.
+
 ### Added
 
 - Writing rules for wiki prose (issue #28). `schema/ingest-rules.md` gains a
@@ -36,6 +44,15 @@ uses [Semantic Versioning](https://semver.org/).
   the exit code is 0, or 1 under `--strict`. `--paths` limits the pages
   scanned; the term lock still reads the whole glossary. `api.lint` gains
   `prose: bool = False` and `LintResult.prose`.
+- Fact-preservation warnings on updates (issue #28). When `ingest`,
+  `query --file-back` or `propose` writes an `update` edit whose page exists,
+  the citations (`sources[].path`, `path:line`), backticked identifiers and
+  numbers with a unit that the new content drops are recorded as
+  `edits[].fact_warnings` in `plan.json` (an optional key, documented in
+  `docs/patch-set-format.md`) and printed to stderr as
+  `fact-check: <path>: N item(s) removed`. `propose --promote` prints them
+  before it applies the patch-set. The warnings are advisory: no exit code
+  changes and `promote` ignores the key.
 
 ### Changed
 
