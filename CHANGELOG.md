@@ -18,6 +18,25 @@ uses [Semantic Versioning](https://semver.org/).
   The ingest, multi-page ingest and query prompts already load
   `ingest-rules.md`, so all three now carry the rules. `page-types.md`,
   `WIKI_MAINTAINER.md` and `lint-rules.md` point to the section.
+- Optional `avoid:` key on glossary pages (page schema addition, issue #28).
+  A per-file glossary page may carry `avoid: alignment check, origin check`,
+  and a `glossary/index.md` entry may carry an `Avoid: …` line as the first
+  line after its `### <term>` heading. The value is one line of
+  comma-separated terms, unquoted or double-quoted; a term cannot contain a
+  comma, `"` or `\`. Any other form is reported by `lint --health` as the new
+  `avoid-format` finding and contributes no terms. A per-file glossary page's
+  avoid terms count as mentions of that page in the missing-cross-links
+  check. Existing pages stay valid. Decision record:
+  `docs/adr/0001-glossary-avoid-key.md`.
+
+### Changed
+
+- Whole-word slug matching in the missing-cross-links check. A slug used to
+  count as mentioned when it appeared anywhere as a substring, so `lint`
+  matched `linter` and `lint-rules`. Letters, digits, `_` and `-` now count
+  as word characters on both sides, and a slug written with spaces matches
+  only within one paragraph. This removes false `missing-cross-link`
+  findings, which can change the result of `lint --health --strict`.
 
 ### Upgrade notes
 

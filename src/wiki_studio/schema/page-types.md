@@ -128,6 +128,15 @@ its `slug:` is `glossary` (the parent directory name), not `index`.
 Write each definition by the writing rules in
 [`ingest-rules.md`](ingest-rules.md#writing-rules).
 
+Optional keys: a per-file glossary page may carry `avoid:`, one line of
+comma-separated terms the wiki should not use for this concept, for
+example `avoid: alignment check, origin check`. The value is unquoted or
+wrapped in double quotes, and a term cannot contain a comma, `"` or `\`.
+An entry in `glossary/index.md` names its terms on an `Avoid: …` line,
+the first non-blank line after its `### <term>` heading, with the same
+syntax. Any other form is reported as an `avoid-format` finding. See
+`docs/adr/0001-glossary-avoid-key.md`.
+
 ### `open-question` — `open-questions/<slug>.md`
 Something the project does not yet know but should. Marks the gap
 explicitly so it is not forgotten.

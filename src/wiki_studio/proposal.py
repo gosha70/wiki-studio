@@ -133,6 +133,7 @@ HealthFindingKind = Literal[
     "stale-claim",
     "weak-orphan",
     "missing-cross-link",
+    "avoid-format",
 ]
 HealthFindingSeverity = Literal["warning", "error"]
 

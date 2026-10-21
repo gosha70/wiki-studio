@@ -17,7 +17,11 @@
 #                         inbound edge (one hub away from disconnect)
 #   4. missing cross-   — entities (page title slugs) appearing in N≥3
 #      links             pages with fewer than 2 cross-links to the
-#                        canonical page
+#                        canonical page; a glossary page's avoid terms
+#                        count as mentions of it
+#
+# Glossary avoid lists in a refused form are reported as avoid-format
+# findings (prose_lint.load_avoid_map).
 #
 # Default mode is advisory (exit 0 with warnings on stderr). --strict
 # flips warnings to non-zero exit. --paths scopes the pass to specific
@@ -39,11 +43,13 @@ from typing import TYPE_CHECKING, Any
 from . import yaml_lite
 from .errors import BackendInvocationError, ContractViolationError
 from .proposal import HealthFinding
+from .prose_lint import GLOSSARY_DIR, GLOSSARY_INDEX, contains_term, load_avoid_map, strip_index_avoid_lines
 from .wiki_state import _read_text_or_empty
 
 if TYPE_CHECKING:
     from .ingestor import Backend
     from .paths import WikiPaths
+    from .prose_lint import AvoidEntry, FormatProblem
 
 # Pattern for [text](path.md) intra-wiki links.
 _MD_LINK_RE = re.compile(r"\]\(([^)]+\.md)(?:#[^)]*)?\)")
@@ -182,25 +188,47 @@ def _check_weak_orphans(wiki_dir: Path) -> list[HealthFinding]:
     return findings
 
 
-def _entity_mentions(text: str, candidates: list[str]) -> set[str]:
+def _entity_mentions(
+    text: str,
+    candidates: list[str],
+    aliases: dict[str, list[str]] | None = None,
+) -> set[str]:
     """Return the subset of ``candidates`` that appear as whole-word
-    matches in ``text`` (case-insensitive)."""
+    matches in ``text`` (case-insensitive).
+
+    ``aliases`` maps a candidate slug to its glossary avoid terms; a
+    whole-word hit on an avoid term counts as a mention of the slug.
+    """
     seen: set[str] = set()
     if not text or not candidates:
         return seen
-    lower = text.lower()
     for slug in candidates:
         # Match the slug as a hyphenated identifier OR the slug with
         # hyphens replaced by spaces (e.g. "origin alignment").
-        if slug.lower() in lower:
-            seen.add(slug)
-        spaced = slug.replace("-", " ").lower()
-        if spaced != slug.lower() and spaced in lower:
+        forms = [slug, slug.replace("-", " ")]
+        forms.extend((aliases or {}).get(slug, []))
+        if any(contains_term(text, form) for form in forms):
             seen.add(slug)
     return seen
 
 
-def _check_missing_cross_links(wiki_dir: Path) -> list[HealthFinding]:
+def _avoid_format_findings(problems: list[FormatProblem]) -> list[HealthFinding]:
+    """Glossary avoid lists in a refused form (prose_lint.load_avoid_map)."""
+    return [
+        HealthFinding(
+            kind="avoid-format",
+            severity="warning",
+            pages=[problem.path],
+            description=f"line {problem.line}: {problem.message}",
+        )
+        for problem in problems
+    ]
+
+
+def _check_missing_cross_links(
+    wiki_dir: Path,
+    avoid_map: dict[str, AvoidEntry] | None = None,
+) -> list[HealthFinding]:
     """Entities (page title slugs) that appear in N≥3 pages with
     fewer than 2 cross-links to the canonical page are flagged.
 
@@ -208,9 +236,16 @@ def _check_missing_cross_links(wiki_dir: Path) -> list[HealthFinding]:
     entity vocabulary. For each slug, count pages whose body (NOT
     frontmatter) mentions the slug; count pages that link to the
     canonical page. If mentions ≥ 3 and links ≤ 1, flag.
+
+    Avoid terms of per-file glossary pages count as mentions of the
+    page; ``Avoid:`` lines of ``glossary/index.md`` entries are not
+    mentions. ``avoid_map`` is read from the wiki when not given.
     """
     findings: list[HealthFinding] = []
     pages = _list_wiki_pages(wiki_dir)
+    if avoid_map is None:
+        avoid_map, _ = load_avoid_map(wiki_dir)
+    aliases = {e.canonical: list(e.terms) for e in avoid_map.values() if e.anchor is None}
 
     # Build slug → canonical-page map.
     slug_to_page: dict[str, str] = {}
@@ -234,7 +269,9 @@ def _check_missing_cross_links(wiki_dir: Path) -> list[HealthFinding]:
             close_idx = content.find("\n---", 3)
             if close_idx != -1:
                 body = content[close_idx + 4 :]
-        page_mentions[rel] = _entity_mentions(body, list(slug_to_page.keys()))
+        if rel == f"{GLOSSARY_DIR}/{GLOSSARY_INDEX}":
+            body = strip_index_avoid_lines(body)
+        page_mentions[rel] = _entity_mentions(body, list(slug_to_page.keys()), aliases)
         page_links[rel] = set(_intra_wiki_links_from(page, wiki_dir))
 
     # index/log/overview are hubs by design — every page is linked
@@ -426,7 +463,7 @@ def lint_health(
     only: list[str] | None = None,
     backend: Backend | None = None,
 ) -> HealthLintResult:
-    """Run all four knowledge-health checks against the wiki.
+    """Run all four knowledge-health checks, and the avoid-format check, against the wiki.
 
     Parameters
     ----------
@@ -445,11 +482,14 @@ def lint_health(
     wiki_dir = paths.wiki_dir
     pages = _list_wiki_pages(wiki_dir)
 
+    avoid_map, avoid_problems = load_avoid_map(wiki_dir)
+
     findings: list[HealthFinding] = []
     findings.extend(_check_stale_claims(paths))
     findings.extend(_check_weak_orphans(wiki_dir))
-    findings.extend(_check_missing_cross_links(wiki_dir))
+    findings.extend(_check_missing_cross_links(wiki_dir, avoid_map))
     findings.extend(_check_contradictions(wiki_dir, backend))
+    findings.extend(_avoid_format_findings(avoid_problems))
 
     if only:
         scoped = set(only)
