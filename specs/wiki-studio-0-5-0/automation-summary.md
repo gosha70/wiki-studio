@@ -13,3 +13,7 @@ Review: PASS (see specs/wiki-studio-0-5-0/collaboration/build-review.md).
 
 ### Phase 5 complete — US5: Fact preservation on update, release 0.5.0 (pitch S5, part D) (2026-10-21T01:58:36Z)
 Review: PASS (see specs/wiki-studio-0-5-0/collaboration/build-review.md).
+
+## Run complete (2026-10-21T01:58:38Z)
+Profile: pr — branch feature/wiki-studio-0-5-0 pushed to origin; a pull request tracks the work (the driver never merges).
+Review artifacts: specs/wiki-studio-0-5-0/collaboration/.
