@@ -4,12 +4,14 @@
 
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import tempfile
 import unittest
 from pathlib import Path
 
-from tests.conftest import run_cli
+from tests.conftest import chdir, run_cli
 from wiki_studio import api
 from wiki_studio.errors import ContractViolationError, SourceMissingError
 from wiki_studio.lint import lint_wiki
@@ -242,6 +244,56 @@ class TestRepeatedRecordings(_Workspace):
         written = Path(result.stdout.splitlines()[0])
         self.assertTrue(written.name.endswith("-draft"))
         self.assertEqual(json.loads((written / "plan.json").read_text(encoding="utf-8"))["backend"], "cli")
+
+
+class TestProposeFactWarnings(_Workspace):
+    """0.5.0 (FR-016): ``propose --from`` prints what an update drops, before ``--promote`` applies it."""
+
+    # The update drops the notes.md citation and both "8 s" mentions; the number is one item.
+    REWRITE = DECISION.replace("sources:\n  - path: notes.md\n", "sources:\n  - url: https://example.com\n").replace(
+        "8 s", "a few seconds"
+    )
+
+    def setUp(self) -> None:
+        super().setUp()
+        api.init(self.paths)
+        live = self.paths.wiki_dir / "decisions" / "retry-backoff.md"
+        live.parent.mkdir(parents=True)
+        live.write_text(DECISION, encoding="utf-8")
+        with (self.paths.wiki_dir / "index.md").open("a", encoding="utf-8") as index:
+            index.write("\n- [Retry backoff](decisions/retry-backoff.md)\n")
+        self.draft = self.write_draft({"decisions/retry-backoff.md": self.REWRITE})
+
+    def cli_merged(self, *argv: str) -> tuple[int, str]:
+        """Run the CLI with stdout and stderr in one buffer, so line order across the two is kept."""
+        from wiki_studio.cli import main
+
+        buffer = io.StringIO()
+        with chdir(self.root), contextlib.redirect_stdout(buffer), contextlib.redirect_stderr(buffer):
+            code = main(list(argv))
+        return code, buffer.getvalue()
+
+    def test_without_promote_warns_and_applies_nothing(self) -> None:
+        result = self.cli("propose", "--from", str(self.draft), "--name", "rewrite")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("fact-check: decisions/retry-backoff.md: 2 item(s) removed", result.stderr)
+        self.assertIn("  - notes.md", result.stderr)
+        self.assertIn("  - 8 s", result.stderr)
+        self.assertNotIn("fact-check", result.stdout)
+        self.assertEqual((self.paths.wiki_dir / "decisions" / "retry-backoff.md").read_text(encoding="utf-8"), DECISION)
+        plan = json.loads((self.paths.proposals_dir / "rewrite" / "plan.json").read_text(encoding="utf-8"))
+        self.assertEqual(plan["edits"][0]["fact_warnings"], ["notes.md", "8 s"])
+
+    def test_with_promote_warns_before_the_apply_line_and_applies(self) -> None:
+        code, output = self.cli_merged("propose", "--from", str(self.draft), "--name", "rewrite", "--promote")
+        self.assertEqual(code, 0, output)
+        warning, applied = "fact-check: decisions/retry-backoff.md: 2 item(s) removed", "\napplied "
+        self.assertIn(applied, output)
+        self.assertLess(output.index(warning), output.index(applied))
+        live = (self.paths.wiki_dir / "decisions" / "retry-backoff.md").read_text(encoding="utf-8")
+        self.assertEqual(live, self.REWRITE)
+        archived = json.loads((self.paths.applied_dir / "rewrite" / "plan.json").read_text(encoding="utf-8"))
+        self.assertEqual(archived["edits"][0]["fact_warnings"], ["notes.md", "8 s"])
 
 
 class TestFind(_Workspace):

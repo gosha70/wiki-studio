@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 from .errors import BackendInvocationError, ContractViolationError, SourceMissingError
+from .fact_diff import removed_facts
 from .prompt import (
     compose_multi_prompt,
     load_schema_files,
@@ -168,6 +169,7 @@ class DefaultMultiIngestor:
 def write_patch_set_dir(
     patch: WikiPatchSet,
     output_dir: Path,
+    wiki_dir: Path | None = None,
 ) -> Path:
     """Write a WikiPatchSet to disk under output_dir.
 
@@ -179,6 +181,11 @@ def write_patch_set_dir(
                                            append-index or append-log lines) gets
                                            preview/<edit.path>.2, .3, ... so no
                                            edit's content overwrites another's
+
+    With ``wiki_dir``, an ``update`` edit whose live page exists gets
+    ``fact_warnings`` in plan.json: the citations, backticked identifiers and
+    numbers with units the new content drops (fact_diff.removed_facts). The
+    key is written only when the list is non-empty; promote ignores it.
 
     Returns the absolute path of <output_dir>.
     Raises OSError if the filesystem operations fail; the caller maps
@@ -200,23 +207,23 @@ def write_patch_set_dir(
         n = seen[key]
         preview_rels.append(f"preview/{key}" if n == 1 else f"preview/{key}.{n}")
 
+    plan_edits: list[dict[str, object]] = []
+    for e, rel in zip(patch.edits, preview_rels, strict=True):
+        # new_content is stored in the preview file; the plan.json stays
+        # small + grep-friendly. Curator reads the preview to see the full content.
+        entry: dict[str, object] = {"path": e.path, "action": e.action, "rationale": e.rationale, "preview": rel}
+        live = wiki_dir / e.path if wiki_dir is not None else None
+        if e.action == "update" and live is not None and live.is_file():
+            warnings = removed_facts(live.read_text(encoding="utf-8"), e.new_content)
+            if warnings:
+                entry["fact_warnings"] = warnings
+        plan_edits.append(entry)
     plan = {
         "version": 1,
         "source_path": patch.source_path,
         "backend": patch.backend,
         "rationale": patch.rationale,
-        "edits": [
-            {
-                "path": e.path,
-                "action": e.action,
-                "rationale": e.rationale,
-                # new_content is stored in the preview file; the plan.json
-                # stays small + grep-friendly. Curator reads the preview
-                # to see the full content.
-                "preview": rel,
-            }
-            for e, rel in zip(patch.edits, preview_rels, strict=True)
-        ],
+        "edits": plan_edits,
     }
     (output_dir / "plan.json").write_text(
         json.dumps(plan, indent=2, ensure_ascii=False) + "\n",

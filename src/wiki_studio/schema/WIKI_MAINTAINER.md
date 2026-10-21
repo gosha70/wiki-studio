@@ -45,7 +45,9 @@ For every promotion or update:
 5. **Cite.** Per [`citation-rules.md`](citation-rules.md), every page
    needs at least one source in its frontmatter. No source → no
    page.
-6. **Write.** Use the template from `page-types.md`. Keep prose tight.
+6. **Write.** Use the template from `page-types.md`. Keep prose tight:
+   follow the writing rules in
+   [`ingest-rules.md`](ingest-rules.md#writing-rules).
    Prefer concrete examples over abstract claims.
 7. **Link.** Add a link to the new or updated page from
    [`../index.md`](../index.md) under the correct section. A page

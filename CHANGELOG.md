@@ -6,6 +6,70 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-10-20
+
+Plain technical English for wiki pages (closes #28): writing rules in the
+prompts, a glossary term lock, advisory prose checks and fact-preservation
+warnings on updates. Exit codes are unchanged; the patch-set format and the
+page schema gain one optional key each; `promote` is never blocked by the new
+findings.
+
+### Added
+
+- Writing rules for wiki prose (issue #28). `schema/ingest-rules.md` gains a
+  `## Writing rules` section: one fact per sentence, at most 25 words per
+  sentence (20 in numbered steps), one instruction per step, active voice, no
+  semicolons, the glossary term for each concept, and a first `## Summary`
+  sentence that states the main claim. A preserve list keeps identifiers,
+  paths, numbers, `path:` citations and the words "if", "unless" and
+  "not verified", and tells the model to split long sentences, not cut them.
+  The ingest, multi-page ingest and query prompts already load
+  `ingest-rules.md`, so all three now carry the rules. `page-types.md`,
+  `WIKI_MAINTAINER.md` and `lint-rules.md` point to the section.
+- Optional `avoid:` key on glossary pages (page schema addition, issue #28).
+  A per-file glossary page may carry `avoid: alignment check, origin check`,
+  and a `glossary/index.md` entry may carry an `Avoid: …` line as the first
+  line after its `### <term>` heading. The value is one line of
+  comma-separated terms, unquoted or double-quoted; a term cannot contain a
+  comma, `"` or `\`. Any other form is reported by `lint --health` as the new
+  `avoid-format` finding and contributes no terms. A per-file glossary page's
+  avoid terms count as mentions of that page in the missing-cross-links
+  check. Existing pages stay valid. Decision record:
+  `docs/adr/0001-glossary-avoid-key.md`.
+- `wiki-studio lint --prose` (issue #28): advisory prose checks for sentence
+  length, semicolons, filler phrases, `## Summary` and `## Key ideas` length,
+  and the glossary term lock, which reports each avoid term used on a
+  non-glossary page with its canonical term. Code, tables, quotes and HTML
+  comments are skipped. Findings go to stderr as `path:line [check] message`;
+  the exit code is 0, or 1 under `--strict`. `--paths` limits the pages
+  scanned; the term lock still reads the whole glossary. `api.lint` gains
+  `prose: bool = False` and `LintResult.prose`.
+- Fact-preservation warnings on updates (issue #28). When `ingest`,
+  `query --file-back` or `propose` writes an `update` edit whose page exists,
+  the citations (`sources[].path`, `path:line`), backticked identifiers and
+  numbers with a unit that the new content drops are recorded as
+  `edits[].fact_warnings` in `plan.json` (an optional key, documented in
+  `docs/patch-set-format.md`) and printed to stderr as
+  `fact-check: <path>: N item(s) removed`. `propose --promote` prints them
+  before it applies the patch-set. The warnings are advisory: no exit code
+  changes and `promote` ignores the key.
+
+### Changed
+
+- Whole-word slug matching in the missing-cross-links check. A slug used to
+  count as mentioned when it appeared anywhere as a substring, so `lint`
+  matched `linter` and `lint-rules`. Letters, digits, `_` and `-` now count
+  as word characters on both sides, and a slug written with spaces matches
+  only within one paragraph. This removes false `missing-cross-link`
+  findings, which can change the result of `lint --health --strict`.
+
+### Upgrade notes
+
+- A wiki with its own `schema/ingest-rules.md` overrides the packaged copy, so
+  its prompts do not get the writing rules. Merge the `## Writing rules`
+  section from the packaged `src/wiki_studio/schema/ingest-rules.md` into the
+  local copy.
+
 ## [0.4.1] — 2026-10-17
 
 Fixes only. The one addition is `propose --allow-out-of-repo` (#24); exit codes,

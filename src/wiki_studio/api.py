@@ -64,12 +64,14 @@ from .proposal import (
     validate_page_edit_semantics,
     validate_patch_set,
 )
+from .prose_lint import run_prose_lint
 from .querier import DEFAULT_MAX_QUERY_PAGES, DefaultQuerier, _select_query_candidates
 
 if TYPE_CHECKING:
     from .health_lint import HealthLintResult
     from .ingestor import Backend
     from .paths import WikiPaths
+    from .prose_lint import ProseLintResult
 
 __all__ = [
     "ALLOW_OUT_OF_REPO_HINT",
@@ -158,24 +160,27 @@ class QueryResult:
 
 @dataclass(frozen=True)
 class LintResult:
-    """Structural violations, audit-format errors and (optionally) knowledge-health findings."""
+    """Structural violations, audit-format errors and (optionally) knowledge-health and prose findings."""
 
     violations: tuple[str, ...]
     pages_checked: int
     audit_errors: tuple[str, ...]
     health: HealthLintResult | None
     strict: bool
+    prose: ProseLintResult | None = None
 
     @property
     def passed(self) -> bool:
-        """Structural violations always fail; audit and health findings fail only under ``strict``."""
+        """Structural violations always fail; audit, health and prose findings fail only under ``strict``."""
         if self.violations:
             return False
         if not self.strict:
             return True
         if self.audit_errors:
             return False
-        return not (self.health is not None and self.health.findings)
+        if self.health is not None and self.health.findings:
+            return False
+        return not (self.prose is not None and self.prose.findings)
 
 
 AuditFlushResult = FlushResult
@@ -363,7 +368,7 @@ def _ingest_multi(
     today = datetime.date.today().isoformat()
     output_dir = proposals_root / f"{today}-{request.source_path.stem or 'source'}"
     try:
-        written = write_patch_set_dir(patch, output_dir)
+        written = write_patch_set_dir(patch, output_dir, wiki_dir=paths.wiki_dir)
     except OSError as exc:
         raise OutputWriteError(f"could not write patch-set dir at {output_dir}: {exc}") from exc
     if not dry_run and patch.edits:
@@ -438,7 +443,7 @@ def propose(
     except OSError as exc:
         raise OutputWriteError(f"could not create patch-set dir at {output_dir}: {exc}") from exc
     try:
-        written = write_patch_set_dir(patch, output_dir)
+        written = write_patch_set_dir(patch, output_dir, wiki_dir=paths.wiki_dir)
         _write_ingest_snapshot(written)
     except Exception as exc:
         # Any failure, not only OSError: leave no half-written directory behind.
@@ -619,7 +624,7 @@ def query(
     today = datetime.date.today().isoformat()
     out = (output_dir if output_dir is not None else paths.proposals_dir) / f"{today}-{_FILE_BACK_SLUG}"
     try:
-        written = write_patch_set_dir(patch, out)
+        written = write_patch_set_dir(patch, out, wiki_dir=paths.wiki_dir)
     except OSError as exc:
         raise OutputWriteError(f"could not write file-back dir: {exc}") from exc
     return QueryResult(answer=answer, patch=patch, file_back_dir=written)
@@ -636,11 +641,15 @@ def lint(
     only: list[str] | None = None,
     backend: str | Backend | None = None,
     redact_output: bool = True,
+    prose: bool = False,
 ) -> LintResult:
     """Structural lint plus the audit-format pass; ``health`` adds the knowledge-health checks.
 
-    ``backend`` is only consulted with ``health`` (for the contradiction
-    check); when it is None, contradictions are skipped.
+    ``prose`` adds the prose checks (``lint --prose``); ``only`` limits the
+    pages they scan. ``backend`` is only consulted with ``health`` (for the
+    contradiction check); when it is None, contradictions are skipped.
+    Avoid-format problems are reported by the health tier when it runs and
+    by the prose tier otherwise, so each appears once.
     """
     violations = tuple(lint_wiki(paths.wiki_dir))
     pages_checked = len(list_pages(paths.wiki_dir))
@@ -649,7 +658,10 @@ def lint(
     if health:
         resolved = prepare_backend(backend, paths, redact_output=redact_output) if backend is not None else None
         health_result = lint_health(paths, only=only, backend=resolved)
-    return LintResult(violations, pages_checked, audit_errors, health_result, strict)
+    prose_result: ProseLintResult | None = None
+    if prose:
+        prose_result = run_prose_lint(paths.wiki_dir, paths=only, avoid_format=not health)
+    return LintResult(violations, pages_checked, audit_errors, health_result, strict, prose_result)
 
 
 # ── audit-flush ───────────────────────────────────────────────

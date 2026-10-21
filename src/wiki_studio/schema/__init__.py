@@ -91,3 +91,26 @@ SOURCELESS_PAGE_TYPES: frozenset[str] = frozenset(
 
 # Frontmatter keys every page must carry.
 REQUIRED_KEYS: tuple[str, ...] = ("page_type", "slug", "title", "status", "last_reviewed")
+
+# Prose limits for ``lint --prose`` (checks 1-4); lint-rules.md documents them.
+# Words per sentence in descriptive text, and in a numbered step.
+PROSE_MAX_WORDS = 25
+PROSE_MAX_WORDS_NUMBERED = 20
+# Sentences in a ``## Summary`` section, and in one ``## Key ideas`` bullet.
+SUMMARY_MAX_SENTENCES = 4
+KEY_IDEA_MAX_SENTENCES = 2
+# Phrases that add words and no fact; matched whole-word, case-insensitive.
+FILLER_PHRASES: tuple[str, ...] = (
+    "it is important to note",
+    "it should be noted",
+    "in order to",
+    "ensure that",
+    "make sure that",
+    "please note",
+    "basically",
+)
+# A period after these is not a sentence boundary.
+PROSE_ABBREVIATIONS: tuple[str, ...] = ("e.g.", "i.e.", "etc.", "vs.")
+
+# Units a number must carry to count as a fact for the update fact check (fact_diff.py).
+FACT_UNITS: tuple[str, ...] = ("ms", "s", "min", "h", "d", "KB", "MB", "GB", "%", "words", "lines", "tokens")
