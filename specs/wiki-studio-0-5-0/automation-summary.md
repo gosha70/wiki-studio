@@ -7,3 +7,6 @@ Review: PASS (see specs/wiki-studio-0-5-0/collaboration/build-review.md).
 
 ### Phase 3 complete — US3: Prose scanner and `lint --prose` checks 1–4 (pitch S3, part C) (2026-10-21T01:40:48Z)
 Review: PASS (see specs/wiki-studio-0-5-0/collaboration/build-review.md).
+
+### Phase 4 complete — US4: Term lock, API and CLI tier (pitch S4, parts B+C, check 5) (2026-10-21T01:47:52Z)
+Review: PASS (see specs/wiki-studio-0-5-0/collaboration/build-review.md).
