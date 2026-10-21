@@ -3,7 +3,7 @@ spec_mode: full
 feature_id: wiki-studio-0-5-0
 risk_category: feature
 justification: "Adds an optional key to the page schema shared with memkernel, a new lint tier with a CLI and API surface, and an optional patch-set key; a full spec pins the accepted syntax, the matcher and the contracts before an unattended build."
-status: draft
+status: approved
 date: 2026-10-20
 collaboration_mode: single
 origin:
