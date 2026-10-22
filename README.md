@@ -49,6 +49,16 @@ Runs the four-question gate over a source file and writes a patch-set
 update) under `<proposals-dir>/<date>-<source-stem>/`, then appends one
 line to the ingest audit log.
 
+An `update` to a page the wiki already has is compared with the live page.
+Citations (`sources[].path`, `path:` in the body, `path:line`), backticked
+identifiers and numbers with a unit that the new content drops are recorded as
+`edits[].fact_warnings` in `plan.json` and printed to stderr as
+`fact-check: <path>: N item(s) removed`. The warnings are advisory: the
+exit code does not change and `promote` ignores them. A live page that
+cannot be read or decoded is reported as `not compared` and recorded as
+`edits[].fact_check_error`; the patch-set is still written. See
+`docs/patch-set-format.md`.
+
 | Flag | Effect |
 |---|---|
 | `--legacy-single-source` | v1 single-page proposal: one `<date>-<slug>.md` file instead of a patch-set |
@@ -82,7 +92,7 @@ stderr and the pages-loaded set is appended to the query log.
 |---|---|
 | `--backend NAME` | as for ingest |
 | `--max-pages N` | cap on pages loaded into the prompt (default 5) |
-| `--file-back` | also ingest the question + answer as a source and write a patch-set the curator can promote |
+| `--file-back` | also ingest the question + answer as a source and write a patch-set the curator can promote; an `update` gets the fact warnings described under `ingest` |
 | `--output-dir DIR` | with `--file-back`, where to write that patch-set |
 | `--debug-unsafe-output` | as for ingest |
 
@@ -154,7 +164,9 @@ and `<dir>/log.md` hold the lines to append, one per line, never a page.
 | `--name NAME` | proposal directory name (default `<date>-<dir-name>`) |
 | `--rationale TEXT` | recorded in `plan.json` and the audit archive |
 
-Invalid pages exit 4 with every problem listed and nothing written.
+Invalid pages exit 4 with every problem listed and nothing written. An
+`update` prints the fact warnings described under `ingest` after the
+patch-set is written and before the optional `--promote` step.
 
 ### `wiki-studio find "<question>"`
 
@@ -222,7 +234,12 @@ its own copy under `<wiki-dir>/schema/`; when that directory exists it is
 used instead of the packaged one. The schema is a published contract
 shared with memkernel's `WikiExporter` and `WikiImporter`; changing
 frontmatter keys, page types or directory names needs a decision record
-in `docs/adr/`.
+in `docs/adr/`. Since 0.5.0 a glossary page may carry one optional key,
+`avoid:`, one line of comma-separated terms the wiki should not use for
+that term (`avoid: alignment check, origin check`); a `glossary/index.md`
+entry names its terms on an `Avoid: …` line instead. `lint --prose` reports
+their use on other pages, outside code and quotes. Decision record:
+`docs/adr/0001-glossary-avoid-key.md`.
 
 The same facts are available as code in `wiki_studio.schema`: `PAGE_TYPES`
 maps each page type to a `PageTypeSpec` (`directory`, `required_sections`,

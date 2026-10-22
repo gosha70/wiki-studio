@@ -93,7 +93,9 @@ sure that", "please note", "basically".
 
 - It skips frontmatter, fenced code (```` ``` ```` and `~~~`), table
   rows (`|`), blockquotes (`>`), HTML comments, the `Avoid:` lines of
-  `glossary/index.md` and thematic breaks (`---`, `***`).
+  `glossary/index.md` and thematic breaks (`---`, `***`). A fence opens
+  at most three spaces in and closes at a run of the same character at
+  least as long, so a shorter fence inside a longer one stays code.
 - It skips an indented code block (4 spaces or a tab) only when the
   block follows a blank line outside a list.
 - It joins wrapped lines into one paragraph. Each list item and each

@@ -45,7 +45,9 @@ the page for a differently worded question.
 All three verbs exist from wiki-studio **0.4.0**; pin `wiki-studio==0.4.1` on the run
 machine (for example `pipx install wiki-studio==0.4.1`, so it is on the `PATH` the
 runner passes through). 0.4.1 keeps promote's rollback whole when a write fails
-part-way (#21), which matters if a write fails during a measured run.
+part-way (#21), which matters if a write fails during a measured run. The pin
+stays at 0.4.1 for memkernel's benchmark run: 0.5.0 can add fact-check lines to
+`propose` output for an update, and the arm was checked against the 0.4.1 wheel.
 
 ## Which tasks it can attempt
 
