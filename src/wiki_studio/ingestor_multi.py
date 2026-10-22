@@ -220,8 +220,11 @@ def write_patch_set_dir(
             # reported as "not compared" and never blocks the proposal.
             try:
                 old_content = live.read_text(encoding="utf-8")
-            except (OSError, UnicodeDecodeError) as exc:
-                entry["fact_check_error"] = f"live page not readable: {exc}"
+            except UnicodeDecodeError:
+                entry["fact_check_error"] = "live page not readable: not valid UTF-8"
+            except OSError as exc:
+                # The plan is archived into the wiki on promote: record the error kind, not a machine path.
+                entry["fact_check_error"] = f"live page not readable: {exc.strerror or type(exc).__name__}"
             else:
                 warnings = removed_facts(old_content, e.new_content)
                 if warnings:

@@ -99,6 +99,13 @@ class TestRemovedFacts(unittest.TestCase):
         self.assertEqual(removed_facts(old, "Intro.\n"), ["required_id", "5 ms"])
         self.assertEqual(removed_facts("```x```\n\nCall `y` in 5 ms.\n", "Call.\n"), ["x", "y", "5 ms"])
 
+    def test_fence_under_a_deep_list_item_is_code(self) -> None:
+        steps = "".join(f"{n}. Step {n}.\n" for n in range(1, 10))
+        old = steps + "10. Run:\n\n    ```bash\n    echo `date` 5 ms\n    ```\n\n11. Done.\n"
+        self.assertEqual(removed_facts(old, steps + "10. Run.\n\n11. Done.\n"), [])
+        nested = "- a\n  - b:\n\n    ~~~\n    `x` 5 ms\n    ~~~\n"
+        self.assertEqual(removed_facts(nested, "- a\n"), [])
+
     def test_shorter_fence_inside_a_longer_one_does_not_close_it(self) -> None:
         old = "Example:\n\n````md\n```\necho `date` 5 ms\n```\n````\n"
         self.assertEqual(removed_facts(old, "Example.\n"), [])
@@ -149,8 +156,23 @@ class TestProposeFactWarnings(unittest.TestCase):
         live.write_bytes(PAGE.encode("utf-8") + b"\xff\n")
         [edit] = self.plan_edits([PageEdit("decisions/retry-backoff.md", "update", DROPPED, "tighten")], "bad")
         self.assertNotIn("fact_warnings", edit)
-        self.assertIn("live page not readable", str(edit["fact_check_error"]))
+        self.assertEqual(edit["fact_check_error"], "live page not readable: not valid UTF-8")
         self.assertTrue((self.paths.proposals_dir / "bad" / "preview" / "decisions" / "retry-backoff.md").is_file())
+
+    def test_unreadable_live_page_records_the_error_kind_not_the_path(self) -> None:
+        from unittest import mock
+
+        live = self.paths.wiki_dir / "decisions" / "retry-backoff.md"
+        real_read_text = Path.read_text
+
+        def read_text(path: Path, *args: object, **kwargs: object) -> str:
+            if path == live:
+                raise PermissionError(13, "Permission denied", str(live))
+            return real_read_text(path, *args, **kwargs)  # type: ignore[arg-type]
+
+        with mock.patch.object(Path, "read_text", read_text):
+            [edit] = self.plan_edits([PageEdit("decisions/retry-backoff.md", "update", DROPPED, "tighten")], "denied")
+        self.assertEqual(edit["fact_check_error"], "live page not readable: Permission denied")
 
     def test_create_edit_writes_no_key(self) -> None:
         page = PAGE.replace("retry-backoff", "jitter").replace("Retry backoff", "Jitter")

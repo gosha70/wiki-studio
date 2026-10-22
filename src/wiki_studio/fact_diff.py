@@ -56,19 +56,27 @@ def _split_frontmatter(text: str) -> tuple[list[str], str]:
 
 
 def _without_fences(body: str) -> str:
-    """The body with fenced code blocks blanked out (line count kept)."""
+    """The body with fenced code blocks blanked out (line count kept).
+
+    A fence under a deep list item sits four or more spaces in; it counts
+    when a matching close follows. An unclosed fence at the margin runs to
+    the end of the page; an unclosed indented one is plain text.
+    """
+    lines = body.splitlines()
     out: list[str] = []
-    fence: str | None = None
-    for line in body.splitlines():
-        if fence is not None:
-            if closes_fence(line, fence):
-                fence = None
-            out.append("")
-        elif (opened := open_fence(line)) is not None:
-            fence = opened
-            out.append("")
-        else:
-            out.append(line)
+    i = 0
+    while i < len(lines):
+        opened = open_fence(lines[i], indented=True)
+        if opened is not None:
+            close = next((j for j in range(i + 1, len(lines)) if closes_fence(lines[j], opened, indented=True)), None)
+            if close is None and open_fence(lines[i]) is not None:
+                close = len(lines) - 1
+            if close is not None:
+                out.extend([""] * (close - i + 1))
+                i = close + 1
+                continue
+        out.append(lines[i])
+        i += 1
     return "\n".join(out)
 
 

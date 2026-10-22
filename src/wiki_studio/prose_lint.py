@@ -69,15 +69,19 @@ _BULLET_RE = re.compile(r"^[ \t]*(?:[-*+]|\d+[.)])[ \t]+")
 # A fence is three or more backticks or tildes indented at most three spaces
 # (CommonMark); a deeper indent, or a tab, is indented code. The run is the delimiter.
 _FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
+# The same run at any indent, for a caller that checks for a matching close itself.
+_INDENTED_FENCE_RE = re.compile(r"^[ \t]*(`{3,}|~{3,})")
 
 
-def open_fence(line: str) -> str | None:
+def open_fence(line: str, *, indented: bool = False) -> str | None:
     """The delimiter that ``line`` opens a fenced code block with, or None.
 
     A backtick fence's info string may not hold a backtick, so a line that is
-    an inline code span (```` ```x``` ````) does not open a block.
+    an inline code span (```` ```x``` ````) does not open a block. With
+    ``indented`` the run may sit at any indent, for a fence under a deep list
+    item; the caller then has to find the matching close.
     """
-    match = _FENCE_RE.match(line)
+    match = (_INDENTED_FENCE_RE if indented else _FENCE_RE).match(line)
     if not match:
         return None
     run = match.group(1)
@@ -86,14 +90,14 @@ def open_fence(line: str) -> str | None:
     return run
 
 
-def closes_fence(line: str, fence: str) -> bool:
+def closes_fence(line: str, fence: str, *, indented: bool = False) -> bool:
     """True when ``line`` closes a block opened by ``fence``.
 
     The closing run uses the same character, is at least as long as the
     opening run and carries nothing else on the line, so a shorter fence
     inside a longer one, or an info string, never closes the block.
     """
-    match = _FENCE_RE.match(line)
+    match = (_INDENTED_FENCE_RE if indented else _FENCE_RE).match(line)
     if not match:
         return False
     run = match.group(1)
