@@ -19,9 +19,9 @@ import re
 
 from . import yaml_lite
 from .errors import ContractViolationError
+from .prose_lint import closes_fence, open_fence
 from .schema import FACT_UNITS
 
-_FENCE_RE = re.compile(r"^\s*(```|~~~)")
 # A backtick span; it may wrap onto the next line but never across a blank line.
 _BACKTICK_RE = re.compile(r"`((?:[^`\n]|\n(?![ \t]*\n))+)`")
 # `<file>:<line>` or `<file>:<line>-<line>`: a path segment with an extension, then a line number.
@@ -29,8 +29,11 @@ _PATH_LINE_RE = re.compile(r"(?<![\w./-])((?:[\w.-]+/)*[\w.-]+\.\w+):(\d+(?:-\d+
 # `path: <x>` written in the body (for example a citation moved out of the frontmatter).
 _BODY_PATH_RE = re.compile(r"(?<![\w-])path:[ \t]*([^\s`)\],]+)")
 _UNIT_ALT = "|".join(re.escape(u) for u in sorted(FACT_UNITS, key=len, reverse=True))
+# A minus sign is part of the number ("-5 ms"); a range ("5-10 ms") is not, because
+# the lookbehind refuses a sign glued to a word character. The integer part may be
+# empty when a fraction follows (".5 s").
 _NUMBER_RE = re.compile(
-    rf"(?<![\w.,])(\d{{1,3}}(?:,\d{{3}})+|\d+)(\.\d+)?[ \t]*\n?[ \t]*({_UNIT_ALT})(?![A-Za-z0-9])",
+    rf"(?<![\w.,])(-?)(\d{{1,3}}(?:,\d{{3}})+|\d+|(?=\.\d))(\.\d+)?[ \t]*\n?[ \t]*({_UNIT_ALT})(?![A-Za-z0-9])",
     re.IGNORECASE,
 )
 
@@ -53,20 +56,27 @@ def _split_frontmatter(text: str) -> tuple[list[str], str]:
 
 
 def _without_fences(body: str) -> str:
-    """The body with fenced code blocks blanked out (line count kept)."""
+    """The body with fenced code blocks blanked out (line count kept).
+
+    A fence under a deep list item sits four or more spaces in; it counts
+    when a matching close follows. An unclosed fence at the margin runs to
+    the end of the page; an unclosed indented one is plain text.
+    """
+    lines = body.splitlines()
     out: list[str] = []
-    fence: str | None = None
-    for line in body.splitlines():
-        m = _FENCE_RE.match(line)
-        if fence is None and m:
-            fence = m.group(1)
-            out.append("")
-        elif fence is not None:
-            if line.strip().startswith(fence):
-                fence = None
-            out.append("")
-        else:
-            out.append(line)
+    i = 0
+    while i < len(lines):
+        opened = open_fence(lines[i], indented=True)
+        if opened is not None:
+            close = next((j for j in range(i + 1, len(lines)) if closes_fence(lines[j], opened, indented=True)), None)
+            if close is None and open_fence(lines[i]) is not None:
+                close = len(lines) - 1
+            if close is not None:
+                out.extend([""] * (close - i + 1))
+                i = close + 1
+                continue
+        out.append(lines[i])
+        i += 1
     return "\n".join(out)
 
 
@@ -75,9 +85,9 @@ def _normalize_identifier(raw: str) -> str:
     return ident[:-2] if ident.endswith("()") else ident
 
 
-def _normalize_number(integer: str, fraction: str | None, unit: str) -> str:
+def _normalize_number(sign: str, integer: str, fraction: str | None, unit: str) -> str:
     unit = unit.lower()
-    number = integer.replace(",", "") + (fraction or "")
+    number = sign + (integer.replace(",", "") or "0") + (fraction or "")
     return f"{number}{unit}" if unit == "%" else f"{number} {unit}"
 
 
@@ -89,7 +99,7 @@ def _facts(text: str) -> list[str]:
     found += [f"{m.group(1)}:{m.group(2)}" for m in _PATH_LINE_RE.finditer(body)]
     prose = _without_fences(body)
     found += [_normalize_identifier(m.group(1)) for m in _BACKTICK_RE.finditer(prose)]
-    found += [_normalize_number(m.group(1), m.group(2), m.group(3)) for m in _NUMBER_RE.finditer(prose)]
+    found += [_normalize_number(*m.groups()) for m in _NUMBER_RE.finditer(prose)]
     return list(dict.fromkeys(f for f in found if f))
 
 

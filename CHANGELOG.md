@@ -52,7 +52,11 @@ findings.
   `docs/patch-set-format.md`) and printed to stderr as
   `fact-check: <path>: N item(s) removed`. `propose --promote` prints them
   before it applies the patch-set. The warnings are advisory: no exit code
-  changes and `promote` ignores the key.
+  changes and `promote` ignores the key. A number keeps its minus sign and a
+  fraction without a leading zero (`.5 s`) is read as `0.5 s`. When the live
+  page cannot be read or decoded, `edits[].fact_check_error` records why,
+  the CLI prints `fact-check: <path>: not compared (<reason>)` and the
+  proposal is still written.
 
 ### Changed
 

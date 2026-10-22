@@ -185,7 +185,9 @@ def write_patch_set_dir(
     With ``wiki_dir``, an ``update`` edit whose live page exists gets
     ``fact_warnings`` in plan.json: the citations, backticked identifiers and
     numbers with units the new content drops (fact_diff.removed_facts). The
-    key is written only when the list is non-empty; promote ignores it.
+    key is written only when the list is non-empty. When the live page cannot
+    be read or decoded, ``fact_check_error`` records why and no comparison
+    is claimed. Promote ignores both keys.
 
     Returns the absolute path of <output_dir>.
     Raises OSError if the filesystem operations fail; the caller maps
@@ -214,9 +216,19 @@ def write_patch_set_dir(
         entry: dict[str, object] = {"path": e.path, "action": e.action, "rationale": e.rationale, "preview": rel}
         live = wiki_dir / e.path if wiki_dir is not None else None
         if e.action == "update" and live is not None and live.is_file():
-            warnings = removed_facts(live.read_text(encoding="utf-8"), e.new_content)
-            if warnings:
-                entry["fact_warnings"] = warnings
+            # The check is advisory: a live page that cannot be read or decoded is
+            # reported as "not compared" and never blocks the proposal.
+            try:
+                old_content = live.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                entry["fact_check_error"] = "live page not readable: not valid UTF-8"
+            except OSError as exc:
+                # The plan is archived into the wiki on promote: record the error kind, not a machine path.
+                entry["fact_check_error"] = f"live page not readable: {exc.strerror or type(exc).__name__}"
+            else:
+                warnings = removed_facts(old_content, e.new_content)
+                if warnings:
+                    entry["fact_warnings"] = warnings
         plan_edits.append(entry)
     plan = {
         "version": 1,
