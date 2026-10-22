@@ -284,6 +284,17 @@ class TestProposeFactWarnings(_Workspace):
         plan = json.loads((self.paths.proposals_dir / "rewrite" / "plan.json").read_text(encoding="utf-8"))
         self.assertEqual(plan["edits"][0]["fact_warnings"], ["notes.md", "8 s"])
 
+    def test_undecodable_live_page_does_not_block_the_proposal(self) -> None:
+        live = self.paths.wiki_dir / "decisions" / "retry-backoff.md"
+        live.write_bytes(DECISION.encode("utf-8") + b"\xff\n")
+        result = self.cli("propose", "--from", str(self.draft), "--name", "rewrite")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("fact-check: decisions/retry-backoff.md: not compared (live page not readable", result.stderr)
+        self.assertNotIn("item(s) removed", result.stderr)
+        plan = json.loads((self.paths.proposals_dir / "rewrite" / "plan.json").read_text(encoding="utf-8"))
+        self.assertNotIn("fact_warnings", plan["edits"][0])
+        self.assertIn("live page not readable", plan["edits"][0]["fact_check_error"])
+
     def test_with_promote_warns_before_the_apply_line_and_applies(self) -> None:
         code, output = self.cli_merged("propose", "--from", str(self.draft), "--name", "rewrite", "--promote")
         self.assertEqual(code, 0, output)

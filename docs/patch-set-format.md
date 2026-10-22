@@ -68,6 +68,7 @@ file; `promote` accepts both.
 | `edits[].rationale` | One-line justification for this edit. |
 | `edits[].preview` | Where the content lives: `preview/<path>`; a second, third ... edit to the same path (several `append-index` or `append-log` lines) gets `preview/<path>.2`, `.3`, ... in edit order (`.2` is the second edit to that path, not a revision). `<path>` is normalised (`./` and repeated `/` dropped; `..` and absolute paths are rejected earlier), so `./index.md` is the same path as `index.md`. Always read the pointer. |
 | `edits[].fact_warnings` | Optional, advisory. On an `update` whose live page exists: the facts the new content drops — `path:` citations (frontmatter `sources[].path`, body `path:line`), backticked identifiers and numbers with a unit (ms, s, min, h, d, KB, MB, GB, %, words, lines, tokens). Compared as normalized sets over the whole page, so a moved citation or a reflowed paragraph is no warning. Present only when non-empty; the CLI prints it to stderr as `fact-check: <path>: N item(s) removed`. `promote` ignores the key and never blocks on it. |
+| `edits[].fact_check_error` | Optional, advisory. On an `update` whose live page exists but cannot be read or decoded as UTF-8: why the fact check did not run. The proposal is still written and no comparison is claimed; the CLI prints `fact-check: <path>: not compared (<reason>)` to stderr. `promote` ignores the key. |
 
 The content itself is not in `plan.json`: `preview/<path>` holds the full
 page (frontmatter and body) for `create` and `update`, or the line(s) to

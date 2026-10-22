@@ -379,11 +379,17 @@ def _paths_from_args(args: argparse.Namespace) -> WikiPaths:
 
 
 def _print_fact_warnings(patch_dir: Path | None) -> None:
-    """Print each edit's ``fact_warnings`` from ``<patch_dir>/plan.json`` to stderr; advisory, never an exit code."""
+    """Print each edit's ``fact_warnings`` (or ``fact_check_error``) from ``<patch_dir>/plan.json`` to stderr.
+
+    Advisory: never an exit code.
+    """
     plan_path = patch_dir / "plan.json" if patch_dir is not None else None
     if plan_path is None or not plan_path.is_file():
         return
     for edit in json.loads(plan_path.read_text(encoding="utf-8")).get("edits", []):
+        error = edit.get("fact_check_error")
+        if error:
+            print(f"fact-check: {edit['path']}: not compared ({error})", file=sys.stderr)
         items = edit.get("fact_warnings") or []
         if items:
             print(f"fact-check: {edit['path']}: {len(items)} item(s) removed", file=sys.stderr)

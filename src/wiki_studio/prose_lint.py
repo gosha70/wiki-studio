@@ -66,7 +66,47 @@ _INDEX_AVOID_RE = re.compile(r"^Avoid:[ \t]*(.*)$")
 # Any line that looks like an index Avoid: line, bulleted or indented.
 _ANY_AVOID_LINE_RE = re.compile(r"^[ \t]*(?:[-*+][ \t]+)?Avoid:")
 _BULLET_RE = re.compile(r"^[ \t]*(?:[-*+]|\d+[.)])[ \t]+")
-_FENCE_RE = re.compile(r"^[ \t]*(```|~~~)")
+# A fence is three or more backticks or tildes indented at most three spaces
+# (CommonMark); a deeper indent, or a tab, is indented code. The run is the delimiter.
+_FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
+
+
+def open_fence(line: str) -> str | None:
+    """The delimiter that ``line`` opens a fenced code block with, or None.
+
+    A backtick fence's info string may not hold a backtick, so a line that is
+    an inline code span (```` ```x``` ````) does not open a block.
+    """
+    match = _FENCE_RE.match(line)
+    if not match:
+        return None
+    run = match.group(1)
+    if run[0] == "`" and "`" in line[match.end() :]:
+        return None
+    return run
+
+
+def closes_fence(line: str, fence: str) -> bool:
+    """True when ``line`` closes a block opened by ``fence``.
+
+    The closing run uses the same character, is at least as long as the
+    opening run and carries nothing else on the line, so a shorter fence
+    inside a longer one, or an info string, never closes the block.
+    """
+    match = _FENCE_RE.match(line)
+    if not match:
+        return False
+    run = match.group(1)
+    return run[0] == fence[0] and len(run) >= len(fence) and not line[match.end() :].strip()
+
+
+def term_key(term: str) -> str:
+    """The key under which the matcher treats two avoid terms as the same term.
+
+    ``find_term`` ignores case and matches a space inside a term against any
+    whitespace run, so collision checks compare terms by this key.
+    """
+    return " ".join(term.split()).lower()
 
 
 @dataclass(frozen=True)
@@ -152,11 +192,14 @@ def strip_index_avoid_lines(text: str) -> str:
     around it does not join into one paragraph.
     """
     out: list[str] = []
-    in_fence = False
+    fence: str | None = None
     for line in text.split("\n"):
-        if _FENCE_RE.match(line):
-            in_fence = not in_fence
-        elif not in_fence and _ANY_AVOID_LINE_RE.match(line):
+        if fence is not None:
+            if closes_fence(line, fence):
+                fence = None
+        elif (opened := open_fence(line)) is not None:
+            fence = opened
+        elif _ANY_AVOID_LINE_RE.match(line):
             line = ""
         out.append(line)
     return "\n".join(out)
@@ -222,13 +265,15 @@ def _read_index_avoid(rel: str, text: str) -> tuple[list[tuple[AvoidEntry, int]]
     # Pass 1: entry headings and Avoid-looking lines, outside fenced code.
     headings: list[tuple[int, str]] = []
     avoid_lines: list[int] = []
-    in_fence = False
+    fence: str | None = None
     for i in range(start, len(lines)):
         line = lines[i]
-        if _FENCE_RE.match(line):
-            in_fence = not in_fence
+        if fence is not None:
+            if closes_fence(line, fence):
+                fence = None
             continue
-        if in_fence:
+        if (opened := open_fence(line)) is not None:
+            fence = opened
             continue
         heading = _ENTRY_HEADING_RE.match(line)
         if heading:
@@ -293,9 +338,9 @@ def load_avoid_map(wiki_dir: Path) -> tuple[dict[str, AvoidEntry], list[FormatPr
 
     owners: dict[str, list[tuple[AvoidEntry, int]]] = {}
     for entry, line in raw_entries:
-        for term in dict.fromkeys(t.lower() for t in entry.terms):
+        for term in dict.fromkeys(term_key(t) for t in entry.terms):
             owners.setdefault(term, []).append((entry, line))
-    shared = {term for term, found in owners.items() if len({e.canonical.lower() for e, _ in found}) > 1}
+    shared = {term for term, found in owners.items() if len({term_key(e.canonical) for e, _ in found}) > 1}
     for term in sorted(shared):
         names = ", ".join(sorted({e.canonical for e, _ in owners[term]}))
         last, line = owners[term][-1]
@@ -304,12 +349,12 @@ def load_avoid_map(wiki_dir: Path) -> tuple[dict[str, AvoidEntry], list[FormatPr
     avoid_map: dict[str, AvoidEntry] = {}
     seen: set[str] = set()
     for entry, line in raw_entries:
-        if entry.canonical.lower() in seen:
+        if term_key(entry.canonical) in seen:
             message = f"canonical term {entry.canonical!r} has more than one avoid list"
             problems.append(FormatProblem(entry.page, line, message))
             continue
-        seen.add(entry.canonical.lower())
-        terms = tuple(t for t in entry.terms if t.lower() not in shared)
+        seen.add(term_key(entry.canonical))
+        terms = tuple(t for t in entry.terms if term_key(t) not in shared)
         if terms:
             avoid_map[entry.canonical] = AvoidEntry(entry.canonical, entry.page, entry.anchor, terms)
     return avoid_map, problems
@@ -461,14 +506,14 @@ def scan_page(path: str, text: str) -> list[ProseSegment]:
 
     for index in range(end + 1 if end else 0, len(lines)):
         lineno = index + 1
-        fence_match = None if in_comment else _FENCE_RE.match(lines[index])
         if fence is not None:
-            if fence_match and fence_match.group(1) == fence:
+            if closes_fence(lines[index], fence):
                 fence = None
             continue
-        if fence_match:
+        opened = None if in_comment else open_fence(lines[index])
+        if opened is not None:
             flush()
-            fence = fence_match.group(1)
+            fence = opened
             previous_blank = False
             continue
 

@@ -77,9 +77,33 @@ class TestRemovedFacts(unittest.TestCase):
         self.assertEqual(removed_facts("Wait 3 days, retry 2 times, v1.5 s.\n", "Wait.\n"), [])
         self.assertEqual(removed_facts("Keep 12 lines and 5 min.\n", "Keep.\n"), ["12 lines", "5 min"])
 
+    def test_sign_is_part_of_the_number(self) -> None:
+        self.assertEqual(removed_facts("Offset -5 ms.\n", "Offset 5 ms.\n"), ["-5 ms"])
+        self.assertEqual(removed_facts("Offset 5 ms.\n", "Offset -5 ms.\n"), ["5 ms"])
+        self.assertEqual(removed_facts("Offset -5 ms.\n", "Offset removed.\n"), ["-5 ms"])
+        # A range is two unsigned numbers.
+        self.assertEqual(removed_facts("Wait 5-10 ms.\n", "Wait 5 ms and 10 ms.\n"), [])
+
+    def test_fraction_without_leading_zero(self) -> None:
+        self.assertEqual(removed_facts("Limit .5 s.\n", "Limit removed.\n"), ["0.5 s"])
+        self.assertEqual(removed_facts("Limit .5 s.\n", "Limit 0.5 s.\n"), [])
+        self.assertEqual(removed_facts("Limit -.5 s.\n", "Limit .5 s.\n"), ["-0.5 s"])
+        self.assertEqual(removed_facts("Wait v1.5 s.\n", "Wait.\n"), [])
+
     def test_fenced_code_is_not_an_identifier_source(self) -> None:
         old = "Run:\n\n```sh\necho `date` 5 ms\n```\n"
         self.assertEqual(removed_facts(old, "Run.\n"), [])
+
+    def test_indented_backticks_do_not_hide_later_facts(self) -> None:
+        old = "Intro.\n\n    ```\n    code\n\nCall `required_id` within 5 ms.\n"
+        self.assertEqual(removed_facts(old, "Intro.\n"), ["required_id", "5 ms"])
+        self.assertEqual(removed_facts("```x```\n\nCall `y` in 5 ms.\n", "Call.\n"), ["x", "y", "5 ms"])
+
+    def test_shorter_fence_inside_a_longer_one_does_not_close_it(self) -> None:
+        old = "Example:\n\n````md\n```\necho `date` 5 ms\n```\n````\n"
+        self.assertEqual(removed_facts(old, "Example.\n"), [])
+        old = "Example:\n\n```\n~~~\n`x` 5 ms\n```\n"
+        self.assertEqual(removed_facts(old, "Example.\n"), [])
 
     def test_page_without_or_with_broken_frontmatter(self) -> None:
         self.assertEqual(removed_facts("---\nno closing\n`x`\n", ""), ["x"])
@@ -119,6 +143,14 @@ class TestProposeFactWarnings(unittest.TestCase):
         )
         [edit] = self.plan_edits([PageEdit("decisions/retry-backoff.md", "update", new, "reflow")], "reflow")
         self.assertNotIn("fact_warnings", edit)
+
+    def test_undecodable_live_page_is_reported_and_the_proposal_is_written(self) -> None:
+        live = self.paths.wiki_dir / "decisions" / "retry-backoff.md"
+        live.write_bytes(PAGE.encode("utf-8") + b"\xff\n")
+        [edit] = self.plan_edits([PageEdit("decisions/retry-backoff.md", "update", DROPPED, "tighten")], "bad")
+        self.assertNotIn("fact_warnings", edit)
+        self.assertIn("live page not readable", str(edit["fact_check_error"]))
+        self.assertTrue((self.paths.proposals_dir / "bad" / "preview" / "decisions" / "retry-backoff.md").is_file())
 
     def test_create_edit_writes_no_key(self) -> None:
         page = PAGE.replace("retry-backoff", "jitter").replace("Retry backoff", "Jitter")

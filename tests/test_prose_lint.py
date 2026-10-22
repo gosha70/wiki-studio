@@ -76,6 +76,28 @@ class SkipRulesTest(unittest.TestCase):
     def test_tilde_fence_is_skipped_and_backticks_do_not_close_it(self) -> None:
         self._assert_nothing(f"~~~\n```\n{self.LONG_BAD}\n~~~\n")
 
+    def test_shorter_fence_inside_a_longer_one_does_not_close_it(self) -> None:
+        self._assert_nothing(f"````markdown\n```\n{self.LONG_BAD}\n```\n````\n")
+        self._assert_nothing(f"~~~~\n~~~\n{self.LONG_BAD}\n~~~\n~~~~\n")
+        texts = _texts(f"Before.\n\n````md\n```\n{self.LONG_BAD}\n```\n````\n\nAfter.\n")
+        self.assertEqual(texts, ["Before.", "After."])
+
+    def test_closing_fence_may_be_longer_but_carries_no_info_string(self) -> None:
+        self.assertEqual(_texts(f"```\n{self.LONG_BAD}\n````\n\nAfter.\n"), ["After."])
+        self._assert_nothing(f"```\n```bash\n{self.LONG_BAD}\n```\n")
+
+    def test_indented_backticks_are_code_not_a_fence(self) -> None:
+        # FR-010: indented code after a blank line ends at the next prose; the prose stays visible.
+        body = f"Intro.\n\n    ```\n    code\n\nCall `required_id` within 5 ms; {self.LONG_BAD}\n"
+        self.assertEqual(_texts(body), ["Intro.", f"Call `…` within 5 ms; {self.LONG_BAD}"])
+        self.assertTrue(lint_page_prose(_PATH, _FM + body))
+        self.assertEqual(_texts("\t```\n\tcode\n\nAfter.\n"), ["After."])
+        self.assertEqual(_texts("   ```\nhidden; text\n   ```\n\nAfter.\n"), ["After."])
+
+    def test_inline_code_span_line_does_not_open_a_fence(self) -> None:
+        self.assertEqual(_texts("```x```\n\nAfter.\n"), ["`…`", "After."])
+        self.assertEqual(_texts("~~~ `x`\nhidden\n~~~\n\nAfter.\n"), ["After."])
+
     def test_table_rows_are_skipped(self) -> None:
         self._assert_nothing(f"| a | b |\n|---|---|\n| {self.LONG_BAD} | x |\n")
 

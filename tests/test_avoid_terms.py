@@ -138,6 +138,24 @@ class TestRefusedForms(_WikiCase):
         self.assertEqual(avoid_map["origin-gate"].terms, ("origin check",))
         self.assertNotIn("spec-gate", avoid_map)
 
+    def test_collision_ignores_case_and_inner_whitespace(self) -> None:
+        # The matcher treats "origin  check" and "Origin check" as one term, so the collision check must too.
+        self.glossary("origin-gate", "avoid: origin  check\n")
+        self.glossary("spec-gate", "avoid: Origin check\n")
+        avoid_map, problems = load_avoid_map(self.wiki)
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("origin check", problems[0].message)
+        self.assertEqual(avoid_map, {})
+
+    def test_collision_between_frontmatter_and_index_entry(self) -> None:
+        self.glossary("spec-gate", "avoid: alignment\tcheck, spec check\n")
+        self.write("glossary/index.md", _CCT_GLOSSARY_INDEX)
+        avoid_map, problems = load_avoid_map(self.wiki)
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("alignment check", problems[0].message)
+        self.assertEqual(avoid_map["spec-gate"].terms, ("spec check",))
+        self.assertEqual(avoid_map["origin gate"].terms, ("origin check",))
+
     def test_parse_value_names_the_character(self) -> None:
         self.assertIn('"', parse_avoid_value('the "old" gate')[1] or "")
         self.assertIn("\\", parse_avoid_value("C:\\cache")[1] or "")
