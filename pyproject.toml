@@ -8,6 +8,7 @@ description = "Karpathy-pattern LLM wiki maintainer: ingest, promote, query, lin
 authors = ["EGOGE <i.am.goga@gmail.com>"]
 license = "Apache-2.0"
 readme = "README.md"
+homepage = "https://memkernel.dev/wiki-studio/"
 repository = "https://github.com/gosha70/wiki-studio"
 keywords = ["llm", "wiki", "knowledge-base", "markdown", "agents"]
 classifiers = [
