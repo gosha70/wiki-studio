@@ -6,6 +6,11 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Package metadata and the README point to the project page at
+  https://memkernel.dev/wiki-studio/ (PyPI shows the link from the next release).
+
 ## [0.5.0] — 2026-10-20
 
 Plain technical English for wiki pages (closes #28): writing rules in the

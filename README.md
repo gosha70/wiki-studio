@@ -1,6 +1,11 @@
 <p align="center">
   <img src="https://raw.githubusercontent.com/gosha70/wiki-studio/v0.5.0/docs/assets/wiki-studio-banner.png" alt="Wiki-Studio — Turn information into living knowledge." width="760">
 </p>
+<p align="center">
+  <a href="https://memkernel.dev/wiki-studio/">memkernel.dev/wiki-studio</a> ·
+  <a href="https://pypi.org/project/wiki-studio/">PyPI</a> ·
+  <a href="https://github.com/gosha70/wiki-studio/blob/main/CHANGELOG.md">Changelog</a>
+</p>
 
 Karpathy-pattern LLM wiki maintainer: a curated markdown knowledge base
 (`index.md`, `log.md`, typed pages with cited sources) that agents ingest
