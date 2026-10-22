@@ -50,8 +50,8 @@ update) under `<proposals-dir>/<date>-<source-stem>/`, then appends one
 line to the ingest audit log.
 
 An `update` to a page the wiki already has is compared with the live page.
-Citations (`sources[].path`, `path:line`), backticked identifiers and
-numbers with a unit that the new content drops are recorded as
+Citations (`sources[].path`, `path:` in the body, `path:line`), backticked
+identifiers and numbers with a unit that the new content drops are recorded as
 `edits[].fact_warnings` in `plan.json` and printed to stderr as
 `fact-check: <path>: N item(s) removed`. The warnings are advisory: the
 exit code does not change and `promote` ignores them. A live page that
@@ -238,7 +238,8 @@ in `docs/adr/`. Since 0.5.0 a glossary page may carry one optional key,
 `avoid:`, one line of comma-separated terms the wiki should not use for
 that term (`avoid: alignment check, origin check`); a `glossary/index.md`
 entry names its terms on an `Avoid: …` line instead. `lint --prose` reports
-any use of those terms. Decision record: `docs/adr/0001-glossary-avoid-key.md`.
+their use on other pages, outside code and quotes. Decision record:
+`docs/adr/0001-glossary-avoid-key.md`.
 
 The same facts are available as code in `wiki_studio.schema`: `PAGE_TYPES`
 maps each page type to a `PageTypeSpec` (`directory`, `required_sections`,
