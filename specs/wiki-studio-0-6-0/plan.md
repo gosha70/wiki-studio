@@ -61,11 +61,16 @@ Every file and line the spec relies on was checked on `main` at 41cfe54 on
   path nothing. Creates are checked for absence and appends applied to current
   content under the lock; an unhashed replacement is refused unless the caller
   opts into compatibility mode, which is recorded and never described as safe.
-- **ADR-5: Receipts beside immutable submissions.** The archived plan and
-  previews keep their bytes and digests; outcome, overrides and software
-  identity go in `receipt.json`. The archive name carries the plan digest so
-  same-named proposals cannot collide, and retries are answered from the
-  receipt without re-running appends.
+- **ADR-5: Receipts beside immutable submissions, identity by payload.** The
+  archived plan, previews and snapshot keep their bytes; outcome, overrides and
+  software identity go in `receipt.json`. The submission identity is the full
+  payload digest (plan plus previews, as `audit.proposal_hash` already
+  computes), because a plan is pointers and a preview can change under it.
+  Archive directory names stay as in 0.4.0, so `run2_protocol.py` and any
+  script that reads `.applied/<name>/plan.json` keep working. The receipt is
+  written before commit as a recovery marker (`committing`, then `committed`),
+  so a failure between commit and the archive move is recovered without
+  replaying appends, and an uncertain state is refused rather than guessed.
 - **ADR-6: Three containment boundaries.** Wiki for page writes and navigation
   reads, proposal directory for preview reads, root or allowed source root for
   source references. One boundary would either break source citations or let
@@ -83,11 +88,11 @@ Every file and line the spec relies on was checked on `main` at 41cfe54 on
 
 | Phase | What | Main files |
 |---|---|---|
-| US1 | Commit scope, `WikiLock`, receipts and archive naming, retry semantics, lock on the ingest-log append | `promoter.py`, `wikilock.py` (new), `audit.py`, `paths.py`, `docs/patch-set-format.md`, CI workflow (Windows lock job) |
-| US2 | `base_sha256` in the edit model and `plan.json`, `api.read_page` and `wiki-studio read`, hash capture in ingest and `propose --from`, preconditions under the lock, compatibility option, `PromoteResult` fields, dry run on a snapshot | `proposal.py`, `ingestor_multi.py`, `ingestor.py`, `prompt.py`, `api.py`, `cli.py`, `promoter.py`, `docs/patch-set-format.md` |
-| US3 | Symlink refusal, `resolve()`-based checks, preview-pointer rejection, link classification, index-entry rule shared by lint, `find`, `query` and the eval selector | `promoter.py`, `lint.py`, `querier.py`, `api.py`, `paths.py` |
+| US1 | Commit scope, `WikiLock`, receipts with payload identity and the commit/receipt/archive protocol, lock on the ingest-log append and audit-flush | `promoter.py`, `wikilock.py` (new), `audit.py`, `audit_flush.py`, `paths.py`, `docs/patch-set-format.md`, CI workflow (Windows lock job) |
+| US2 | `base_sha256` in the edit model and `plan.json`, `api.read_page` and `wiki-studio read`, single-read hash capture in `wiki_state` and `propose --from`, preconditions under the lock, compatibility option, `PromoteResult` fields, dry run on a snapshot | `proposal.py`, `ingestor_multi.py`, `ingestor.py`, `wiki_state.py`, `prompt.py`, `api.py`, `cli.py`, `promoter.py`, `docs/patch-set-format.md` |
+| US3 | `paths.contain` on every read and write surface (wiki, proposal, source roots), symlink refusal, `--source-root`, link classification, index-entry rule shared by lint, `find`, `query` and the eval selector | `promoter.py`, `lint.py`, `querier.py`, `api.py`, `cli.py`, `paths.py` |
 | US4 | Citation fragments validated against the prompt snapshot; evidence required for a non-empty answer | `querier.py`, README |
-| US5 | Honest guarantees in README, SECURITY.md and docstrings; CHANGELOG with per-operation upgrade notes and limitations; version 0.6.0 | README, SECURITY.md, `promoter.py`, CHANGELOG, `pyproject.toml`, `__init__.py`, `tests/test_cli_contract.py` |
+| US5 | Honest guarantees in README, SECURITY.md and docstrings; CHANGELOG with per-operation upgrade notes and limitations; coverage gate aligned at 92; version 0.6.0 | README, SECURITY.md, `promoter.py`, CHANGELOG, `.github/workflows/ci.yml`, `CLAUDE.md`, `pyproject.toml`, `__init__.py`, `tests/test_cli_contract.py` |
 
 US1 first: US2's precondition check and US3's `lstat` re-check both run
 under the lock. US3 and US4 are independent of US2. US5 last.
@@ -124,8 +129,10 @@ does not carry one yet.
   directory.
 - Adding a Windows CI job may surface unrelated platform differences; the
   fallback is to narrow the classifier to POSIX in this release.
-- The archive rename changes a path consumers may have scripted against;
-  recorded under Changed, and `.applied/` keeps the same parent.
+- The pre-commit receipt adds a write and an fsync to every promote; the cost
+  is small and the alternative, a retry that replays an append, is worse.
+- A missing or corrupt receipt on a proposal under `.applied/` is treated as
+  "not known committed" and refused, never silently reapplied.
 - memkernel's outer snapshot can still revert a committed change until its own
   fix lands; stated as a limitation, not hidden.
 
