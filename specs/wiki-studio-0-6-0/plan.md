@@ -3,7 +3,7 @@ spec_mode: full
 feature_id: wiki-studio-0-6-0
 risk_category: feature
 justification: "Changes the write path of the only module that writes into the wiki, adds an OS lock and a receipt artifact, adds an optional key to the published patch-set format and fields to the public API, and rewrites published guarantees; a full spec pins each behaviour before an unattended build."
-status: draft
+status: approved
 date: 2026-10-23
 collaboration_mode: single
 origin:
@@ -105,8 +105,8 @@ under the lock. US3 and US4 are independent of US2. US5 last.
 `specs/wiki-studio-0-6-0/automation.json`: profile `pr`, branch
 `feature/wiki-studio-0-6-0` off `main`, five phases with no milestone pause,
 DeepSeek gating review (max 3 rounds per phase), caps as for 0.5.0. The
-origin-alignment record is written by the gate before the run; this bundle
-does not carry one yet.
+origin-alignment record `origin-alignment-2026-10-23-2100.md` accompanies the
+approved plan; the gate re-runs it before the build.
 
 ## Test strategy
 
