@@ -70,7 +70,10 @@ Every file and line the spec relies on was checked on `main` at 41cfe54 on
   script that reads `.applied/<name>/plan.json` keep working. The receipt is
   written before commit as a recovery marker (`committing`, then `committed`),
   so a failure between commit and the archive move is recovered without
-  replaying appends, and an uncertain state is refused rather than guessed.
+  replaying appends. The marker tracks only the writes the commit will make,
+  each with its pre- and post-commit hash, so a page that already holds its
+  proposed content cannot masquerade as a partial commit; any state that is
+  neither "all pre" nor "all post" is refused rather than guessed.
 - **ADR-6: Three containment boundaries.** Wiki for page writes and navigation
   reads, proposal directory for preview reads, root or allowed source root for
   source references. One boundary would either break source citations or let
