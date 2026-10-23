@@ -3,7 +3,7 @@ spec_mode: full
 feature_id: wiki-studio-0-6-0
 risk_category: feature
 justification: "Changes the write path of the only module that writes into the wiki, adds an OS lock and a receipt artifact, adds an optional key to the published patch-set format and fields to the public API, and rewrites published guarantees; a full spec pins each behaviour before an unattended build."
-status: approved
+status: draft
 date: 2026-10-23
 collaboration_mode: single
 origin:
@@ -64,8 +64,21 @@ Every file and line the spec relies on was checked on `main` at 41cfe54 on
 - **ADR-5: Receipts beside immutable submissions, identity by payload.** The
   archived plan, previews and snapshot keep their bytes; outcome, overrides and
   software identity go in `receipt.json`. The submission identity is the full
-  payload digest (plan plus previews, as `audit.proposal_hash` already
-  computes), because a plan is pointers and a preview can change under it.
+  payload digest over every byte promote consumes: plan plus every file under
+  `preview/`, hidden files included, with pointers outside `preview/` refused.
+  `audit.proposal_hash` is widened to that rule rather than reused as is,
+  because it skips dot-prefixed files and anything outside `preview/` that the
+  loader still accepts, so a preview could change under an unchanged hash.
+  Promote captures the payload once under the lock and parses, hashes, stages
+  and archives from that capture (the archive is written from the captured
+  bytes and the original removed only when it still matches), and the
+  patch-set writer never reuses a proposal directory, so the receipt and the
+  archive cannot identify bytes other than the ones applied.
+  The ingest log keeps the generated payload's hash and the receipt the
+  promoted payload's; they differ after curator edits by design. The receipt
+  names the wiki it was written for by device and inode (the path is a
+  diagnostic), and recovery refuses a receipt from another wiki, or one it
+  cannot identify, before it classifies, archives or reports anything.
   Archive directory names stay as in 0.4.0, so `run2_protocol.py` and any
   script that reads `.applied/<name>/plan.json` keep working. The receipt is
   written before commit as a recovery marker (`committing`, then `committed`),
@@ -75,8 +88,9 @@ Every file and line the spec relies on was checked on `main` at 41cfe54 on
   proposed content cannot masquerade as a partial commit; any state that is
   neither "all pre" nor "all post" is refused rather than guessed.
 - **ADR-6: Three containment boundaries.** Wiki for page writes and navigation
-  reads, proposal directory for preview reads, root or allowed source root for
-  source references. One boundary would either break source citations or let
+  reads, proposal directory for preview reads (every file an enumeration
+  touches, not only the files plan pointers name), root or allowed source root
+  for source references. One boundary would either break source citations or let
   previews escape. Index entries outside the wiki are lint violations, so
   promote rejects what `find` would otherwise have to filter.
 - **ADR-7: Citations are checked against the prompt snapshot.** Validating

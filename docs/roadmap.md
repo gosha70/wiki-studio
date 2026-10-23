@@ -69,7 +69,13 @@ reproduced defect is a passing regression test through both entry points.
 
 Depends on A. Exit evidence: one complete correction loop (retain, export,
 review, import, correct, next-session recall) passes on clean installs with
-compatible versions and survives retries.
+compatible versions and survives retries. The loop's acceptance cases are
+named here so they are not lost in shaping: a draft page is never imported;
+a page that declares itself approved without the gate's record is refused;
+an approved page that is edited after approval is re-reviewed before its new
+revision is imported; a wrong raw memory that a corrected page supersedes is
+not returned as a current answer in the next session, while its provenance
+remains readable.
 
 Wiki Studio:
 - First item: the combined integration gate deferred from A — memkernel
@@ -82,6 +88,10 @@ Wiki Studio:
 - Identity and evidence: stable page identity across renames; asserted actor
   attribution (`--by`) recorded as attribution, not authentication; approver
   recorded separately when required.
+- Approval bound to the revision and the policy: an accepted revision records
+  the wiki, page identity, content hash, policy and decision; a manual edit
+  after approval invalidates it until revalidated; a frontmatter status alone
+  does not establish approval, the gate's record does.
 - A `superseded_by` key through a decision record on both sides; review
   state kept separate from memory tier.
 - Findings exposed without a model call so the host decides when synthesis
@@ -90,10 +100,18 @@ Wiki Studio:
 memkernel:
 - A governed configuration that requires the gate and refuses the unchecked
   fallback; a clearly identified ungated mode for independent deployments.
-- Idempotent import by page identity and revision hash; withdrawal on
-  supersession, deprecation and explicit deletion; a pending / applied /
-  failed synchronisation state with a retry path; no claimed transaction
-  across Markdown and the memory store.
+- Idempotent import by page identity and revision hash, of approved
+  revisions only: the importer today accepts drafts and has no approval
+  check, so it must read the gate's approval record and refuse drafts,
+  self-declared approval and a revision whose hash is not the approved one;
+  withdrawal on supersession, deprecation and explicit deletion; a pending /
+  applied / failed synchronisation state with a retry path; no claimed
+  transaction across Markdown and the memory store.
+- Reconciliation of originating raw memories: when an approved page corrects
+  the memory it was curated from, that memory is marked superseded by the
+  page so it no longer competes as a current answer, with its provenance
+  retained; the page-to-source mapping is explicit, so a multi-source page
+  withdraws only the sources it corrects and never every source it cites.
 - Curation debt at session start; bounded batches of candidates; source
   content hashes for freshness, with Git revision metadata when available.
 - The outer whole-wiki snapshot and rollback coordinated with the wiki lock
