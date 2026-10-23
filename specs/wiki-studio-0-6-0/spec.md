@@ -1,0 +1,104 @@
+---
+spec_mode: full
+feature_id: wiki-studio-0-6-0
+risk_category: feature
+status: draft
+date: 2026-10-23
+---
+
+# Spec: wiki-studio 0.6.0 — safe changes (Release A)
+
+<!-- Project constitution: shared/skills/ — copilot-conventions, coding-standards, safety -->
+
+Design references (read before building): `CLAUDE.md`; the owner's product
+proposal of 23 October 2026 (Release A, "Safe changes") and its review of the
+same date (revision 3), which reproduced every defect below on `main` at
+41cfe54; in this repository `src/wiki_studio/promoter.py` (`_stage_wiki`,
+`_apply_edit`, `_validate_before_staging`, `_commit_stage_to_wiki`,
+`_archive_proposals_dir`, `promote`), `audit.py` (the ingest-log append),
+`proposal.py` (`PageEdit`, `WikiPatchSet`, `Citation`, `QueryAnswer`),
+`ingestor_multi.py` (`write_patch_set_dir`), `ingestor.py`, `prompt.py`
+(candidate pages in `wiki_state`), `querier.py` (`_extract_index_links`,
+`_select_query_candidates`, the citation check in `DefaultQuerier.query`),
+`lint.py` (`_link_resolves`, `lint_wiki`), `paths.py` (`WikiPaths`),
+`api.py` (`propose`, `promote`, `find`, `PromoteResult`), `cli.py`,
+`errors.py`, `docs/patch-set-format.md`, `README.md`, `SECURITY.md`.
+
+## Why
+
+Five defects on `main` break promises the README makes. Two promotes that
+start together revert each other's pages, because commit writes back every
+staged page that differs from the live one. A replacement carries no record
+of the page it was drafted from, so a stale draft overwrites a newer page.
+A symlinked page is written through to its target, a page may link to a file
+outside the project, and `find` follows such a link. The query answer check
+accepts a fabricated quotation and an answer with no evidence. "Atomic
+promotion" means rollback on exception, not crash safety. This release fixes
+the first four, states the fifth honestly, and makes each reproduction a
+regression test. It ships before any new contract or promotion campaign.
+
+The claim this release earns is bounded: Wiki Studio writers that cooperate
+through its API or CLI on one machine do not lose each other's changes and do
+not apply stale replacements. Safety across the memkernel stack additionally
+depends on memkernel's outer rollback, which is not changed here.
+
+## User Scenarios
+
+### US1: Two writers, no lost update (Priority: HIGH)
+
+**Given** two proposals that each update a different page, promoted by two processes that start together
+**When** both `wiki-studio promote` calls return
+**Then** both pages carry their change, each promote wrote only the paths its patch-set named, the second waited on the wiki lock before staging, and each has its own archive and receipt
+
+### US2: A stale replacement is refused (Priority: HIGH)
+
+**Given** an agent that read page A, another writer that then committed page A′, and a proposal that replaces A with content drafted from A
+**When** the proposal is promoted
+**Then** promote exits 9 naming the page and writes nothing; a proposal whose replacement carries no base revision is refused the same way unless the caller passes the compatibility option, in which case the receipt records the page as unguarded; creates and appends from older proposals promote unchanged
+
+### US3: The wiki stays inside the wiki (Priority: HIGH)
+
+**Given** a wiki with a symlinked page, a page that links to an absolute path, an index entry that points outside the wiki, and a proposal whose preview pointer escapes the proposal directory
+**When** lint, promote and `find` run
+**Then** lint reports the links, promote refuses the symlink and the escaping pointer before reading or writing anything, and `find` never lists a file outside the wiki; `../` source references inside the configured root stay legal
+
+### US4: An answer carries real evidence (Priority: HIGH)
+
+**Given** a backend reply whose citation quotes text that is not in the cited page, or that answers with no citation
+**When** `query` validates the reply
+**Then** it exits 4 naming the page; a fragment is checked against the page content that was in the prompt, not a file reread afterwards; the abstention form (empty answer, one citation to the index) still passes
+
+### US5: The guarantees are stated as they are (Priority: HIGH)
+
+**Given** the README, SECURITY.md and the promoter docstrings
+**When** 0.6.0 is released
+**Then** no document says "atomic" without qualification, the fact and stale-source checks are described as heuristics, the per-operation upgrade policy is in the CHANGELOG, memkernel's outer rollback is listed as a limitation, and the version is 0.6.0
+
+## Requirements
+
+- **FR-001 (commit scope)**: `_commit_stage_to_wiki` MUST write only the paths named by the patch-set's edits (including `index.md` and `log.md` appends) plus this proposal's own archive under `.audit/proposals/`. Both staged-tree collectors (`*.md` and `.audit/proposals/*/plan.json`) MUST be scoped this way. A staged file outside that set is never written back.
+- **FR-002 (the wiki lock)**: A new module `src/wiki_studio/wikilock.py` MUST provide `WikiLock`, an OS advisory lock held on an open file descriptor: `fcntl.flock(fd, LOCK_EX)` on POSIX and `msvcrt.locking` on Windows, behind one interface. Ownership is the OS lock; no PID-file ownership, no stale-lock reclamation, and the lock file is never deleted or recreated while contenders may hold it. PID, hostname and start time MAY be written into the file as diagnostics only. The lock file is `<resolved-wiki-parent>/.<wiki-dir-name>.wiki-studio.lock`, keyed to `wiki_dir.resolve()`, so two spellings of one directory share it; it lies outside the wiki, so staging and lint never see it. Acquisition waits up to a timeout (default 30 s; `--lock-timeout` and `WIKI_STUDIO_LOCK_TIMEOUT`); on expiry `PromoteApplyError` with `reason="lock_timeout"`, exit 10. The lock is held from before staging to after the archive move, and taken by every cooperating entry point: `promote`, `propose --promote`, the ingest-log append in `audit.py`, and `api.promote`. CI MUST run the lock tests on one Windows job; if that job is not added in this release, the "OS Independent" classifier MUST be narrowed to POSIX in the same release.
+- **FR-003 (receipts)**: The archived `plan.json` and `preview/` MUST be byte-identical copies of the submitted proposal. Execution metadata MUST go in `receipt.json` in the archive directory: outcome, written paths, `unguarded_paths`, lock wait, timestamps, the sha256 of the submitted `plan.json` and of every preview file used, and `promoter` as software identity only (package name and version, entry point `cli` or `api`). The archive directory MUST be named `<name>-<sha256(plan.json)[:12]>` so same-named proposals from different proposal directories never overwrite each other. A receipt is written only for a committed promote; failed attempts and dry runs persist nothing.
+- **FR-004 (retry)**: Promoting a proposal that already lives under `.applied/` MUST return its recorded outcome from the receipt and perform no writes. A commit that succeeded but whose move into `.applied/` failed MUST be detected on retry by the receipt's plan digest; the retry completes the move and does not run the appends again.
+- **FR-005 (base revision in the edit model)**: `PageEdit` MUST gain `base_sha256: str | None = None`, added last with a default so positional construction keeps working; `plan.json` MUST gain the optional key `edits[].base_sha256`, documented in `docs/patch-set-format.md` under the format's minor-version rule. The hash is sha256 over the page bytes as read.
+- **FR-006 (one read gives content and hash)**: `api.read_page(path, paths)` MUST return the bytes, the decoded text and the sha256 of those exact bytes; `wiki-studio read <path> [--json]` MUST expose it. `find` lists pages and does not hash them; `info` stays configuration and capabilities. The documented agent procedure is: read with `read`, draft from that content, record its hash.
+- **FR-007 (the hash is what the author read)**: For `ingest`, the hash MUST be attached internally to each captured candidate page when the prompt's `wiki_state` is built; the model never supplies or reconstructs it. For `propose --from`, the draft directory MAY carry `<draft>/.base.json` mapping wiki path to sha256; `propose` MUST NOT fill a missing hash from the live page, and an `update` without a manifest entry is unguarded. For `api.propose`, the caller supplies it. No code path upgrades an older proposal by attaching a current hash.
+- **FR-008 (preconditions under the lock)**: After staging and while holding the lock, immediately before commit, promote MUST check: `create` requires absence of the live target; `append-index` and `append-log` apply to the current live content; `update` with `base_sha256` requires the live page's sha256 to equal it. A mismatch is `PromoteValidationError` (exit 9) naming the page, with nothing written.
+- **FR-009 (unguarded updates)**: An `update` without `base_sha256` MUST be refused with exit 9 and a message naming the page and the two remedies (regenerate from a fresh `read`, or pass the compatibility option). With `--allow-unguarded-updates` (CLI) or `allow_unguarded_updates=True` (`api.promote`) it is applied and listed under `unguarded_paths` in the receipt and in `PromoteResult`. Help text and docs MUST call this "compatibility mode with incomplete conflict protection" and MUST NOT describe it as preventing stale overwrites.
+- **FR-010 (structured findings)**: `PromoteResult` MUST gain `unguarded_paths: list[str]` and `warnings: list[str]`, added last with defaults.
+- **FR-011 (dry run on a snapshot)**: `promote --dry-run` MUST acquire the lock, stage, check FR-008's preconditions against live while holding the lock, release the lock, then validate the staged copy. It writes no wiki content, no receipt and no proposal change; the lock file itself may be created. Its help text says the result is point-in-time evidence and a real promote checks again.
+- **FR-012 (containment boundaries)**: Page writes, staging reads and navigation reads (`find`, `query`, the eval selector) MUST resolve inside the resolved wiki directory; proposal preview reads MUST resolve inside the resolved proposal directory, and an absolute or escaping preview pointer is rejected before any read; a local source reference in page text MUST resolve inside the configured root or an explicitly allowed source root. Checks use `resolve()`, never `normpath` alone. Staging MUST refuse any symlink inside the wiki (file or directory) with `PromoteValidationError` naming it, and commit MUST re-check with `os.lstat` under the lock.
+- **FR-013 (link rule)**: `lint_wiki` MUST classify each Markdown link target: `http`, `https` and `mailto` targets are not filesystem links; a local target naming a wiki page must resolve inside the wiki directory; any other local target is a source reference and must resolve inside the root or an allowed source root. Absolute targets and targets that leave the root are violations. `../` targets that stay inside the root remain legal. An index entry whose target resolves outside the wiki directory is a violation, so promote rejects it; `_extract_index_links` MUST apply the same rule as a defence, shared by `find`, `query` and the eval selector. Both evaluation runs MUST remain byte-identical.
+- **FR-014 (citation evidence)**: `DefaultQuerier.query` MUST validate each citation's fragment against the captured `index_md` and `pages_content` supplied to the backend, never against files reread after the backend returns; the fragment must occur in that text after whitespace normalisation, else `ContractViolationError` (exit 4) naming the page. A non-empty answer MUST carry at least one citation. The abstention form (empty answer, one citation to `index.md` whose fragment occurs in the captured index) remains valid. Docs state that the check verifies quotation against the prompt snapshot, not logical support.
+- **FR-015 (honest guarantees)**: README (the promote section and line 79), SECURITY.md (line 32) and the promoter docstrings MUST describe promotion as "validated, serialised against other wiki-studio writers on the same machine, rolled back on failure; not crash-safe across files, and uncoordinated readers may observe intermediate state." The fact check MUST be described as a heuristic for citations, identifiers and quantities that does not detect changes of meaning; the stale-source check as verifying that cited paths exist, not the recorded revision. The lock's scope (one machine, one filesystem; not distributed; not protection against direct edits; network filesystems out of scope) MUST be documented.
+- **FR-016 (release)**: Version 0.6.0 in `pyproject.toml`, `src/wiki_studio/__init__.py` and the CLI contract test; README banner pinned to `v0.6.0`; CHANGELOG `[0.6.0]` with Added (lock, receipts, `read`, preconditions, containment boundaries, citation evidence), Changed (commit scope, link rule, archive naming), Security (symlink and outside-link escapes, credited to the reporter), Upgrade notes stated per operation (creates and appends from older proposals promote unchanged; replacements without a base hash are refused until regenerated from a fresh `read`, or applied under the compatibility option, recorded as incomplete conflict protection), and Limitations (memkernel's outer whole-wiki snapshot and rollback can still undo another writer's committed changes until memkernel holds the same lock across its lifecycle or removes that workaround; mixed-writer safety across the stack is claimed only when both halves ship). The CHANGELOG MUST NOT state what memkernel's next release does. The agent arm stays pinned at 0.4.1 with its note.
+- **FR-017 (fallback)**: If 0.6.0 slips, the contract-compatible subset MAY ship first as 0.5.1: FR-001, FR-002, FR-012, FR-013, FR-014 and FR-015. Receipts, the archive naming, `read`, `base_sha256`, the compatibility option and `PromoteResult` fields wait for 0.6.0, because each adds to a published format or API.
+
+## Constraints
+
+- **Standard library only.** `fcntl`, `msvcrt`, `hashlib`, `os` and `pathlib` suffice; no new runtime or dev dependency.
+- **Contracts.** Exit codes 0 and 2..11 unchanged (9 for revision conflicts, 10 with `reason="lock_timeout"` for the lock); the patch-set format gains optional keys only; `api` changes are additive with defaults; `promoter.py` stays the single writer into the wiki (the single-writer test stays green).
+- **Submitted bytes are never rewritten.** No code path edits an archived `plan.json` or preview; execution metadata lives in `receipt.json`.
+- **No production pause hook.** Tests force interleavings from a test bootstrap that patches the child process before it calls `cli.main`; no environment variable in shipped code can pause promotion.
+- **Out of scope.** Asserted actor attribution, schema version and root manifest, supersession keys, FTS5, MCP, curation-debt reporting, quickstarts, crash-safe multi-file transactions, distributed or network-filesystem coordination, changes to memkernel.
+- **Gate.** `poetry run ruff check src/ tests/ eval/ && poetry run ruff format --check src/ tests/ eval/ && poetry run mypy src/ && poetry run pytest -q -p no:cacheprovider --cov=wiki_studio --cov-fail-under=80` stays green; coverage does not fall below the current level (92%); both evaluation runs' determinism tests stay green.
