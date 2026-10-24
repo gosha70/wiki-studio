@@ -10,6 +10,7 @@ paths, and the wiki lock serialises cooperating writers before staging.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import subprocess
@@ -58,27 +59,26 @@ def _wiki_page(wiki: Path, slug: str, body: str) -> Path:
     return page
 
 
-def _update_proposal(root: Path, name: str, slug: str, body: str) -> Path:
-    """A proposal with one ``update`` of ``concepts/<slug>.md``."""
+def _update_proposal(root: Path, name: str, slug: str, body: str, *, base_sha256: str | None = None) -> Path:
+    """A proposal with one ``update`` of ``concepts/<slug>.md``; ``base_sha256`` is written when given."""
     prop = root / "doc_internal" / "proposals" / name
     (prop / "preview" / "concepts").mkdir(parents=True)
     (prop / "preview" / "concepts" / f"{slug}.md").write_text(_concept(slug, body), encoding="utf-8")
-    plan = {
-        "version": 1,
-        "source_path": "src.md",
-        "backend": "test",
-        "rationale": "update",
-        "edits": [
-            {
-                "path": f"concepts/{slug}.md",
-                "action": "update",
-                "rationale": "r",
-                "preview": f"preview/concepts/{slug}.md",
-            }
-        ],
+    edit: dict[str, str] = {
+        "path": f"concepts/{slug}.md",
+        "action": "update",
+        "rationale": "r",
+        "preview": f"preview/concepts/{slug}.md",
     }
+    if base_sha256 is not None:
+        edit["base_sha256"] = base_sha256
+    plan = {"version": 1, "source_path": "src.md", "backend": "test", "rationale": "update", "edits": [edit]}
     (prop / "plan.json").write_text(json.dumps(plan, indent=2), encoding="utf-8")
     return prop
+
+
+def _live_sha(page: Path) -> str:
+    return hashlib.sha256(page.read_bytes()).hexdigest()
 
 
 def _record(n: int) -> IngestLogRecord:
@@ -117,8 +117,8 @@ class TestCommitScope(_LayoutCase):
         # Drives _stage_wiki / _plan_commit / _apply_planned directly, without the
         # lock or the receipt protocol: the property under test is the commit
         # scope alone. TestInterleavedProcesses covers the full promote path.
-        _wiki_page(self.wiki, "x", "Original.")
-        a = _update_proposal(self.root, "a", "x", "Updated by A.")
+        page = _wiki_page(self.wiki, "x", "Original.")
+        a = _update_proposal(self.root, "a", "x", "Updated by A.", base_sha256=_live_sha(page))
         b = _proposals_dir(self.root, slug="b")
         handle = promoter._open_wiki(self.wiki)
         try:
@@ -161,8 +161,8 @@ class TestCommitScope(_LayoutCase):
         self.assertIn("[CLI Fixture](incidents/b.md)", (self.wiki / "index.md").read_text(encoding="utf-8"))
 
     def test_planned_writes_exclude_no_ops_and_include_the_archive(self) -> None:
-        _wiki_page(self.wiki, "x", "Same.")
-        prop = _update_proposal(self.root, "same", "x", "Same.")
+        page = _wiki_page(self.wiki, "x", "Same.")
+        prop = _update_proposal(self.root, "same", "x", "Same.", base_sha256=_live_sha(page))
         result = api.promote(prop, self.paths)
         self.assertEqual(result.applied_paths, [".audit/proposals/same/plan.json", ".audit/proposals/same/proposal.md"])
         receipt = json.loads((self.paths.applied_dir / "same" / "receipt.json").read_text(encoding="utf-8"))
@@ -398,13 +398,15 @@ class TestSubmissionIdentity(_LayoutCase):
         return draft
 
     def test_same_name_same_plan_different_previews_get_different_identities_and_both_archive(self) -> None:
+        # Two legacy proposals (no base revision), so the plan bytes can be identical: both
+        # need the compatibility option, which is what records them as unguarded.
         _wiki_page(self.wiki, "x", "v0")
         prop = _update_proposal(self.root, "same", "x", "v1")
         plan_bytes = (prop / "plan.json").read_bytes()
-        api.promote(prop, self.paths)
+        api.promote(prop, self.paths, allow_unguarded_updates=True)
         again = _update_proposal(self.root, "same", "x", "v2")
         self.assertEqual((again / "plan.json").read_bytes(), plan_bytes)
-        api.promote(again, self.paths)
+        api.promote(again, self.paths, allow_unguarded_updates=True)
         first = json.loads((self.paths.applied_dir / "same" / "receipt.json").read_text(encoding="utf-8"))
         second = json.loads((self.paths.applied_dir / "same-2" / "receipt.json").read_text(encoding="utf-8"))
         self.assertNotEqual(first["submission_digest"], second["submission_digest"])

@@ -72,6 +72,7 @@ file; `promote` accepts both.
 | `edits[].path` | Wiki-relative target: `concepts/<slug>.md` for `create`/`update`; `index.md`, `<dir>/index.md` for `append-index`; `log.md` for `append-log`. Relative, no `..`. |
 | `edits[].action` | `create`, `update`, `append-log` or `append-index` (`PageAction`). |
 | `edits[].rationale` | One-line justification for this edit. |
+| `edits[].base_sha256` | Optional, `update` only (0.6.0, a minor-version addition; older readers ignore it). The sha256 of the page bytes as read when the replacement was drafted: `wiki-studio read <path> --json` prints it, `ingest` takes it from the bytes it placed in the prompt, `propose --from` from the draft's `.base.json`, `api.propose` from `PageEdit.base_sha256`. `promote` applies the update only while the live page's sha256 still equals it (exit 9 otherwise, nothing written). No code path fills a missing value from the live page: an `update` without it is refused unless promote runs in compatibility mode (`--allow-unguarded-updates`), which records the path as unguarded. |
 | `edits[].preview` | Where the content lives: `preview/<path>`; a second, third ... edit to the same path (several `append-index` or `append-log` lines) gets `preview/<path>.2`, `.3`, ... in edit order (`.2` is the second edit to that path, not a revision). `<path>` is normalised (`./` and repeated `/` dropped; `..` and absolute paths are rejected earlier), so `./index.md` is the same path as `index.md`. Always read the pointer. |
 | `edits[].fact_warnings` | Optional, advisory. On an `update` whose live page exists: the facts the new content drops — `path:` citations (frontmatter `sources[].path`, body `path:line`), backticked identifiers and numbers with a unit (ms, s, min, h, d, KB, MB, GB, %, words, lines, tokens). Compared as normalized sets over the whole page, so a moved citation or a reflowed paragraph is no warning. Present only when non-empty; the CLI prints it to stderr as `fact-check: <path>: N item(s) removed`. `promote` ignores the key and never blocks on it. |
 | `edits[].fact_check_error` | Optional, advisory. On an `update` whose live page exists but cannot be read or decoded as UTF-8: why the fact check did not run. The proposal is still written and no comparison is claimed; the CLI prints `fact-check: <path>: not compared (<reason>)` to stderr. `promote` ignores the key. |
@@ -118,9 +119,22 @@ seconds (default 30); on expiry promote exits 10 with reason
    a staged file outside that set is never written back, and a path whose
    live bytes already equal the proposed bytes is a no-op. On an exception
    during the commit every touched file is restored. Append edits require
-   their target file to exist. `--dry-run` stops before the commit, writes no
-   wiki content, no receipt and no proposal change, and releases the lock; its
-   result is point-in-time evidence and a real promote checks again.
+   their target file to exist.
+   Immediately before the commit, still under the lock, the revision
+   preconditions are checked against the live wiki: a `create` requires its
+   target to be absent; an `update` with `base_sha256` requires the live
+   page's sha256 to equal it; an `update` without one is refused unless
+   `--allow-unguarded-updates` / `allow_unguarded_updates=True` was given, in
+   which case it is applied and listed under `unguarded_paths` in the receipt
+   and in `PromoteResult` (compatibility mode with incomplete conflict
+   protection: a stale draft can overwrite a newer page). `append-index` and
+   `append-log` lines land on the staged copy of the current content, which
+   was taken under the same lock. A mismatch exits 9 naming each page, and
+   nothing is written.
+   `--dry-run` takes the lock, stages, checks these preconditions against
+   the live wiki, releases the lock, then validates the staged snapshot. It
+   writes no wiki content, no receipt and no proposal change; its result is
+   point-in-time evidence and a real promote checks again.
 5. Archives the proposal: the captured tree plus the receipt are written to
    `<proposals-dir>/.applied/.<name>.<pid>.tmp/`, fsynced, and published by an
    atomic rename to `<proposals-dir>/.applied/<name>/` (`<name>-2`, `-3` on a
@@ -159,7 +173,7 @@ attempts and dry runs persist no receipt.
 | `wiki_target` | The wiki being written: `st_dev` and `st_ino` from `os.fstat` on the wiki-directory descriptor opened under the lock, plus the resolved `path` as a diagnostic that is never used to accept. Zero values count as unavailable. |
 | `planned_writes` | Every path the commit actually writes (no-ops excluded, this proposal's `.audit/proposals/` archive included): `pre_sha256` (null when absent) and `post_sha256`. |
 | `written_paths` | The paths written, filled at `committed`. |
-| `unguarded_paths` | Reserved for replacements applied without a base revision (empty in this release). |
+| `unguarded_paths` | The `update` paths applied without a `base_sha256` under `--allow-unguarded-updates` (compatibility mode with incomplete conflict protection); empty otherwise. |
 | `lock_wait_seconds`, `started_at`, `committing_at`, `committed_at` | Timing. |
 | `promoter` | Software identity only: `package`, `version`, `entry_point` (`cli` or `api`). |
 
@@ -225,6 +239,20 @@ edits = [
 ]
 proposal = api.propose(edits, paths, name="2026-10-15-retry-budget", source="memkernel", rationale="Export.")
 api.promote(proposal, paths)
+```
+
+A replacement records the page it was drafted from: read it once, draft
+from that text, and pass the hash of those bytes as `base_sha256`.
+
+```python
+page = api.read_page("concepts/retry-budget.md", paths)        # one read: data, text, sha256
+revised = page.text.replace("draft", "stable")
+proposal = api.propose(
+    [PageEdit("concepts/retry-budget.md", "update", revised, "Promote to stable.", base_sha256=page.sha256)],
+    paths,
+    name="2026-10-16-retry-budget-stable",
+)
+api.promote(proposal, paths)   # PromoteValidationError (exit 9) if the page changed since the read
 ```
 
 `propose` runs step 3 above before writing and raises

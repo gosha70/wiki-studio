@@ -28,8 +28,39 @@ uses [Semantic Versioning](https://semver.org/).
   `payload_changed`. Documented in `docs/patch-set-format.md`.
 - `PromoteApplyError.reason` (`wiki_studio.errors.REASON_*`); the CLI prints
   it as `[reason=...]`.
+- Base revisions for replacements: `PageEdit.base_sha256` (last field,
+  default `None`) and the optional `plan.json` key `edits[].base_sha256`, the
+  sha256 of the page bytes the author read. `ingest` records the hash of the
+  exact bytes it placed in the prompt for each candidate page it shows (the
+  model cannot set or change it); `propose --from` reads `<draft>/.base.json`
+  (wiki path to sha256) and never the live page; `api.propose` passes the
+  caller's value through.
+- `wiki-studio read <path>` and `api.read_page(path, paths)`: one page, read
+  once, returning bytes, UTF-8 text and the sha256 of those bytes (`--json`
+  prints `{"path", "sha256", "content"}`); a path outside the wiki or through
+  a symlink exits 7, a missing page 5, a page that is not UTF-8 exits 4. The
+  documented procedure for a replacement is read, draft, record.
+- Revision preconditions, checked under the lock immediately before the
+  commit: a `create` requires its target absent, an `update` with
+  `base_sha256` requires the live page to still have that hash, appends land
+  on the current content. A mismatch is `PromoteValidationError` (exit 9)
+  naming the page, with nothing written.
+- `--allow-unguarded-updates` / `api.promote(allow_unguarded_updates=True)`:
+  compatibility mode with incomplete conflict protection that applies
+  `update` edits without a base hash and records them as `unguarded_paths` in
+  the receipt. `PromoteResult.unguarded_paths` and `PromoteResult.warnings`
+  (both last, with defaults); the CLI prints the warnings to stderr.
 
 ### Changed
+
+- An `update` without `base_sha256` is refused (exit 9) with the two
+  remedies named: regenerate the proposal from a fresh `read`, or pass the
+  compatibility option. Creates and appends from older proposals promote
+  unchanged.
+- `promote --dry-run` takes the lock, stages, checks the revision
+  preconditions against the live wiki, releases the lock and then validates
+  the staged snapshot; it still writes nothing. The result is point-in-time
+  evidence; a real promote checks again.
 
 - The commit writes only the paths the patch-set names plus the proposal's own
   `.audit/proposals/` archive; a staged file outside that set is never written

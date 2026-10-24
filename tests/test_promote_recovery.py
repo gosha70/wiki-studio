@@ -511,7 +511,13 @@ class TestCommittingReceipts(_LayoutCase):
         (prop / "preview" / "same.md").write_bytes(live)
         plan = json.loads((prop / "plan.json").read_text(encoding="utf-8"))
         plan["edits"] = [
-            {"path": "incidents/cli-fixture.md", "action": "update", "rationale": "r", "preview": "preview/same.md"},
+            {
+                "path": "incidents/cli-fixture.md",
+                "action": "update",
+                "rationale": "r",
+                "preview": "preview/same.md",
+                "base_sha256": _sha(live),
+            },
             {"path": "log.md", "action": "append-log", "rationale": "r", "preview": "preview/log.md"},
         ]
         (prop / "plan.json").write_text(json.dumps(plan), encoding="utf-8")

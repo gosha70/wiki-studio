@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import datetime
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
@@ -26,6 +27,15 @@ from .schema import PAGE_TYPE_DIRS, PROMOTABLE_PAGE_TYPES
 
 if TYPE_CHECKING:
     from .paths import WikiPaths
+
+# The only form a sha256 takes anywhere in the package: 64 lowercase hex digits.
+_SHA256_HEX_RE = re.compile(r"[0-9a-f]{64}")
+
+
+def is_sha256_hex(value: object) -> bool:
+    """True for a lowercase 64-character hex string (``hashlib.sha256(...).hexdigest()``)."""
+    return isinstance(value, str) and _SHA256_HEX_RE.fullmatch(value) is not None
+
 
 # ── Stage 1 (v1 single-source) ──────────────────────────────
 
@@ -87,12 +97,21 @@ class PageEdit:
     rationale : str
         One-sentence justification for this edit, surfaced to the
         curator in the patch-set preview.
+    base_sha256 : str | None
+        For ``update`` only: the sha256 of the page bytes the author
+        read when drafting the replacement (``api.read_page`` returns
+        it; ``ingest`` takes it from the bytes placed in the prompt).
+        ``promote`` applies the update only while the live page still
+        has that hash; an ``update`` without one is refused unless the
+        caller opts into compatibility mode. Added in 0.6.0 with a
+        default, so positional construction keeps working.
     """
 
     path: str
     action: PageAction
     new_content: str
     rationale: str
+    base_sha256: str | None = None
 
 
 @dataclass(frozen=True)
@@ -365,6 +384,9 @@ def validate_patch_set(patch: WikiPatchSet) -> list[str]:
         ``index.md`` under a sub-directory (e.g. ``glossary/index.md``).
       - ``create``/``update`` paths must be relative (no leading ``/``,
         no ``..``).
+      - ``base_sha256``, when present, is a sha256 hex digest on an
+        ``update`` edit (a base revision means nothing for a create or
+        an append).
     """
     errors: list[str] = []
 
@@ -398,6 +420,12 @@ def validate_patch_set(patch: WikiPatchSet) -> list[str]:
 
         if not edit.new_content:
             errors.append(f"{prefix}: new_content must be non-empty")
+
+        if edit.base_sha256 is not None:
+            if not is_sha256_hex(edit.base_sha256):
+                errors.append(f"{prefix}: base_sha256 must be a 64-character lowercase hex sha256")
+            elif edit.action != "update":
+                errors.append(f"{prefix}: base_sha256 is only meaningful on an 'update' edit")
 
     return errors
 

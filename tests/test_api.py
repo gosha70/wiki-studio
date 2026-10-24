@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import shutil
 import subprocess
 import tempfile
@@ -18,6 +19,7 @@ from wiki_studio.backends.test import TestBackend
 from wiki_studio.errors import (
     AuditFlushError,
     BackendNotFoundError,
+    ContractViolationError,
     PathOutsideRootError,
     PromoteValidationError,
     SourceMissingError,
@@ -321,6 +323,40 @@ class TestPrepareBackend(_LayoutCase):
         self.assertEqual(api.backend_display_name(TestBackend(), None), "test")
         self.assertEqual(api.backend_display_name(CopilotCliBackend("codex"), None), "codex")
         self.assertEqual(api.backend_display_name(TestBackend(), "requested"), "requested")
+
+
+class TestReadPage(_LayoutCase):
+    """``api.read_page``: one read gives bytes, text and the hash of exactly those bytes (FR-006)."""
+
+    def test_returns_bytes_text_and_sha256_of_the_same_read(self) -> None:
+        wiki = _wiki_with_pages(self.root)
+        rel = "concepts/origin-alignment.md"
+        result = api.read_page(rel, self.paths)
+        data = (wiki / rel).read_bytes()
+        self.assertEqual((result.path, result.data, result.text), (rel, data, data.decode("utf-8")))
+        self.assertEqual(result.sha256, hashlib.sha256(data).hexdigest())
+        self.assertEqual(api.read_page(Path("./concepts/../concepts/origin-alignment.md"), self.paths).path, rel)
+        self.assertIn("read_page", api.__all__)
+        self.assertIn("ReadResult", api.__all__)
+
+    def test_boundary_missing_and_encoding_errors(self) -> None:
+        wiki = _wiki_with_pages(self.root)
+        for bad in ("../README.md", str(self.root / "README.md"), "/etc/hosts"):
+            with self.subTest(path=bad), self.assertRaises(PathOutsideRootError):
+                api.read_page(bad, self.paths)
+        (wiki / "concepts" / "alias.md").symlink_to(wiki / "concepts" / "spec-drift.md")
+        with self.assertRaises(PathOutsideRootError):
+            api.read_page("concepts/alias.md", self.paths)
+        with self.assertRaises(SourceMissingError):
+            api.read_page("concepts/missing.md", self.paths)
+        (wiki / "concepts" / "binary.md").write_bytes(b"\xff\xfe")
+        with self.assertRaises(ContractViolationError) as ctx:
+            api.read_page("concepts/binary.md", self.paths)
+        self.assertEqual(ctx.exception.exit_code, 4)
+
+    def test_promote_result_fields_default(self) -> None:
+        result = PromoteResult([], self.paths.proposals_dir, None, False)
+        self.assertEqual((result.unguarded_paths, result.warnings), ([], []))
 
 
 class TestLintResultPassed(unittest.TestCase):

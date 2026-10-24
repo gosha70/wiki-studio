@@ -262,7 +262,11 @@ class TestProposeFactWarnings(_Workspace):
         live.write_text(DECISION, encoding="utf-8")
         with (self.paths.wiki_dir / "index.md").open("a", encoding="utf-8") as index:
             index.write("\n- [Retry backoff](decisions/retry-backoff.md)\n")
-        self.draft = self.write_draft({"decisions/retry-backoff.md": self.REWRITE})
+        # The agent read the live page and recorded its hash, so --promote can apply the replacement.
+        base = api.read_page("decisions/retry-backoff.md", self.paths).sha256
+        self.draft = self.write_draft(
+            {"decisions/retry-backoff.md": self.REWRITE, ".base.json": json.dumps({"decisions/retry-backoff.md": base})}
+        )
 
     def cli_merged(self, *argv: str) -> tuple[int, str]:
         """Run the CLI with stdout and stderr in one buffer, so line order across the two is kept."""

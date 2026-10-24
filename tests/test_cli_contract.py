@@ -26,7 +26,7 @@ from wiki_studio.errors import (
     SourceMissingError,
 )
 
-_VERBS = ("ingest", "promote", "query", "lint", "audit-flush", "info", "init", "propose", "find")
+_VERBS = ("ingest", "promote", "query", "lint", "audit-flush", "info", "init", "propose", "find", "read")
 
 _PAGE = (
     "---\npage_type: {page_type}\nslug: {slug}\ntitle: {title}\nstatus: stable\n"

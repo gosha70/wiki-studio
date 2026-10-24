@@ -18,6 +18,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import re
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
@@ -73,6 +74,30 @@ _STOPWORDS: frozenset[str] = frozenset(
 
 
 @dataclass(frozen=True)
+class PageContent:
+    """One page as read once: the exact bytes, their UTF-8 text and the sha256 of those bytes.
+
+    The three always come from a single read, so a hash recorded as an
+    edit's ``base_sha256`` identifies the very bytes whose text the author
+    (or the model's prompt) saw.
+    """
+
+    data: bytes
+    text: str
+    sha256: str
+
+
+def read_page_content(path: Path) -> PageContent:
+    """Read ``path`` once and return its bytes, decoded text and sha256.
+
+    ``OSError`` and ``UnicodeDecodeError`` propagate; the caller decides what
+    an unreadable or non-UTF-8 page means on its surface.
+    """
+    data = path.read_bytes()
+    return PageContent(data=data, text=data.decode("utf-8"), sha256=hashlib.sha256(data).hexdigest())
+
+
+@dataclass(frozen=True)
 class WikiState:
     """Snapshot of the existing wiki passed into the multi-page ingest prompt.
 
@@ -84,17 +109,29 @@ class WikiState:
     log_md : str
         Verbatim contents of the wiki's ``log.md``. Empty string
         if absent.
-    candidate_pages : dict[str, str]
+    candidates : dict[str, PageContent]
         Map from wiki-relative path (e.g. ``concepts/origin-alignment.md``)
-        to the page's full markdown content. Selected by relevance
-        against the ingest source. Order is not significant; the dict
-        type is preserved for stable JSON serialisation in the
-        BackendPrompt.
+        to the page as read once (bytes, text, sha256). Selected by
+        relevance against the ingest source. Order is not significant;
+        the dict type is preserved for stable JSON serialisation in the
+        BackendPrompt. ``candidate_pages`` (the text placed in the
+        prompt) and ``candidate_hashes`` (the ``base_sha256`` attached
+        to an ``update`` of that page) are views of the same reads.
     """
 
     index_md: str
     log_md: str
-    candidate_pages: dict[str, str] = field(default_factory=dict)
+    candidates: dict[str, PageContent] = field(default_factory=dict)
+
+    @property
+    def candidate_pages(self) -> dict[str, str]:
+        """Wiki-relative path to the page text the prompt shows."""
+        return {rel: page.text for rel, page in self.candidates.items()}
+
+    @property
+    def candidate_hashes(self) -> dict[str, str]:
+        """Wiki-relative path to the sha256 of the bytes that text was decoded from."""
+        return {rel: page.sha256 for rel, page in self.candidates.items()}
 
 
 def _tokenise(text: str) -> set[str]:
@@ -129,18 +166,24 @@ def _list_wiki_pages(wiki_dir: Path) -> list[Path]:
     return pages
 
 
-def _score_page_against_source(page_path: Path, source_tokens: set[str]) -> int:
+def _read_page_or_none(path: Path) -> PageContent | None:
+    """The page as read once, or None when it is missing, unreadable or not UTF-8 (then it is no candidate)."""
+    try:
+        return read_page_content(path)
+    except (OSError, UnicodeDecodeError):
+        return None
+
+
+def _score_page_against_source(page_path: Path, content: str, source_tokens: set[str]) -> int:
     """Score a wiki page by token overlap with the source.
 
     Score = |source_tokens ∩ page_signal_tokens|, where page_signal_tokens
     is the union of the page's slug, the slugified path, and the first
     400 characters of body (typically title + lead paragraph).
-    Returns 0 for unreadable pages.
+    ``content`` is the page text already read, so scoring never reads
+    the page a second time.
     """
-    if not source_tokens:
-        return 0
-    content = _read_text_or_empty(page_path)
-    if not content:
+    if not source_tokens or not content:
         return 0
     # Slug: filename stem.
     signal = {page_path.stem.lower()}
@@ -176,8 +219,10 @@ def load_wiki_state(
     Returns
     -------
     WikiState
-        index_md, log_md verbatim; candidate_pages keyed by
-        wiki-relative path. Returns empty state for missing wiki.
+        index_md, log_md verbatim; candidates keyed by wiki-relative
+        path, each read exactly once: the text the prompt shows and the
+        sha256 an ``update`` of that page carries come from the same
+        bytes (FR-007). Returns empty state for missing wiki.
     """
     wiki_dir = paths.wiki_dir
     index_md = _read_text_or_empty(wiki_dir / "index.md")
@@ -185,24 +230,20 @@ def load_wiki_state(
 
     source_tokens = _tokenise(source_content) | _tokenise(str(source_path))
 
-    pages = _list_wiki_pages(wiki_dir)
-    scored: list[tuple[int, Path]] = []
-    for page in pages:
-        score = _score_page_against_source(page, source_tokens)
+    # One read per page: the bytes scored here are the bytes a selected page
+    # contributes to the prompt and to its hash; nothing is reread later.
+    scored: list[tuple[int, Path, PageContent]] = []
+    for page in _list_wiki_pages(wiki_dir):
+        content = _read_page_or_none(page)
+        if content is None:
+            continue
+        score = _score_page_against_source(page, content.text, source_tokens)
         if score > 0:
-            scored.append((score, page))
+            scored.append((score, page, content))
 
     # Sort by descending score, then by path for stability.
-    scored.sort(key=lambda pair: (-pair[0], str(pair[1])))
+    scored.sort(key=lambda item: (-item[0], str(item[1])))
     selected = scored[:max_candidates]
 
-    candidate_pages: dict[str, str] = {}
-    for _score, page in selected:
-        rel = str(page.relative_to(wiki_dir))
-        candidate_pages[rel] = _read_text_or_empty(page)
-
-    return WikiState(
-        index_md=index_md,
-        log_md=log_md,
-        candidate_pages=candidate_pages,
-    )
+    candidates = {str(page.relative_to(wiki_dir)): content for _score, page, content in selected}
+    return WikiState(index_md=index_md, log_md=log_md, candidates=candidates)

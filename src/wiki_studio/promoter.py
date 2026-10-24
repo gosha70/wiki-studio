@@ -24,6 +24,13 @@
 #             memory (the submission manifest); parsing, the payload digest,
 #             staging and the archive all use that capture
 #   stage     copy of the wiki + the edits + the audit archive, then validate
+#   check     revision preconditions against the live wiki (FR-008, FR-009):
+#             a create needs absence, an update with ``base_sha256`` needs the
+#             live page to still have that hash, an update without one is
+#             refused unless compatibility mode is on (then recorded as
+#             unguarded); appends landed on the staged copy of the current
+#             content. A dry run stops here, releases the lock and validates
+#             the staged snapshot outside it (FR-011).
 #   step 1    receipt.json ``committing`` (tracked writes with pre/post sha256,
 #             wiki identity by device and inode), fsynced; a failure here
 #             commits nothing (exit 6)
@@ -48,7 +55,7 @@ import os
 import posixpath
 import shutil
 import tempfile
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -69,6 +76,7 @@ from .paths import APPLIED_DIR_NAME, AUDIT_DIR_NAME
 from .proposal import (
     PageEdit,
     WikiPatchSet,
+    is_sha256_hex,
     validate_page_edit_semantics,
     validate_patch_set,
 )
@@ -123,12 +131,22 @@ class PromoteResult:
     dry_run : bool
         True if the staged tree was built and validated but never
         committed to the live wiki.
+    unguarded_paths : list[str]
+        Paths of ``update`` edits applied without a ``base_sha256`` under
+        ``allow_unguarded_updates`` (compatibility mode with incomplete
+        conflict protection); also recorded in the receipt. Empty
+        otherwise. Added in 0.6.0 with a default.
+    warnings : list[str]
+        Human-readable findings that did not stop the promotion, one per
+        unguarded path. Added in 0.6.0 with a default.
     """
 
     applied_paths: list[str]
     proposals_dir: Path
     archived_dir: Path | None
     dry_run: bool
+    unguarded_paths: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
 
 
 def _sha256(data: bytes) -> str:
@@ -137,7 +155,14 @@ def _sha256(data: bytes) -> str:
 
 def _is_hex_digest(value: object) -> bool:
     """True for a lowercase 64-character hex string: the only form ``_sha256`` produces."""
-    return isinstance(value, str) and len(value) == 64 and all(c in "0123456789abcdef" for c in value)
+    return is_sha256_hex(value)
+
+
+def _unguarded_warnings(unguarded: list[str]) -> list[str]:
+    return [
+        f"{rel}: replaced without a base revision (compatibility mode with incomplete conflict protection)"
+        for rel in unguarded
+    ]
 
 
 def _now() -> str:
@@ -242,12 +267,18 @@ def _parse_patch(capture: _Capture, proposals_dir: Path) -> tuple[WikiPatchSet, 
             new_content = data.decode("utf-8")
         except UnicodeDecodeError as exc:
             raise PromoteValidationError(f"preview file {pointer} in {proposals_dir} is not valid UTF-8") from exc
+        # The optional base revision (FR-005) is read back as written; its shape
+        # is judged by the set-level validator, never filled in here.
+        base_sha256 = raw.get("base_sha256")
+        if base_sha256 is not None and not isinstance(base_sha256, str):
+            raise PromoteValidationError(f"plan.json edit 'base_sha256' must be a string when present: {raw!r}")
         edits.append(
             PageEdit(
                 path=str(raw["path"]),
                 action=raw["action"],
                 new_content=new_content,
                 rationale=str(raw.get("rationale", "")),
+                base_sha256=base_sha256,
             )
         )
     patch = WikiPatchSet(
@@ -439,6 +470,56 @@ def _validate_before_staging(patch: WikiPatchSet, paths: WikiPaths) -> None:
         per_edit_errors.extend(validate_page_edit_semantics(edit, paths))
     if per_edit_errors:
         raise PromoteValidationError("Per-edit validation failed:\n  - " + "\n  - ".join(per_edit_errors))
+
+
+def _check_preconditions(patch: WikiPatchSet, paths: WikiPaths, *, allow_unguarded_updates: bool) -> list[str]:
+    """Revision preconditions against the live wiki, under the lock, after staging (FR-008, FR-009).
+
+    - ``create`` requires the live target to be absent.
+    - ``update`` with ``base_sha256`` requires the live page's sha256 to equal it.
+    - ``update`` without one is refused unless ``allow_unguarded_updates``;
+      then it is applied and its path returned (recorded as unguarded).
+    - ``append-index`` / ``append-log`` need no comparison: the staged copy
+      was taken from the live file under this same lock, so the appended
+      line lands on the current content.
+
+    Every mismatch is collected and raised as one PromoteValidationError
+    (exit 9) naming each page; nothing has been written at this point.
+    Returns the unguarded update paths, in edit order, without duplicates.
+    """
+    problems: list[str] = []
+    unguarded: list[str] = []
+    for edit in patch.edits:
+        live = paths.wiki_dir / edit.path
+        if edit.action == "create":
+            if os.path.lexists(live):
+                problems.append(f"{edit.path}: create requires absence, but a live page now exists at that path")
+        elif edit.action == "update":
+            if edit.base_sha256 is None:
+                if not allow_unguarded_updates:
+                    problems.append(
+                        f"{edit.path}: update carries no base_sha256, so a stale draft cannot be detected. Either "
+                        f"regenerate the proposal from a fresh `wiki-studio read {edit.path}` and record its sha256 "
+                        "as the edit's base_sha256, or pass --allow-unguarded-updates / allow_unguarded_updates=True "
+                        "(compatibility mode with incomplete conflict protection; the path is recorded as unguarded)"
+                    )
+                elif edit.path not in unguarded:
+                    unguarded.append(edit.path)
+                continue
+            try:
+                live_sha = _sha256(live.read_bytes()) if live.is_file() else None
+            except OSError as exc:
+                raise PromoteApplyError(f"could not read the live page for {edit.path}: {exc}") from exc
+            if live_sha != edit.base_sha256:
+                problems.append(
+                    f"{edit.path}: the live page is not the revision this update was drafted from "
+                    f"(base_sha256 {edit.base_sha256}, live {live_sha or 'absent'}); read it again and redraft"
+                )
+    if problems:
+        raise PromoteValidationError(
+            "Revision preconditions failed; nothing was written:\n  - " + "\n  - ".join(problems)
+        )
+    return unguarded
 
 
 def _stage_audit_archive(
@@ -743,6 +824,7 @@ def _build_receipt(
     lock_wait: float,
     entry_point: str,
     started_at: str,
+    unguarded: list[str],
 ) -> dict[str, Any]:
     """The ``committing`` receipt: identity of the submission and of the wiki, and every write the commit will make."""
     return {
@@ -763,7 +845,7 @@ def _build_receipt(
             for p in planned
         ],
         "written_paths": [],
-        "unguarded_paths": [],
+        "unguarded_paths": list(unguarded),
         "lock_wait_seconds": round(lock_wait, 6),
         "started_at": started_at,
         "committing_at": _now(),
@@ -999,8 +1081,9 @@ def _commit_and_archive(
     lock_wait: float,
     entry_point: str,
     started_at: str,
+    unguarded: list[str],
 ) -> PromoteResult:
-    """Steps 1 to 4 for a fresh promotion whose stage validated."""
+    """Steps 1 to 4 for a fresh promotion whose stage validated and whose preconditions held."""
     receipt = _build_receipt(
         proposals_dir=proposals_dir,
         capture=capture,
@@ -1010,6 +1093,7 @@ def _commit_and_archive(
         lock_wait=lock_wait,
         entry_point=entry_point,
         started_at=started_at,
+        unguarded=unguarded,
     )
     # Step 1: the recovery marker, before any wiki write.
     try:
@@ -1035,7 +1119,14 @@ def _commit_and_archive(
         ) from exc
     # Step 4: archive from the capture, then remove the original.
     archived = _archive_and_cleanup(proposals_dir, paths, {**capture.files, RECEIPT_FILE_NAME: receipt_bytes}, receipt)
-    return PromoteResult(applied_paths=applied, proposals_dir=proposals_dir, archived_dir=archived, dry_run=False)
+    return PromoteResult(
+        applied_paths=applied,
+        proposals_dir=proposals_dir,
+        archived_dir=archived,
+        dry_run=False,
+        unguarded_paths=list(unguarded),
+        warnings=_unguarded_warnings(unguarded),
+    )
 
 
 def _archive_and_cleanup(
@@ -1060,6 +1151,13 @@ def _written_paths(receipt: dict[str, Any]) -> list[str]:
     if isinstance(written, list) and all(isinstance(p, str) for p in written):
         return list(written)
     return [str(w["path"]) for w in receipt["planned_writes"]]
+
+
+def _unguarded_paths(receipt: dict[str, Any]) -> list[str]:
+    unguarded = receipt.get("unguarded_paths")
+    if isinstance(unguarded, list) and all(isinstance(p, str) for p in unguarded):
+        return list(unguarded)
+    return []
 
 
 def _finish_committed(proposals_dir: Path, paths: WikiPaths, receipt: dict[str, Any]) -> PromoteResult:
@@ -1093,8 +1191,14 @@ def _finish_committed(proposals_dir: Path, paths: WikiPaths, receipt: dict[str, 
     else:
         archive_files = {rel: path.read_bytes() for rel, path in _directory_files(archive).items()}
     archived = _archive_and_cleanup(proposals_dir, paths, archive_files, receipt)
+    unguarded = _unguarded_paths(receipt)
     return PromoteResult(
-        applied_paths=_written_paths(receipt), proposals_dir=proposals_dir, archived_dir=archived, dry_run=False
+        applied_paths=_written_paths(receipt),
+        proposals_dir=proposals_dir,
+        archived_dir=archived,
+        dry_run=False,
+        unguarded_paths=unguarded,
+        warnings=_unguarded_warnings(unguarded),
     )
 
 
@@ -1166,16 +1270,32 @@ def _is_already_applied(proposals_dir: Path) -> bool:
     return proposals_dir.parent.name == APPLIED_DIR_NAME
 
 
+@dataclass(frozen=True)
+class _StagedDryRun:
+    """A dry run's staged tree and preconditions outcome, handed out of the lock for validation (FR-011)."""
+
+    patch: WikiPatchSet
+    unguarded: list[str]
+
+
 def _promote_locked(
     proposals_dir: Path,
     paths: WikiPaths,
     *,
     dry_run: bool,
+    allow_unguarded_updates: bool,
     entry_point: str,
     handle: _WikiHandle,
     lock_wait: float,
     started_at: str,
-) -> PromoteResult:
+    stage_dir: Path,
+) -> PromoteResult | _StagedDryRun:
+    """Everything that happens under the lock; ``stage_dir`` (absent on entry) receives the staged copy.
+
+    A dry run returns ``_StagedDryRun`` once the preconditions have been
+    checked against the live wiki; the caller validates the staged snapshot
+    after releasing the lock.
+    """
     _discard_receipt_tmp(proposals_dir)
     receipt = _load_receipt(proposals_dir)
     if receipt is not None:
@@ -1200,28 +1320,28 @@ def _promote_locked(
     capture = _capture_submission(proposals_dir)
     patch, plan_sha256 = _parse_patch(capture, proposals_dir)
     planned: list[_PlannedWrite] = []
+    unguarded: list[str] = []
     if patch.edits:
         _validate_before_staging(patch, paths)
-        with tempfile.TemporaryDirectory(prefix="wiki-stage-") as stage:
-            stage_dir = Path(stage) / "wiki"
-            _stage_wiki(handle, paths.wiki_dir, stage_dir)
-            for edit in patch.edits:
-                _apply_edit(stage_dir, edit)
-            # The accepted-proposal archive is staged AFTER the edit loop and
-            # BEFORE validation so the validator sees the full tree (including
-            # .audit/) and the commit writes it with the patch-set's paths.
-            archive_rel = _stage_audit_archive(stage_dir, proposals_dir.name, capture, patch)
-            # Validation gate. Raises PromoteValidationError on any failure; the
-            # wiki tree is unchanged because nothing has been committed yet.
-            _validate_staged_tree(stage_dir, paths, patch)
-            if dry_run:
-                return PromoteResult(
-                    applied_paths=[e.path for e in patch.edits],
-                    proposals_dir=proposals_dir,
-                    archived_dir=None,
-                    dry_run=True,
-                )
-            planned = _plan_commit(stage_dir, paths, patch, archive_rel)
+        _stage_wiki(handle, paths.wiki_dir, stage_dir)
+        for edit in patch.edits:
+            _apply_edit(stage_dir, edit)
+        # The accepted-proposal archive is staged AFTER the edit loop and
+        # BEFORE validation so the validator sees the full tree (including
+        # .audit/) and the commit writes it with the patch-set's paths.
+        archive_rel = _stage_audit_archive(stage_dir, proposals_dir.name, capture, patch)
+        if dry_run:
+            # FR-011: the preconditions are checked against live while the lock
+            # is held; the staged snapshot is validated by the caller after the
+            # lock is released. Nothing is written either way.
+            unguarded = _check_preconditions(patch, paths, allow_unguarded_updates=allow_unguarded_updates)
+            return _StagedDryRun(patch=patch, unguarded=unguarded)
+        # Validation gate. Raises PromoteValidationError on any failure; the
+        # wiki tree is unchanged because nothing has been committed yet.
+        _validate_staged_tree(stage_dir, paths, patch)
+        # FR-008 / FR-009: immediately before the commit, against the live wiki.
+        unguarded = _check_preconditions(patch, paths, allow_unguarded_updates=allow_unguarded_updates)
+        planned = _plan_commit(stage_dir, paths, patch, archive_rel)
     elif dry_run:
         # Empty patch-set (gate reject): nothing to stage or apply.
         return PromoteResult(applied_paths=[], proposals_dir=proposals_dir, archived_dir=None, dry_run=True)
@@ -1235,6 +1355,7 @@ def _promote_locked(
         lock_wait=lock_wait,
         entry_point=entry_point,
         started_at=started_at,
+        unguarded=unguarded,
     )
 
 
@@ -1244,13 +1365,19 @@ def promote(
     dry_run: bool = False,
     *,
     entry_point: str = PROMOTE_ENTRY_POINT_API,
+    allow_unguarded_updates: bool = False,
 ) -> PromoteResult:
     """Apply a proposals dir's patch-set to the wiki under the wiki lock.
 
     The promotion is validated, serialised against other wiki-studio writers
     on the same machine, and rolled back on failure; it is not crash-safe
     across files, and uncoordinated readers may observe intermediate state.
-    The lock is held from before staging to after the archive move.
+    The lock is held from before staging to after the archive move. Before
+    the commit, still under the lock, the revision preconditions are checked
+    against the live wiki: a ``create`` needs its target absent, an
+    ``update`` with ``base_sha256`` needs the live page to still carry that
+    hash, and an ``update`` without one is refused (exit 9) unless
+    ``allow_unguarded_updates`` is set.
 
     Parameters
     ----------
@@ -1261,11 +1388,20 @@ def promote(
     paths : WikiPaths
         The resolved layout (wiki directory, proposals archive, lock timeout).
     dry_run : bool
-        When True, build and validate the staged tree under the lock but
-        write nothing: no wiki content, no receipt, no proposal change. The
-        result is point-in-time evidence; a real promote checks again.
+        When True: take the lock, stage, check the preconditions against the
+        live wiki, release the lock, then validate the staged snapshot. It
+        writes nothing: no wiki content, no receipt, no proposal change (the
+        lock file itself may be created). The result is point-in-time
+        evidence; a real promote checks again.
     entry_point : str
         ``"api"`` or ``"cli"``, recorded in the receipt as software identity.
+    allow_unguarded_updates : bool
+        Compatibility mode with incomplete conflict protection: apply
+        ``update`` edits that carry no ``base_sha256`` (proposals written
+        before 0.6.0, drafts without a ``.base.json`` manifest) and list
+        them in ``PromoteResult.unguarded_paths`` and the receipt. A stale
+        draft can then overwrite a newer page; this option does not prevent
+        that.
 
     Returns
     -------
@@ -1293,20 +1429,40 @@ def promote(
 
     started_at = _now()
     lock = WikiLock(paths.wiki_dir, paths.lock_timeout)
-    with lock:
-        handle = _open_wiki(paths.wiki_dir)
-        try:
-            return _promote_locked(
-                proposals_dir,
-                paths,
-                dry_run=dry_run,
-                entry_point=entry_point,
-                handle=handle,
-                lock_wait=lock.wait_seconds,
-                started_at=started_at,
-            )
-        finally:
-            handle.close()
+    # The staging directory outlives the lock: a dry run validates its
+    # snapshot after the release (FR-011), a real promote commits from it
+    # before.
+    with tempfile.TemporaryDirectory(prefix="wiki-stage-") as stage:
+        stage_dir = Path(stage) / "wiki"
+        with lock:
+            handle = _open_wiki(paths.wiki_dir)
+            try:
+                outcome = _promote_locked(
+                    proposals_dir,
+                    paths,
+                    dry_run=dry_run,
+                    allow_unguarded_updates=allow_unguarded_updates,
+                    entry_point=entry_point,
+                    handle=handle,
+                    lock_wait=lock.wait_seconds,
+                    started_at=started_at,
+                    stage_dir=stage_dir,
+                )
+            finally:
+                handle.close()
+        if not isinstance(outcome, _StagedDryRun):
+            return outcome
+        # Lock released: the staged tree is a point-in-time snapshot of the
+        # wiki plus the edits, validated here without holding other writers up.
+        _validate_staged_tree(stage_dir, paths, outcome.patch)
+        return PromoteResult(
+            applied_paths=[e.path for e in outcome.patch.edits],
+            proposals_dir=proposals_dir,
+            archived_dir=None,
+            dry_run=True,
+            unguarded_paths=list(outcome.unguarded),
+            warnings=_unguarded_warnings(outcome.unguarded),
+        )
 
 
 # ── init: the scaffold every other verb needs ─────────────────

@@ -122,24 +122,30 @@ class DefaultMultiIngestor:
 
         # 6. Build WikiPatchSet.
         edits: list[PageEdit] = []
+        candidate_hashes = wiki_state.candidate_hashes
         for raw_edit in validated["edits"]:
             if not isinstance(raw_edit, dict):
                 raise ContractViolationError(f"WikiPatchSet.edits[*] must be objects, got {type(raw_edit).__name__}")
             for required in ("path", "action", "new_content", "rationale"):
                 if required not in raw_edit:
                     raise ContractViolationError(f"WikiPatchSet.edits[*] missing required key: {required!r}")
+            action = str(raw_edit["action"])
+            # The prompt labels wiki files "<label>/<path>"; a copied label is
+            # removed here, exactly once, before per-edit validation (issue #11).
+            # Targets of update/append edits already exist, which settles the
+            # case where the wiki directory is named like a page directory.
+            path = self._paths.strip_wiki_label(str(raw_edit["path"]), must_exist=action != "create")
             edits.append(
                 PageEdit(
-                    # The prompt labels wiki files "<label>/<path>"; a copied label is
-                    # removed here, exactly once, before per-edit validation (issue #11).
-                    # Targets of update/append edits already exist, which settles the
-                    # case where the wiki directory is named like a page directory.
-                    path=self._paths.strip_wiki_label(
-                        str(raw_edit["path"]), must_exist=str(raw_edit.get("action")) != "create"
-                    ),
+                    path=path,
                     action=raw_edit["action"],
                     new_content=str(raw_edit["new_content"]),
                     rationale=str(raw_edit["rationale"]),
+                    # The base revision of an update is the hash of the bytes whose text
+                    # the prompt showed (FR-007). It comes from the wiki state alone: a
+                    # ``base_sha256`` in the backend's reply is ignored, and a page the
+                    # prompt did not show gets none (the update is then unguarded).
+                    base_sha256=candidate_hashes.get(path) if action == "update" else None,
                 )
             )
 
@@ -210,7 +216,8 @@ def write_patch_set_dir(
 
     Layout:
         <output_dir>/
-            plan.json                    — full patch-set as JSON
+            plan.json                    — full patch-set as JSON; an edit's ``base_sha256``
+                                           is written when the PageEdit carries one
             preview/<edit.path>          — one preview file per edit (path normalised); a second,
                                            third ... edit to the same path (several
                                            append-index or append-log lines) gets
@@ -267,6 +274,9 @@ def _write_patch_set_files(patch: WikiPatchSet, output_dir: Path, wiki_dir: Path
         # new_content is stored in the preview file; the plan.json stays
         # small + grep-friendly. Curator reads the preview to see the full content.
         entry: dict[str, object] = {"path": e.path, "action": e.action, "rationale": e.rationale, "preview": rel}
+        if e.base_sha256 is not None:
+            # Written only when the author supplied it; never filled from the live page here.
+            entry["base_sha256"] = e.base_sha256
         live = wiki_dir / e.path if wiki_dir is not None else None
         if e.action == "update" and live is not None and live.is_file():
             # The check is advisory: a live page that cannot be read or decoded is

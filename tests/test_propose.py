@@ -223,5 +223,48 @@ class TestProposeRejects(_LayoutCase):
         self.assertEqual(sorted(p.name for p in existing.iterdir()), ["keep.txt"])
 
 
+class TestBaseRevision(_LayoutCase):
+    """``PageEdit.base_sha256`` travels into ``plan.json`` as the caller supplied it (FR-005, FR-007)."""
+
+    def test_positional_construction_still_works_and_defaults_to_none(self) -> None:
+        edit = PageEdit(PAGE_REL, "create", PAGE, "r")
+        self.assertIsNone(edit.base_sha256)
+        self.assertEqual(PageEdit(PAGE_REL, "update", PAGE, "r", "a" * 64).base_sha256, "a" * 64)
+
+    def test_propose_passes_the_callers_hash_through_and_writes_the_key_only_when_present(self) -> None:
+        api.promote(api.propose(_edits(), self.paths, name=NAME), self.paths)
+        page = api.read_page(PAGE_REL, self.paths)
+        revised = PAGE.replace("not a reflex", "a budget")
+        written = api.propose(
+            [
+                PageEdit(PAGE_REL, "update", revised, "Revise.", base_sha256=page.sha256),
+                PageEdit("log.md", "append-log", "- 2026-10-16 — revised retry-budget", "Log it."),
+            ],
+            self.paths,
+            name=NAME + "-2",
+        )
+        plan = json.loads((written / "plan.json").read_text(encoding="utf-8"))
+        self.assertEqual(plan["edits"][0]["base_sha256"], page.sha256)
+        self.assertNotIn("base_sha256", plan["edits"][1])
+        result = api.promote(written, self.paths)
+        self.assertEqual(result.unguarded_paths, [])
+        self.assertEqual((self.paths.wiki_dir / PAGE_REL).read_text(encoding="utf-8"), revised)
+
+    def test_propose_never_fills_a_missing_hash_from_the_live_page(self) -> None:
+        api.promote(api.propose(_edits(), self.paths, name=NAME), self.paths)
+        written = api.propose([PageEdit(PAGE_REL, "update", PAGE, "r")], self.paths, name=NAME + "-2")
+        plan = json.loads((written / "plan.json").read_text(encoding="utf-8"))
+        self.assertNotIn("base_sha256", plan["edits"][0])
+
+    def test_a_malformed_or_misplaced_hash_is_a_contract_violation(self) -> None:
+        with self.assertRaises(ContractViolationError) as ctx:
+            api.propose([PageEdit(PAGE_REL, "create", PAGE, "r", base_sha256="A" * 64)], self.paths, name=NAME)
+        self.assertIn("base_sha256", str(ctx.exception))
+        self._assert_nothing_written()
+
+    def _assert_nothing_written(self) -> None:
+        self.assertEqual(list(self.paths.proposals_dir.iterdir()), [])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
 import tempfile
@@ -247,12 +248,17 @@ class TestIdempotency(_LayoutCase):
         # The same page again as an update with identical content: nothing to write for it.
         again = _proposals_dir(self.root, slug="cli-fixture-again")
         plan = _plan(again)
+        live = (self.wiki / "incidents" / "cli-fixture.md").read_bytes()
         plan["edits"] = [
-            {"path": "incidents/cli-fixture.md", "action": "update", "rationale": "r", "preview": "preview/same.md"}
+            {
+                "path": "incidents/cli-fixture.md",
+                "action": "update",
+                "rationale": "r",
+                "preview": "preview/same.md",
+                "base_sha256": hashlib.sha256(live).hexdigest(),
+            }
         ]
-        (again / "preview" / "same.md").write_text(
-            (self.wiki / "incidents" / "cli-fixture.md").read_text(encoding="utf-8"), encoding="utf-8"
-        )
+        (again / "preview" / "same.md").write_bytes(live)
         _write_plan(again, plan)
         result = promote(again, self.paths)
         self.assertNotIn("incidents/cli-fixture.md", result.applied_paths)
