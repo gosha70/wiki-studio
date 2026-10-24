@@ -32,6 +32,7 @@ the contract.
 
 from __future__ import annotations
 
+import contextlib
 import datetime
 import os
 import re
@@ -479,10 +480,15 @@ def propose(
 
 
 def _discard_partial_proposal(output_dir: Path, paths: WikiPaths, proposals_dir_existed: bool) -> None:
-    """Remove a proposal directory ``propose`` could only partly write (and a proposals dir it created)."""
+    """Remove a proposal directory ``propose`` could only partly write (and a proposals dir it created).
+
+    The proposals dir is removed only while empty: another writer may have
+    created it, and filled it, while this call waited for the lock.
+    """
     shutil.rmtree(output_dir, ignore_errors=True)
     if not proposals_dir_existed:
-        shutil.rmtree(paths.proposals_dir, ignore_errors=True)
+        with contextlib.suppress(OSError):
+            paths.proposals_dir.rmdir()
 
 
 # ── promote ───────────────────────────────────────────────────

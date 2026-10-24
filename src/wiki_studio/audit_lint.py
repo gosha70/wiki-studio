@@ -53,7 +53,7 @@ _REQUIRED_KEYS: dict[str, type | tuple[type, ...]] = {
 
 # The one optional key accepted in v: 1 since 0.6.0: which digest recipe produced
 # ``proposal_hash`` (2 = ``audit.payload_digest``). A record without it used recipe 1.
-_OPTIONAL_KEYS: dict[str, type | tuple[type, ...]] = {"hash_recipe": int}
+_OPTIONAL_KEYS: frozenset[str] = frozenset({"hash_recipe"})
 _HASH_RECIPES = {1, 2}
 
 _PERMITTED_PROPOSAL_ENTRIES = {"plan.json", "proposal.md", "curator-delta.md"}

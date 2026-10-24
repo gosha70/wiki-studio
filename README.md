@@ -86,7 +86,7 @@ This is the only code path that writes into the wiki.
 |---|---|
 | `--dry-run` | build and validate the staged tree under the lock, change nothing; point-in-time evidence, a real promote checks again |
 | `--allow-out-of-repo` | accept a proposal directory outside the root (otherwise exit 7) |
-| `--lock-timeout SECONDS` | how long to wait for the wiki lock that serialises wiki-studio writers on this machine (default 30, or `WIKI_STUDIO_LOCK_TIMEOUT`); on expiry exit 10 with reason `lock_timeout`. Also accepted by every other verb |
+| `--lock-timeout SECONDS` | how long to wait for the wiki lock that serialises wiki-studio writers on this machine (default 30, or `WIKI_STUDIO_LOCK_TIMEOUT`; `inf` waits indefinitely); on expiry exit 10 with reason `lock_timeout`. Also accepted by every other verb |
 
 Promote writes a `receipt.json` beside the proposal (moved with it into
 `.applied/`) that records the outcome; promoting the same directory again

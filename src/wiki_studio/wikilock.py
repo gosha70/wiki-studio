@@ -139,7 +139,9 @@ class WikiLock:
         The wiki directory the lock protects; the lock file is its sibling.
     timeout : float
         Seconds to wait for the lock; on expiry ``PromoteApplyError`` with
-        ``reason="lock_timeout"`` (exit 10).
+        ``reason="lock_timeout"`` (exit 10). A negative value is clamped to
+        0 (one attempt, no wait); ``WikiPaths.resolve`` rejects negatives
+        before they reach here. ``inf`` waits indefinitely.
     backend : LockBackend | None
         The OS lock primitive; defaults to the platform's.
 
@@ -172,7 +174,10 @@ class WikiLock:
         self.lock_path.parent.mkdir(parents=True, exist_ok=True)
         # O_CREAT without O_EXCL: the file is shared by every contender and is
         # never removed, so opening it is never a question of ownership.
-        fd = os.open(self.lock_path, os.O_RDWR | os.O_CREAT, 0o644)
+        # O_NOFOLLOW (where the platform has it): a symlink planted at the lock
+        # path is refused rather than written through.
+        flags = os.O_RDWR | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0)
+        fd = os.open(self.lock_path, flags, 0o644)
         started = time.monotonic()
         deadline = started + self.timeout
         try:
@@ -212,7 +217,9 @@ class WikiLock:
         offset = 1 if self.backend.name == BACKEND_MSVCRT else 0
         with contextlib.suppress(OSError):  # diagnostics are best-effort
             os.lseek(fd, offset, os.SEEK_SET)
-            os.write(fd, text)
+            view = memoryview(text)
+            while view:  # os.write may write fewer bytes than asked
+                view = view[os.write(fd, view) :]
             os.ftruncate(fd, offset + len(text))
 
     def __enter__(self) -> WikiLock:

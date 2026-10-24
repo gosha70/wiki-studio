@@ -298,6 +298,16 @@ _LEGACY_PAGE_TYPE_DIR: dict[str, str] = {name: PAGE_TYPE_DIRS[name] for name in 
 # ── Append writer (the only writer of ingest-log.md) ──────────────────────
 
 
+def _ends_with_newline(path: Path) -> bool:
+    """True when ``path`` is empty or its last byte is a newline (reads one byte, not the file)."""
+    with path.open("rb") as handle:
+        size = handle.seek(0, 2)
+        if size == 0:
+            return True
+        handle.seek(size - 1)
+        return handle.read(1) == b"\n"
+
+
 def record_to_json_line(record: IngestLogRecord) -> str:
     """One NDJSON line for ``record``: the fields in definition order; ``hash_recipe`` only when set."""
     import dataclasses
@@ -316,9 +326,12 @@ def append_ingest_log(paths: WikiPaths, record: IngestLogRecord) -> None:
     of the current tail and the append happen under the wiki lock
     (:class:`~wiki_studio.wikilock.WikiLock`), so two cooperating writers
     never interleave lines and ``audit-flush`` never commits a torn tail.
-    Fail-closed: any OSError is re-raised so the caller can exit via
-    OutputWriteError (exit code 6); a lock timeout is ``PromoteApplyError``
-    (exit 10, ``reason="lock_timeout"``).
+    The existing bytes are never rewritten (the append-only invariant
+    ``audit-flush`` checks); the price is that a process killed inside the
+    append can leave a torn last line, which the audit lint reports and
+    ``audit-flush`` refuses to commit. Fail-closed: any OSError is re-raised
+    so the caller can exit via OutputWriteError (exit code 6); a lock timeout
+    is ``PromoteApplyError`` (exit 10, ``reason="lock_timeout"``).
     """
     log_path = paths.audit_log
     line = record_to_json_line(record)
@@ -332,12 +345,11 @@ def append_ingest_log(paths: WikiPaths, record: IngestLogRecord) -> None:
                 log_path.write_text(content, encoding="utf-8")
                 return
 
-            # Ensure the file ends with a newline before we append.
-            existing = log_path.read_bytes()
-            prefix = b"" if not existing or existing.endswith(b"\n") else b"\n"
-            # Binary append: no re-encoding of the existing content, and the
-            # existing bytes are never rewritten (the append-only invariant
-            # ``audit-flush`` checks).
+            # Ensure the file ends with a newline before we append: only the
+            # last byte is read, not the whole log.
+            prefix = b"" if _ends_with_newline(log_path) else b"\n"
+            # Binary append in one write call: no re-encoding of the existing
+            # content, and the newline fix and the line are never split.
             with log_path.open("ab") as handle:
                 handle.write(prefix + (line + "\n").encode("utf-8"))
     except OSError as exc:

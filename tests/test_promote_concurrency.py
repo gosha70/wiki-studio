@@ -114,6 +114,9 @@ class TestCommitScope(_LayoutCase):
     """The focused reproduction: stage both from one pre-state, commit sequentially."""
 
     def test_a_stale_stage_never_writes_back_another_writers_page(self) -> None:
+        # Drives _stage_wiki / _plan_commit / _apply_planned directly, without the
+        # lock or the receipt protocol: the property under test is the commit
+        # scope alone. TestInterleavedProcesses covers the full promote path.
         _wiki_page(self.wiki, "x", "Original.")
         a = _update_proposal(self.root, "a", "x", "Updated by A.")
         b = _proposals_dir(self.root, slug="b")
@@ -425,9 +428,11 @@ class TestSubmissionIdentity(_LayoutCase):
         self.assertEqual(payload_digest_from_files(files), payload_digest(prop))
 
     def test_a_preview_pointer_outside_preview_is_refused_with_exit_4(self) -> None:
-        for pointer in ("line.md", "../escape.md", "/tmp/abs.md", "preview/../line.md", "preview/incidents"):
+        for i, pointer in enumerate(
+            ("line.md", "../escape.md", "/tmp/abs.md", "preview/../line.md", "preview/incidents")
+        ):
             with self.subTest(pointer=pointer):
-                prop = _proposals_dir(self.root, slug=f"ptr-{abs(hash(pointer)) % 1000}")
+                prop = _proposals_dir(self.root, slug=f"ptr-{i}")
                 (prop / "line.md").write_text("- outside\n", encoding="utf-8")
                 plan = json.loads((prop / "plan.json").read_text(encoding="utf-8"))
                 plan["edits"][1]["preview"] = pointer

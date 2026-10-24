@@ -96,6 +96,18 @@ class TestAcquireRelease(unittest.TestCase):
                 self.assertTrue(lock.lock_path.is_file())
             self.assertFalse(wiki.exists())
 
+    @unittest.skipUnless(hasattr(os, "O_NOFOLLOW"), "O_NOFOLLOW is a POSIX flag")
+    def test_a_symlink_at_the_lock_path_is_refused_not_written_through(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            wiki = Path(tmp) / "wiki"
+            wiki.mkdir()
+            target = Path(tmp) / "victim"
+            target.write_text("keep\n", encoding="utf-8")
+            lock_path_for(wiki).symlink_to(target)
+            with self.assertRaises(OSError):
+                WikiLock(wiki, timeout=1).acquire()
+            self.assertEqual(target.read_text(encoding="utf-8"), "keep\n")
+
     def test_double_acquire_on_one_object_is_an_error(self) -> None:
         with (
             tempfile.TemporaryDirectory() as tmp,

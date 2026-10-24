@@ -379,6 +379,22 @@ class TestArchiveFaults(_LayoutCase):
         self.assertEqual(retry.returncode, 0, retry.stderr)
         self._assert_recovered(prop)
 
+    def test_a_source_receipt_whose_bytes_differ_from_the_archived_copy_is_still_cleaned_up(self) -> None:
+        # The receipt is the promoter's file, outside the submission identity: its
+        # bytes are never a reason to refuse the cleanup of a completely archived directory.
+        prop = _proposals_dir(self.root)
+        with patch("wiki_studio.promoter._remove_source_dir", side_effect=OSError("cleanup failed")):
+            first = api.promote(prop, self.paths)
+        self.assertIsNone(first.archived_dir)
+        archive = self.paths.applied_dir / prop.name
+        reserialised = json.dumps(_receipt(prop)).encode("utf-8")  # same record, different bytes
+        self.assertNotEqual(reserialised, (archive / RECEIPT).read_bytes())
+        (prop / RECEIPT).write_bytes(reserialised)
+        retry = api.promote(prop, self.paths)
+        self.assertEqual(retry.archived_dir, archive)
+        self.assertFalse(prop.exists())
+        self.assertEqual(_receipt(archive)["state"], "committed")
+
 
 class TestCommittedReceipts(_LayoutCase):
     def test_killed_between_committed_rewrite_and_archive_then_edited_exits_payload_changed(self) -> None:
@@ -532,6 +548,35 @@ class TestCommittingReceipts(_LayoutCase):
         self.assertEqual(neither.exception.reason, REASON_UNCERTAIN_OUTCOME)
         self.assertIn("incidents/cli-fixture.md: neither", str(neither.exception))
 
+    def test_an_unreadable_or_non_regular_tracked_path_is_refused_as_uncertain_outcome(self) -> None:
+        prop = _proposals_dir(self.root)
+        self.interrupt_after_committing_receipt(prop)
+        # A directory where the tracked create expects a file is not "absent" (pre-commit).
+        (self.wiki / "incidents" / "cli-fixture.md").mkdir(parents=True)
+        before = _tree(self.wiki)
+        with self.assertRaises(PromoteApplyError) as as_dir:
+            api.promote(prop, self.paths)
+        self.assertEqual(as_dir.exception.reason, REASON_UNCERTAIN_OUTCOME)
+        self.assertIn("incidents/cli-fixture.md: neither (live not a regular file)", str(as_dir.exception))
+        self.assertEqual(_tree(self.wiki), before)
+        self.assertTrue((prop / RECEIPT).is_file(), "the receipt is kept for the repair")
+        shutil.rmtree(self.wiki / "incidents")
+        before = _tree(self.wiki)
+        # A tracked page that cannot be read is refused the same way, not reported as a raw OSError.
+        real_read = Path.read_bytes
+
+        def failing_read(self_: Path) -> bytes:
+            if self_.name == "log.md" and self_.is_relative_to(self.wiki):
+                raise PermissionError("permission denied")
+            return real_read(self_)
+
+        with patch.object(Path, "read_bytes", failing_read), self.assertRaises(PromoteApplyError) as unreadable:
+            api.promote(prop, self.paths)
+        self.assertEqual(unreadable.exception.reason, REASON_UNCERTAIN_OUTCOME)
+        self.assertIn("log.md: neither (live unreadable: permission denied)", str(unreadable.exception))
+        self.assertEqual(_tree(self.wiki), before)
+        self.assertTrue((prop / RECEIPT).is_file())
+
     def test_committing_receipt_with_everything_at_post_state_completes(self) -> None:
         prop = _proposals_dir(self.root)
         self.interrupt_after_commit(prop)
@@ -542,9 +587,9 @@ class TestCommittingReceipts(_LayoutCase):
 
 class TestMissingAndCorruptReceipts(_LayoutCase):
     def test_a_corrupt_receipt_is_refused_with_nothing_written(self) -> None:
-        for body in ("{not json", '{"state": "committed"}', '{"state": "done"}', "[]"):
+        for i, body in enumerate(("{not json", '{"state": "committed"}', '{"state": "done"}', "[]")):
             with self.subTest(body=body):
-                prop = _proposals_dir(self.root, slug=f"c{abs(hash(body)) % 1000}")
+                prop = _proposals_dir(self.root, slug=f"c{i}")
                 (prop / RECEIPT).write_text(body, encoding="utf-8")
                 before = _tree(self.wiki)
                 result = run_cli("promote", str(prop), cwd=self.root)
@@ -555,6 +600,25 @@ class TestMissingAndCorruptReceipts(_LayoutCase):
                 self.assertEqual(
                     [p.name for p in self.paths.applied_dir.iterdir()] if self.paths.applied_dir.exists() else [], []
                 )
+
+    def test_a_receipt_with_a_malformed_digest_is_refused(self) -> None:
+        prop = _proposals_dir(self.root)
+        self.interrupt_before_archive(prop)
+        good = _receipt(prop)
+        for field, broken in (
+            ("submission_digest", "abc"),
+            ("submission_manifest", [{"path": "plan.json", "sha256": "ABCDEF"}]),
+            (
+                "planned_writes",
+                [{"path": "log.md", "pre_sha256": "x", "post_sha256": good["planned_writes"][0]["post_sha256"]}],
+            ),
+        ):
+            with self.subTest(field=field):
+                (prop / RECEIPT).write_text(json.dumps({**good, field: broken}), encoding="utf-8")
+                with self.assertRaises(PromoteApplyError) as ctx:
+                    api.promote(prop, self.paths)
+                self.assertEqual(ctx.exception.reason, REASON_UNCERTAIN_OUTCOME)
+                self.assertIn(f"malformed {field}", str(ctx.exception))
 
     def test_a_missing_receipt_never_means_committed_and_never_reapplies_silently(self) -> None:
         prop = _proposals_dir(self.root)

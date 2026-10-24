@@ -135,6 +135,11 @@ def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def _is_hex_digest(value: object) -> bool:
+    """True for a lowercase 64-character hex string: the only form ``_sha256`` produces."""
+    return isinstance(value, str) and len(value) == 64 and all(c in "0123456789abcdef" for c in value)
+
+
 def _now() -> str:
     return datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -544,7 +549,9 @@ def _plan_commit(stage_dir: Path, paths: WikiPaths, patch: WikiPatchSet, archive
 
     A staged file outside that set is never written back, whatever differs.
     A path whose live bytes already equal the staged bytes is a no-op and is
-    not planned (so it is not tracked by the receipt either).
+    not planned (so it is not tracked by the receipt either). Planned paths
+    (and so the receipt's ``planned_writes``) are ``posixpath.normpath`` of
+    ``edit.path``, not its verbatim spelling in ``plan.json``.
     """
     wiki_dst = paths.wiki_dir
     rels: list[str] = []
@@ -705,18 +712,22 @@ def _load_receipt(proposals_dir: Path) -> dict[str, Any] | None:
     state = data.get("state")
     if state not in (STATE_COMMITTING, STATE_COMMITTED):
         raise _corrupt_receipt(receipt_path, f"unknown state {state!r}")
-    if not isinstance(data.get("submission_digest"), str):
-        raise _corrupt_receipt(receipt_path, "missing submission_digest")
+    if not _is_hex_digest(data.get("submission_digest")):
+        raise _corrupt_receipt(receipt_path, "missing or malformed submission_digest")
     manifest = data.get("submission_manifest")
     if not isinstance(manifest, list) or not all(
-        isinstance(e, dict) and isinstance(e.get("path"), str) and isinstance(e.get("sha256"), str) for e in manifest
+        isinstance(e, dict) and isinstance(e.get("path"), str) and _is_hex_digest(e.get("sha256")) for e in manifest
     ):
         raise _corrupt_receipt(receipt_path, "missing or malformed submission_manifest")
     if not isinstance(data.get("wiki_target"), dict):
         raise _corrupt_receipt(receipt_path, "missing wiki_target")
     writes = data.get("planned_writes")
     if not isinstance(writes, list) or not all(
-        isinstance(w, dict) and isinstance(w.get("path"), str) and isinstance(w.get("post_sha256"), str) for w in writes
+        isinstance(w, dict)
+        and isinstance(w.get("path"), str)
+        and _is_hex_digest(w.get("post_sha256"))
+        and (w.get("pre_sha256") is None or _is_hex_digest(w.get("pre_sha256")))
+        for w in writes
     ):
         raise _corrupt_receipt(receipt_path, "missing or malformed planned_writes")
     return data
@@ -766,7 +777,14 @@ def _check_wiki_target(receipt: dict[str, Any], receipt_path: Path, handle: _Wik
     target = receipt["wiki_target"]
     dev, ino = target.get("st_dev"), target.get("st_ino")
     recorded_path = target.get("path", "?")
-    usable = isinstance(dev, int) and isinstance(ino, int) and dev != 0 and ino != 0
+    usable = (
+        isinstance(dev, int)
+        and isinstance(ino, int)
+        and not isinstance(dev, bool)
+        and not isinstance(ino, bool)
+        and dev != 0
+        and ino != 0
+    )
     if not usable or handle.st_dev == 0 or handle.st_ino == 0:
         raise PromoteApplyError(
             f"cannot verify which wiki {receipt_path} was written for: the filesystem reports no usable identity "
@@ -874,7 +892,9 @@ def _find_complete_archive(applied_root: Path, name: str, digest: str, manifest:
     for candidate in sorted(applied_root.iterdir()):
         if not candidate.is_dir() or candidate.is_symlink() or candidate.name.startswith("."):
             continue
-        if candidate.name != name and not candidate.name.startswith(f"{name}-"):
+        if candidate.name != name and not (
+            candidate.name.startswith(f"{name}-") and candidate.name[len(name) + 1 :].isdigit()
+        ):
             continue
         try:
             data = json.loads((candidate / RECEIPT_FILE_NAME).read_bytes().decode("utf-8"))
@@ -939,11 +959,15 @@ def _payload_changed_after_archive(proposals_dir: Path, archive: Path, problems:
 def _remove_source_dir(proposals_dir: Path, archive_files: Mapping[str, bytes], archive: Path) -> None:
     """Remove the original directory, only while every file in it matches the archive; ``receipt.json`` last.
 
-    ``OSError`` from a deletion propagates: the archive is complete, and a
-    retry finishes the cleanup from the receipt's manifest.
+    The receipt itself is not compared: it is the promoter's own file, outside
+    the submission identity, and the archive carries its own copy. A file
+    removed from the directory after capture is not a mismatch either (the
+    archive holds the captured bytes). ``OSError`` from a deletion
+    propagates: the archive is complete, and a retry finishes the cleanup
+    from the receipt's manifest.
     """
     expected = {rel: _sha256(data) for rel, data in archive_files.items()}
-    problems = _mismatches(proposals_dir, expected, ignore=(_RECEIPT_TMP_NAME,))
+    problems = _mismatches(proposals_dir, expected, ignore=(RECEIPT_FILE_NAME, _RECEIPT_TMP_NAME))
     if problems:
         raise _payload_changed_after_archive(proposals_dir, archive, problems)
     _discard_receipt_tmp(proposals_dir)
@@ -1084,13 +1108,23 @@ def _classify_committing(receipt: dict[str, Any], paths: WikiPaths, receipt_path
     report: list[str] = []
     for write in receipt["planned_writes"]:
         live = paths.wiki_dir / str(write["path"])
-        live_sha = _sha256(live.read_bytes()) if live.is_file() else None
-        at_pre = live_sha == write.get("pre_sha256")
-        at_post = live_sha == write["post_sha256"]
+        # A tracked path that is not a regular file, or cannot be read, matches
+        # neither state: the outcome is uncertain, not "absent".
+        live_sha: str | None = None
+        problem: str | None = None
+        try:
+            if live.is_symlink() or (live.exists() and not live.is_file()):
+                problem = "not a regular file"
+            elif live.is_file():
+                live_sha = _sha256(live.read_bytes())
+        except OSError as exc:
+            problem = f"unreadable: {exc}"
+        at_pre = problem is None and live_sha == write.get("pre_sha256")
+        at_post = problem is None and live_sha == write["post_sha256"]
         all_pre &= at_pre
         all_post &= at_post
         state = "post-commit" if at_post else ("pre-commit" if at_pre else "neither")
-        report.append(f"{write['path']}: {state} (live {live_sha or 'absent'})")
+        report.append(f"{write['path']}: {state} (live {problem or live_sha or 'absent'})")
     if all_post:
         return True
     if all_pre:
@@ -1128,8 +1162,8 @@ def _resolve_receipt(
 
 
 def _is_already_applied(proposals_dir: Path) -> bool:
-    """True when proposals_dir lives under the proposals ``.applied/`` archive."""
-    return APPLIED_DIR_NAME in proposals_dir.parts
+    """True when proposals_dir is an entry of a ``.applied/`` archive (its parent, not any ancestor)."""
+    return proposals_dir.parent.name == APPLIED_DIR_NAME
 
 
 def _promote_locked(
@@ -1155,9 +1189,11 @@ def _promote_locked(
             return resolved
 
     if not (proposals_dir / PLAN_FILE_NAME).exists():
-        # Neither a receipt nor a plan: an empty leftover is removed; anything else is not a proposal.
+        # Neither a receipt nor a plan: an empty leftover is removed (a dry run
+        # only reports it); anything else is not a proposal.
         if not any(proposals_dir.iterdir()):
-            proposals_dir.rmdir()
+            if not dry_run:
+                proposals_dir.rmdir()
             return PromoteResult(applied_paths=[], proposals_dir=proposals_dir, archived_dir=None, dry_run=dry_run)
         raise PromoteValidationError(f"plan.json not found in {proposals_dir}; not a valid proposals dir.")
 

@@ -11,9 +11,12 @@ uses [Semantic Versioning](https://semver.org/).
 - The wiki lock (`wiki_studio.wikilock.WikiLock`): an OS advisory lock
   (`fcntl.flock` on POSIX) on `<wiki-parent>/.<wiki-dir-name>.wiki-studio.lock`,
   keyed to the resolved wiki directory and held by `promote`,
-  `propose --promote`, the ingest-log append and `audit-flush`. Two promotes
-  that start together no longer revert each other's pages. `--lock-timeout`
-  and `WIKI_STUDIO_LOCK_TIMEOUT` (default 30 s); on expiry exit 10 with
+  `propose --promote`, proposal-directory creation (`ingest`, `query
+  --file-back`, `api.propose`), the ingest-log append and `audit-flush`. Two
+  promotes that start together on the same machine no longer revert each
+  other's pages (the lock is not distributed and does not cover direct edits).
+  `--lock-timeout` and `WIKI_STUDIO_LOCK_TIMEOUT` (default 30 s; `inf` waits
+  indefinitely); on expiry every holder, `ingest` included, exits 10 with
   reason `lock_timeout`. `info` prints the lock file and timeout.
 - Receipts: `promote` writes `receipt.json` into the proposal directory before
   the commit (`committing`), rewrites it after (`committed`) and archives it

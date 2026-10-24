@@ -125,7 +125,9 @@ seconds (default 30); on expiry promote exits 10 with reason
    `<proposals-dir>/.applied/.<name>.<pid>.tmp/`, fsynced, and published by an
    atomic rename to `<proposals-dir>/.applied/<name>/` (`<name>-2`, `-3` on a
    name clash, as since 0.4.0). The original directory is then removed, only
-   if every file in it still matches the archive and nothing new appeared;
+   if every file in it still matches the archive and nothing new appeared (a
+   file deleted from it after capture is not a change: the archive holds the
+   captured bytes; `receipt.json` itself is not compared);
    otherwise it is left in place and promote exits 10 with reason
    `payload_changed` naming each file that differs or is new (the archive is
    complete; the remedy is to delete the leftover directory, or promote it
@@ -150,7 +152,7 @@ attempts and dry runs persist no receipt.
 | `receipt_version` | `1`. |
 | `state` | `committing` (written before the commit, fsynced) or `committed` (rewritten after it, fsynced). |
 | `proposal` | The proposal directory's name. |
-| `submission_digest` | The submission identity: recipe 2 (`payload_digest`, `schema/audit-rules.md`) over `plan.json` and every file under `preview/`, hidden files included; `.ingest-snapshot/` is outside it. Equal to the ingest-log `proposal_hash` of a proposal promoted unchanged; different after a curator edit, which `curator-delta.md` records. |
+| `submission_digest` | The submission identity: recipe 2 (`payload_digest`, `schema/audit-rules.md`) over `plan.json` and every file under `preview/`, hidden files included; `.ingest-snapshot/` is outside it. Equal to the ingest-log `proposal_hash` of a proposal promoted unchanged when that record carries `hash_recipe: 2` (records written before 0.6.0 used recipe 1 and differ); different after a curator edit, which `curator-delta.md` records. |
 | `digest_recipe` | `2`. |
 | `submission_manifest` | Every captured file as `{"path", "sha256"}` (proposal-relative), so a later process can prove which archive is this proposal's and which source files remain. |
 | `plan_sha256` | sha256 of `plan.json`, for provenance. |
@@ -183,9 +185,11 @@ with reason `wiki_identity_unavailable` (no path fallback). Then:
   it is a new proposal.
 - `committing`: each tracked write's live sha256 is compared with the receipt.
   All at their pre-commit state means not committed: the receipt is removed
-  and the proposal is promoted afresh in the same run. All at their
-  post-commit state means committed: steps 3 to 5 are finished. Anything else
-  exits 10 with reason `uncertain_outcome` naming the paths, with no writes.
+  (it recorded an attempt that wrote nothing, and is not preserved) and the
+  proposal is promoted afresh in the same run. All at their post-commit state
+  means committed: steps 3 to 5 are finished. Anything else, including a
+  tracked path that is unreadable or not a regular file, exits 10 with reason
+  `uncertain_outcome` naming the paths, with no writes.
 - Under `.applied/`: the recorded outcome, no writes.
 - A missing or corrupt receipt is never taken to mean committed and never
   causes a silent re-application; a corrupt one exits 10 with reason

@@ -57,6 +57,14 @@ class TestLoadPatch(_LayoutCase):
         self.assertIsNone(result.archived_dir)
         self.assertFalse(prop.exists())
 
+    def test_a_dry_run_leaves_an_empty_leftover_directory_in_place(self) -> None:
+        prop = self.paths.proposals_dir / "2026-05-06-leftover"
+        prop.mkdir(parents=True)
+        result = promote(prop, self.paths, dry_run=True)
+        self.assertEqual(result.applied_paths, [])
+        self.assertTrue(result.dry_run)
+        self.assertTrue(prop.is_dir(), "a dry run changes nothing, not even a leftover")
+
     def test_invalid_json(self) -> None:
         prop = _proposals_dir(self.root)
         (prop / "plan.json").write_text("{not json", encoding="utf-8")
