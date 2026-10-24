@@ -130,6 +130,32 @@ class TestIndexOnlyAnswers(unittest.TestCase):
         self.assertEqual(result["counts"]["with_gold"], 3)
 
 
+class TestArchiveLayoutIsUnchanged(unittest.TestCase):
+    def test_run2_protocol_reads_the_applied_plan_at_its_0_4_0_path(self) -> None:
+        # run2_protocol.py reads ``<run>/proposals/.applied/<proposal_dir>/plan.json`` after each
+        # promote (0.6.0 FR-016): the archive directory name and the verbatim plan are unchanged.
+        import shutil
+        import tempfile
+
+        from tests.conftest import make_repo_layout
+        from tests.test_cli_contract import _proposals_dir
+        from wiki_studio import api
+        from wiki_studio.paths import WikiPaths
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = make_repo_layout(Path(tmp), with_schema=True, with_sample=False)
+            paths = WikiPaths.for_root(root, proposals_dir=root / "run" / "proposals")
+            shutil.move(str(_proposals_dir(root)), str(paths.proposals_dir / "2026-05-06-cli-fixture"))
+            prop = paths.proposals_dir / "2026-05-06-cli-fixture"
+            plan_bytes = (prop / "plan.json").read_bytes()
+            api.promote(prop, paths)
+            archived_plan = root / "run" / "proposals" / ".applied" / prop.name / "plan.json"
+            self.assertEqual(archived_plan.read_bytes(), plan_bytes)
+            pages = [e["path"] for e in json.loads(archived_plan.read_text(encoding="utf-8"))["edits"]]
+            self.assertEqual(pages, ["incidents/cli-fixture.md", "log.md", "index.md"])
+            self.assertEqual([p.name for p in (root / "run" / "proposals" / ".applied").iterdir()], [prop.name])
+
+
 class TestGrepRule(unittest.TestCase):
     def test_question_words_use_the_queriers_pattern_and_stop_list(self) -> None:
         words = run.question_words("What does `get` return for a page_type export?", frozenset({"what", "for"}))

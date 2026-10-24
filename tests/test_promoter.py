@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
 import tempfile
@@ -39,11 +40,31 @@ class _LayoutCase(unittest.TestCase):
 
 class TestLoadPatch(_LayoutCase):
     def test_missing_plan_json(self) -> None:
+        # A non-empty directory without plan.json (or receipt.json) is not a proposal.
         prop = self.paths.proposals_dir / "2026-05-06-no-plan"
-        prop.mkdir(parents=True)
+        (prop / "preview").mkdir(parents=True)
+        (prop / "preview" / "stray.md").write_text("x\n", encoding="utf-8")
         with self.assertRaises(PromoteValidationError) as ctx:
             promote(prop, self.paths)
         self.assertIn("plan.json not found", str(ctx.exception))
+        self.assertTrue(prop.is_dir())
+
+    def test_empty_leftover_directory_is_removed(self) -> None:
+        # The remains of an interrupted cleanup: neither receipt.json nor plan.json, and empty.
+        prop = self.paths.proposals_dir / "2026-05-06-leftover"
+        prop.mkdir(parents=True)
+        result = promote(prop, self.paths)
+        self.assertEqual(result.applied_paths, [])
+        self.assertIsNone(result.archived_dir)
+        self.assertFalse(prop.exists())
+
+    def test_a_dry_run_leaves_an_empty_leftover_directory_in_place(self) -> None:
+        prop = self.paths.proposals_dir / "2026-05-06-leftover"
+        prop.mkdir(parents=True)
+        result = promote(prop, self.paths, dry_run=True)
+        self.assertEqual(result.applied_paths, [])
+        self.assertTrue(result.dry_run)
+        self.assertTrue(prop.is_dir(), "a dry run changes nothing, not even a leftover")
 
     def test_invalid_json(self) -> None:
         prop = _proposals_dir(self.root)
@@ -227,12 +248,17 @@ class TestIdempotency(_LayoutCase):
         # The same page again as an update with identical content: nothing to write for it.
         again = _proposals_dir(self.root, slug="cli-fixture-again")
         plan = _plan(again)
+        live = (self.wiki / "incidents" / "cli-fixture.md").read_bytes()
         plan["edits"] = [
-            {"path": "incidents/cli-fixture.md", "action": "update", "rationale": "r", "preview": "preview/same.md"}
+            {
+                "path": "incidents/cli-fixture.md",
+                "action": "update",
+                "rationale": "r",
+                "preview": "preview/same.md",
+                "base_sha256": hashlib.sha256(live).hexdigest(),
+            }
         ]
-        (again / "preview" / "same.md").write_text(
-            (self.wiki / "incidents" / "cli-fixture.md").read_text(encoding="utf-8"), encoding="utf-8"
-        )
+        (again / "preview" / "same.md").write_bytes(live)
         _write_plan(again, plan)
         result = promote(again, self.paths)
         self.assertNotIn("incidents/cli-fixture.md", result.applied_paths)
@@ -261,16 +287,20 @@ class TestValidationAndFailures(_LayoutCase):
 
     def test_archive_failure_after_commit_is_not_a_promote_failure(self) -> None:
         prop = _proposals_dir(self.root)
-        with patch("wiki_studio.promoter.shutil.move", side_effect=OSError("disk full")):
+        with patch("wiki_studio.promoter._publish_archive", side_effect=OSError("disk full")):
             result = promote(prop, self.paths)
         self.assertEqual(len(result.applied_paths), 5)
         self.assertIsNone(result.archived_dir)
         self.assertTrue(prop.exists())
         self.assertTrue((self.wiki / "incidents" / "cli-fixture.md").is_file())
+        # The receipt records the outcome; no partial archive sits at an applied name.
+        receipt = json.loads((prop / "receipt.json").read_text(encoding="utf-8"))
+        self.assertEqual(receipt["state"], "committed")
+        self.assertFalse((self.paths.applied_dir / prop.name).exists())
 
     def test_unreadable_live_page_aborts_before_any_write(self) -> None:
         prop = _proposals_dir(self.root)
-        real_read = Path.read_text
+        real_read = Path.read_bytes
 
         def failing_read(self_: Path, *args, **kwargs):  # noqa: ANN001, ANN202
             if self_.name == "log.md" and "knowledge/wiki" in str(self_):
@@ -278,7 +308,7 @@ class TestValidationAndFailures(_LayoutCase):
             return real_read(self_, *args, **kwargs)
 
         index_before = (self.wiki / "index.md").read_text(encoding="utf-8")
-        with patch.object(Path, "read_text", failing_read), self.assertRaises(PromoteApplyError) as ctx:
+        with patch.object(Path, "read_bytes", failing_read), self.assertRaises(PromoteApplyError) as ctx:
             promote(prop, self.paths)
         self.assertIn("could not read existing wiki file for backup", str(ctx.exception))
         self.assertEqual((self.wiki / "index.md").read_text(encoding="utf-8"), index_before)

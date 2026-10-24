@@ -43,19 +43,30 @@ from .errors import (
     PromoteValidationError,
 )
 from .paths import (
+    DEFAULT_LOCK_TIMEOUT,
     DEFAULT_PROPOSALS_DIR,
     DEFAULT_WIKI_DIR,
+    ENV_LOCK_TIMEOUT,
     ENV_PROPOSALS_DIR,
     ENV_ROOT,
+    ENV_SOURCE_ROOTS,
     ENV_WIKI_DIR,
     WikiPaths,
 )
+from .wikilock import lock_path_for
 
 # Exit codes new in Phase 0.
 EXIT_PATH_OUT_OF_REPO = PathOutsideRootError.exit_code
 EXIT_NOT_IMPLEMENTED = 8
 
 _BACKEND_HELP_SUFFIX = f"Defaults to {ENV_BACKEND} env var ({ENV_BACKEND_DEPRECATED} is deprecated), then auto-detect."
+
+_ALLOW_UNGUARDED_HELP = (
+    "Apply update edits that carry no base_sha256 (proposals written before 0.6.0, drafts without a "
+    ".base.json manifest). Compatibility mode with incomplete conflict protection: a stale draft can "
+    "overwrite a newer page, and the paths are recorded as unguarded_paths in the receipt. Without it "
+    "such an update exits 9; the safe remedy is to regenerate the proposal from a fresh `wiki-studio read`."
+)
 
 # Message prefixes that distinguish the error classes on stderr (the exit
 # code itself comes from the exception).
@@ -68,13 +79,23 @@ _ERROR_PREFIXES: tuple[tuple[type[IngestError], str], ...] = (
 
 
 def _add_path_options(parser: argparse.ArgumentParser, *, suppress_defaults: bool) -> None:
-    """The three global location options.
+    """The three global location options, the allowed source roots and the wiki-lock timeout.
 
     They live on the top-level parser and, with suppressed defaults, on every
     verb parser, so a value given after the verb is not clobbered by a
     missing one before it.
     """
     default = argparse.SUPPRESS if suppress_defaults else None
+    parser.add_argument(
+        "--source-root",
+        type=Path,
+        action="append",
+        default=default,
+        metavar="PATH",
+        help="A directory outside the root whose files pages may reference with local links (images, data, "
+        "source files); repeatable. A local link target must otherwise resolve inside the root. "
+        f"Default: {ENV_SOURCE_ROOTS} ({os.pathsep!r}-separated), else none.",
+    )
     parser.add_argument(
         "--root",
         type=Path,
@@ -94,6 +115,15 @@ def _add_path_options(parser: argparse.ArgumentParser, *, suppress_defaults: boo
         default=default,
         help=f"Proposals directory. Default: {ENV_PROPOSALS_DIR}, else <root>/{DEFAULT_PROPOSALS_DIR}.",
     )
+    parser.add_argument(
+        "--lock-timeout",
+        type=float,
+        default=default,
+        metavar="SECONDS",
+        help="Seconds to wait for the wiki lock that serialises wiki-studio writers on this machine "
+        "(promote, propose, the ingest-log append, audit-flush); on expiry exit 10 with reason lock_timeout. "
+        f"Default: {ENV_LOCK_TIMEOUT}, else {DEFAULT_LOCK_TIMEOUT:g}.",
+    )
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:
@@ -102,14 +132,17 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         prog="wiki-studio",
         description=(
             "Karpathy-pattern LLM Wiki maintainer. Verbs: "
-            "init|ingest|propose|promote|query|find|lint|audit-flush|info. "
+            "init|ingest|propose|promote|read|query|find|lint|audit-flush|info. "
             "``wiki-studio <verb> --help`` for per-verb help."
         ),
         epilog=(
             "Exit codes (stable across v1): "
             "0 success; 2 backend not found; 3 backend invocation failed; "
             "4 contract violation; 5 source missing; 6 output write failure; "
-            "7 source out of repo; 8 verb not yet implemented (Phase N stub); "
+            "7 source out of repo, or a page path outside the wiki; 8 verb not yet implemented (Phase N stub); "
+            "9 promote validation failed, including a revision precondition (stale or unguarded update, "
+            "create of an existing page); 10 promote apply failed (with a reason: lock_timeout, "
+            "uncertain_outcome, wiki_mismatch, wiki_identity_unavailable, payload_changed); "
             "11 audit-flush error (not a git work tree; append-only invariant "
             "violated; working log malformed; git commit failed)."
         ),
@@ -185,9 +218,11 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     p_promote = sub.add_parser(
         "promote",
         parents=[common],
-        help="Apply a proposal patch-set to the wiki directory atomically. "
-        "The ONLY code path that writes to the canonical wiki content "
-        "tree, excluding .audit/.",
+        help="Apply a proposal patch-set to the wiki directory: validated, serialised against other "
+        "wiki-studio writers on this machine by the wiki lock, rolled back on failure; not crash-safe "
+        "across files. The ONLY code path that writes to the canonical wiki content tree, excluding .audit/. "
+        "A receipt.json beside the proposal records the outcome; promoting the directory again finishes an "
+        "interrupted archive step and never re-applies an edit.",
     )
     p_promote.add_argument(
         "proposal_dir",
@@ -198,9 +233,10 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     p_promote.add_argument(
         "--dry-run",
         action="store_true",
-        help="Build and validate the staged tree but do not commit to "
-        "the wiki directory and do not move the proposals dir to "
-        ".applied/. Exits 0 on a clean stage.",
+        help="Take the wiki lock, stage the wiki with the edits, check the revision preconditions against "
+        "the live wiki, release the lock, then validate the staged copy. Writes no wiki content, no "
+        "receipt and no proposal change. The result is point-in-time evidence: a real promote checks "
+        "again. Exits 0 on a clean stage.",
     )
     p_promote.add_argument(
         "--allow-out-of-repo",
@@ -210,6 +246,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         "applied to the wiki directory, so accepting paths from "
         "outside the repo is an avoidable security surface.",
     )
+    p_promote.add_argument("--allow-unguarded-updates", action="store_true", help=_ALLOW_UNGUARDED_HELP)
 
     # ── query ──────────────────────────────────────────────────
     p_query = sub.add_parser(
@@ -351,6 +388,25 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         help="With --promote: allow the proposal directory to be outside the repository tree (a "
         "--proposals-dir elsewhere). Default: refuse (exit 7), as promote does.",
     )
+    p_propose.add_argument(
+        "--allow-unguarded-updates", action="store_true", help="With --promote: " + _ALLOW_UNGUARDED_HELP
+    )
+
+    # ── read ───────────────────────────────────────────────────
+    p_read = sub.add_parser(
+        "read",
+        parents=[common],
+        help="Print one wiki page, read exactly once. Before replacing a page: read it, draft from that text, "
+        "and record the sha256 that --json prints as the edit's base_sha256 (api.propose) or in the "
+        "draft's .base.json (propose --from); promote then applies the replacement only while the live "
+        "page still has that hash. Reads nothing outside the wiki (exit 7); a page that is not UTF-8 exits 4.",
+    )
+    p_read.add_argument("path", help="Wiki-relative page path: index.md, concepts/<slug>.md, ...")
+    p_read.add_argument(
+        "--json",
+        action="store_true",
+        help='Print {"path", "sha256", "content"} as one JSON object; content is the decoded text.',
+    )
 
     # ── find ───────────────────────────────────────────────────
     p_find = sub.add_parser(
@@ -372,6 +428,8 @@ def _paths_from_args(args: argparse.Namespace) -> WikiPaths:
         root=getattr(args, "root", None),
         wiki_dir=getattr(args, "wiki_dir", None),
         proposals_dir=getattr(args, "proposals_dir", None),
+        lock_timeout=getattr(args, "lock_timeout", None),
+        source_roots=getattr(args, "source_root", None),
     )
 
 
@@ -423,33 +481,58 @@ def _do_ingest(args: argparse.Namespace) -> int:
     return 0
 
 
+def _archived_note(result: api.PromoteResult) -> str:
+    """Where the proposal directory went, or how to finish when the archive step did not complete."""
+    if result.archived_dir:
+        return f"archived to {result.archived_dir}."
+    return (
+        "not archived (the archive step failed after the commit; the receipt records the outcome). "
+        "Run promote on the same directory again to finish archiving; nothing is applied twice."
+    )
+
+
+def _print_promote_warnings(result: api.PromoteResult) -> None:
+    """Findings that did not stop the promotion (unguarded updates), on stderr."""
+    for warning in result.warnings:
+        print(f"warning: {warning}", file=sys.stderr)
+
+
 def _do_promote(args: argparse.Namespace) -> int:
-    """Phase 2: atomic patch-set application — the only writer to the wiki directory."""
+    """Phase 2: patch-set application under the wiki lock — the only writer to the wiki directory."""
     paths = _paths_from_args(args)
     result = api.promote(
         args.proposal_dir,
         paths,
         dry_run=args.dry_run,
         allow_out_of_repo=args.allow_out_of_repo,
+        entry_point=api.PROMOTE_ENTRY_POINT_CLI,
+        allow_unguarded_updates=args.allow_unguarded_updates,
     )
+    _print_promote_warnings(result)
     if result.dry_run:
-        print(f"dry-run: staged tree validated; would apply {len(result.applied_paths)} edit(s); wiki tree unchanged.")
+        print(
+            f"dry-run: staged snapshot validated; would apply {len(result.applied_paths)} edit(s); wiki tree "
+            "unchanged (point-in-time evidence: a real promote checks again)."
+        )
         for p in result.applied_paths:
             print(f"  + {p}")
         return 0
     if not result.applied_paths:
         print(f"no-op: {args.proposal_dir.name} already applied (no changes to write).")
         return 0
-    print(
-        f"applied {len(result.applied_paths)} edit(s) from {args.proposal_dir.name}; "
-        + (
-            f"archived to {result.archived_dir}."
-            if result.archived_dir
-            else "not archived (move failed; left in place)."
-        )
-    )
+    print(f"applied {len(result.applied_paths)} edit(s) from {args.proposal_dir.name}; {_archived_note(result)}")
     for p in result.applied_paths:
         print(f"  + {paths.wiki_label}/{p}")
+    return 0
+
+
+def _do_read(args: argparse.Namespace) -> int:
+    """One page, read once: its text, or with --json the text and the sha256 of the bytes read."""
+    result = api.read_page(args.path, _paths_from_args(args))
+    if args.json:
+        print(json.dumps({"path": result.path, "sha256": result.sha256, "content": result.text}, indent=2))
+        return 0
+    sys.stdout.write(result.text)
     return 0
 
 
@@ -583,6 +666,9 @@ def _do_info(args: argparse.Namespace) -> int:
         "audit_log": str(paths.audit_log),
         "schema": schema,
         "schema_dir": str(paths.schema_dir),
+        "lock_file": str(lock_path_for(paths.wiki_dir)),
+        "lock_timeout": paths.lock_timeout,
+        "source_roots": [str(p) for p in paths.source_roots],
     }
     if args.json:
         print(json.dumps(info, indent=2))
@@ -598,6 +684,8 @@ def _do_info(args: argparse.Namespace) -> int:
     print(f"query-log: {paths.query_log}")
     print(f"audit-log: {paths.audit_log}")
     print(f"schema: {schema}" + (f" copy at {paths.schema_dir}" if schema == _SCHEMA_PROJECT else ""))
+    print(f"lock-file: {lock_path_for(paths.wiki_dir)}  (timeout {paths.lock_timeout:g}s)")
+    print("source-roots: " + (", ".join(str(p) for p in paths.source_roots) or "(none; links stay inside the root)"))
     return 0
 
 
@@ -638,11 +726,15 @@ def _do_propose(args: argparse.Namespace) -> int:
     _print_fact_warnings(written)
     if not args.promote:
         return 0
-    result = api.promote(written, paths, allow_out_of_repo=args.allow_out_of_repo)
-    archived = (
-        f"archived to {result.archived_dir}." if result.archived_dir else "not archived (move failed; left in place)."
+    result = api.promote(
+        written,
+        paths,
+        allow_out_of_repo=args.allow_out_of_repo,
+        entry_point=api.PROMOTE_ENTRY_POINT_CLI,
+        allow_unguarded_updates=args.allow_unguarded_updates,
     )
-    print(f"applied {len(result.applied_paths)} edit(s); {archived}")
+    _print_promote_warnings(result)
+    print(f"applied {len(result.applied_paths)} edit(s); {_archived_note(result)}")
     return 0
 
 
@@ -666,10 +758,10 @@ def _do_find(args: argparse.Namespace) -> int:
     return 0
 
 
-_VERBS = ("ingest", "promote", "query", "lint", "audit-flush", "info", "init", "propose", "find")
+_VERBS = ("ingest", "promote", "query", "lint", "audit-flush", "info", "init", "propose", "find", "read")
 
 # Global options that take a value; their value is not a positional for the legacy shim.
-_GLOBAL_VALUE_OPTIONS = ("--root", "--wiki-dir", "--proposals-dir")
+_GLOBAL_VALUE_OPTIONS = ("--root", "--wiki-dir", "--proposals-dir", "--source-root", "--lock-timeout")
 
 
 def _inject_legacy_v1_prefix(argv: list[str]) -> list[str]:
@@ -713,6 +805,11 @@ def _report(exc: Exception) -> int:
     """The one place where exceptions become stderr messages and exit codes."""
     if isinstance(exc, IngestError):
         prefix = next((p for cls, p in _ERROR_PREFIXES if isinstance(exc, cls)), "")
+        reason = getattr(exc, "reason", None)
+        if reason:
+            # "promote apply failed:\n" -> "promote apply failed [reason=lock_timeout]:\n"
+            head, sep, tail = prefix.partition(":")
+            prefix = f"{head} [reason={reason}]{sep}{tail}"
         print(f"error: {prefix}{exc}", file=sys.stderr)
         return exc.exit_code
     # ValueError: a flag combination the verb rejects (e.g. --check with --dry-run).
@@ -739,6 +836,7 @@ def main(argv: list[str] | None = None) -> int:
         "init": _do_init,
         "propose": _do_propose,
         "find": _do_find,
+        "read": _do_read,
     }
     handler = dispatch.get(args.verb)
     if handler is None:

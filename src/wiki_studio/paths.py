@@ -14,6 +14,8 @@ Precedence, highest first: CLI flag, environment variable, default.
 from __future__ import annotations
 
 import os
+import posixpath
+import re
 import subprocess
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -25,12 +27,26 @@ from .schema import PAGE_TYPE_DIRS, ROOT_DIR
 _PAGE_DIRS: frozenset[str] = frozenset(d for d in PAGE_TYPE_DIRS.values() if d != ROOT_DIR)
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Mapping, Sequence
 
 # Environment variables (the CLI flags of the same name take precedence).
 ENV_ROOT = "WIKI_STUDIO_ROOT"
 ENV_WIKI_DIR = "WIKI_STUDIO_WIKI_DIR"
 ENV_PROPOSALS_DIR = "WIKI_STUDIO_PROPOSALS_DIR"
+ENV_LOCK_TIMEOUT = "WIKI_STUDIO_LOCK_TIMEOUT"
+# ``os.pathsep``-separated directories outside the root that page links may reference (``--source-root``).
+ENV_SOURCE_ROOTS = "WIKI_STUDIO_SOURCE_ROOTS"
+
+# Why ``contain`` refused a candidate (``ContainmentError.reason``).
+CONTAIN_ABSOLUTE = "absolute"
+CONTAIN_SYMLINK = "symlink"
+CONTAIN_OUTSIDE = "outside"
+
+# A Windows drive or UNC prefix: absolute on any platform for the purpose of a link target.
+_WINDOWS_ABSOLUTE_RE = re.compile(r"^(?:[A-Za-z]:[\\/]|\\\\)")
+
+# Seconds a writer waits for the wiki lock (``--lock-timeout`` / ``WIKI_STUDIO_LOCK_TIMEOUT``).
+DEFAULT_LOCK_TIMEOUT = 30.0
 
 # Defaults, relative to the root. These names are the documented layout and
 # must not be spelled anywhere else in the package.
@@ -86,6 +102,66 @@ def _absolute(value: str | os.PathLike[str], cwd: Path) -> Path:
     return path if path.is_absolute() else cwd / path
 
 
+def is_absolute_path(text: str) -> bool:
+    """True for a path that is absolute on this platform, as POSIX, or as a Windows drive or UNC path."""
+    return Path(text).is_absolute() or posixpath.isabs(text) or bool(_WINDOWS_ABSOLUTE_RE.match(text))
+
+
+class ContainmentError(ValueError):
+    """:func:`contain` refused ``candidate``.
+
+    ``reason`` is ``"absolute"`` (the candidate is not relative), ``"symlink"``
+    (a component on the way is a symlink) or ``"outside"`` (the real path
+    lies outside the boundary); the message names the offending path.
+    """
+
+    def __init__(self, candidate: str, boundary: Path, reason: str, message: str) -> None:
+        super().__init__(message)
+        self.candidate = candidate
+        self.boundary = boundary
+        self.reason = reason
+
+
+def contain(candidate: str | os.PathLike[str], boundary: Path, *, base: Path | None = None) -> Path:
+    """The one containment check (FR-012): the real path of ``candidate`` when it stays inside ``boundary``.
+
+    ``candidate`` is a relative path taken from ``base`` (default: the boundary
+    itself); an absolute candidate is refused outright. Both sides are
+    resolved: ``base`` and ``boundary`` with ``Path.resolve``, the candidate by
+    walking it component by component from the resolved base without ever
+    following a symlink. A component that is a symlink, file or directory,
+    is refused even when a later ``..`` would step back out of it; ``..``
+    steps to the real parent. Because no symlink was followed, the path
+    reached is the one the kernel would resolve, and it must lie inside the
+    resolved boundary. Nothing is read, and existence is the caller's
+    question: a target that does not exist yet (a page about to be created)
+    passes when its path does.
+
+    Raises :class:`ContainmentError` with ``reason`` ``"absolute"``,
+    ``"symlink"`` or ``"outside"``.
+    """
+    text = os.fspath(candidate)
+    if is_absolute_path(text):
+        raise ContainmentError(
+            text, boundary, CONTAIN_ABSOLUTE, f"{text}: absolute path (must be relative to {boundary})"
+        )
+    start = (boundary if base is None else base).resolve()
+    boundary_real = boundary.resolve()
+    current = start
+    for part in Path(text).parts:
+        if part == ".":
+            continue
+        if part == "..":
+            current = current.parent
+            continue
+        current = current / part
+        if current.is_symlink():
+            raise ContainmentError(text, boundary, CONTAIN_SYMLINK, f"{text}: {current} is a symlink")
+    if current != boundary_real and not current.is_relative_to(boundary_real):
+        raise ContainmentError(text, boundary, CONTAIN_OUTSIDE, f"{text}: resolves to {current}, outside {boundary}")
+    return current
+
+
 @dataclass(frozen=True)
 class WikiPaths:
     """Resolved locations of everything the maintainer reads or writes.
@@ -105,6 +181,14 @@ class WikiPaths:
         The append-only ingest log, ``<wiki_dir>/.audit/ingest-log.md``.
     schema_dir : Path
         A project-local copy of the schema documents; used only when it exists.
+    lock_timeout : float
+        Seconds a writer waits for the wiki lock (``wikilock.WikiLock``) before
+        exit 10 ``lock_timeout``.
+    source_roots : tuple[Path, ...]
+        Directories outside the root whose files a page may reference with a
+        local link (``--source-root``, ``WIKI_STUDIO_SOURCE_ROOTS``); empty by
+        default. A local link target must resolve inside the root or one of
+        these (the source boundary of FR-012).
     """
 
     root: Path
@@ -113,6 +197,8 @@ class WikiPaths:
     query_log: Path
     audit_log: Path
     schema_dir: Path
+    lock_timeout: float = DEFAULT_LOCK_TIMEOUT
+    source_roots: tuple[Path, ...] = ()
 
     @classmethod
     def for_root(
@@ -121,6 +207,8 @@ class WikiPaths:
         *,
         wiki_dir: Path | str | None = None,
         proposals_dir: Path | str | None = None,
+        lock_timeout: float | None = None,
+        source_roots: Sequence[Path | str] | None = None,
     ) -> WikiPaths:
         """Build the layout under ``root`` with the defaults, optionally overriding the two directories.
 
@@ -137,6 +225,8 @@ class WikiPaths:
             query_log=root_path / DEFAULT_QUERY_LOG,
             audit_log=wiki / AUDIT_DIR_NAME / AUDIT_LOG_NAME,
             schema_dir=wiki / SCHEMA_DIR_NAME,
+            lock_timeout=DEFAULT_LOCK_TIMEOUT if lock_timeout is None else float(lock_timeout),
+            source_roots=tuple(Path(p).absolute() for p in (source_roots or ())),
         )
 
     @classmethod
@@ -146,13 +236,18 @@ class WikiPaths:
         root: str | os.PathLike[str] | None = None,
         wiki_dir: str | os.PathLike[str] | None = None,
         proposals_dir: str | os.PathLike[str] | None = None,
+        lock_timeout: float | None = None,
+        source_roots: Sequence[str | os.PathLike[str]] | None = None,
         env: Mapping[str, str] | None = None,
         cwd: Path | None = None,
     ) -> WikiPaths:
         """Resolve the layout from flags, then ``WIKI_STUDIO_*`` variables, then defaults.
 
         Explicit values (flag or variable) that are relative are taken relative
-        to ``cwd``; defaults are relative to the resolved root.
+        to ``cwd``; defaults are relative to the resolved root. A lock timeout
+        that is not a non-negative number raises ``ValueError``. ``source_roots``
+        (the repeatable ``--source-root``) replaces the ``os.pathsep``-separated
+        list in ``WIKI_STUDIO_SOURCE_ROOTS``; both default to none.
         """
         environ: Mapping[str, str] = os.environ if env is None else env
         base = Path.cwd() if cwd is None else Path(cwd)
@@ -166,7 +261,25 @@ class WikiPaths:
         proposals_value = proposals_dir or environ.get(ENV_PROPOSALS_DIR)
         proposals_path = _absolute(proposals_value, base) if proposals_value else None
 
-        return cls.for_root(root_path, wiki_dir=wiki_path, proposals_dir=proposals_path)
+        roots_value: Sequence[str | os.PathLike[str]] = (
+            list(source_roots) if source_roots else environ.get(ENV_SOURCE_ROOTS, "").split(os.pathsep)
+        )
+        roots = tuple(_absolute(value, base) for value in roots_value if value)
+
+        timeout = lock_timeout
+        if timeout is None:
+            timeout_value = environ.get(ENV_LOCK_TIMEOUT)
+            if timeout_value:
+                try:
+                    timeout = float(timeout_value)
+                except ValueError as exc:
+                    raise ValueError(f"{ENV_LOCK_TIMEOUT} must be a number of seconds, got {timeout_value!r}") from exc
+        if timeout is not None and not timeout >= 0:  # also rejects NaN
+            raise ValueError(f"lock timeout must be a non-negative number of seconds, got {timeout!r}")
+
+        return cls.for_root(
+            root_path, wiki_dir=wiki_path, proposals_dir=proposals_path, lock_timeout=timeout, source_roots=roots
+        )
 
     def with_wiki_dir(self, wiki_dir: Path) -> WikiPaths:
         """The same layout with the wiki (and its audit log and schema dir) at ``wiki_dir``.

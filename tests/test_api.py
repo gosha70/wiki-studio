@@ -4,11 +4,15 @@
 
 from __future__ import annotations
 
+import contextlib
+import hashlib
+import os
 import shutil
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from tests.conftest import FIXTURES_DIR, SAMPLE_INCIDENT, make_repo_layout
 from tests.test_cli_contract import _proposals_dir, _wiki_with_pages, _write_page
@@ -18,12 +22,17 @@ from wiki_studio.backends.test import TestBackend
 from wiki_studio.errors import (
     AuditFlushError,
     BackendNotFoundError,
+    ContractViolationError,
+    OutputWriteError,
     PathOutsideRootError,
+    PromoteApplyError,
     PromoteValidationError,
     SourceMissingError,
 )
 from wiki_studio.paths import WikiPaths
 from wiki_studio.promoter import PromoteResult
+from wiki_studio.proposal import PageEdit
+from wiki_studio.wikilock import REASON_LOCK_TIMEOUT, WikiLock
 
 
 class _LayoutCase(unittest.TestCase):
@@ -141,23 +150,35 @@ class TestPromote(_LayoutCase):
             self.assertEqual(len(result.applied_paths), 5)
 
     def test_promote_resolves_escape_links_of_a_wiki_outside_the_root(self) -> None:
-        # Regression: the staged copy has no neighbours, so ``../guide.md`` used to
-        # be reported as broken although the live wiki (and api.lint) resolve it.
+        # Regression: the staged copy has no neighbours, so ``../../guide.md`` used to
+        # be reported as broken although the live wiki (and api.lint) resolve it. The
+        # wiki lies outside the root, so the reference needs ``source_roots`` (FR-012);
+        # an index entry may not leave the wiki (FR-013), so a page carries the link.
         with tempfile.TemporaryDirectory() as other:
             elsewhere = Path(other)
             (elsewhere / "guide.md").write_text("# guide\n", encoding="utf-8")
             wiki = elsewhere / "kb"
-            wiki.mkdir()
+            (wiki / "concepts").mkdir(parents=True)
             (wiki / "index.md").write_text(
                 "---\npage_type: index\nslug: index\ntitle: KB\nstatus: stable\nlast_reviewed: 2026-05-06\n---\n\n"
-                "# KB\n\n- [guide](../guide.md)\n",
+                "# KB\n\n- [notes](concepts/notes.md)\n",
+                encoding="utf-8",
+            )
+            (wiki / "concepts" / "notes.md").write_text(
+                "---\npage_type: concept\nslug: notes\ntitle: Notes\nstatus: stable\nlast_reviewed: 2026-05-06\n"
+                "sources:\n  - path: src.md\n    sha: abc\n---\n\n# Notes\n\nSee the [guide](../../guide.md).\n",
                 encoding="utf-8",
             )
             (wiki / "log.md").write_text(
                 "---\npage_type: log\nslug: log\ntitle: Log\nstatus: stable\nlast_reviewed: 2026-05-06\n---\n\n# Log\n",
                 encoding="utf-8",
             )
-            paths = WikiPaths.for_root(self.root, wiki_dir=wiki)
+            unadmitted = WikiPaths.for_root(self.root, wiki_dir=wiki)
+            self.assertIn(
+                "concepts/notes.md: link target escapes the project root → ../../guide.md",
+                api.lint(unadmitted).violations,
+            )
+            paths = WikiPaths.for_root(self.root, wiki_dir=wiki, source_roots=[elsewhere])
             self.assertTrue(api.lint(paths).passed)
             prop = _proposals_dir(self.root)
             self.assertTrue(api.promote(prop, paths, dry_run=True).dry_run)
@@ -281,6 +302,8 @@ class TestAuditFlush(_LayoutCase):
         self._git("init", "-q")
         self._git("config", "user.email", "t@example.com")
         self._git("config", "user.name", "T")
+        self._git("config", "gc.auto", "0")  # no background gc racing the temp-dir cleanup
+        self._git("config", "maintenance.auto", "false")
         self._git("add", ".")
         self._git("commit", "-q", "-m", "init")
         api.ingest(self.sample, self.paths, backend="test")
@@ -323,6 +346,40 @@ class TestPrepareBackend(_LayoutCase):
         self.assertEqual(api.backend_display_name(TestBackend(), "requested"), "requested")
 
 
+class TestReadPage(_LayoutCase):
+    """``api.read_page``: one read gives bytes, text and the hash of exactly those bytes (FR-006)."""
+
+    def test_returns_bytes_text_and_sha256_of_the_same_read(self) -> None:
+        wiki = _wiki_with_pages(self.root)
+        rel = "concepts/origin-alignment.md"
+        result = api.read_page(rel, self.paths)
+        data = (wiki / rel).read_bytes()
+        self.assertEqual((result.path, result.data, result.text), (rel, data, data.decode("utf-8")))
+        self.assertEqual(result.sha256, hashlib.sha256(data).hexdigest())
+        self.assertEqual(api.read_page(Path("./concepts/../concepts/origin-alignment.md"), self.paths).path, rel)
+        self.assertIn("read_page", api.__all__)
+        self.assertIn("ReadResult", api.__all__)
+
+    def test_boundary_missing_and_encoding_errors(self) -> None:
+        wiki = _wiki_with_pages(self.root)
+        for bad in ("../README.md", str(self.root / "README.md"), "/etc/hosts"):
+            with self.subTest(path=bad), self.assertRaises(PathOutsideRootError):
+                api.read_page(bad, self.paths)
+        (wiki / "concepts" / "alias.md").symlink_to(wiki / "concepts" / "spec-drift.md")
+        with self.assertRaises(PathOutsideRootError):
+            api.read_page("concepts/alias.md", self.paths)
+        with self.assertRaises(SourceMissingError):
+            api.read_page("concepts/missing.md", self.paths)
+        (wiki / "concepts" / "binary.md").write_bytes(b"\xff\xfe")
+        with self.assertRaises(ContractViolationError) as ctx:
+            api.read_page("concepts/binary.md", self.paths)
+        self.assertEqual(ctx.exception.exit_code, 4)
+
+    def test_promote_result_fields_default(self) -> None:
+        result = PromoteResult([], self.paths.proposals_dir, None, False)
+        self.assertEqual((result.unguarded_paths, result.warnings), ([], []))
+
+
 class TestLintResultPassed(unittest.TestCase):
     def test_matrix(self) -> None:
         def result(violations: int, audit: int, strict: bool) -> api.LintResult:
@@ -344,6 +401,250 @@ class TestLintResultPassed(unittest.TestCase):
         self.assertTrue(api.LintResult((), 1, (), None, False, prose).passed)
         self.assertFalse(api.LintResult((), 1, (), None, True, prose).passed)
         self.assertTrue(api.LintResult((), 1, (), None, True, ProseLintResult([], 1)).passed)
+
+
+if __name__ == "__main__":
+    unittest.main()
+
+
+_SNAPSHOT = "wiki_studio.api._write_ingest_snapshot"
+_APPEND = "wiki_studio.api.append_ingest_log"
+
+
+class TestPublicationUnderOneLock(_LayoutCase):
+    """PR #41 review: the proposal files, the snapshot and the audit record are published under one wiki lock.
+
+    A concurrent promote must never see a proposal directory that is still
+    being published; it would archive the partial proposal and remove its
+    source, after which the ingest would recreate an orphan snapshot.
+    """
+
+    def _assert_lock_held(self) -> None:
+        with self.assertRaises(PromoteApplyError) as ctx:
+            WikiLock(self.paths.wiki_dir, timeout=0).acquire()
+        self.assertEqual(ctx.exception.reason, REASON_LOCK_TIMEOUT)
+
+    def _assert_lock_free(self) -> None:
+        WikiLock(self.paths.wiki_dir, timeout=0).acquire().release()
+
+    def _patched(self, seen: list[str]) -> tuple[object, object]:
+        real_snapshot, real_append = api._write_ingest_snapshot, api.append_ingest_log
+
+        def snapshot(directory: Path) -> None:
+            self._assert_lock_held()
+            seen.append("snapshot")
+            real_snapshot(directory)
+
+        def append(paths: WikiPaths, record: object, *, lock: WikiLock | None = None) -> None:
+            self._assert_lock_held()
+            self.assertIsNotNone(lock, "the audit append reuses the publication lock")
+            seen.append("audit")
+            real_append(paths, record, lock=lock)  # type: ignore[arg-type]
+
+        return snapshot, append
+
+    def test_multi_page_ingest_publishes_under_one_lock(self) -> None:
+        seen: list[str] = []
+        snapshot, append = self._patched(seen)
+        with patch(_SNAPSHOT, snapshot), patch(_APPEND, append):
+            result = api.ingest(self.sample, self.paths, backend="test")
+        self.assertEqual(seen, ["snapshot", "audit"])
+        assert result.written is not None
+        self.assertTrue((result.written / ".ingest-snapshot" / "plan.json").is_file())
+        self._assert_lock_free()
+
+    def test_legacy_ingest_publishes_under_one_lock(self) -> None:
+        seen: list[str] = []
+        snapshot, append = self._patched(seen)
+        with patch(_SNAPSHOT, snapshot), patch(_APPEND, append):
+            api.ingest(self.sample, self.paths, backend="test", legacy_single_source=True)
+        self.assertEqual(seen, ["snapshot", "audit"])
+        self._assert_lock_free()
+
+    def test_a_failed_publication_is_removed_before_the_lock_is_released(self) -> None:
+        """PR #41 review: cleanup of a half-published proposal happens while the lock is still held."""
+        real_discard = api._discard_partial_proposal
+        discarded: list[str] = []
+
+        def discard(output_dir: Path, paths: WikiPaths, existed: bool) -> None:
+            self._assert_lock_held()
+            discarded.append(output_dir.name)
+            real_discard(output_dir, paths, existed)
+
+        def failing_snapshot(directory: Path) -> None:
+            (directory / ".ingest-snapshot").mkdir()
+            raise OSError("disk full after the snapshot directory")
+
+        page = (
+            "---\npage_type: concept\nslug: half\ntitle: Half\nstatus: draft\nlast_reviewed: 2026-10-24\n"
+            "sources:\n  - path: sample-incident.md\n---\n\n# Half\n\n## Summary\n\nHalf.\n"
+        )
+        with (
+            patch(_SNAPSHOT, failing_snapshot),
+            patch("wiki_studio.api._discard_partial_proposal", discard),
+            self.assertRaises(OutputWriteError),
+        ):
+            api.propose([PageEdit("concepts/half.md", "create", page, "r")], self.paths, name="half")
+        self.assertEqual(discarded, ["half"])
+        self.assertFalse((self.paths.proposals_dir / "half").exists())
+        self._assert_lock_free()
+
+    def test_a_failed_audit_record_removes_the_ingest_proposal_under_the_lock(self) -> None:
+        removed_while_locked: list[bool] = []
+        real_rmtree = api.shutil.rmtree
+
+        def rmtree(path: object, *args: object, **kwargs: object) -> None:
+            with contextlib.suppress(AssertionError):
+                self._assert_lock_held()
+                removed_while_locked.append(True)
+            real_rmtree(path, *args, **kwargs)
+
+        def failing_append(paths: WikiPaths, record: object, *, lock: WikiLock | None = None) -> None:
+            raise OutputWriteError("audit log append failed")
+
+        with (
+            patch(_APPEND, failing_append),
+            patch("wiki_studio.api.shutil.rmtree", rmtree),
+            self.assertRaises(OutputWriteError),
+        ):
+            api.ingest(self.sample, self.paths, backend="test")
+        self.assertEqual(removed_while_locked, [True])
+        leftovers = [p.name for p in self.paths.proposals_dir.iterdir()] if self.paths.proposals_dir.is_dir() else []
+        self.assertEqual(leftovers, [], "no half-published proposal is left for a promote to find")
+        self._assert_lock_free()
+
+    def test_a_failed_legacy_publication_restores_the_proposal_it_overwrote(self) -> None:
+        """PR #41 review: cleanup restores a legacy proposal it overwrote instead of deleting it."""
+        first = api.ingest(self.sample, self.paths, backend="test", legacy_single_source=True)
+        assert first.written is not None
+        original = first.written.read_bytes()
+
+        def failing_append(paths: WikiPaths, record: object, *, lock: WikiLock | None = None) -> None:
+            raise OutputWriteError("audit log append failed")
+
+        with patch(_APPEND, failing_append), self.assertRaises(OutputWriteError):
+            api.ingest(self.sample, self.paths, backend="test", legacy_single_source=True)
+        self.assertTrue(first.written.is_file(), "the earlier proposal still exists")
+        self.assertEqual(first.written.read_bytes(), original)
+        self._assert_lock_free()
+
+    def test_a_symlinked_legacy_proposal_path_is_refused_and_its_target_untouched(self) -> None:
+        """PR #41 review: the deterministic legacy path is never read or written through a symlink."""
+        probe = api.ingest(self.sample, self.paths, backend="test", legacy_single_source=True)
+        assert probe.written is not None
+        name = probe.written.name
+        probe.written.unlink()
+        outside = self.root / "outside.md"
+        outside.write_text("untouched\n", encoding="utf-8")
+        (self.paths.proposals_dir / name).symlink_to(outside)
+        with self.assertRaises(OutputWriteError) as ctx:
+            api.ingest(self.sample, self.paths, backend="test", legacy_single_source=True)
+        self.assertIn(name, str(ctx.exception))
+        self.assertEqual(outside.read_text(encoding="utf-8"), "untouched\n")
+        self.assertTrue((self.paths.proposals_dir / name).is_symlink(), "the planted link is left for the curator")
+        self._assert_lock_free()
+
+    def test_a_failed_restoration_is_reported_and_the_backup_kept(self) -> None:
+        """PR #41 review: when putting the previous proposal back fails, the error says so and the backup survives."""
+        first = api.ingest(self.sample, self.paths, backend="test", legacy_single_source=True)
+        assert first.written is not None
+        original = first.written.read_bytes()
+        real_replace = os.replace
+
+        def replace(src: object, dst: object, *args: object, **kwargs: object) -> None:
+            if ".bak-" in str(src):
+                raise OSError("rename back failed")
+            real_replace(src, dst, *args, **kwargs)  # type: ignore[arg-type]
+
+        def failing_append(paths: WikiPaths, record: object, *, lock: WikiLock | None = None) -> None:
+            raise OutputWriteError("audit log append failed")
+
+        with (
+            patch(_APPEND, failing_append),
+            patch("wiki_studio.api.os.replace", replace),
+            self.assertRaises(OutputWriteError) as ctx,
+        ):
+            api.ingest(self.sample, self.paths, backend="test", legacy_single_source=True)
+        self.assertIn("rollback also raised", str(ctx.exception))
+        self.assertIn("audit log append failed", str(ctx.exception))
+        backups = list(self.paths.proposals_dir.glob("*.bak-*"))
+        self.assertEqual(len(backups), 1, "the previous proposal's bytes survive in the backup")
+        self.assertEqual(backups[0].read_bytes(), original)
+        self._assert_lock_free()
+
+    def test_a_surviving_backup_is_never_overwritten_by_a_retry(self) -> None:
+        """PR #41 review: a backup left by a failed restoration is the only copy of that proposal; a retry keeps it."""
+        first = api.ingest(self.sample, self.paths, backend="test", legacy_single_source=True)
+        assert first.written is not None
+        original = first.written.read_bytes()
+        real_replace = os.replace
+
+        def replace(src: object, dst: object, *args: object, **kwargs: object) -> None:
+            if ".bak-" in str(src):
+                raise OSError("rename back failed")
+            real_replace(src, dst, *args, **kwargs)  # type: ignore[arg-type]
+
+        def failing_append(paths: WikiPaths, record: object, *, lock: WikiLock | None = None) -> None:
+            raise OutputWriteError("audit log append failed")
+
+        with (
+            patch(_APPEND, failing_append),
+            patch("wiki_studio.api.os.replace", replace),
+            self.assertRaises(OutputWriteError),
+        ):
+            api.ingest(self.sample, self.paths, backend="test", legacy_single_source=True)
+        [backup] = list(self.paths.proposals_dir.glob("*.bak-*"))
+        self.assertEqual(backup.read_bytes(), original)
+        # The proposal path is free again (the created file was removed), so a retry publishes
+        # a new proposal and must reserve a different backup name, leaving the survivor intact.
+        self.assertFalse(first.written.exists())
+        retry = api.ingest(self.sample, self.paths, backend="test", legacy_single_source=True)
+        assert retry.written is not None
+        self.assertEqual(backup.read_bytes(), original, "the surviving backup was not overwritten")
+        again = api.ingest(self.sample, self.paths, backend="test", legacy_single_source=True)
+        assert again.written is not None
+        self.assertEqual(backup.read_bytes(), original)
+        self.assertEqual(sorted(p.name for p in self.paths.proposals_dir.glob("*.bak-*")), [backup.name])
+
+    def test_a_directory_at_the_legacy_name_is_refused_without_mutation(self) -> None:
+        """PR #41 review: only a regular file is a previous proposal; anything else is refused before any move."""
+        probe = api.ingest(self.sample, self.paths, backend="test", legacy_single_source=True)
+        assert probe.written is not None
+        name = probe.written.name
+        probe.written.unlink()
+        blocker = self.paths.proposals_dir / name
+        blocker.mkdir()
+        (blocker / "curator.md").write_text("curated\n", encoding="utf-8")
+        log_before = self.paths.audit_log.read_bytes() if self.paths.audit_log.exists() else b""
+        with self.assertRaises(OutputWriteError) as ctx:
+            api.ingest(self.sample, self.paths, backend="test", legacy_single_source=True)
+        self.assertIn("not a regular file", str(ctx.exception))
+        self.assertTrue((blocker / "curator.md").is_file(), "the directory and its content are untouched")
+        self.assertEqual(list(self.paths.proposals_dir.glob("*.bak-*")), [])
+        self.assertEqual(self.paths.audit_log.read_bytes() if self.paths.audit_log.exists() else b"", log_before)
+        self._assert_lock_free()
+
+    def test_a_failed_legacy_publication_removes_a_proposal_it_created(self) -> None:
+        def failing_append(paths: WikiPaths, record: object, *, lock: WikiLock | None = None) -> None:
+            raise OutputWriteError("audit log append failed")
+
+        with patch(_APPEND, failing_append), self.assertRaises(OutputWriteError):
+            api.ingest(self.sample, self.paths, backend="test", legacy_single_source=True)
+        leftovers = [p.name for p in self.paths.proposals_dir.glob("*.md")] if self.paths.proposals_dir.is_dir() else []
+        self.assertEqual(leftovers, [])
+
+    def test_propose_writes_the_snapshot_under_the_same_lock(self) -> None:
+        seen: list[str] = []
+        snapshot, _append = self._patched(seen)
+        page = (
+            "---\npage_type: concept\nslug: one-lock\ntitle: One lock\nstatus: draft\nlast_reviewed: 2026-10-24\n"
+            "sources:\n  - path: sample-incident.md\n---\n\n# One lock\n\n## Summary\n\nOne lock.\n"
+        )
+        with patch(_SNAPSHOT, snapshot):
+            written = api.propose([PageEdit("concepts/one-lock.md", "create", page, "r")], self.paths, name="one-lock")
+        self.assertEqual(seen, ["snapshot"])
+        self.assertTrue((written / ".ingest-snapshot" / "plan.json").is_file())
+        self._assert_lock_free()
 
 
 if __name__ == "__main__":

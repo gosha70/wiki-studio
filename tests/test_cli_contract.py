@@ -26,7 +26,7 @@ from wiki_studio.errors import (
     SourceMissingError,
 )
 
-_VERBS = ("ingest", "promote", "query", "lint", "audit-flush", "info", "init", "propose", "find")
+_VERBS = ("ingest", "promote", "query", "lint", "audit-flush", "info", "init", "propose", "find", "read")
 
 _PAGE = (
     "---\npage_type: {page_type}\nslug: {slug}\ntitle: {title}\nstatus: stable\n"
@@ -132,7 +132,7 @@ class TestCliHelp(_LayoutCase):
         result = self.run_cli("--version")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), __version__)
-        self.assertEqual(__version__, "0.5.0")
+        self.assertEqual(__version__, "0.6.0")
 
     def test_each_verb_help_exits_zero(self) -> None:
         for verb in _VERBS:
@@ -348,6 +348,8 @@ class TestCliAuditFlush(_LayoutCase):
         subprocess.run([*git, "init", "-q"], check=True)
         subprocess.run([*git, "config", "user.email", "t@example.com"], check=True)
         subprocess.run([*git, "config", "user.name", "T"], check=True)
+        subprocess.run([*git, "config", "gc.auto", "0"], check=True)  # no background gc racing the cleanup
+        subprocess.run([*git, "config", "maintenance.auto", "false"], check=True)
         subprocess.run([*git, "add", "."], check=True)
         subprocess.run([*git, "commit", "-q", "-m", "init"], check=True)
         self.assertEqual(self.run_cli("ingest", str(self.sample), "--backend", "test").returncode, 0)

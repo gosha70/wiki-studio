@@ -80,6 +80,11 @@ def _init_repo(tmp: Path) -> Path:
     _git(repo, "init")
     _git(repo, "config", "user.email", "test@example.com")
     _git(repo, "config", "user.name", "Test")
+    # No background git process in a throwaway repo: `git commit` may otherwise
+    # spawn `gc --auto` / maintenance, which races the TemporaryDirectory
+    # cleanup on .git/objects/pack ("Directory not empty" on CI).
+    _git(repo, "config", "gc.auto", "0")
+    _git(repo, "config", "maintenance.auto", "false")
     # Create an initial commit so HEAD exists.
     readme = repo / "README.md"
     readme.write_text("# test\n", encoding="utf-8")

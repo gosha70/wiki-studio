@@ -1,6 +1,6 @@
 # Copyright (c) 2026 EGOGE
 # SPDX-License-Identifier: Apache-2.0
-"""wiki_studio.api — the library surface: ``ingest``, ``propose``, ``promote``, ``query``, ``lint``, ``audit_flush``.
+"""wiki_studio.api — the library surface: ``ingest``, ``propose``, ``promote``, ``read_page``, ``query``, ``lint``.
 
 Each function takes a :class:`~wiki_studio.paths.WikiPaths`, returns a typed result
 and raises the exceptions in :mod:`wiki_studio.errors`. Nothing here prints; the
@@ -32,10 +32,14 @@ the contract.
 
 from __future__ import annotations
 
+import contextlib
 import datetime
+import json
 import os
+import posixpath
 import re
 import shutil
+import stat
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -48,9 +52,19 @@ from .backends.copilot_cli import CopilotCliBackend
 from .errors import ContractViolationError, OutputWriteError, PathOutsideRootError, SourceMissingError
 from .health_lint import lint_health
 from .ingestor import DefaultIngestor
-from .ingestor_multi import DefaultMultiIngestor, write_patch_set_dir
+from .ingestor_multi import COLLISION_ERROR, COLLISION_SUFFIX, DefaultMultiIngestor, write_patch_set_dir
 from .lint import lint_wiki, list_pages
-from .promoter import DEFAULT_WIKI_TITLE, INDEX_NAME, LOG_NAME, InitResult, PromoteResult, init_wiki
+from .paths import CONTAIN_SYMLINK, ContainmentError, contain, is_absolute_path
+from .promoter import (
+    DEFAULT_WIKI_TITLE,
+    INDEX_NAME,
+    LOG_NAME,
+    PROMOTE_ENTRY_POINT_API,
+    PROMOTE_ENTRY_POINT_CLI,
+    InitResult,
+    PromoteResult,
+    init_wiki,
+)
 from .promoter import promote as _promote
 from .proposal import (
     IngestLogRecord,
@@ -60,12 +74,15 @@ from .proposal import (
     PageEdit,
     QueryAnswer,
     WikiPatchSet,
+    is_sha256_hex,
     render_proposal_file,
     validate_page_edit_semantics,
     validate_patch_set,
 )
 from .prose_lint import run_prose_lint
 from .querier import DEFAULT_MAX_QUERY_PAGES, DefaultQuerier, _select_query_candidates
+from .wiki_state import read_page_content
+from .wikilock import WikiLock
 
 if TYPE_CHECKING:
     from .health_lint import HealthLintResult
@@ -76,6 +93,8 @@ if TYPE_CHECKING:
 __all__ = [
     "ALLOW_OUT_OF_REPO_HINT",
     "ALLOW_OUT_OF_REPO_PROMOTE_HINT",
+    "PROMOTE_ENTRY_POINT_API",
+    "PROMOTE_ENTRY_POINT_CLI",
     "PROPOSE_BACKEND",
     "AuditFlushResult",
     "FlushResult",
@@ -92,6 +111,7 @@ __all__ = [
     "PromoteResult",
     "QueryAnswer",
     "QueryResult",
+    "ReadResult",
     "WikiPatchSet",
     "audit_flush",
     "edits_from_dir",
@@ -104,7 +124,12 @@ __all__ = [
     "promote",
     "propose",
     "query",
+    "read_page",
 ]
+
+# ``propose --from``: the optional manifest an agent writes beside its draft, mapping each wiki
+# path it replaces to the sha256 ``read`` reported for the page it drafted from (FR-007).
+BASE_MANIFEST_NAME = ".base.json"
 
 # The env var the legacy single-source ingestor reads its task hint from.
 _TASK_ENV = "WIKI_INGEST_TASK"
@@ -228,14 +253,104 @@ def _proposal_filename(proposal: IngestProposal) -> str:
     return f"{today}-{base}.md"
 
 
-def _write_proposal_file(proposal: IngestProposal, request: IngestRequest, backend_name: str, output_dir: Path) -> Path:
-    proposal_path = output_dir / _proposal_filename(proposal)
+_LEGACY_BACKUP_ATTEMPTS = 100
+
+
+def _legacy_slot(output_dir: Path, name: str) -> Path | None:
+    """Make the deterministic legacy path ``output_dir/name`` free to create, moving a previous file aside.
+
+    The path must pass the proposal boundary (no symlink, inside
+    ``output_dir``); a previous proposal is renamed to a backup sibling
+    atomically, never read and never followed, so its bytes survive until
+    publication succeeds. Returns the backup path, or None when nothing was
+    there.
+    """
+    target = output_dir / name
     try:
-        output_dir.mkdir(parents=True, exist_ok=True)
-        proposal_path.write_text(render_proposal_file(proposal, request, backend_name), encoding="utf-8")
+        contain(name, output_dir)
+    except ContainmentError as exc:
+        raise OutputWriteError(f"legacy proposal path {target} is outside the proposal boundary ({exc})") from exc
+    try:
+        st = os.lstat(target)
+    except FileNotFoundError:
+        return None
+    if not stat.S_ISREG(st.st_mode):
+        # Only a regular file is a previous proposal; a directory or any other
+        # entry at this name is refused before anything is moved or published.
+        raise OutputWriteError(f"{target} exists and is not a regular file; refusing to replace it")
+    # A unique backup, reserved exclusively: an existing backup is a surviving
+    # copy of an earlier proposal that a failed restoration left behind, and
+    # is never overwritten. The backup is a visible sibling so it is found.
+    for attempt in range(1, _LEGACY_BACKUP_ATTEMPTS + 1):
+        backup = target.with_name(f"{name}.bak-{os.getpid()}-{attempt}")
+        try:
+            os.link(target, backup)
+        except FileExistsError:
+            continue
+        except OSError:
+            # No hard links here (or a different filesystem rule): fall back
+            # to an exclusive create followed by a copy, still never over an
+            # existing backup.
+            fd = os.open(backup, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o644)
+            os.close(fd)
+            shutil.copy2(target, backup)
+        os.unlink(target)
+        return backup
+    raise OutputWriteError(
+        f"could not reserve a backup for {target}: {_LEGACY_BACKUP_ATTEMPTS} backups already exist beside it; "
+        "a .bak-* file beside a proposal is an earlier proposal a failed restoration left behind, "
+        "review and remove them first"
+    )
+
+
+def _write_proposal_file(proposal: IngestProposal, request: IngestRequest, backend_name: str, output_dir: Path) -> Path:
+    """Create the legacy proposal file exclusively (``O_EXCL``, never following a symlink)."""
+    proposal_path = output_dir / _proposal_filename(proposal)
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        fd = os.open(proposal_path, flags, 0o644)
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(render_proposal_file(proposal, request, backend_name))
     except OSError as exc:
         raise OutputWriteError(f"Could not write proposal file at {proposal_path}: {exc}") from exc
     return proposal_path.resolve()
+
+
+def _roll_back_legacy(proposal_path: Path, backup: Path | None, cause: BaseException) -> None:
+    """Undo a failed legacy publication: remove the file this call created and put the previous one back.
+
+    Every rollback failure is reported with the cause (the promoter's rollback
+    pattern); a failed restoration is never silent, because the previous
+    proposal's bytes are what the backup protects.
+    """
+    problems: list[str] = []
+    if backup is None:
+        try:
+            os.unlink(proposal_path)
+        except FileNotFoundError:
+            pass
+        except OSError as exc:
+            problems.append(f"removing {proposal_path} failed: {exc}")
+    else:
+        # The file at proposal_path is the one this call created exclusively; it
+        # is removed, then the backup takes its place by an atomic rename.
+        try:
+            os.unlink(proposal_path)
+        except FileNotFoundError:
+            pass
+        except OSError as exc:
+            problems.append(f"removing {proposal_path} failed: {exc}")
+        try:
+            os.replace(backup, proposal_path)
+        except OSError as exc:
+            problems.append(
+                f"restoring the previous proposal from {backup} over {proposal_path} failed: {exc}; "
+                f"the previous proposal's bytes are in {backup}"
+            )
+    if problems:
+        raise OutputWriteError(
+            f"legacy ingest failed ({cause}); rollback also raised: " + "; ".join(problems)
+        ) from cause
 
 
 def _write_ingest_snapshot(proposal_dir: Path) -> None:
@@ -330,19 +445,43 @@ def _ingest_legacy(
     if dry_run:
         proposal = replace(proposal, draft_markdown=None)
 
-    proposal_path = _write_proposal_file(proposal, request, backend_name, output_dir)
-    if not dry_run:
-        _write_ingest_snapshot(proposal_path.parent)
-    record = build_log_record(
-        source_file=request.source_path,
-        paths=paths,
-        backend_name=backend_name,
-        proposal_dir_path=proposal_path.parent,
-        allow_out_of_repo=allow_out_of_repo,
-        legacy_proposal=proposal,
-        dry_run=dry_run,
-    )
-    append_ingest_log(paths, record)
+    with WikiLock(paths.wiki_dir, paths.lock_timeout) as lock:
+        # The legacy name is deterministic: a previous proposal is moved aside
+        # atomically (never read, never followed) and restored if publication
+        # fails, so no caller ever loses it.
+        try:
+            output_dir.mkdir(parents=True, exist_ok=True)
+            backup = _legacy_slot(output_dir, _proposal_filename(proposal))
+        except OSError as exc:
+            raise OutputWriteError(f"could not prepare the proposal path in {output_dir}: {exc}") from exc
+        try:
+            proposal_path = _write_proposal_file(proposal, request, backend_name, output_dir)
+        except BaseException as exc:
+            _roll_back_legacy(output_dir / _proposal_filename(proposal), backup, exc)
+            raise
+        try:
+            if not dry_run:
+                _write_ingest_snapshot(proposal_path.parent)
+            record = build_log_record(
+                source_file=request.source_path,
+                paths=paths,
+                backend_name=backend_name,
+                proposal_dir_path=proposal_path.parent,
+                allow_out_of_repo=allow_out_of_repo,
+                legacy_proposal=proposal,
+                dry_run=dry_run,
+            )
+            append_ingest_log(paths, record, lock=lock)
+        except BaseException as exc:
+            # Same policy as the multi-page path, before the lock is released:
+            # the file this call created goes, the previous one comes back.
+            _roll_back_legacy(proposal_path, backup, exc)
+            raise
+        if backup is not None:
+            try:
+                os.unlink(backup)
+            except OSError as exc:
+                raise OutputWriteError(f"published, but the backup {backup} could not be removed: {exc}") from exc
     return IngestResult(
         proposal.disposition, proposal_path, edits, proposal.reason, dry_run, False, None, proposal, record
     )
@@ -367,22 +506,39 @@ def _ingest_multi(
 
     today = datetime.date.today().isoformat()
     output_dir = proposals_root / f"{today}-{request.source_path.stem or 'source'}"
-    try:
-        written = write_patch_set_dir(patch, output_dir, wiki_dir=paths.wiki_dir)
-    except OSError as exc:
-        raise OutputWriteError(f"could not write patch-set dir at {output_dir}: {exc}") from exc
-    if not dry_run and patch.edits:
-        _write_ingest_snapshot(written)
-    record = build_log_record(
-        source_file=request.source_path,
-        paths=paths,
-        backend_name=backend_name,
-        proposal_dir_path=written,
-        allow_out_of_repo=allow_out_of_repo,
-        patch=patch,
-        dry_run=dry_run,
-    )
-    append_ingest_log(paths, record)
+    # One lock from the proposal files through the snapshot and the audit
+    # record: a concurrent promote never sees (and archives) a proposal that
+    # is still being published.
+    with WikiLock(paths.wiki_dir, paths.lock_timeout) as lock:
+        try:
+            # A generated name: a second ingest of the same source on the same day
+            # lands in ``<name>-2`` rather than in a directory that may be mid-promotion.
+            written = write_patch_set_dir(
+                patch, output_dir, wiki_dir=paths.wiki_dir, on_collision=COLLISION_SUFFIX, lock=lock
+            )
+        except OSError as exc:
+            raise OutputWriteError(f"could not write patch-set dir at {output_dir}: {exc}") from exc
+        try:
+            if not dry_run and patch.edits:
+                _write_ingest_snapshot(written)
+            record = build_log_record(
+                source_file=request.source_path,
+                paths=paths,
+                backend_name=backend_name,
+                proposal_dir_path=written,
+                allow_out_of_repo=allow_out_of_repo,
+                patch=patch,
+                dry_run=dry_run,
+            )
+            append_ingest_log(paths, record, lock=lock)
+        except BaseException as exc:
+            # The directory is ours (created exclusively above): a proposal whose
+            # snapshot or audit record failed is removed before the lock is
+            # released, so no concurrent promote can apply a half-published one.
+            shutil.rmtree(written, ignore_errors=True)
+            if isinstance(exc, OSError):
+                raise OutputWriteError(f"could not write patch-set dir at {output_dir}: {exc}") from exc
+            raise
     return IngestResult(disposition, written, edits, patch.rationale, dry_run, False, patch, None, record)
 
 
@@ -434,26 +590,47 @@ def propose(
         )
     output_dir = paths.proposals_dir / name
     proposals_dir_existed = paths.proposals_dir.is_dir()
-    try:
-        # Creating the directory is the collision check: it must not exist, and
-        # from here on it is ours to remove if a later write fails.
-        output_dir.mkdir(parents=True, exist_ok=False)
-    except FileExistsError as exc:
-        raise OutputWriteError(f"proposal dir already exists: {output_dir}") from exc
-    except OSError as exc:
-        raise OutputWriteError(f"could not create patch-set dir at {output_dir}: {exc}") from exc
-    try:
-        written = write_patch_set_dir(patch, output_dir, wiki_dir=paths.wiki_dir)
-        _write_ingest_snapshot(written)
-    except Exception as exc:
-        # Any failure, not only OSError: leave no half-written directory behind.
-        shutil.rmtree(output_dir, ignore_errors=True)
-        if not proposals_dir_existed:
-            shutil.rmtree(paths.proposals_dir, ignore_errors=True)
-        if isinstance(exc, OSError):
+    # Creating the directory (exclusively, under the wiki lock) is the
+    # collision check: a caller-selected name that exists is an error, and
+    # from here on the directory is ours to remove if a later write fails.
+    # The removal happens under the same lock: once the lock is released a
+    # concurrent promote may apply and archive whatever it finds.
+    with WikiLock(paths.wiki_dir, paths.lock_timeout) as lock:
+        try:
+            written = write_patch_set_dir(
+                patch, output_dir, wiki_dir=paths.wiki_dir, on_collision=COLLISION_ERROR, lock=lock
+            )
+        except FileExistsError as exc:
+            raise OutputWriteError(f"proposal dir already exists: {output_dir}") from exc
+        except OSError as exc:
+            _discard_partial_proposal(output_dir, paths, proposals_dir_existed)
             raise OutputWriteError(f"could not write patch-set dir at {output_dir}: {exc}") from exc
-        raise
+        except BaseException:
+            _discard_partial_proposal(output_dir, paths, proposals_dir_existed)
+            raise
+        try:
+            # Under the same lock as the proposal files: a concurrent promote
+            # never sees the directory without its snapshot.
+            _write_ingest_snapshot(written)
+        except BaseException as exc:
+            # Any failure, not only OSError: leave no half-written directory behind.
+            _discard_partial_proposal(output_dir, paths, proposals_dir_existed)
+            if isinstance(exc, OSError):
+                raise OutputWriteError(f"could not write patch-set dir at {output_dir}: {exc}") from exc
+            raise
     return written
+
+
+def _discard_partial_proposal(output_dir: Path, paths: WikiPaths, proposals_dir_existed: bool) -> None:
+    """Remove a proposal directory ``propose`` could only partly write (and a proposals dir it created).
+
+    The proposals dir is removed only while empty: another writer may have
+    created it, and filled it, while this call waited for the lock.
+    """
+    shutil.rmtree(output_dir, ignore_errors=True)
+    if not proposals_dir_existed:
+        with contextlib.suppress(OSError):
+            paths.proposals_dir.rmdir()
 
 
 # ── promote ───────────────────────────────────────────────────
@@ -465,18 +642,114 @@ def promote(
     *,
     dry_run: bool = False,
     allow_out_of_repo: bool = False,
+    lock_timeout: float | None = None,
+    entry_point: str = PROMOTE_ENTRY_POINT_API,
+    allow_unguarded_updates: bool = False,
 ) -> PromoteResult:
-    """Apply a patch-set directory to the wiki atomically (the only write into the wiki).
+    """Apply a patch-set directory to the wiki (the only write into the wiki).
+
+    The promotion is validated, serialised against other wiki-studio writers
+    on the same machine by the wiki lock, and rolled back on failure; it is
+    not crash-safe across files, and uncoordinated readers may observe
+    intermediate state. Under the lock, before the commit, the revision
+    preconditions are checked against the live wiki: a ``create`` needs its
+    target absent and an ``update`` with ``base_sha256`` needs the live page
+    to still carry that hash (``PromoteValidationError``, exit 9, nothing
+    written, otherwise). An ``update`` without a ``base_sha256`` is refused
+    the same way unless ``allow_unguarded_updates`` is set: compatibility
+    mode with incomplete conflict protection, which applies it and lists the
+    path in ``PromoteResult.unguarded_paths`` and the receipt; a stale draft
+    can then overwrite a newer page. ``dry_run`` stages and checks the
+    preconditions under the lock, then validates the staged snapshot after
+    releasing it, writing nothing (point-in-time evidence). ``lock_timeout``
+    overrides ``paths.lock_timeout`` (seconds to wait for the lock).
+    ``entry_point`` (``"api"`` or ``"cli"``) is recorded in the receipt as
+    software identity.
 
     Raises ``SourceMissingError`` when the directory does not exist,
     ``PathOutsideRootError`` when it lies outside the root without
-    ``allow_out_of_repo``, and the promoter's validation/apply errors.
+    ``allow_out_of_repo``, ``OutputWriteError`` when the receipt cannot be
+    written, and the promoter's validation/apply errors (``PromoteApplyError``
+    carries ``reason`` for the lock and recovery refusals).
     """
     proposal_path = Path(proposal_dir)
     if not proposal_path.exists():
         raise SourceMissingError(f"proposals dir not found: {proposal_path}")
     _require_within_root("proposal dir", proposal_path, paths, allow_out_of_repo, ALLOW_OUT_OF_REPO_PROMOTE_HINT)
-    return _promote(proposals_dir=proposal_path, paths=paths, dry_run=dry_run)
+    if lock_timeout is not None:
+        paths = replace(paths, lock_timeout=float(lock_timeout))
+    return _promote(
+        proposals_dir=proposal_path,
+        paths=paths,
+        dry_run=dry_run,
+        entry_point=entry_point,
+        allow_unguarded_updates=allow_unguarded_updates,
+    )
+
+
+# ── read: one page, its text and the hash of the bytes read ───
+
+
+@dataclass(frozen=True)
+class ReadResult:
+    """One wiki page as read once: wiki-relative ``path``, exact ``data``, decoded ``text`` and ``sha256`` of the bytes.
+
+    ``sha256`` is what an ``update`` of this page records as ``base_sha256``;
+    ``promote`` applies the update only while the live page still has it.
+    """
+
+    path: str
+    data: bytes
+    text: str
+    sha256: str
+
+
+def _wiki_relative_page(path: str | os.PathLike[str], paths: WikiPaths) -> tuple[str, Path]:
+    """Normalise a wiki-relative page path and refuse one that leaves the wiki or passes through a symlink.
+
+    The wiki boundary (FR-012), checked by :func:`wiki_studio.paths.contain`
+    before anything is read: the candidate must be relative, resolve inside
+    the resolved wiki directory, and no component of it may be a symlink.
+    """
+    raw = Path(path)
+    text = raw.as_posix()
+    rel = posixpath.normpath(text)
+    if is_absolute_path(text) or rel == "." or rel.startswith("../") or rel == "..":
+        raise PathOutsideRootError(f"page path must be wiki-relative and stay inside the wiki: {path}")
+    try:
+        contain(rel, paths.wiki_dir)
+    except ContainmentError as exc:
+        if exc.reason == CONTAIN_SYMLINK:
+            raise PathOutsideRootError(
+                f"page path passes through a symlink, which is outside the wiki boundary: {rel}"
+            ) from exc
+        raise PathOutsideRootError(f"page path escapes the wiki directory {paths.wiki_dir}: {rel}") from exc
+    return rel, paths.wiki_dir / rel
+
+
+def read_page(path: str | os.PathLike[str], paths: WikiPaths) -> ReadResult:
+    """Read one wiki page once and return its bytes, UTF-8 text and the sha256 of exactly those bytes.
+
+    ``path`` is wiki-relative (``index.md``, ``concepts/<slug>.md``) and is
+    checked against the wiki boundary before anything is read:
+    ``PathOutsideRootError`` (exit 7) for an absolute path, a ``..`` escape or
+    a symlink. ``SourceMissingError`` (exit 5) when there is no such file;
+    ``ContractViolationError`` (exit 4) when the bytes are not valid UTF-8, in
+    which case no content is returned. The procedure for an agent that
+    replaces a page: ``read`` it, draft from that text, record the ``sha256``
+    as the edit's ``base_sha256`` (``api.propose``) or in the draft's
+    ``.base.json`` (``propose --from``).
+    """
+    rel, target = _wiki_relative_page(path, paths)
+    if not target.is_file():
+        raise SourceMissingError(f"page not found: {paths.wiki_label}/{rel}")
+    try:
+        content = read_page_content(target)
+    except OSError as exc:
+        raise SourceMissingError(f"page not readable: {paths.wiki_label}/{rel}: {exc}") from exc
+    except UnicodeDecodeError as exc:
+        raise ContractViolationError(f"page is not valid UTF-8: {paths.wiki_label}/{rel}: {exc}") from exc
+    return ReadResult(path=rel, data=content.data, text=content.text, sha256=content.sha256)
 
 
 # ── init ──────────────────────────────────────────────────────
@@ -508,9 +781,17 @@ def edits_from_dir(source_dir: Path, paths: WikiPaths, *, rationale: str = "") -
     when the wiki has no page at that path and an ``update`` when it has one
     (``glossary/index.md`` included). Validation is :func:`propose`'s.
 
+    An ``update`` carries the base revision the agent recorded in
+    ``<source_dir>/.base.json``, a JSON object mapping the wiki path to the
+    ``sha256`` that ``read`` reported for the page the draft was made from.
+    The hash is never taken from the live page here: a page with no manifest
+    entry (or no manifest) is an unguarded update, which ``promote`` refuses
+    unless its compatibility option is passed.
+
     Files under hidden directories are skipped. Raises ``SourceMissingError``
     when ``source_dir`` is not a directory and ``ContractViolationError`` for
-    an index or log file that is a page or a ``source_dir`` that overlaps the wiki.
+    an index or log file that is a page, a ``source_dir`` that overlaps the
+    wiki, or a malformed ``.base.json``.
     """
     root = Path(source_dir)
     if not root.is_dir():
@@ -520,6 +801,7 @@ def edits_from_dir(source_dir: Path, paths: WikiPaths, *, rationale: str = "") -
         raise ContractViolationError(
             f"--from {root} overlaps the wiki directory {paths.wiki_dir}; write drafts somewhere else"
         )
+    base_hashes = _read_base_manifest(root)
     why = rationale or f"written by the agent in {root.name}"
     edits: list[PageEdit] = []
     for file in sorted(p for p in root.rglob("*.md") if p.is_file()):
@@ -537,8 +819,27 @@ def edits_from_dir(source_dir: Path, paths: WikiPaths, *, rationale: str = "") -
             edits.extend(PageEdit(rel, action, line.strip(), why) for line in text.splitlines() if line.strip())
             continue
         exists = (paths.wiki_dir / rel).is_file()
-        edits.append(PageEdit(rel, "update" if exists else "create", text, why))
+        # Only an update takes a base revision, and only the one the agent recorded.
+        base = base_hashes.get(rel) if exists else None
+        edits.append(PageEdit(rel, "update" if exists else "create", text, why, base_sha256=base))
     return edits
+
+
+def _read_base_manifest(root: Path) -> dict[str, str]:
+    """``<root>/.base.json``: wiki path -> sha256 the agent read; ``{}`` when absent."""
+    manifest = root / BASE_MANIFEST_NAME
+    if not manifest.is_file():
+        return {}
+    try:
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise ContractViolationError(f"{manifest} is not valid JSON: {exc}") from exc
+    if not isinstance(data, dict) or not all(isinstance(k, str) and is_sha256_hex(v) for k, v in data.items()):
+        raise ContractViolationError(
+            f"{manifest} must be a JSON object mapping wiki-relative page paths to sha256 hex digests "
+            "(the sha256 that `wiki-studio read <path>` printed for the page the draft was made from)"
+        )
+    return {posixpath.normpath(k): str(v) for k, v in data.items()}
 
 
 # ── find (model-free page selection) ──────────────────────────
@@ -624,7 +925,9 @@ def query(
     today = datetime.date.today().isoformat()
     out = (output_dir if output_dir is not None else paths.proposals_dir) / f"{today}-{_FILE_BACK_SLUG}"
     try:
-        written = write_patch_set_dir(patch, out, wiki_dir=paths.wiki_dir)
+        written = write_patch_set_dir(
+            patch, out, wiki_dir=paths.wiki_dir, on_collision=COLLISION_SUFFIX, lock_timeout=paths.lock_timeout
+        )
     except OSError as exc:
         raise OutputWriteError(f"could not write file-back dir: {exc}") from exc
     return QueryResult(answer=answer, patch=patch, file_back_dir=written)
@@ -651,7 +954,7 @@ def lint(
     Avoid-format problems are reported by the health tier when it runs and
     by the prose tier otherwise, so each appears once.
     """
-    violations = tuple(lint_wiki(paths.wiki_dir))
+    violations = tuple(lint_wiki(paths.wiki_dir, root=paths.root, source_roots=paths.source_roots))
     pages_checked = len(list_pages(paths.wiki_dir))
     audit_errors = tuple(validate_audit_tree(paths))
     health_result: HealthLintResult | None = None

@@ -20,14 +20,16 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import posixpath
 from pathlib import Path
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Literal, Protocol, runtime_checkable
 
 from .errors import BackendInvocationError, ContractViolationError, SourceMissingError
 from .fact_diff import removed_facts
+from .paths import DEFAULT_LOCK_TIMEOUT
 from .prompt import (
     compose_multi_prompt,
     load_schema_files,
@@ -41,10 +43,18 @@ from .proposal import (
     validate_patch_set,
 )
 from .wiki_state import load_wiki_state
+from .wikilock import WikiLock, lock_path_for
 
 if TYPE_CHECKING:
     from .ingestor import Backend
     from .paths import WikiPaths
+
+# What ``write_patch_set_dir`` does when ``output_dir`` already exists: ``"error"`` raises
+# ``FileExistsError`` (caller-selected names: ``api.propose``); ``"suffix"`` creates the
+# next free ``<name>-2``, ``-3``, ... (generated names: ``ingest``, ``query --file-back``).
+CollisionPolicy = Literal["error", "suffix"]
+COLLISION_ERROR: CollisionPolicy = "error"
+COLLISION_SUFFIX: CollisionPolicy = "suffix"
 
 
 @runtime_checkable
@@ -112,24 +122,30 @@ class DefaultMultiIngestor:
 
         # 6. Build WikiPatchSet.
         edits: list[PageEdit] = []
+        candidate_hashes = wiki_state.candidate_hashes
         for raw_edit in validated["edits"]:
             if not isinstance(raw_edit, dict):
                 raise ContractViolationError(f"WikiPatchSet.edits[*] must be objects, got {type(raw_edit).__name__}")
             for required in ("path", "action", "new_content", "rationale"):
                 if required not in raw_edit:
                     raise ContractViolationError(f"WikiPatchSet.edits[*] missing required key: {required!r}")
+            action = str(raw_edit["action"])
+            # The prompt labels wiki files "<label>/<path>"; a copied label is
+            # removed here, exactly once, before per-edit validation (issue #11).
+            # Targets of update/append edits already exist, which settles the
+            # case where the wiki directory is named like a page directory.
+            path = self._paths.strip_wiki_label(str(raw_edit["path"]), must_exist=action != "create")
             edits.append(
                 PageEdit(
-                    # The prompt labels wiki files "<label>/<path>"; a copied label is
-                    # removed here, exactly once, before per-edit validation (issue #11).
-                    # Targets of update/append edits already exist, which settles the
-                    # case where the wiki directory is named like a page directory.
-                    path=self._paths.strip_wiki_label(
-                        str(raw_edit["path"]), must_exist=str(raw_edit.get("action")) != "create"
-                    ),
+                    path=path,
                     action=raw_edit["action"],
                     new_content=str(raw_edit["new_content"]),
                     rationale=str(raw_edit["rationale"]),
+                    # The base revision of an update is the hash of the bytes whose text
+                    # the prompt showed (FR-007). It comes from the wiki state alone: a
+                    # ``base_sha256`` in the backend's reply is ignored, and a page the
+                    # prompt did not show gets none (the update is then unguarded).
+                    base_sha256=candidate_hashes.get(path) if action == "update" else None,
                 )
             )
 
@@ -166,16 +182,43 @@ class DefaultMultiIngestor:
         return patch
 
 
+def _create_patch_set_dir(output_dir: Path, on_collision: CollisionPolicy) -> Path:
+    """Create the proposal directory exclusively (``exist_ok=False``) and return the one created.
+
+    A proposal directory is never reused: a second writer must not overwrite
+    a proposal that may be mid-promotion. With ``"suffix"`` an existing
+    directory makes this one ``<name>-2``, ``-3``, ...; with ``"error"`` the
+    ``FileExistsError`` propagates.
+    """
+    if on_collision == COLLISION_ERROR:
+        output_dir.mkdir(parents=True, exist_ok=False)
+        return output_dir
+    candidate, suffix = output_dir, 2
+    while True:
+        try:
+            candidate.mkdir(parents=True, exist_ok=False)
+        except FileExistsError:
+            candidate = output_dir.with_name(f"{output_dir.name}-{suffix}")
+            suffix += 1
+            continue
+        return candidate
+
+
 def write_patch_set_dir(
     patch: WikiPatchSet,
     output_dir: Path,
     wiki_dir: Path | None = None,
+    *,
+    on_collision: CollisionPolicy = COLLISION_ERROR,
+    lock_timeout: float | None = None,
+    lock: WikiLock | None = None,
 ) -> Path:
     """Write a WikiPatchSet to disk under output_dir.
 
     Layout:
         <output_dir>/
-            plan.json                    — full patch-set as JSON
+            plan.json                    — full patch-set as JSON; an edit's ``base_sha256``
+                                           is written when the PageEdit carries one
             preview/<edit.path>          — one preview file per edit (path normalised); a second,
                                            third ... edit to the same path (several
                                            append-index or append-log lines) gets
@@ -189,11 +232,36 @@ def write_patch_set_dir(
     be read or decoded, ``fact_check_error`` records why and no comparison
     is claimed. Promote ignores both keys.
 
-    Returns the absolute path of <output_dir>.
+    The directory is created exclusively (``exist_ok=False``), under the wiki
+    lock when ``wiki_dir`` is given, so no writer ever writes into an existing
+    proposal directory. ``on_collision`` says what an existing ``output_dir``
+    means: ``"error"`` (the default, for caller-selected names) lets the
+    ``FileExistsError`` propagate; ``"suffix"`` (generated names) creates the
+    next free ``<name>-2``, ``-3``, ... instead. ``lock_timeout`` defaults to
+    the package default (``paths.DEFAULT_LOCK_TIMEOUT``). A caller that
+    already holds the wiki lock passes it as ``lock`` (it must be held and
+    be this wiki's), so one lock covers the proposal files and whatever the
+    caller publishes next (snapshot, audit record); no second lock is taken.
+
+    Returns the absolute path of the directory actually created.
     Raises OSError if the filesystem operations fail; the caller maps
     to OutputWriteError exit code 6.
     """
-    output_dir.mkdir(parents=True, exist_ok=True)
+    timeout = DEFAULT_LOCK_TIMEOUT if lock_timeout is None else lock_timeout
+    held: contextlib.AbstractContextManager[object]
+    if lock is not None:
+        if wiki_dir is None or not lock.held or lock.lock_path != lock_path_for(wiki_dir):
+            raise ValueError("write_patch_set_dir: `lock` must be the held WikiLock of `wiki_dir`")
+        held = contextlib.nullcontext()
+    else:
+        held = WikiLock(wiki_dir, timeout) if wiki_dir is not None else contextlib.nullcontext()
+    with held:
+        output_dir = _create_patch_set_dir(output_dir, on_collision)
+        return _write_patch_set_files(patch, output_dir, wiki_dir)
+
+
+def _write_patch_set_files(patch: WikiPatchSet, output_dir: Path, wiki_dir: Path | None) -> Path:
+    """Fill a freshly created proposal directory (see :func:`write_patch_set_dir`)."""
     preview_dir = output_dir / "preview"
     preview_dir.mkdir(exist_ok=True)
 
@@ -214,6 +282,9 @@ def write_patch_set_dir(
         # new_content is stored in the preview file; the plan.json stays
         # small + grep-friendly. Curator reads the preview to see the full content.
         entry: dict[str, object] = {"path": e.path, "action": e.action, "rationale": e.rationale, "preview": rel}
+        if e.base_sha256 is not None:
+            # Written only when the author supplied it; never filled from the live page here.
+            entry["base_sha256"] = e.base_sha256
         live = wiki_dir / e.path if wiki_dir is not None else None
         if e.action == "update" and live is not None and live.is_file():
             # The check is advisory: a live page that cannot be read or decoded is
