@@ -188,6 +188,10 @@ class IngestLogRecord:
     target_paths: list[str]  # sorted unique wiki-rel paths; [] on reject
     page_types: list[str]  # sorted unique page types; [] on reject
     proposal_hash: str | None  # sha256 of canonicalized payload, or None
+    # Which recipe produced ``proposal_hash``: 2 (``audit.payload_digest``, 0.6.0+) on new
+    # records; None (key absent in the log) on records written with recipe 1 before 0.6.0
+    # and whenever ``proposal_hash`` is None.
+    hash_recipe: int | None = None
 
 
 @dataclass(frozen=True)

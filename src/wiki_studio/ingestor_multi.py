@@ -20,14 +20,16 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import posixpath
 from pathlib import Path
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Literal, Protocol, runtime_checkable
 
 from .errors import BackendInvocationError, ContractViolationError, SourceMissingError
 from .fact_diff import removed_facts
+from .paths import DEFAULT_LOCK_TIMEOUT
 from .prompt import (
     compose_multi_prompt,
     load_schema_files,
@@ -41,10 +43,18 @@ from .proposal import (
     validate_patch_set,
 )
 from .wiki_state import load_wiki_state
+from .wikilock import WikiLock
 
 if TYPE_CHECKING:
     from .ingestor import Backend
     from .paths import WikiPaths
+
+# What ``write_patch_set_dir`` does when ``output_dir`` already exists: ``"error"`` raises
+# ``FileExistsError`` (caller-selected names: ``api.propose``); ``"suffix"`` creates the
+# next free ``<name>-2``, ``-3``, ... (generated names: ``ingest``, ``query --file-back``).
+CollisionPolicy = Literal["error", "suffix"]
+COLLISION_ERROR: CollisionPolicy = "error"
+COLLISION_SUFFIX: CollisionPolicy = "suffix"
 
 
 @runtime_checkable
@@ -166,10 +176,35 @@ class DefaultMultiIngestor:
         return patch
 
 
+def _create_patch_set_dir(output_dir: Path, on_collision: CollisionPolicy) -> Path:
+    """Create the proposal directory exclusively (``exist_ok=False``) and return the one created.
+
+    A proposal directory is never reused: a second writer must not overwrite
+    a proposal that may be mid-promotion. With ``"suffix"`` an existing
+    directory makes this one ``<name>-2``, ``-3``, ...; with ``"error"`` the
+    ``FileExistsError`` propagates.
+    """
+    if on_collision == COLLISION_ERROR:
+        output_dir.mkdir(parents=True, exist_ok=False)
+        return output_dir
+    candidate, suffix = output_dir, 2
+    while True:
+        try:
+            candidate.mkdir(parents=True, exist_ok=False)
+        except FileExistsError:
+            candidate = output_dir.with_name(f"{output_dir.name}-{suffix}")
+            suffix += 1
+            continue
+        return candidate
+
+
 def write_patch_set_dir(
     patch: WikiPatchSet,
     output_dir: Path,
     wiki_dir: Path | None = None,
+    *,
+    on_collision: CollisionPolicy = COLLISION_ERROR,
+    lock_timeout: float | None = None,
 ) -> Path:
     """Write a WikiPatchSet to disk under output_dir.
 
@@ -189,11 +224,29 @@ def write_patch_set_dir(
     be read or decoded, ``fact_check_error`` records why and no comparison
     is claimed. Promote ignores both keys.
 
-    Returns the absolute path of <output_dir>.
+    The directory is created exclusively (``exist_ok=False``), under the wiki
+    lock when ``wiki_dir`` is given, so no writer ever writes into an existing
+    proposal directory. ``on_collision`` says what an existing ``output_dir``
+    means: ``"error"`` (the default, for caller-selected names) lets the
+    ``FileExistsError`` propagate; ``"suffix"`` (generated names) creates the
+    next free ``<name>-2``, ``-3``, ... instead. ``lock_timeout`` defaults to
+    the package default (``paths.DEFAULT_LOCK_TIMEOUT``).
+
+    Returns the absolute path of the directory actually created.
     Raises OSError if the filesystem operations fail; the caller maps
     to OutputWriteError exit code 6.
     """
-    output_dir.mkdir(parents=True, exist_ok=True)
+    timeout = DEFAULT_LOCK_TIMEOUT if lock_timeout is None else lock_timeout
+    lock: contextlib.AbstractContextManager[object] = (
+        WikiLock(wiki_dir, timeout) if wiki_dir is not None else contextlib.nullcontext()
+    )
+    with lock:
+        output_dir = _create_patch_set_dir(output_dir, on_collision)
+        return _write_patch_set_files(patch, output_dir, wiki_dir)
+
+
+def _write_patch_set_files(patch: WikiPatchSet, output_dir: Path, wiki_dir: Path | None) -> Path:
+    """Fill a freshly created proposal directory (see :func:`write_patch_set_dir`)."""
     preview_dir = output_dir / "preview"
     preview_dir.mkdir(exist_ok=True)
 

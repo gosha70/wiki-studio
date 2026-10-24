@@ -51,6 +51,11 @@ _REQUIRED_KEYS: dict[str, type | tuple[type, ...]] = {
     "proposal_hash": (str, type(None)),
 }
 
+# The one optional key accepted in v: 1 since 0.6.0: which digest recipe produced
+# ``proposal_hash`` (2 = ``audit.payload_digest``). A record without it used recipe 1.
+_OPTIONAL_KEYS: dict[str, type | tuple[type, ...]] = {"hash_recipe": int}
+_HASH_RECIPES = {1, 2}
+
 _PERMITTED_PROPOSAL_ENTRIES = {"plan.json", "proposal.md", "curator-delta.md"}
 
 
@@ -80,11 +85,17 @@ def _validate_ingest_log(path: Path) -> list[str]:
 
         keys = set(obj)
         missing = set(_REQUIRED_KEYS) - keys
-        extra = keys - set(_REQUIRED_KEYS)
+        extra = keys - set(_REQUIRED_KEYS) - set(_OPTIONAL_KEYS)
         if missing:
             errors.append(f"{path}:{n}: missing keys {sorted(missing)}")
         if extra:
             errors.append(f"{path}:{n}: unexpected keys {sorted(extra)}")
+
+        recipe = obj.get("hash_recipe")
+        if "hash_recipe" in obj and (isinstance(recipe, bool) or not isinstance(recipe, int)):
+            errors.append(f"{path}:{n}: 'hash_recipe' must be int (got {type(recipe).__name__})")
+        elif isinstance(recipe, int) and recipe not in _HASH_RECIPES:
+            errors.append(f"{path}:{n}: unknown hash_recipe {recipe} (this linter knows {sorted(_HASH_RECIPES)})")
 
         for key, typ in _REQUIRED_KEYS.items():
             if key in obj and not isinstance(obj[key], typ):

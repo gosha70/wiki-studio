@@ -84,8 +84,15 @@ This is the only code path that writes into the wiki.
 
 | Flag | Effect |
 |---|---|
-| `--dry-run` | build and validate the staged tree, change nothing |
+| `--dry-run` | build and validate the staged tree under the lock, change nothing; point-in-time evidence, a real promote checks again |
 | `--allow-out-of-repo` | accept a proposal directory outside the root (otherwise exit 7) |
+| `--lock-timeout SECONDS` | how long to wait for the wiki lock that serialises wiki-studio writers on this machine (default 30, or `WIKI_STUDIO_LOCK_TIMEOUT`); on expiry exit 10 with reason `lock_timeout`. Also accepted by every other verb |
+
+Promote writes a `receipt.json` beside the proposal (moved with it into
+`.applied/`) that records the outcome; promoting the same directory again
+finishes an interrupted archive step and never re-applies an edit. The lock
+file is `<wiki-parent>/.<wiki-dir-name>.wiki-studio.lock`, outside the wiki;
+add it to `.gitignore`. Details: `docs/patch-set-format.md`.
 
 ### `wiki-studio query "<question>"`
 

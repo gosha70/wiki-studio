@@ -23,14 +23,27 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .audit_lint import INGEST_LOG_MARKER
-from .errors import OutputWriteError
+from .errors import OutputWriteError, PromoteValidationError
 from .proposal import IngestLogRecord, IngestProposal, WikiPatchSet
 from .schema import PAGE_TYPE_DIRS, PROMOTABLE_PAGE_TYPES
+from .wikilock import WikiLock
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from .paths import WikiPaths
 
 # ── Helpers ────────────────────────────────────────────────────────────────
+
+# The digest recipes documented in schema/audit-rules.md. Recipe 1 (``proposal_hash``)
+# skips dot-prefixed components; recipe 2 (``payload_digest``) enumerates ``preview/``
+# without exclusions. New ingest-log records and every receipt use recipe 2; recipe 1
+# stays implemented to verify records written before 0.6.0.
+HASH_RECIPE_PROPOSAL_HASH = 1
+HASH_RECIPE_PAYLOAD_DIGEST = 2
+
+PLAN_FILE_NAME = "plan.json"
+PREVIEW_DIR_NAME = "preview"
 
 
 def source_sha(source_file: Path) -> str:
@@ -38,24 +51,89 @@ def source_sha(source_file: Path) -> str:
     return hashlib.sha256(source_file.read_bytes()).hexdigest()
 
 
-def proposal_hash(proposal_dir: Path) -> str:
-    """Return the SHA-256 canonical hash of the proposal payload.
+def _canonical_digest(files: Mapping[str, bytes]) -> str:
+    """The shared framing of both recipes over proposal-relative POSIX paths and their bytes.
 
-    Canonicalization recipe (from audit-rules.md / spec.md DD3):
+    Sort by the UTF-8 bytes of the path (``LC_ALL=C`` order); for each file append
+    ``<path>\\n<bytes>\\n--\\n``; SHA-256 the buffer; lowercase hex.
+    """
+    buf = bytearray()
+    for rel_posix in sorted(files, key=lambda rel: rel.encode("utf-8")):
+        buf += rel_posix.encode("utf-8")
+        buf += b"\n"
+        buf += files[rel_posix]
+        buf += b"\n--\n"
+    return hashlib.sha256(bytes(buf)).hexdigest()
+
+
+def _identity_files(proposal_dir: Path) -> dict[str, Path]:
+    """``plan.json`` plus every file under ``preview/`` (symlinks refused), keyed by proposal-relative path."""
+    found: dict[str, Path] = {}
+    plan = proposal_dir / PLAN_FILE_NAME
+    if plan.is_symlink():
+        raise PromoteValidationError(f"{PLAN_FILE_NAME} in {proposal_dir} is a symlink; refusing to read through it")
+    if plan.is_file():
+        found[PLAN_FILE_NAME] = plan
+    preview = proposal_dir / PREVIEW_DIR_NAME
+    if preview.is_symlink():
+        raise PromoteValidationError(f"{PREVIEW_DIR_NAME}/ in {proposal_dir} is a symlink; refusing to read through it")
+    if preview.is_dir():
+        for p in sorted(preview.rglob("*")):
+            if p.is_symlink():
+                raise PromoteValidationError(
+                    f"{p.relative_to(proposal_dir).as_posix()} in {proposal_dir} is a symlink; "
+                    "refusing to read through it"
+                )
+            if p.is_file():
+                found[p.relative_to(proposal_dir).as_posix()] = p
+    return found
+
+
+def payload_digest_from_files(files: Mapping[str, bytes]) -> str:
+    """Recipe 2 over an in-memory capture: ``plan.json`` and every ``preview/`` file, nothing excluded.
+
+    ``files`` maps proposal-relative POSIX paths to bytes; entries outside the
+    identity set (``.ingest-snapshot/``, notes) are ignored, so the same call
+    serves a full submission manifest and a bare payload.
+    """
+    identity = {
+        rel: data for rel, data in files.items() if rel == PLAN_FILE_NAME or rel.startswith(PREVIEW_DIR_NAME + "/")
+    }
+    return _canonical_digest(identity)
+
+
+def payload_digest(proposal_dir: Path) -> str:
+    """Recipe 2: the SHA-256 identity of the applied payload, read from ``proposal_dir``.
+
+    Like :func:`proposal_hash` but with no dot-component exclusion: hidden
+    preview files such as ``preview/.line.md`` count, so a preview the loader
+    would accept cannot change under an unchanged digest. ``.ingest-snapshot/``
+    is outside ``preview/`` and therefore outside the identity. Symlinks under
+    the proposal are refused (``PromoteValidationError``).
+    """
+    return _canonical_digest({rel: p.read_bytes() for rel, p in _identity_files(proposal_dir).items()})
+
+
+def proposal_hash(proposal_dir: Path) -> str:
+    """Recipe 1: the SHA-256 canonical hash every ingest-log record before 0.6.0 carries.
+
+    Canonicalization recipe (from audit-rules.md):
       1. Collect plan.json + every file under preview/ recursively.
          Exclude .ingest-snapshot/ and any path component beginning with '.'.
       2. Sort by repo-relative POSIX path under LC_ALL=C (byte order).
       3. For each file, append:
            <rel_path UTF-8> + b'\\n' + raw bytes + b'\\n--\\n'
       4. SHA-256 the concatenated buffer; return lowercase hex.
+
+    Kept to verify those records; new records and receipts use :func:`payload_digest`.
     """
     files: list[Path] = []
 
-    plan = proposal_dir / "plan.json"
+    plan = proposal_dir / PLAN_FILE_NAME
     if plan.is_file():
         files.append(plan)
 
-    preview = proposal_dir / "preview"
+    preview = proposal_dir / PREVIEW_DIR_NAME
     if preview.is_dir():
         for p in preview.rglob("*"):
             if p.is_file():
@@ -70,23 +148,8 @@ def proposal_hash(proposal_dir: Path) -> str:
             return True
         return any(part.startswith(".") for part in rel.parts)
 
-    included = [f for f in files if not _is_excluded(f)]
-
-    # Sort by repo-relative POSIX path, byte order (LC_ALL=C).
-    def _sort_key(p: Path) -> bytes:
-        return p.relative_to(proposal_dir).as_posix().encode("utf-8")
-
-    included.sort(key=_sort_key)
-
-    buf = bytearray()
-    for f in included:
-        rel_posix = f.relative_to(proposal_dir).as_posix()
-        buf += rel_posix.encode("utf-8")
-        buf += b"\n"
-        buf += f.read_bytes()
-        buf += b"\n--\n"
-
-    return hashlib.sha256(bytes(buf)).hexdigest()
+    included = {f.relative_to(proposal_dir).as_posix(): f.read_bytes() for f in files if not _is_excluded(f)}
+    return _canonical_digest(included)
 
 
 def truncate_reason(s: str) -> str:
@@ -204,9 +267,12 @@ def build_log_record(
     prop_dir_name: str | None = proposal_dir_path.name if proposal_dir_path is not None else None
 
     # proposal_hash: None on reject (empty edits), --dry-run, or no proposal dir.
+    # Since 0.6.0 the value is recipe 2 (payload_digest) and the record says so.
     p_hash: str | None = None
+    recipe: int | None = None
     if not dry_run and disp == "accept" and proposal_dir_path is not None and proposal_dir_path.is_dir():
-        p_hash = proposal_hash(proposal_dir_path)
+        p_hash = payload_digest(proposal_dir_path)
+        recipe = HASH_RECIPE_PAYLOAD_DIGEST
 
     return IngestLogRecord(
         v=1,
@@ -221,6 +287,7 @@ def build_log_record(
         target_paths=tgt_paths,
         page_types=pg_types,
         proposal_hash=p_hash,
+        hash_recipe=recipe,
     )
 
 
@@ -231,39 +298,47 @@ _LEGACY_PAGE_TYPE_DIR: dict[str, str] = {name: PAGE_TYPE_DIRS[name] for name in 
 # ── Append writer (the only writer of ingest-log.md) ──────────────────────
 
 
+def record_to_json_line(record: IngestLogRecord) -> str:
+    """One NDJSON line for ``record``: the fields in definition order; ``hash_recipe`` only when set."""
+    import dataclasses
+
+    obj = dataclasses.asdict(record)
+    if obj.get("hash_recipe") is None:
+        # A record without the key was produced by recipe 1 (or carries no hash).
+        obj.pop("hash_recipe", None)
+    return json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
+
+
 def append_ingest_log(paths: WikiPaths, record: IngestLogRecord) -> None:
     """Append one NDJSON line to the ingest log (``paths.audit_log``).
 
-    Creates the file with the marker preamble if it does not exist.
+    Creates the file with the marker preamble if it does not exist. The read
+    of the current tail and the append happen under the wiki lock
+    (:class:`~wiki_studio.wikilock.WikiLock`), so two cooperating writers
+    never interleave lines and ``audit-flush`` never commits a torn tail.
     Fail-closed: any OSError is re-raised so the caller can exit via
-    OutputWriteError (exit code 6).
+    OutputWriteError (exit code 6); a lock timeout is ``PromoteApplyError``
+    (exit 10, ``reason="lock_timeout"``).
     """
     log_path = paths.audit_log
+    line = record_to_json_line(record)
     try:
-        log_path.parent.mkdir(parents=True, exist_ok=True)
+        with WikiLock(paths.wiki_dir, paths.lock_timeout):
+            log_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Serialize the record to a JSON object (one line, no trailing newline yet).
-        # We use the dataclass fields in definition order to match the spec table.
-        import dataclasses
+            if not log_path.exists():
+                # First write: create with marker + blank line.
+                content = INGEST_LOG_MARKER + "\n\n" + line + "\n"
+                log_path.write_text(content, encoding="utf-8")
+                return
 
-        obj = dataclasses.asdict(record)
-        line = json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
-
-        if not log_path.exists():
-            # First write: create with marker + blank line.
-            content = INGEST_LOG_MARKER + "\n\n" + line + "\n"
-            log_path.write_text(content, encoding="utf-8")
-            return
-
-        # Append a single line.  We open in binary append mode to avoid
-        # any implicit re-encoding of the existing content.
-        existing = log_path.read_bytes()
-        # Ensure the file ends with a newline before we append.
-        if existing and existing[-1:] != b"\n":
-            existing += b"\n"
-        new_content = existing + (line + "\n").encode("utf-8")
-        # Write atomically by replacing the file contents; this avoids a
-        # partial-line race (the curator-driven pipeline is single-process).
-        log_path.write_bytes(new_content)
+            # Ensure the file ends with a newline before we append.
+            existing = log_path.read_bytes()
+            prefix = b"" if not existing or existing.endswith(b"\n") else b"\n"
+            # Binary append: no re-encoding of the existing content, and the
+            # existing bytes are never rewritten (the append-only invariant
+            # ``audit-flush`` checks).
+            with log_path.open("ab") as handle:
+                handle.write(prefix + (line + "\n").encode("utf-8"))
     except OSError as exc:
         raise OutputWriteError(f"audit log append failed for {log_path}: {exc}") from exc

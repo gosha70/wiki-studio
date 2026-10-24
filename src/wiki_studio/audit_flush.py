@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING
 
 from .audit_lint import _validate_ingest_log
 from .errors import AuditFlushError
+from .wikilock import WikiLock
 
 if TYPE_CHECKING:
     from .paths import WikiPaths
@@ -158,6 +159,10 @@ class FlushResult:
 def flush_state(paths: WikiPaths, dry_run: bool) -> FlushResult:
     """Commit any pending ingest-log lines, or report them in dry-run mode, without printing.
 
+    The log is read and committed under the wiki lock
+    (:class:`~wiki_studio.wikilock.WikiLock`), so an ingest append that
+    overlaps the flush waits and lands after the commit as a pending line.
+
     Parameters
     ----------
     paths : WikiPaths
@@ -171,7 +176,16 @@ def flush_state(paths: WikiPaths, dry_run: bool) -> FlushResult:
         For non-git-repo, divergence, malformed log, or a failed git commit.
         A wiki outside the git work tree (``paths.root``) ends here too: git
         rejects the pathspec, which is reported as a failed git add.
+    PromoteApplyError
+        With ``reason="lock_timeout"`` (exit 10) when the wiki lock is not
+        acquired within ``paths.lock_timeout`` seconds.
     """
+    with WikiLock(paths.wiki_dir, paths.lock_timeout):
+        return _flush_locked(paths, dry_run)
+
+
+def _flush_locked(paths: WikiPaths, dry_run: bool) -> FlushResult:
+    """``flush_state`` with the wiki lock already held."""
     state = detect_pending(paths)
     log_rel = state.path.as_posix()
 

@@ -6,8 +6,49 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- The wiki lock (`wiki_studio.wikilock.WikiLock`): an OS advisory lock
+  (`fcntl.flock` on POSIX) on `<wiki-parent>/.<wiki-dir-name>.wiki-studio.lock`,
+  keyed to the resolved wiki directory and held by `promote`,
+  `propose --promote`, the ingest-log append and `audit-flush`. Two promotes
+  that start together no longer revert each other's pages. `--lock-timeout`
+  and `WIKI_STUDIO_LOCK_TIMEOUT` (default 30 s); on expiry exit 10 with
+  reason `lock_timeout`. `info` prints the lock file and timeout.
+- Receipts: `promote` writes `receipt.json` into the proposal directory before
+  the commit (`committing`), rewrites it after (`committed`) and archives it
+  with the proposal: the submission digest and manifest, the wiki's device and
+  inode, every tracked write with its pre- and post-commit sha256, timing and
+  the promoter's identity. Promoting the same directory again resolves the
+  receipt instead of re-applying anything; refusals exit 10 with reasons
+  `uncertain_outcome`, `wiki_mismatch`, `wiki_identity_unavailable` or
+  `payload_changed`. Documented in `docs/patch-set-format.md`.
+- `PromoteApplyError.reason` (`wiki_studio.errors.REASON_*`); the CLI prints
+  it as `[reason=...]`.
+
 ### Changed
 
+- The commit writes only the paths the patch-set names plus the proposal's own
+  `.audit/proposals/` archive; a staged file outside that set is never written
+  back.
+- The archive under `<proposals-dir>/.applied/<name>/` is written from the
+  captured bytes into a hidden temporary sibling and published by atomic
+  rename; names are unchanged (`<name>`, `-2`, `-3`). The original directory
+  is removed only while it still matches the archive.
+- Digest recipe 2 (`audit.payload_digest`: no dot-component exclusion) for
+  receipts and for new ingest-log records, which carry the optional key
+  `hash_recipe: 2`; recipe 1 (`audit.proposal_hash`) stays implemented to
+  verify records written before 0.6.0. The audit lint accepts the optional key
+  in `v: 1`. A consumer that recomputes `proposal_hash` against the documented
+  recipe must pick the recipe by the key (`schema/audit-rules.md`).
+- A `preview` pointer that does not name a regular file under `preview/` is a
+  contract violation (exit 4).
+- Proposal directories are created exclusively under the lock: `ingest` and
+  `query --file-back` take `<name>-2`, `-3` on a clash instead of writing into
+  an existing directory; `api.propose` still raises `OutputWriteError`.
+- The `Operating System` classifier is narrowed to POSIX: the `msvcrt` lock
+  backend and the path-based staging fallback exist but are untested and
+  unsupported in this release.
 - Package metadata and the README point to the project page at
   https://memkernel.dev/wiki-studio/ (PyPI shows the link from the next release).
 

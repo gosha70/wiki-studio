@@ -43,13 +43,16 @@ from .errors import (
     PromoteValidationError,
 )
 from .paths import (
+    DEFAULT_LOCK_TIMEOUT,
     DEFAULT_PROPOSALS_DIR,
     DEFAULT_WIKI_DIR,
+    ENV_LOCK_TIMEOUT,
     ENV_PROPOSALS_DIR,
     ENV_ROOT,
     ENV_WIKI_DIR,
     WikiPaths,
 )
+from .wikilock import lock_path_for
 
 # Exit codes new in Phase 0.
 EXIT_PATH_OUT_OF_REPO = PathOutsideRootError.exit_code
@@ -68,7 +71,7 @@ _ERROR_PREFIXES: tuple[tuple[type[IngestError], str], ...] = (
 
 
 def _add_path_options(parser: argparse.ArgumentParser, *, suppress_defaults: bool) -> None:
-    """The three global location options.
+    """The three global location options and the wiki-lock timeout.
 
     They live on the top-level parser and, with suppressed defaults, on every
     verb parser, so a value given after the verb is not clobbered by a
@@ -94,6 +97,15 @@ def _add_path_options(parser: argparse.ArgumentParser, *, suppress_defaults: boo
         default=default,
         help=f"Proposals directory. Default: {ENV_PROPOSALS_DIR}, else <root>/{DEFAULT_PROPOSALS_DIR}.",
     )
+    parser.add_argument(
+        "--lock-timeout",
+        type=float,
+        default=default,
+        metavar="SECONDS",
+        help="Seconds to wait for the wiki lock that serialises wiki-studio writers on this machine "
+        "(promote, propose, the ingest-log append, audit-flush); on expiry exit 10 with reason lock_timeout. "
+        f"Default: {ENV_LOCK_TIMEOUT}, else {DEFAULT_LOCK_TIMEOUT:g}.",
+    )
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:
@@ -110,6 +122,8 @@ def _build_arg_parser() -> argparse.ArgumentParser:
             "0 success; 2 backend not found; 3 backend invocation failed; "
             "4 contract violation; 5 source missing; 6 output write failure; "
             "7 source out of repo; 8 verb not yet implemented (Phase N stub); "
+            "9 promote validation failed; 10 promote apply failed (with a reason: lock_timeout, "
+            "uncertain_outcome, wiki_mismatch, wiki_identity_unavailable, payload_changed); "
             "11 audit-flush error (not a git work tree; append-only invariant "
             "violated; working log malformed; git commit failed)."
         ),
@@ -185,9 +199,11 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     p_promote = sub.add_parser(
         "promote",
         parents=[common],
-        help="Apply a proposal patch-set to the wiki directory atomically. "
-        "The ONLY code path that writes to the canonical wiki content "
-        "tree, excluding .audit/.",
+        help="Apply a proposal patch-set to the wiki directory: validated, serialised against other "
+        "wiki-studio writers on this machine by the wiki lock, rolled back on failure; not crash-safe "
+        "across files. The ONLY code path that writes to the canonical wiki content tree, excluding .audit/. "
+        "A receipt.json beside the proposal records the outcome; promoting the directory again finishes an "
+        "interrupted archive step and never re-applies an edit.",
     )
     p_promote.add_argument(
         "proposal_dir",
@@ -372,6 +388,7 @@ def _paths_from_args(args: argparse.Namespace) -> WikiPaths:
         root=getattr(args, "root", None),
         wiki_dir=getattr(args, "wiki_dir", None),
         proposals_dir=getattr(args, "proposals_dir", None),
+        lock_timeout=getattr(args, "lock_timeout", None),
     )
 
 
@@ -423,14 +440,25 @@ def _do_ingest(args: argparse.Namespace) -> int:
     return 0
 
 
+def _archived_note(result: api.PromoteResult) -> str:
+    """Where the proposal directory went, or how to finish when the archive step did not complete."""
+    if result.archived_dir:
+        return f"archived to {result.archived_dir}."
+    return (
+        "not archived (the archive step failed after the commit; the receipt records the outcome). "
+        "Run promote on the same directory again to finish archiving; nothing is applied twice."
+    )
+
+
 def _do_promote(args: argparse.Namespace) -> int:
-    """Phase 2: atomic patch-set application — the only writer to the wiki directory."""
+    """Phase 2: patch-set application under the wiki lock — the only writer to the wiki directory."""
     paths = _paths_from_args(args)
     result = api.promote(
         args.proposal_dir,
         paths,
         dry_run=args.dry_run,
         allow_out_of_repo=args.allow_out_of_repo,
+        entry_point=api.PROMOTE_ENTRY_POINT_CLI,
     )
     if result.dry_run:
         print(f"dry-run: staged tree validated; would apply {len(result.applied_paths)} edit(s); wiki tree unchanged.")
@@ -440,14 +468,7 @@ def _do_promote(args: argparse.Namespace) -> int:
     if not result.applied_paths:
         print(f"no-op: {args.proposal_dir.name} already applied (no changes to write).")
         return 0
-    print(
-        f"applied {len(result.applied_paths)} edit(s) from {args.proposal_dir.name}; "
-        + (
-            f"archived to {result.archived_dir}."
-            if result.archived_dir
-            else "not archived (move failed; left in place)."
-        )
-    )
+    print(f"applied {len(result.applied_paths)} edit(s) from {args.proposal_dir.name}; {_archived_note(result)}")
     for p in result.applied_paths:
         print(f"  + {paths.wiki_label}/{p}")
     return 0
@@ -583,6 +604,8 @@ def _do_info(args: argparse.Namespace) -> int:
         "audit_log": str(paths.audit_log),
         "schema": schema,
         "schema_dir": str(paths.schema_dir),
+        "lock_file": str(lock_path_for(paths.wiki_dir)),
+        "lock_timeout": paths.lock_timeout,
     }
     if args.json:
         print(json.dumps(info, indent=2))
@@ -598,6 +621,7 @@ def _do_info(args: argparse.Namespace) -> int:
     print(f"query-log: {paths.query_log}")
     print(f"audit-log: {paths.audit_log}")
     print(f"schema: {schema}" + (f" copy at {paths.schema_dir}" if schema == _SCHEMA_PROJECT else ""))
+    print(f"lock-file: {lock_path_for(paths.wiki_dir)}  (timeout {paths.lock_timeout:g}s)")
     return 0
 
 
@@ -638,11 +662,10 @@ def _do_propose(args: argparse.Namespace) -> int:
     _print_fact_warnings(written)
     if not args.promote:
         return 0
-    result = api.promote(written, paths, allow_out_of_repo=args.allow_out_of_repo)
-    archived = (
-        f"archived to {result.archived_dir}." if result.archived_dir else "not archived (move failed; left in place)."
+    result = api.promote(
+        written, paths, allow_out_of_repo=args.allow_out_of_repo, entry_point=api.PROMOTE_ENTRY_POINT_CLI
     )
-    print(f"applied {len(result.applied_paths)} edit(s); {archived}")
+    print(f"applied {len(result.applied_paths)} edit(s); {_archived_note(result)}")
     return 0
 
 
@@ -669,7 +692,7 @@ def _do_find(args: argparse.Namespace) -> int:
 _VERBS = ("ingest", "promote", "query", "lint", "audit-flush", "info", "init", "propose", "find")
 
 # Global options that take a value; their value is not a positional for the legacy shim.
-_GLOBAL_VALUE_OPTIONS = ("--root", "--wiki-dir", "--proposals-dir")
+_GLOBAL_VALUE_OPTIONS = ("--root", "--wiki-dir", "--proposals-dir", "--lock-timeout")
 
 
 def _inject_legacy_v1_prefix(argv: list[str]) -> list[str]:
@@ -713,6 +736,11 @@ def _report(exc: Exception) -> int:
     """The one place where exceptions become stderr messages and exit codes."""
     if isinstance(exc, IngestError):
         prefix = next((p for cls, p in _ERROR_PREFIXES if isinstance(exc, cls)), "")
+        reason = getattr(exc, "reason", None)
+        if reason:
+            # "promote apply failed:\n" -> "promote apply failed [reason=lock_timeout]:\n"
+            head, sep, tail = prefix.partition(":")
+            prefix = f"{head} [reason={reason}]{sep}{tail}"
         print(f"error: {prefix}{exc}", file=sys.stderr)
         return exc.exit_code
     # ValueError: a flag combination the verb rejects (e.g. --check with --dry-run).

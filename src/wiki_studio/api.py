@@ -48,9 +48,18 @@ from .backends.copilot_cli import CopilotCliBackend
 from .errors import ContractViolationError, OutputWriteError, PathOutsideRootError, SourceMissingError
 from .health_lint import lint_health
 from .ingestor import DefaultIngestor
-from .ingestor_multi import DefaultMultiIngestor, write_patch_set_dir
+from .ingestor_multi import COLLISION_ERROR, COLLISION_SUFFIX, DefaultMultiIngestor, write_patch_set_dir
 from .lint import lint_wiki, list_pages
-from .promoter import DEFAULT_WIKI_TITLE, INDEX_NAME, LOG_NAME, InitResult, PromoteResult, init_wiki
+from .promoter import (
+    DEFAULT_WIKI_TITLE,
+    INDEX_NAME,
+    LOG_NAME,
+    PROMOTE_ENTRY_POINT_API,
+    PROMOTE_ENTRY_POINT_CLI,
+    InitResult,
+    PromoteResult,
+    init_wiki,
+)
 from .promoter import promote as _promote
 from .proposal import (
     IngestLogRecord,
@@ -76,6 +85,8 @@ if TYPE_CHECKING:
 __all__ = [
     "ALLOW_OUT_OF_REPO_HINT",
     "ALLOW_OUT_OF_REPO_PROMOTE_HINT",
+    "PROMOTE_ENTRY_POINT_API",
+    "PROMOTE_ENTRY_POINT_CLI",
     "PROPOSE_BACKEND",
     "AuditFlushResult",
     "FlushResult",
@@ -368,7 +379,15 @@ def _ingest_multi(
     today = datetime.date.today().isoformat()
     output_dir = proposals_root / f"{today}-{request.source_path.stem or 'source'}"
     try:
-        written = write_patch_set_dir(patch, output_dir, wiki_dir=paths.wiki_dir)
+        # A generated name: a second ingest of the same source on the same day
+        # lands in ``<name>-2`` rather than in a directory that may be mid-promotion.
+        written = write_patch_set_dir(
+            patch,
+            output_dir,
+            wiki_dir=paths.wiki_dir,
+            on_collision=COLLISION_SUFFIX,
+            lock_timeout=paths.lock_timeout,
+        )
     except OSError as exc:
         raise OutputWriteError(f"could not write patch-set dir at {output_dir}: {exc}") from exc
     if not dry_run and patch.edits:
@@ -435,25 +454,35 @@ def propose(
     output_dir = paths.proposals_dir / name
     proposals_dir_existed = paths.proposals_dir.is_dir()
     try:
-        # Creating the directory is the collision check: it must not exist, and
-        # from here on it is ours to remove if a later write fails.
-        output_dir.mkdir(parents=True, exist_ok=False)
+        # Creating the directory (exclusively, under the wiki lock) is the
+        # collision check: a caller-selected name that exists is an error, and
+        # from here on the directory is ours to remove if a later write fails.
+        written = write_patch_set_dir(
+            patch, output_dir, wiki_dir=paths.wiki_dir, on_collision=COLLISION_ERROR, lock_timeout=paths.lock_timeout
+        )
     except FileExistsError as exc:
         raise OutputWriteError(f"proposal dir already exists: {output_dir}") from exc
-    except OSError as exc:
-        raise OutputWriteError(f"could not create patch-set dir at {output_dir}: {exc}") from exc
+    except Exception as exc:
+        _discard_partial_proposal(output_dir, paths, proposals_dir_existed)
+        if isinstance(exc, OSError):
+            raise OutputWriteError(f"could not write patch-set dir at {output_dir}: {exc}") from exc
+        raise
     try:
-        written = write_patch_set_dir(patch, output_dir, wiki_dir=paths.wiki_dir)
         _write_ingest_snapshot(written)
     except Exception as exc:
         # Any failure, not only OSError: leave no half-written directory behind.
-        shutil.rmtree(output_dir, ignore_errors=True)
-        if not proposals_dir_existed:
-            shutil.rmtree(paths.proposals_dir, ignore_errors=True)
+        _discard_partial_proposal(output_dir, paths, proposals_dir_existed)
         if isinstance(exc, OSError):
             raise OutputWriteError(f"could not write patch-set dir at {output_dir}: {exc}") from exc
         raise
     return written
+
+
+def _discard_partial_proposal(output_dir: Path, paths: WikiPaths, proposals_dir_existed: bool) -> None:
+    """Remove a proposal directory ``propose`` could only partly write (and a proposals dir it created)."""
+    shutil.rmtree(output_dir, ignore_errors=True)
+    if not proposals_dir_existed:
+        shutil.rmtree(paths.proposals_dir, ignore_errors=True)
 
 
 # ── promote ───────────────────────────────────────────────────
@@ -465,18 +494,31 @@ def promote(
     *,
     dry_run: bool = False,
     allow_out_of_repo: bool = False,
+    lock_timeout: float | None = None,
+    entry_point: str = PROMOTE_ENTRY_POINT_API,
 ) -> PromoteResult:
-    """Apply a patch-set directory to the wiki atomically (the only write into the wiki).
+    """Apply a patch-set directory to the wiki (the only write into the wiki).
+
+    The promotion is validated, serialised against other wiki-studio writers
+    on the same machine by the wiki lock, and rolled back on failure; it is
+    not crash-safe across files, and uncoordinated readers may observe
+    intermediate state. ``lock_timeout`` overrides
+    ``paths.lock_timeout`` (seconds to wait for the lock). ``entry_point``
+    (``"api"`` or ``"cli"``) is recorded in the receipt as software identity.
 
     Raises ``SourceMissingError`` when the directory does not exist,
     ``PathOutsideRootError`` when it lies outside the root without
-    ``allow_out_of_repo``, and the promoter's validation/apply errors.
+    ``allow_out_of_repo``, ``OutputWriteError`` when the receipt cannot be
+    written, and the promoter's validation/apply errors (``PromoteApplyError``
+    carries ``reason`` for the lock and recovery refusals).
     """
     proposal_path = Path(proposal_dir)
     if not proposal_path.exists():
         raise SourceMissingError(f"proposals dir not found: {proposal_path}")
     _require_within_root("proposal dir", proposal_path, paths, allow_out_of_repo, ALLOW_OUT_OF_REPO_PROMOTE_HINT)
-    return _promote(proposals_dir=proposal_path, paths=paths, dry_run=dry_run)
+    if lock_timeout is not None:
+        paths = replace(paths, lock_timeout=float(lock_timeout))
+    return _promote(proposals_dir=proposal_path, paths=paths, dry_run=dry_run, entry_point=entry_point)
 
 
 # ── init ──────────────────────────────────────────────────────
@@ -624,7 +666,9 @@ def query(
     today = datetime.date.today().isoformat()
     out = (output_dir if output_dir is not None else paths.proposals_dir) / f"{today}-{_FILE_BACK_SLUG}"
     try:
-        written = write_patch_set_dir(patch, out, wiki_dir=paths.wiki_dir)
+        written = write_patch_set_dir(
+            patch, out, wiki_dir=paths.wiki_dir, on_collision=COLLISION_SUFFIX, lock_timeout=paths.lock_timeout
+        )
     except OSError as exc:
         raise OutputWriteError(f"could not write file-back dir: {exc}") from exc
     return QueryResult(answer=answer, patch=patch, file_back_dir=written)

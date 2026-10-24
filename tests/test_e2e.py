@@ -1521,11 +1521,11 @@ class TestE2EPromoteAtomicity(unittest.TestCase):
             log_pre = (wiki / "log.md").read_text()
             index_pre = (wiki / "index.md").read_text()
 
-            # Patch Path.write_text to raise OSError on the SECOND
-            # call. Counts only writes inside _commit_stage_to_wiki
-            # (the staging phase already wrote to a tempdir before
-            # the patch took effect via this counter).
-            real_write = Path.write_text
+            # Patch Path.write_bytes to raise OSError on the SECOND
+            # call. Counts only writes inside the commit (_apply_planned):
+            # the staging phase writes to a tempdir, the receipt to the
+            # proposal directory.
+            real_write = Path.write_bytes
             calls = {"n": 0}
 
             def flaky_write(self, *args, **kwargs):
@@ -1536,7 +1536,7 @@ class TestE2EPromoteAtomicity(unittest.TestCase):
                         raise OSError("simulated mid-commit failure")
                 return real_write(self, *args, **kwargs)
 
-            with _patch.object(Path, "write_text", flaky_write), self.assertRaises(PromoteApplyError) as ctx:
+            with _patch.object(Path, "write_bytes", flaky_write), self.assertRaises(PromoteApplyError) as ctx:
                 promote(prop, WikiPaths.for_root(tmp_root))
 
             self.assertIn("simulated mid-commit failure", str(ctx.exception))
@@ -1560,7 +1560,8 @@ class TestE2EPromoteAtomicity(unittest.TestCase):
         Whatever the exception, the wiki ends up in its pre-commit state: the half-written
         file is restored (or removed if it was new) along with every earlier write, and
         the proposals dir is not archived. An Exception surfaces as PromoteApplyError;
-        KeyboardInterrupt propagates unchanged after the rollback."""
+        KeyboardInterrupt propagates unchanged after the rollback. The ``committing``
+        receipt stays behind as the recovery marker (0.6.0)."""
         from unittest.mock import patch as _patch
 
         from wiki_studio.errors import PromoteApplyError
@@ -1574,7 +1575,7 @@ class TestE2EPromoteAtomicity(unittest.TestCase):
             ("log.md", ValueError("boom"), PromoteApplyError),
             ("index.md", KeyboardInterrupt(), KeyboardInterrupt),
         ]
-        real_write = Path.write_text
+        real_write = Path.write_bytes
         for failing, exc, expected in cases:
             with self.subTest(failing=failing, exc=type(exc).__name__), tempfile.TemporaryDirectory() as tmp:
                 tmp_root = Path(tmp)
@@ -1594,7 +1595,7 @@ class TestE2EPromoteAtomicity(unittest.TestCase):
                         raise _exc
                     return real_write(path, data, *args, **kwargs)
 
-                with _patch.object(Path, "write_text", half_write_then_raise), self.assertRaises(expected) as ctx:
+                with _patch.object(Path, "write_bytes", half_write_then_raise), self.assertRaises(expected) as ctx:
                     promote(prop, WikiPaths.for_root(tmp_root))
 
                 self.assertTrue(hit, f"{failing} was never written")
@@ -1604,6 +1605,7 @@ class TestE2EPromoteAtomicity(unittest.TestCase):
                 tree_post = {q.relative_to(wiki): q.is_dir() or q.read_bytes() for q in wiki.rglob("*")}
                 self.assertEqual(tree_post, tree_pre, "wiki tree (files, bytes and directories) not restored")
                 self.assertTrue(prop.exists())
+                self.assertTrue((prop / "receipt.json").is_file(), "the committing receipt is the recovery marker")
                 if expected is PromoteApplyError:
                     self.assertIn(f"live wiki write failed for {failing}", str(ctx.exception))
                     self.assertIn(f"including {failing}", str(ctx.exception))

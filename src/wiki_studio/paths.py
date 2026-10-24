@@ -31,6 +31,10 @@ if TYPE_CHECKING:
 ENV_ROOT = "WIKI_STUDIO_ROOT"
 ENV_WIKI_DIR = "WIKI_STUDIO_WIKI_DIR"
 ENV_PROPOSALS_DIR = "WIKI_STUDIO_PROPOSALS_DIR"
+ENV_LOCK_TIMEOUT = "WIKI_STUDIO_LOCK_TIMEOUT"
+
+# Seconds a writer waits for the wiki lock (``--lock-timeout`` / ``WIKI_STUDIO_LOCK_TIMEOUT``).
+DEFAULT_LOCK_TIMEOUT = 30.0
 
 # Defaults, relative to the root. These names are the documented layout and
 # must not be spelled anywhere else in the package.
@@ -105,6 +109,9 @@ class WikiPaths:
         The append-only ingest log, ``<wiki_dir>/.audit/ingest-log.md``.
     schema_dir : Path
         A project-local copy of the schema documents; used only when it exists.
+    lock_timeout : float
+        Seconds a writer waits for the wiki lock (``wikilock.WikiLock``) before
+        exit 10 ``lock_timeout``.
     """
 
     root: Path
@@ -113,6 +120,7 @@ class WikiPaths:
     query_log: Path
     audit_log: Path
     schema_dir: Path
+    lock_timeout: float = DEFAULT_LOCK_TIMEOUT
 
     @classmethod
     def for_root(
@@ -121,6 +129,7 @@ class WikiPaths:
         *,
         wiki_dir: Path | str | None = None,
         proposals_dir: Path | str | None = None,
+        lock_timeout: float | None = None,
     ) -> WikiPaths:
         """Build the layout under ``root`` with the defaults, optionally overriding the two directories.
 
@@ -137,6 +146,7 @@ class WikiPaths:
             query_log=root_path / DEFAULT_QUERY_LOG,
             audit_log=wiki / AUDIT_DIR_NAME / AUDIT_LOG_NAME,
             schema_dir=wiki / SCHEMA_DIR_NAME,
+            lock_timeout=DEFAULT_LOCK_TIMEOUT if lock_timeout is None else float(lock_timeout),
         )
 
     @classmethod
@@ -146,13 +156,15 @@ class WikiPaths:
         root: str | os.PathLike[str] | None = None,
         wiki_dir: str | os.PathLike[str] | None = None,
         proposals_dir: str | os.PathLike[str] | None = None,
+        lock_timeout: float | None = None,
         env: Mapping[str, str] | None = None,
         cwd: Path | None = None,
     ) -> WikiPaths:
         """Resolve the layout from flags, then ``WIKI_STUDIO_*`` variables, then defaults.
 
         Explicit values (flag or variable) that are relative are taken relative
-        to ``cwd``; defaults are relative to the resolved root.
+        to ``cwd``; defaults are relative to the resolved root. A lock timeout
+        that is not a non-negative number raises ``ValueError``.
         """
         environ: Mapping[str, str] = os.environ if env is None else env
         base = Path.cwd() if cwd is None else Path(cwd)
@@ -166,7 +178,18 @@ class WikiPaths:
         proposals_value = proposals_dir or environ.get(ENV_PROPOSALS_DIR)
         proposals_path = _absolute(proposals_value, base) if proposals_value else None
 
-        return cls.for_root(root_path, wiki_dir=wiki_path, proposals_dir=proposals_path)
+        timeout = lock_timeout
+        if timeout is None:
+            timeout_value = environ.get(ENV_LOCK_TIMEOUT)
+            if timeout_value:
+                try:
+                    timeout = float(timeout_value)
+                except ValueError as exc:
+                    raise ValueError(f"{ENV_LOCK_TIMEOUT} must be a number of seconds, got {timeout_value!r}") from exc
+        if timeout is not None and not timeout >= 0:  # also rejects NaN
+            raise ValueError(f"lock timeout must be a non-negative number of seconds, got {timeout!r}")
+
+        return cls.for_root(root_path, wiki_dir=wiki_path, proposals_dir=proposals_path, lock_timeout=timeout)
 
     def with_wiki_dir(self, wiki_dir: Path) -> WikiPaths:
         """The same layout with the wiki (and its audit log and schema dir) at ``wiki_dir``.
