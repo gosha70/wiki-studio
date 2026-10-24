@@ -66,9 +66,12 @@ Every file and line the spec relies on was checked on `main` at 41cfe54 on
   software identity go in `receipt.json`. The submission identity is the full
   payload digest over every byte promote consumes: plan plus every file under
   `preview/`, hidden files included, with pointers outside `preview/` refused.
-  `audit.proposal_hash` is widened to that rule rather than reused as is,
-  because it skips dot-prefixed files and anything outside `preview/` that the
-  loader still accepts, so a preview could change under an unchanged hash.
+  `audit.proposal_hash` is a published recipe (`audit-rules.md`) that skips
+  dot-prefixed files and anything outside `preview/` that the loader still
+  accepts, so a preview could change under an unchanged hash; rather than
+  widen it silently, 0.6.0 adds recipe 2 (`payload_digest`), records the
+  recipe in the receipt and as an optional key on new ingest-log records, and
+  keeps recipe 1 for verifying older records.
   Promote captures the payload once under the lock and parses, hashes, stages
   and archives from that capture (the archive is written from the captured
   bytes and the original removed only when it still matches), and the
