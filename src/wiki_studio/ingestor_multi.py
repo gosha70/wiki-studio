@@ -43,7 +43,7 @@ from .proposal import (
     validate_patch_set,
 )
 from .wiki_state import load_wiki_state
-from .wikilock import WikiLock
+from .wikilock import WikiLock, lock_path_for
 
 if TYPE_CHECKING:
     from .ingestor import Backend
@@ -211,6 +211,7 @@ def write_patch_set_dir(
     *,
     on_collision: CollisionPolicy = COLLISION_ERROR,
     lock_timeout: float | None = None,
+    lock: WikiLock | None = None,
 ) -> Path:
     """Write a WikiPatchSet to disk under output_dir.
 
@@ -237,17 +238,24 @@ def write_patch_set_dir(
     means: ``"error"`` (the default, for caller-selected names) lets the
     ``FileExistsError`` propagate; ``"suffix"`` (generated names) creates the
     next free ``<name>-2``, ``-3``, ... instead. ``lock_timeout`` defaults to
-    the package default (``paths.DEFAULT_LOCK_TIMEOUT``).
+    the package default (``paths.DEFAULT_LOCK_TIMEOUT``). A caller that
+    already holds the wiki lock passes it as ``lock`` (it must be held and
+    be this wiki's), so one lock covers the proposal files and whatever the
+    caller publishes next (snapshot, audit record); no second lock is taken.
 
     Returns the absolute path of the directory actually created.
     Raises OSError if the filesystem operations fail; the caller maps
     to OutputWriteError exit code 6.
     """
     timeout = DEFAULT_LOCK_TIMEOUT if lock_timeout is None else lock_timeout
-    lock: contextlib.AbstractContextManager[object] = (
-        WikiLock(wiki_dir, timeout) if wiki_dir is not None else contextlib.nullcontext()
-    )
-    with lock:
+    held: contextlib.AbstractContextManager[object]
+    if lock is not None:
+        if wiki_dir is None or not lock.held or lock.lock_path != lock_path_for(wiki_dir):
+            raise ValueError("write_patch_set_dir: `lock` must be the held WikiLock of `wiki_dir`")
+        held = contextlib.nullcontext()
+    else:
+        held = WikiLock(wiki_dir, timeout) if wiki_dir is not None else contextlib.nullcontext()
+    with held:
         output_dir = _create_patch_set_dir(output_dir, on_collision)
         return _write_patch_set_files(patch, output_dir, wiki_dir)
 

@@ -49,6 +49,7 @@ from __future__ import annotations
 import contextlib
 import datetime
 import difflib
+import errno
 import hashlib
 import json
 import os
@@ -73,7 +74,7 @@ from .errors import (
     PromoteValidationError,
 )
 from .lint import lint_wiki
-from .paths import APPLIED_DIR_NAME, AUDIT_DIR_NAME, ContainmentError, contain
+from .paths import APPLIED_DIR_NAME, AUDIT_DIR_NAME, ContainmentError, contain, is_absolute_path
 from .proposal import (
     PageEdit,
     WikiPatchSet,
@@ -198,6 +199,29 @@ class _Capture:
     @property
     def manifest(self) -> list[dict[str, str]]:
         return [{"path": rel, "sha256": sha} for rel, sha in sorted(self.shas.items())]
+
+
+def _applied_root(paths: WikiPaths) -> Path:
+    """``.applied/`` as a real directory inside the proposal root (FR-012).
+
+    The archive root is where temporary archives are written, published by
+    rename, and leftovers removed, so it is bound to the proposal boundary
+    before any of that: a symlinked ``.applied`` (or one that resolves
+    outside the proposal root) is refused rather than written through.
+    """
+    root = paths.proposals_dir
+    try:
+        real = contain(APPLIED_DIR_NAME, root)
+    except ContainmentError as exc:
+        raise PromoteValidationError(
+            f"{root / APPLIED_DIR_NAME} is not a real directory inside the proposal root ({exc}); refusing to archive"
+        ) from exc
+    if real.exists() and not real.is_dir():
+        raise PromoteValidationError(f"{real} exists and is not a directory; refusing to archive")
+    # Verified: no symlink on the way and inside the root, so the caller's own
+    # spelling reaches the same directory; it is kept so ``archived_dir`` and
+    # every consumer path stay as 0.4.0 wrote them.
+    return paths.applied_dir
 
 
 def _proposal_file(rel: str, proposals_dir: Path) -> Path:
@@ -824,15 +848,31 @@ def _apply_planned(planned: list[_PlannedWrite], paths: WikiPaths) -> list[str]:
 # ── receipt.json ──────────────────────────────────────────────
 
 
+# errno values that mean "this filesystem does not fsync directories", not "the write was lost".
+_FSYNC_DIR_UNSUPPORTED = frozenset(
+    code for code in (getattr(errno, name, None) for name in ("EINVAL", "ENOTSUP", "EOPNOTSUPP", "EBADF")) if code
+)
+
+
 def _fsync_dir(path: Path) -> None:
-    """Flush a directory's entries to disk where the platform allows opening a directory."""
+    """Flush a directory's entries to disk.
+
+    A platform that cannot open a directory at all (Windows raises
+    ``PermissionError``) is skipped, and so is a filesystem that refuses to
+    fsync one (``EINVAL``, ``ENOTSUP``, ``EBADF``). Any other failure, such
+    as ``EIO`` or ``ENOSPC``, propagates: a receipt or an archive rename that
+    was not durably committed must not let the promotion continue (FR-003,
+    FR-004).
+    """
     try:
         fd = os.open(path, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
-    except OSError:
+    except PermissionError:
         return
     try:
-        with contextlib.suppress(OSError):
-            os.fsync(fd)
+        os.fsync(fd)
+    except OSError as exc:
+        if exc.errno not in _FSYNC_DIR_UNSUPPORTED:
+            raise
     finally:
         os.close(fd)
 
@@ -861,6 +901,19 @@ def _discard_receipt_tmp(proposals_dir: Path) -> None:
     """Remove a temporary receipt a failed earlier write left behind (never part of any manifest)."""
     with contextlib.suppress(OSError):
         (proposals_dir / _RECEIPT_TMP_NAME).unlink()
+
+
+def _is_safe_relative_path(value: object) -> bool:
+    """True for a normalised relative POSIX path with no empty, ``.`` or ``..`` component and no backslash.
+
+    Receipt paths are persisted recovery input, so they are validated at load
+    time, and :func:`contain` checks them again against the wiki boundary
+    before every recovery read.
+    """
+    if not isinstance(value, str) or not value or "\\" in value or is_absolute_path(value):
+        return False
+    parts = value.split("/")
+    return all(part not in ("", ".", "..") for part in parts)
 
 
 def _corrupt_receipt(receipt_path: Path, why: str) -> PromoteApplyError:
@@ -893,7 +946,8 @@ def _load_receipt(proposals_dir: Path) -> dict[str, Any] | None:
         raise _corrupt_receipt(receipt_path, "missing or malformed submission_digest")
     manifest = data.get("submission_manifest")
     if not isinstance(manifest, list) or not all(
-        isinstance(e, dict) and isinstance(e.get("path"), str) and _is_hex_digest(e.get("sha256")) for e in manifest
+        isinstance(e, dict) and _is_safe_relative_path(e.get("path")) and _is_hex_digest(e.get("sha256"))
+        for e in manifest
     ):
         raise _corrupt_receipt(receipt_path, "missing or malformed submission_manifest")
     if not isinstance(data.get("wiki_target"), dict):
@@ -901,7 +955,7 @@ def _load_receipt(proposals_dir: Path) -> dict[str, Any] | None:
     writes = data.get("planned_writes")
     if not isinstance(writes, list) or not all(
         isinstance(w, dict)
-        and isinstance(w.get("path"), str)
+        and _is_safe_relative_path(w.get("path"))
         and _is_hex_digest(w.get("post_sha256"))
         and (w.get("pre_sha256") is None or _is_hex_digest(w.get("pre_sha256")))
         for w in writes
@@ -1098,7 +1152,7 @@ def _archive_submission(proposals_dir: Path, paths: WikiPaths, archive_files: Ma
     consumer never sees a partial archive at an applied name. ``OSError``
     propagates.
     """
-    applied_root = paths.applied_dir
+    applied_root = _applied_root(paths)
     applied_root.mkdir(parents=True, exist_ok=True)
     name = proposals_dir.name
     _remove_leftover_tmp(applied_root, name)
@@ -1265,7 +1319,7 @@ def _finish_committed(proposals_dir: Path, paths: WikiPaths, receipt: dict[str, 
     digest = str(receipt["submission_digest"])
     manifest = {str(e["path"]): str(e["sha256"]) for e in receipt["submission_manifest"]}
     receipt_path = proposals_dir / RECEIPT_FILE_NAME
-    applied_root = paths.applied_dir
+    applied_root = _applied_root(paths)
     _remove_leftover_tmp(applied_root, proposals_dir.name)
     archive = _find_complete_archive(applied_root, proposals_dir.name, digest, manifest)
     if archive is None:
@@ -1311,18 +1365,24 @@ def _classify_committing(receipt: dict[str, Any], paths: WikiPaths, receipt_path
     all_pre = all_post = True
     report: list[str] = []
     for write in receipt["planned_writes"]:
-        live = paths.wiki_dir / str(write["path"])
-        # A tracked path that is not a regular file, or cannot be read, matches
-        # neither state: the outcome is uncertain, not "absent".
+        rel = str(write["path"])
+        # A tracked path that leaves the wiki boundary, is not a regular file,
+        # or cannot be read, matches neither state: the outcome is uncertain,
+        # not "absent", and nothing outside the wiki is ever read.
         live_sha: str | None = None
         problem: str | None = None
         try:
-            if live.is_symlink() or (live.exists() and not live.is_file()):
-                problem = "not a regular file"
-            elif live.is_file():
-                live_sha = _sha256(live.read_bytes())
-        except OSError as exc:
-            problem = f"unreadable: {exc}"
+            live = contain(rel, paths.wiki_dir)
+        except ContainmentError as exc:
+            problem = f"outside the wiki boundary: {exc}"
+        else:
+            try:
+                if live.exists() and not live.is_file():
+                    problem = "not a regular file"
+                elif live.is_file():
+                    live_sha = _sha256(live.read_bytes())
+            except OSError as exc:
+                problem = f"unreadable: {exc}"
         at_pre = problem is None and live_sha == write.get("pre_sha256")
         at_post = problem is None and live_sha == write["post_sha256"]
         all_pre &= at_pre
@@ -1397,6 +1457,9 @@ def _promote_locked(
     after releasing the lock.
     """
     _discard_receipt_tmp(proposals_dir)
+    # The archive root is bound to the proposal boundary before any write: a
+    # symlinked .applied/ would otherwise receive the archive after the commit.
+    _applied_root(paths)
     receipt = _load_receipt(proposals_dir)
     if receipt is not None:
         if dry_run:

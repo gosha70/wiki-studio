@@ -15,18 +15,21 @@
 
 from __future__ import annotations
 
+import contextlib
 import datetime
 import hashlib
 import json
+import os
 import re
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .audit_lint import INGEST_LOG_MARKER
 from .errors import OutputWriteError, PromoteValidationError
+from .paths import ContainmentError, contain
 from .proposal import IngestLogRecord, IngestProposal, WikiPatchSet
 from .schema import PAGE_TYPE_DIRS, PROMOTABLE_PAGE_TYPES
-from .wikilock import WikiLock
+from .wikilock import WikiLock, lock_path_for
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -304,7 +307,96 @@ def record_to_json_line(record: IngestLogRecord) -> str:
     return json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
 
 
-def append_ingest_log(paths: WikiPaths, record: IngestLogRecord) -> None:
+def _refuse_symlinks(log_path: Path, wiki_dir: Path) -> None:
+    """The audit boundary (FR-012): no symlink on the way from the wiki to the log file, and no escape."""
+    try:
+        rel = log_path.relative_to(wiki_dir)
+    except ValueError:
+        rel = None
+    if rel is not None:
+        try:
+            contain(rel, wiki_dir)
+        except ContainmentError as exc:
+            raise OutputWriteError(
+                f"audit log {log_path} is outside the wiki boundary ({exc}); refusing to write"
+            ) from exc
+        return
+    probe = log_path
+    while True:
+        if probe.is_symlink():
+            raise OutputWriteError(f"audit log path {probe} is a symlink; refusing to write through it")
+        if probe.parent == probe:
+            return
+        probe = probe.parent
+
+
+_O_NOFOLLOW = getattr(os, "O_NOFOLLOW", 0)
+_O_DIRECTORY = getattr(os, "O_DIRECTORY", 0)
+_DIR_FD_OPENS = os.open in os.supports_dir_fd and os.mkdir in os.supports_dir_fd
+
+
+def _open_log_fd(paths: WikiPaths) -> int:
+    """Open the ingest log for appending, bound to the verified wiki directory.
+
+    On POSIX every component from the resolved wiki directory down is opened
+    relative to the previous descriptor with ``O_NOFOLLOW`` (``.audit/`` is
+    created the same way when absent), so a parent swapped for a symlink
+    between the containment check and the open is refused rather than
+    written through. Where ``dir_fd`` is unsupported (Windows) the open is
+    by path with ``O_NOFOLLOW`` on the final component, the documented
+    weaker binding. The descriptor is read-write so the tail can be
+    inspected through it; ``O_APPEND`` keeps every write at the end.
+    """
+    log_path = paths.audit_log
+    file_flags = os.O_RDWR | os.O_APPEND | os.O_CREAT | _O_NOFOLLOW
+    try:
+        rel = log_path.relative_to(paths.wiki_dir)
+    except ValueError:
+        rel = None
+    if rel is None or not _DIR_FD_OPENS:
+        # The weaker, path-based binding: create the parent under the lock,
+        # re-run the containment check so a symlinked parent is still refused,
+        # then open with O_NOFOLLOW on the final component.
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        _refuse_symlinks(log_path, paths.wiki_dir)
+        return os.open(log_path, file_flags, 0o644)
+    dir_flags = os.O_RDONLY | _O_DIRECTORY | _O_NOFOLLOW
+    # The wiki directory is the boundary; it is created when absent, as the
+    # path-based append always did, and opened without following a symlink.
+    paths.wiki_dir.mkdir(parents=True, exist_ok=True)
+    fd = os.open(paths.wiki_dir.resolve(), dir_flags)
+    try:
+        for part in rel.parts[:-1]:
+            try:
+                nxt = os.open(part, dir_flags, dir_fd=fd)
+            except FileNotFoundError:
+                os.mkdir(part, 0o755, dir_fd=fd)
+                nxt = os.open(part, dir_flags, dir_fd=fd)
+            os.close(fd)
+            fd = nxt
+        return os.open(rel.parts[-1], file_flags, 0o644, dir_fd=fd)
+    finally:
+        os.close(fd)
+
+
+def _write_all(fd: int, payload: bytes) -> None:
+    """Write every byte of ``payload``; ``os.write`` may return short on a regular file under pressure."""
+    view = memoryview(payload)
+    while view:
+        written = os.write(fd, view)
+        view = view[written:]
+
+
+def _tail_ends_with_newline(fd: int) -> bool:
+    """True when the file behind ``fd`` is empty or its last byte is a newline (reads one byte)."""
+    size = os.fstat(fd).st_size
+    if size == 0:
+        return True
+    os.lseek(fd, size - 1, os.SEEK_SET)
+    return os.read(fd, 1) == b"\n"
+
+
+def append_ingest_log(paths: WikiPaths, record: IngestLogRecord, *, lock: WikiLock | None = None) -> None:
     """Append one NDJSON line to the ingest log (``paths.audit_log``).
 
     Creates the file with the marker preamble if it does not exist. The read
@@ -320,22 +412,31 @@ def append_ingest_log(paths: WikiPaths, record: IngestLogRecord) -> None:
     """
     log_path = paths.audit_log
     line = record_to_json_line(record)
+    if lock is not None:
+        if not lock.held or lock.lock_path != lock_path_for(paths.wiki_dir):
+            raise ValueError("append_ingest_log: `lock` must be the held WikiLock of this wiki")
+        held: contextlib.AbstractContextManager[object] = contextlib.nullcontext()
+    else:
+        held = WikiLock(paths.wiki_dir, paths.lock_timeout)
     try:
-        with WikiLock(paths.wiki_dir, paths.lock_timeout):
-            log_path.parent.mkdir(parents=True, exist_ok=True)
-
-            if not log_path.exists():
-                # First write: create with marker + blank line.
-                content = INGEST_LOG_MARKER + "\n\n" + line + "\n"
-                log_path.write_text(content, encoding="utf-8")
-                return
-
-            # Ensure the file ends with a newline before we append: only the
-            # last byte is read, not the whole log.
-            prefix = b"" if _ends_with_newline(log_path) else b"\n"
-            # Binary append in one write call: no re-encoding of the existing
-            # content, and the newline fix and the line are never split.
-            with log_path.open("ab") as handle:
-                handle.write(prefix + (line + "\n").encode("utf-8"))
+        with held:
+            # Under the lock: the containment check refuses a symlinked .audit/
+            # or ingest-log.md (FR-012), and the open below is bound to the
+            # verified directories, so a swap after the check is refused too.
+            _refuse_symlinks(log_path, paths.wiki_dir)
+            fd = _open_log_fd(paths)
+            try:
+                if os.fstat(fd).st_size == 0:
+                    # First write: create with marker + blank line.
+                    payload = (INGEST_LOG_MARKER + "\n\n" + line + "\n").encode("utf-8")
+                else:
+                    # Ensure the file ends with a newline before we append: only
+                    # the last byte is read, through the same descriptor. One
+                    # payload: the newline fix and the line are never split.
+                    prefix = b"" if _tail_ends_with_newline(fd) else b"\n"
+                    payload = prefix + (line + "\n").encode("utf-8")
+                _write_all(fd, payload)
+            finally:
+                os.close(fd)
     except OSError as exc:
         raise OutputWriteError(f"audit log append failed for {log_path}: {exc}") from exc

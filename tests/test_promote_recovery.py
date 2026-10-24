@@ -8,6 +8,7 @@ functions), never through an environment variable in shipped code.
 
 from __future__ import annotations
 
+import errno
 import hashlib
 import json
 import os
@@ -808,6 +809,82 @@ class TestDigestRecipes(_LayoutCase):
             [e["path"] for e in json.loads(archived_plan.read_text(encoding="utf-8"))["edits"]][0],
             "incidents/cli-fixture.md",
         )
+
+
+class TestDurabilityFailures(_LayoutCase):
+    """PR #41 review: a directory fsync that fails with a real I/O error stops the promotion (FR-003, FR-004)."""
+
+    def test_io_errors_propagate_and_unsupported_filesystems_are_skipped(self) -> None:
+        directory = self.root / "fsync-probe"
+        directory.mkdir()
+        with (
+            patch("wiki_studio.promoter.os.fsync", side_effect=OSError(errno.EIO, "I/O error")),
+            self.assertRaises(OSError),
+        ):
+            promoter._fsync_dir(directory)
+        for code in (errno.EINVAL, getattr(errno, "ENOTSUP", errno.EINVAL)):
+            with patch("wiki_studio.promoter.os.fsync", side_effect=OSError(code, "not supported")):
+                promoter._fsync_dir(directory)
+
+    def test_a_lost_receipt_fsync_commits_nothing(self) -> None:
+        prop = _proposals_dir(self.root)
+        before = _tree(self.wiki)
+        with (
+            patch("wiki_studio.promoter.os.fsync", side_effect=OSError(errno.ENOSPC, "no space left on device")),
+            self.assertRaises(OutputWriteError),
+        ):
+            api.promote(prop, self.paths)
+        self.assertEqual(_tree(self.wiki), before)
+        self.assertFalse((self.paths.applied_dir / prop.name).exists())
+
+
+class TestReceiptPathContainment(_LayoutCase):
+    """PR #41 review: a receipt's tracked paths are validated at load and contained before every recovery read."""
+
+    def _forge(self, prop: Path, path: str, post: str) -> None:
+        receipt = _receipt(prop)
+        receipt["planned_writes"][0]["path"] = path
+        receipt["planned_writes"][0]["post_sha256"] = post
+        (prop / RECEIPT).write_text(json.dumps(receipt), encoding="utf-8")
+
+    def test_a_tracked_path_that_leaves_the_wiki_is_never_read(self) -> None:
+        outside_file = self.root / "outside.txt"
+        outside_file.write_bytes(b"outside bytes\n")
+        prop = _proposals_dir(self.root)
+        self.interrupt_after_committing_receipt(prop)
+        self._forge(prop, "../../outside.txt", _sha(b"outside bytes\n"))
+        hashed: list[bytes] = []
+        real = promoter._sha256
+
+        def spy(data: bytes) -> str:
+            hashed.append(data)
+            return real(data)
+
+        before = _tree(self.wiki)
+        with patch("wiki_studio.promoter._sha256", spy), self.assertRaises(PromoteApplyError) as ctx:
+            api.promote(prop, self.paths)
+        self.assertEqual(ctx.exception.reason, REASON_UNCERTAIN_OUTCOME)
+        self.assertNotIn(b"outside bytes\n", hashed, "the outside file was never read")
+        self.assertEqual(_tree(self.wiki), before)
+        self.assertTrue((prop / RECEIPT).is_file())
+
+    def test_absolute_and_symlinked_tracked_paths_are_refused(self) -> None:
+        outside_file = self.root / "outside.txt"
+        outside_file.write_bytes(b"outside bytes\n")
+        prop = _proposals_dir(self.root)
+        self.interrupt_after_committing_receipt(prop)
+        self._forge(prop, str(outside_file), _sha(b"outside bytes\n"))
+        with self.assertRaises(PromoteApplyError) as absolute:
+            api.promote(prop, self.paths)
+        self.assertEqual(absolute.exception.reason, REASON_UNCERTAIN_OUTCOME)
+        # A symlink planted at a well-formed tracked path matches neither state and is not followed.
+        self._forge(prop, "incidents/link.md", _sha(b"outside bytes\n"))
+        (self.wiki / "incidents").mkdir(exist_ok=True)
+        (self.wiki / "incidents" / "link.md").symlink_to(outside_file)
+        with self.assertRaises(PromoteApplyError) as linked:
+            api.promote(prop, self.paths)
+        self.assertEqual(linked.exception.reason, REASON_UNCERTAIN_OUTCOME)
+        self.assertIn("incidents/link.md: neither", str(linked.exception))
 
 
 if __name__ == "__main__":

@@ -23,6 +23,9 @@ import re
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from .errors import ContractViolationError
+from .paths import ContainmentError, contain
+
 if TYPE_CHECKING:
     from pathlib import Path
 
@@ -149,6 +152,24 @@ def _read_text_or_empty(path: Path) -> str:
         return ""
 
 
+def _contained_read_or_empty(wiki_dir: Path, rel: str) -> str:
+    """``rel`` read inside the wiki boundary (FR-012); a symlinked or escaping file is refused, not read."""
+    try:
+        real = contain(rel, wiki_dir)
+    except ContainmentError as exc:
+        raise ContractViolationError(f"{rel} in {wiki_dir} is outside the wiki boundary ({exc})") from exc
+    return _read_text_or_empty(real)
+
+
+def _inside_wiki(page: Path, wiki_dir: Path) -> bool:
+    """True when ``page`` (under ``wiki_dir``) reaches no symlink and stays inside the wiki."""
+    try:
+        contain(page.relative_to(wiki_dir), wiki_dir)
+    except (ContainmentError, ValueError):
+        return False
+    return True
+
+
 def _list_wiki_pages(wiki_dir: Path) -> list[Path]:
     """Return all candidate wiki .md files (excludes schema/, scripts/, .audit/, index, log, overview)."""
     if not wiki_dir.is_dir():
@@ -161,6 +182,11 @@ def _list_wiki_pages(wiki_dir: Path) -> list[Path]:
         if rel_parts and rel_parts[0] in excluded_dirs:
             continue
         if p.stem in excluded_stems and p.parent == wiki_dir:
+            continue
+        # The wiki boundary (FR-012): a symlinked page, or one under a symlinked
+        # directory, is never a candidate, so no file outside the wiki reaches
+        # the prompt.
+        if not _inside_wiki(p, wiki_dir):
             continue
         pages.append(p)
     return pages
@@ -225,8 +251,10 @@ def load_wiki_state(
         bytes (FR-007). Returns empty state for missing wiki.
     """
     wiki_dir = paths.wiki_dir
-    index_md = _read_text_or_empty(wiki_dir / "index.md")
-    log_md = _read_text_or_empty(wiki_dir / "log.md")
+    if not wiki_dir.is_dir():
+        return WikiState(index_md="", log_md="", candidates={})
+    index_md = _contained_read_or_empty(wiki_dir, "index.md")
+    log_md = _contained_read_or_empty(wiki_dir, "log.md")
 
     source_tokens = _tokenise(source_content) | _tokenise(str(source_path))
 

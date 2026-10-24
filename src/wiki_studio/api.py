@@ -39,6 +39,7 @@ import os
 import posixpath
 import re
 import shutil
+import stat
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -81,6 +82,7 @@ from .proposal import (
 from .prose_lint import run_prose_lint
 from .querier import DEFAULT_MAX_QUERY_PAGES, DefaultQuerier, _select_query_candidates
 from .wiki_state import read_page_content
+from .wikilock import WikiLock
 
 if TYPE_CHECKING:
     from .health_lint import HealthLintResult
@@ -251,14 +253,104 @@ def _proposal_filename(proposal: IngestProposal) -> str:
     return f"{today}-{base}.md"
 
 
-def _write_proposal_file(proposal: IngestProposal, request: IngestRequest, backend_name: str, output_dir: Path) -> Path:
-    proposal_path = output_dir / _proposal_filename(proposal)
+_LEGACY_BACKUP_ATTEMPTS = 100
+
+
+def _legacy_slot(output_dir: Path, name: str) -> Path | None:
+    """Make the deterministic legacy path ``output_dir/name`` free to create, moving a previous file aside.
+
+    The path must pass the proposal boundary (no symlink, inside
+    ``output_dir``); a previous proposal is renamed to a backup sibling
+    atomically, never read and never followed, so its bytes survive until
+    publication succeeds. Returns the backup path, or None when nothing was
+    there.
+    """
+    target = output_dir / name
     try:
-        output_dir.mkdir(parents=True, exist_ok=True)
-        proposal_path.write_text(render_proposal_file(proposal, request, backend_name), encoding="utf-8")
+        contain(name, output_dir)
+    except ContainmentError as exc:
+        raise OutputWriteError(f"legacy proposal path {target} is outside the proposal boundary ({exc})") from exc
+    try:
+        st = os.lstat(target)
+    except FileNotFoundError:
+        return None
+    if not stat.S_ISREG(st.st_mode):
+        # Only a regular file is a previous proposal; a directory or any other
+        # entry at this name is refused before anything is moved or published.
+        raise OutputWriteError(f"{target} exists and is not a regular file; refusing to replace it")
+    # A unique backup, reserved exclusively: an existing backup is a surviving
+    # copy of an earlier proposal that a failed restoration left behind, and
+    # is never overwritten. The backup is a visible sibling so it is found.
+    for attempt in range(1, _LEGACY_BACKUP_ATTEMPTS + 1):
+        backup = target.with_name(f"{name}.bak-{os.getpid()}-{attempt}")
+        try:
+            os.link(target, backup)
+        except FileExistsError:
+            continue
+        except OSError:
+            # No hard links here (or a different filesystem rule): fall back
+            # to an exclusive create followed by a copy, still never over an
+            # existing backup.
+            fd = os.open(backup, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o644)
+            os.close(fd)
+            shutil.copy2(target, backup)
+        os.unlink(target)
+        return backup
+    raise OutputWriteError(
+        f"could not reserve a backup for {target}: {_LEGACY_BACKUP_ATTEMPTS} backups already exist beside it; "
+        "a .bak-* file beside a proposal is an earlier proposal a failed restoration left behind, "
+        "review and remove them first"
+    )
+
+
+def _write_proposal_file(proposal: IngestProposal, request: IngestRequest, backend_name: str, output_dir: Path) -> Path:
+    """Create the legacy proposal file exclusively (``O_EXCL``, never following a symlink)."""
+    proposal_path = output_dir / _proposal_filename(proposal)
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        fd = os.open(proposal_path, flags, 0o644)
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(render_proposal_file(proposal, request, backend_name))
     except OSError as exc:
         raise OutputWriteError(f"Could not write proposal file at {proposal_path}: {exc}") from exc
     return proposal_path.resolve()
+
+
+def _roll_back_legacy(proposal_path: Path, backup: Path | None, cause: BaseException) -> None:
+    """Undo a failed legacy publication: remove the file this call created and put the previous one back.
+
+    Every rollback failure is reported with the cause (the promoter's rollback
+    pattern); a failed restoration is never silent, because the previous
+    proposal's bytes are what the backup protects.
+    """
+    problems: list[str] = []
+    if backup is None:
+        try:
+            os.unlink(proposal_path)
+        except FileNotFoundError:
+            pass
+        except OSError as exc:
+            problems.append(f"removing {proposal_path} failed: {exc}")
+    else:
+        # The file at proposal_path is the one this call created exclusively; it
+        # is removed, then the backup takes its place by an atomic rename.
+        try:
+            os.unlink(proposal_path)
+        except FileNotFoundError:
+            pass
+        except OSError as exc:
+            problems.append(f"removing {proposal_path} failed: {exc}")
+        try:
+            os.replace(backup, proposal_path)
+        except OSError as exc:
+            problems.append(
+                f"restoring the previous proposal from {backup} over {proposal_path} failed: {exc}; "
+                f"the previous proposal's bytes are in {backup}"
+            )
+    if problems:
+        raise OutputWriteError(
+            f"legacy ingest failed ({cause}); rollback also raised: " + "; ".join(problems)
+        ) from cause
 
 
 def _write_ingest_snapshot(proposal_dir: Path) -> None:
@@ -353,19 +445,43 @@ def _ingest_legacy(
     if dry_run:
         proposal = replace(proposal, draft_markdown=None)
 
-    proposal_path = _write_proposal_file(proposal, request, backend_name, output_dir)
-    if not dry_run:
-        _write_ingest_snapshot(proposal_path.parent)
-    record = build_log_record(
-        source_file=request.source_path,
-        paths=paths,
-        backend_name=backend_name,
-        proposal_dir_path=proposal_path.parent,
-        allow_out_of_repo=allow_out_of_repo,
-        legacy_proposal=proposal,
-        dry_run=dry_run,
-    )
-    append_ingest_log(paths, record)
+    with WikiLock(paths.wiki_dir, paths.lock_timeout) as lock:
+        # The legacy name is deterministic: a previous proposal is moved aside
+        # atomically (never read, never followed) and restored if publication
+        # fails, so no caller ever loses it.
+        try:
+            output_dir.mkdir(parents=True, exist_ok=True)
+            backup = _legacy_slot(output_dir, _proposal_filename(proposal))
+        except OSError as exc:
+            raise OutputWriteError(f"could not prepare the proposal path in {output_dir}: {exc}") from exc
+        try:
+            proposal_path = _write_proposal_file(proposal, request, backend_name, output_dir)
+        except BaseException as exc:
+            _roll_back_legacy(output_dir / _proposal_filename(proposal), backup, exc)
+            raise
+        try:
+            if not dry_run:
+                _write_ingest_snapshot(proposal_path.parent)
+            record = build_log_record(
+                source_file=request.source_path,
+                paths=paths,
+                backend_name=backend_name,
+                proposal_dir_path=proposal_path.parent,
+                allow_out_of_repo=allow_out_of_repo,
+                legacy_proposal=proposal,
+                dry_run=dry_run,
+            )
+            append_ingest_log(paths, record, lock=lock)
+        except BaseException as exc:
+            # Same policy as the multi-page path, before the lock is released:
+            # the file this call created goes, the previous one comes back.
+            _roll_back_legacy(proposal_path, backup, exc)
+            raise
+        if backup is not None:
+            try:
+                os.unlink(backup)
+            except OSError as exc:
+                raise OutputWriteError(f"published, but the backup {backup} could not be removed: {exc}") from exc
     return IngestResult(
         proposal.disposition, proposal_path, edits, proposal.reason, dry_run, False, None, proposal, record
     )
@@ -390,30 +506,39 @@ def _ingest_multi(
 
     today = datetime.date.today().isoformat()
     output_dir = proposals_root / f"{today}-{request.source_path.stem or 'source'}"
-    try:
-        # A generated name: a second ingest of the same source on the same day
-        # lands in ``<name>-2`` rather than in a directory that may be mid-promotion.
-        written = write_patch_set_dir(
-            patch,
-            output_dir,
-            wiki_dir=paths.wiki_dir,
-            on_collision=COLLISION_SUFFIX,
-            lock_timeout=paths.lock_timeout,
-        )
-    except OSError as exc:
-        raise OutputWriteError(f"could not write patch-set dir at {output_dir}: {exc}") from exc
-    if not dry_run and patch.edits:
-        _write_ingest_snapshot(written)
-    record = build_log_record(
-        source_file=request.source_path,
-        paths=paths,
-        backend_name=backend_name,
-        proposal_dir_path=written,
-        allow_out_of_repo=allow_out_of_repo,
-        patch=patch,
-        dry_run=dry_run,
-    )
-    append_ingest_log(paths, record)
+    # One lock from the proposal files through the snapshot and the audit
+    # record: a concurrent promote never sees (and archives) a proposal that
+    # is still being published.
+    with WikiLock(paths.wiki_dir, paths.lock_timeout) as lock:
+        try:
+            # A generated name: a second ingest of the same source on the same day
+            # lands in ``<name>-2`` rather than in a directory that may be mid-promotion.
+            written = write_patch_set_dir(
+                patch, output_dir, wiki_dir=paths.wiki_dir, on_collision=COLLISION_SUFFIX, lock=lock
+            )
+        except OSError as exc:
+            raise OutputWriteError(f"could not write patch-set dir at {output_dir}: {exc}") from exc
+        try:
+            if not dry_run and patch.edits:
+                _write_ingest_snapshot(written)
+            record = build_log_record(
+                source_file=request.source_path,
+                paths=paths,
+                backend_name=backend_name,
+                proposal_dir_path=written,
+                allow_out_of_repo=allow_out_of_repo,
+                patch=patch,
+                dry_run=dry_run,
+            )
+            append_ingest_log(paths, record, lock=lock)
+        except BaseException as exc:
+            # The directory is ours (created exclusively above): a proposal whose
+            # snapshot or audit record failed is removed before the lock is
+            # released, so no concurrent promote can apply a half-published one.
+            shutil.rmtree(written, ignore_errors=True)
+            if isinstance(exc, OSError):
+                raise OutputWriteError(f"could not write patch-set dir at {output_dir}: {exc}") from exc
+            raise
     return IngestResult(disposition, written, edits, patch.rationale, dry_run, False, patch, None, record)
 
 
@@ -465,28 +590,34 @@ def propose(
         )
     output_dir = paths.proposals_dir / name
     proposals_dir_existed = paths.proposals_dir.is_dir()
-    try:
-        # Creating the directory (exclusively, under the wiki lock) is the
-        # collision check: a caller-selected name that exists is an error, and
-        # from here on the directory is ours to remove if a later write fails.
-        written = write_patch_set_dir(
-            patch, output_dir, wiki_dir=paths.wiki_dir, on_collision=COLLISION_ERROR, lock_timeout=paths.lock_timeout
-        )
-    except FileExistsError as exc:
-        raise OutputWriteError(f"proposal dir already exists: {output_dir}") from exc
-    except Exception as exc:
-        _discard_partial_proposal(output_dir, paths, proposals_dir_existed)
-        if isinstance(exc, OSError):
+    # Creating the directory (exclusively, under the wiki lock) is the
+    # collision check: a caller-selected name that exists is an error, and
+    # from here on the directory is ours to remove if a later write fails.
+    # The removal happens under the same lock: once the lock is released a
+    # concurrent promote may apply and archive whatever it finds.
+    with WikiLock(paths.wiki_dir, paths.lock_timeout) as lock:
+        try:
+            written = write_patch_set_dir(
+                patch, output_dir, wiki_dir=paths.wiki_dir, on_collision=COLLISION_ERROR, lock=lock
+            )
+        except FileExistsError as exc:
+            raise OutputWriteError(f"proposal dir already exists: {output_dir}") from exc
+        except OSError as exc:
+            _discard_partial_proposal(output_dir, paths, proposals_dir_existed)
             raise OutputWriteError(f"could not write patch-set dir at {output_dir}: {exc}") from exc
-        raise
-    try:
-        _write_ingest_snapshot(written)
-    except Exception as exc:
-        # Any failure, not only OSError: leave no half-written directory behind.
-        _discard_partial_proposal(output_dir, paths, proposals_dir_existed)
-        if isinstance(exc, OSError):
-            raise OutputWriteError(f"could not write patch-set dir at {output_dir}: {exc}") from exc
-        raise
+        except BaseException:
+            _discard_partial_proposal(output_dir, paths, proposals_dir_existed)
+            raise
+        try:
+            # Under the same lock as the proposal files: a concurrent promote
+            # never sees the directory without its snapshot.
+            _write_ingest_snapshot(written)
+        except BaseException as exc:
+            # Any failure, not only OSError: leave no half-written directory behind.
+            _discard_partial_proposal(output_dir, paths, proposals_dir_existed)
+            if isinstance(exc, OSError):
+                raise OutputWriteError(f"could not write patch-set dir at {output_dir}: {exc}") from exc
+            raise
     return written
 
 

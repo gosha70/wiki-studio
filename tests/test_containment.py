@@ -26,8 +26,9 @@ from wiki_studio import api, promoter
 from wiki_studio.audit import payload_digest, proposal_hash
 from wiki_studio.errors import ContractViolationError, PathOutsideRootError, PromoteValidationError
 from wiki_studio.paths import ENV_SOURCE_ROOTS, WikiPaths
+from wiki_studio.wiki_state import load_wiki_state
 
-_SECRET = "The secret launch codes are kept here.\n"
+_OUTSIDE_TEXT = "The outside launch notes are kept here.\n"
 
 
 def _snapshot(directory: Path) -> dict[str, bytes | str]:
@@ -52,7 +53,7 @@ class _Case(unittest.TestCase):
         self.root = make_repo_layout(base / "proj", with_schema=False, with_sample=False)
         self.outside = base / "outside"
         self.outside.mkdir()
-        (self.outside / "secret.md").write_text(_concept("secret", _SECRET), encoding="utf-8")
+        (self.outside / "outside.md").write_text(_concept("outside", _OUTSIDE_TEXT), encoding="utf-8")
         (self.outside / "diagram.png").write_bytes(b"png")
         self.paths = WikiPaths.for_root(self.root)
         self.wiki = self.paths.wiki_dir
@@ -63,7 +64,7 @@ class _Case(unittest.TestCase):
 
     def assertNothingWritten(self, before: dict[str, bytes | str], prop: Path | None = None) -> None:  # noqa: N802
         self.assertEqual(_snapshot(self.wiki), before)
-        self.assertEqual((self.outside / "secret.md").read_text(encoding="utf-8"), _concept("secret", _SECRET))
+        self.assertEqual((self.outside / "outside.md").read_text(encoding="utf-8"), _concept("outside", _OUTSIDE_TEXT))
         if prop is not None:
             self.assertFalse((prop / "receipt.json").exists())
             self.assertFalse((prop.parent / ".applied").exists())
@@ -74,7 +75,12 @@ class _Case(unittest.TestCase):
 
 class TestReadBoundary(_Case):
     def test_absolute_and_escaping_paths_exit_7_before_any_read(self) -> None:
-        for bad in (str(self.outside / "secret.md"), "/etc/hosts", "../../../outside/secret.md", "concepts/../../x.md"):
+        for bad in (
+            str(self.outside / "outside.md"),
+            "/etc/hosts",
+            "../../../outside/outside.md",
+            "concepts/../../x.md",
+        ):
             with self.subTest(path=bad):
                 with self.assertRaises(PathOutsideRootError):
                     api.read_page(bad, self.paths)
@@ -83,7 +89,7 @@ class TestReadBoundary(_Case):
                 self.assertNotIn("launch codes", result.stdout)
 
     def test_symlinked_page_and_symlinked_directory_exit_7(self) -> None:
-        (self.wiki / "concepts" / "sym.md").symlink_to(self.outside / "secret.md")
+        (self.wiki / "concepts" / "sym.md").symlink_to(self.outside / "outside.md")
         (self.wiki / "decisions").symlink_to(self.outside, target_is_directory=True)
         for bad in ("concepts/sym.md", "decisions/secret.md"):
             with self.subTest(path=bad):
@@ -102,8 +108,8 @@ class TestReadBoundary(_Case):
 class TestNavigationBoundary(_Case):
     def setUp(self) -> None:
         super().setUp()
-        (self.root / "knowledge" / "secret.md").write_text(_concept("secret", _SECRET), encoding="utf-8")
-        (self.wiki / "concepts" / "sym.md").symlink_to(self.outside / "secret.md")
+        (self.root / "knowledge" / "outside.md").write_text(_concept("outside", _OUTSIDE_TEXT), encoding="utf-8")
+        (self.wiki / "concepts" / "sym.md").symlink_to(self.outside / "outside.md")
         index = self.wiki / "index.md"
         index.write_text(
             index.read_text(encoding="utf-8")
@@ -134,7 +140,7 @@ class TestNavigationBoundary(_Case):
             self.assertTrue(page.file.resolve().is_relative_to(wiki_real))
         result = run_cli("find", "secret launch codes", "--json", cwd=self.root)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertNotIn("secret.md", result.stdout)
+        self.assertNotIn("outside.md", result.stdout)
         self.assertNotIn("sym.md", result.stdout)
 
     def test_query_shares_the_selection(self) -> None:
@@ -190,7 +196,7 @@ class TestSourceRoots(_Case):
 
 class TestStagingBoundary(_Case):
     def test_a_symlinked_page_stops_promote_before_any_write(self) -> None:
-        (self.wiki / "concepts" / "sym.md").symlink_to(self.outside / "secret.md")
+        (self.wiki / "concepts" / "sym.md").symlink_to(self.outside / "outside.md")
         prop = _proposals_dir(self.root)
         before = _snapshot(self.wiki)
         with self.assertRaises(PromoteValidationError) as ctx:
@@ -210,10 +216,10 @@ class TestStagingBoundary(_Case):
             api.promote(prop, self.paths)
         self.assertIn("decisions", str(ctx.exception))
         self.assertNothingWritten(before, prop)
-        self.assertEqual(sorted(p.name for p in self.outside.iterdir()), ["diagram.png", "secret.md"])
+        self.assertEqual(sorted(p.name for p in self.outside.iterdir()), ["diagram.png", "outside.md"])
 
     def test_the_path_based_staging_copy_refuses_symlinks_too(self) -> None:
-        (self.wiki / "concepts" / "sym.md").symlink_to(self.outside / "secret.md")
+        (self.wiki / "concepts" / "sym.md").symlink_to(self.outside / "outside.md")
         prop = _proposals_dir(self.root)
         before = _snapshot(self.wiki)
         with patch.object(promoter, "_FD_STAGING", False), self.assertRaises(PromoteValidationError) as ctx:
@@ -224,7 +230,7 @@ class TestStagingBoundary(_Case):
     def test_replacing_a_page_that_is_a_symlink_never_writes_through_it(self) -> None:
         live = self.wiki / "concepts" / "alpha.md"
         live.unlink()
-        live.symlink_to(self.outside / "secret.md")
+        live.symlink_to(self.outside / "outside.md")
         prop = _update_proposal(self.root, "2026-05-06-upd", "alpha", "Rewritten.\n")
         before = _snapshot(self.wiki)
         with self.assertRaises(PromoteValidationError):
@@ -318,7 +324,7 @@ class TestProposalBoundary(_Case):
         self.assertNothingWritten(before, prop)
 
     def test_absolute_and_escaping_preview_pointers_exit_4(self) -> None:
-        pointers = (str(self.outside / "secret.md"), "../../../outside/secret.md", "preview/../../x.md", "/etc/hosts")
+        pointers = (str(self.outside / "outside.md"), "../../../outside/outside.md", "preview/../../x.md", "/etc/hosts")
         for n, pointer in enumerate(pointers):
             prop = _proposals_dir(self.root, slug=f"ptr-{n}")
             plan = json.loads((prop / "plan.json").read_text(encoding="utf-8"))
@@ -336,7 +342,7 @@ class TestProposalBoundary(_Case):
         prop = _proposals_dir(self.root)
         preview = prop / "preview" / "incidents" / "cli-fixture.md"
         preview.unlink()
-        preview.symlink_to(self.outside / "secret.md")
+        preview.symlink_to(self.outside / "outside.md")
         before = _snapshot(self.wiki)
         with self.assertRaises(PromoteValidationError) as ctx:
             api.promote(prop, self.paths)
@@ -345,7 +351,7 @@ class TestProposalBoundary(_Case):
 
     def test_an_unreferenced_symlink_under_preview_is_refused_by_hashing_and_by_promote(self) -> None:
         prop = _proposals_dir(self.root)
-        (prop / "preview" / ".stray.md").symlink_to(self.outside / "secret.md")
+        (prop / "preview" / ".stray.md").symlink_to(self.outside / "outside.md")
         with self.assertRaises(PromoteValidationError):
             payload_digest(prop)
         with self.assertRaises(PromoteValidationError):
@@ -361,7 +367,7 @@ class TestProposalBoundary(_Case):
         snapshot = prop / ".ingest-snapshot"
         shutil.copytree(prop / "preview", snapshot / "preview")
         shutil.copy(prop / "plan.json", snapshot / "plan.json")
-        (snapshot / "preview" / "stray.md").symlink_to(self.outside / "secret.md")
+        (snapshot / "preview" / "stray.md").symlink_to(self.outside / "outside.md")
         before = _snapshot(self.wiki)
         with self.assertRaises(PromoteValidationError) as ctx:
             api.promote(prop, self.paths)
@@ -389,6 +395,71 @@ class TestProposalBoundary(_Case):
         self.assertIn("receipt.json", str(ctx.exception))
         self.assertEqual(_snapshot(self.wiki), before)
         self.assertFalse((prop.parent / ".applied").exists())
+
+
+class TestArchiveRootBoundary(_Case):
+    """PR #41 review: a symlinked ``.applied/`` never receives an archive, and the source proposal stays."""
+
+    def test_a_symlinked_applied_root_is_refused_before_any_write(self) -> None:
+        prop = _proposals_dir(self.root)
+        elsewhere = self.outside / "applied-elsewhere"
+        elsewhere.mkdir()
+        (prop.parent / ".applied").symlink_to(elsewhere)
+        before = _snapshot(self.wiki)
+        with self.assertRaises(PromoteValidationError) as ctx:
+            api.promote(prop, self.paths)
+        self.assertIn(".applied", str(ctx.exception))
+        self.assertEqual(_snapshot(self.wiki), before)
+        self.assertEqual(list(elsewhere.iterdir()), [], "nothing archived outside the proposal root")
+        self.assertTrue((prop / "plan.json").is_file(), "the source proposal is untouched")
+        self.assertFalse((prop / "receipt.json").exists())
+
+    def test_a_file_named_applied_is_refused(self) -> None:
+        prop = _proposals_dir(self.root)
+        (prop.parent / ".applied").write_text("not a directory", encoding="utf-8")
+        with self.assertRaises(PromoteValidationError):
+            api.promote(prop, self.paths)
+        self.assertTrue((prop / "plan.json").is_file())
+
+
+class TestWikiStateBoundary(_Case):
+    """PR #41 review: ingest's wiki-state reads stay inside the wiki (FR-012)."""
+
+    def _state(self) -> object:
+        return load_wiki_state(
+            self.paths, source_path=self.root / "src.md", source_content="outside launch notes alpha"
+        )
+
+    def test_a_symlinked_page_never_reaches_the_snapshot(self) -> None:
+        (self.wiki / "concepts").mkdir(exist_ok=True)
+        (self.wiki / "concepts" / "outside.md").symlink_to(self.outside / "outside.md")
+        state = self._state()
+        self.assertNotIn("concepts/secret.md", state.candidates)  # type: ignore[attr-defined]
+        for content in state.candidates.values():  # type: ignore[attr-defined]
+            self.assertNotIn(_OUTSIDE_TEXT.strip(), content.text)
+        self.assertIn("concepts/alpha.md", state.candidates)  # type: ignore[attr-defined]
+
+    def test_a_symlinked_directory_never_reaches_the_snapshot(self) -> None:
+        (self.wiki / "mirror").symlink_to(self.outside)
+        state = self._state()
+        self.assertFalse(any(rel.startswith("mirror/") for rel in state.candidates))  # type: ignore[attr-defined]
+
+    def test_a_symlinked_index_or_log_is_refused(self) -> None:
+        for name in ("index.md", "log.md"):
+            with self.subTest(file=name):
+                target = self.wiki / name
+                backup = target.read_bytes() if target.exists() else None
+                if target.exists():
+                    target.unlink()
+                target.symlink_to(self.outside / "outside.md")
+                try:
+                    with self.assertRaises(ContractViolationError) as ctx:
+                        self._state()
+                    self.assertIn(name, str(ctx.exception))
+                finally:
+                    target.unlink()
+                    if backup is not None:
+                        target.write_bytes(backup)
 
 
 if __name__ == "__main__":

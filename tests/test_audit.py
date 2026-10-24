@@ -17,11 +17,15 @@
 import dataclasses
 import hashlib
 import json
+import os
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from tests.conftest import PACKAGE_ROOT
+from wiki_studio import audit
 from wiki_studio.audit import (
     append_ingest_log,
     build_log_record,
@@ -29,6 +33,7 @@ from wiki_studio.audit import (
     source_sha,
     truncate_reason,
 )
+from wiki_studio.audit_lint import INGEST_LOG_MARKER
 from wiki_studio.errors import OutputWriteError
 from wiki_studio.paths import WikiPaths
 from wiki_studio.proposal import IngestLogRecord, IngestProposal, PageEdit, WikiPatchSet
@@ -501,6 +506,108 @@ class TestSingleWriterInvariant(unittest.TestCase):
                     "write_text" in stripped or "write_bytes" in stripped or ".write(" in stripped
                 ):
                     self.fail(f"{path.name}: line appears to write to knowledge/wiki: {stripped!r}")
+
+
+class TestAppendRefusesSymlinks(unittest.TestCase):
+    """PR #41 review: the append never writes through a symlinked ingest-log.md or .audit/ (FR-012)."""
+
+    def setUp(self) -> None:
+        self._td = tempfile.mkdtemp()
+        self._repo_root = Path(self._td).resolve()
+        self._paths = WikiPaths.for_root(self._repo_root)
+        self._log = self._repo_root / "knowledge" / "wiki" / ".audit" / "ingest-log.md"
+        (self._repo_root / "knowledge" / "wiki").mkdir(parents=True)
+
+    def tearDown(self) -> None:
+        import shutil
+
+        shutil.rmtree(self._td, ignore_errors=True)
+
+    def _record(self) -> IngestLogRecord:
+        return IngestLogRecord(
+            v=1,
+            ts="2026-10-24T00:00:00Z",
+            source_path="specs/x/spec.md",
+            source_repo_relative=True,
+            source_sha="a" * 64,
+            backend="test",
+            disposition="accept",
+            reason="r",
+            proposal_dir="2026-10-24-x",
+            target_paths=["concepts/a.md"],
+            page_types=["concepts"],
+            proposal_hash="b" * 64,
+        )
+
+    def test_a_symlinked_log_file_is_refused_and_its_target_untouched(self) -> None:
+        victim = self._repo_root / "victim.txt"
+        victim.write_text("untouched\n", encoding="utf-8")
+        self._log.parent.mkdir(parents=True)
+        self._log.symlink_to(victim)
+        with self.assertRaises(OutputWriteError) as ctx:
+            append_ingest_log(self._paths, self._record())
+        self.assertIn("ingest-log.md", str(ctx.exception))
+        self.assertEqual(victim.read_text(encoding="utf-8"), "untouched\n")
+
+    def test_a_short_write_is_completed_not_reported_as_success(self) -> None:
+        """PR #41 review: os.write may return short; the append loops until every byte is written."""
+        real_write = os.write
+
+        def short_write(fd: int, data: bytes | memoryview) -> int:
+            return real_write(fd, bytes(data)[:5])
+
+        with patch("wiki_studio.audit.os.write", short_write):
+            append_ingest_log(self._paths, self._record())
+            append_ingest_log(self._paths, self._record())
+        lines = self._log.read_text(encoding="utf-8").split("\n")
+        self.assertEqual(lines[0], INGEST_LOG_MARKER)
+        self.assertEqual(lines[1], "")
+        self.assertEqual(len([ln for ln in lines[2:] if ln]), 2)
+        for ln in lines[2:]:
+            if ln:
+                self.assertEqual(json.loads(ln)["proposal_dir"], "2026-10-24-x")
+
+    def test_a_parent_swapped_for_a_symlink_after_the_check_is_refused(self) -> None:
+        """PR #41 review: the open is bound to the verified parents, so a .audit swap after the check fails closed."""
+        if not audit._DIR_FD_OPENS:
+            self.skipTest("descriptor-relative opens are unsupported here (documented weaker binding)")
+        elsewhere = self._repo_root / "elsewhere"
+        elsewhere.mkdir()
+        audit_dir = self._log.parent
+        audit_dir.mkdir(parents=True)
+        real_check = audit._refuse_symlinks
+
+        def check_then_swap(log_path: Path, wiki_dir: Path) -> None:
+            real_check(log_path, wiki_dir)
+            shutil.rmtree(audit_dir)
+            audit_dir.symlink_to(elsewhere)
+
+        with patch("wiki_studio.audit._refuse_symlinks", check_then_swap), self.assertRaises(OutputWriteError):
+            append_ingest_log(self._paths, self._record())
+        self.assertEqual(list(elsewhere.iterdir()), [], "nothing was written outside the wiki")
+
+    def test_the_path_based_fallback_creates_the_first_log_and_still_refuses_symlinks(self) -> None:
+        """PR #41 review: without dir_fd (Windows) the first append creates .audit/; a symlinked one is refused."""
+        with patch("wiki_studio.audit._DIR_FD_OPENS", False):
+            append_ingest_log(self._paths, self._record())
+            lines = self._log.read_text(encoding="utf-8").split("\n")
+            self.assertEqual(lines[0], INGEST_LOG_MARKER)
+            self.assertEqual(len([ln for ln in lines if ln.startswith("{")]), 1)
+            elsewhere = self._repo_root / "elsewhere"
+            elsewhere.mkdir()
+            shutil.rmtree(self._log.parent)
+            self._log.parent.symlink_to(elsewhere)
+            with self.assertRaises(OutputWriteError):
+                append_ingest_log(self._paths, self._record())
+            self.assertEqual(list(elsewhere.iterdir()), [])
+
+    def test_a_symlinked_audit_directory_is_refused(self) -> None:
+        elsewhere = self._repo_root / "elsewhere"
+        elsewhere.mkdir()
+        self._log.parent.symlink_to(elsewhere)
+        with self.assertRaises(OutputWriteError):
+            append_ingest_log(self._paths, self._record())
+        self.assertEqual(list(elsewhere.iterdir()), [])
 
 
 if __name__ == "__main__":
