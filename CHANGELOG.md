@@ -63,6 +63,14 @@ uses [Semantic Versioning](https://semver.org/).
   `WIKI_STUDIO_SOURCE_ROOTS` (`os.pathsep`-separated) admit directories
   outside the root for source references; `WikiPaths.source_roots`; `info`
   prints them.
+- Citation evidence for `query`: each citation's fragment must occur, after
+  whitespace normalisation, in the `index.md` or page text that was in the
+  prompt (never a file reread after the backend returned), and a non-empty
+  answer must carry at least one citation; a reply that fails exits 4
+  naming the page. The abstention form (empty answer, one citation quoting
+  `index.md`) still passes. The check verifies quotation, not logical
+  support. The test backend quotes the first non-blank line of each page it
+  cites.
 
 ### Changed
 

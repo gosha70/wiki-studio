@@ -1223,7 +1223,7 @@ class TestE2EQuery(unittest.TestCase):
                     return {
                         "version": 1,
                         "answer": "",
-                        "citations": [{"page": "index.md", "fragment": "(index only)"}],
+                        "citations": [{"page": "index.md", "fragment": "# Index"}],
                     }
 
             q = DefaultQuerier(backend=_NoMatchBackend(), paths=WikiPaths.for_root(tmp_root))
@@ -1721,7 +1721,7 @@ class TestE2EQueryCitationValidation(unittest.TestCase):
                         "version": 1,
                         "answer": "",
                         "citations": [
-                            {"page": "index.md", "fragment": "(no answer found)"},
+                            {"page": "index.md", "fragment": "# Index"},
                         ],
                     }
 

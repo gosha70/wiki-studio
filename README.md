@@ -129,6 +129,16 @@ Reads `index.md` first, loads the most relevant linked pages, asks the
 backend, and prints the answer; citations and the pages loaded go to
 stderr and the pages-loaded set is appended to the query log.
 
+Every citation in the reply is checked against the text that was in the
+prompt: the cited page must be `index.md` or one of the pages loaded, and
+the fragment must occur in that page's captured text (whitespace runs are
+collapsed before comparing). A non-empty answer needs at least one
+citation; an empty answer with one citation quoting `index.md` is the
+abstention form. A reply that fails the check exits 4 naming the page.
+The check verifies that the quotation is real, against the snapshot the
+model saw rather than a file reread afterwards; it does not verify that
+the fragment logically supports the answer.
+
 | Flag | Effect |
 |---|---|
 | `--backend NAME` | as for ingest |
