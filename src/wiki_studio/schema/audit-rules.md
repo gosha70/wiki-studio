@@ -25,7 +25,9 @@ Two artifacts live under `.audit/`:
   `<!-- ingest-log schema v1 -->`
 - **Line 2** is empty.
 - **Line 3 onward**: one NDJSON object per line, append-only. Each line
-  is a complete JSON object; nothing spans lines. Order is append
+  is a complete JSON object; nothing spans lines. The writer appends under
+  the wiki lock through the verified `.audit/` directory (never through a
+  symlink) and writes each record whole. Order is append
   order, which is **not** guaranteed to be timestamp-monotonic
   (cherry-picks and branch merges can interleave entries — see
   "What the audit pass does NOT check").

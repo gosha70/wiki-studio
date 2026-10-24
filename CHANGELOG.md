@@ -94,6 +94,37 @@ may observe intermediate state.
 
 ### Changed
 
+- `ingest`, `propose` and `query --file-back` publish a proposal under one
+  wiki lock: the directory, its files, `.ingest-snapshot/` and the
+  ingest-log record are written before the lock is released, and a failed
+  publication is cleaned up while the lock is still held, so a concurrent
+  `promote` never finds a half-published proposal.
+- `ingest --legacy-single-source` keeps its deterministic
+  `<date>-<slug>.md` name but never overwrites: the path is checked against
+  the proposal boundary (a symlink there is refused), a previous file is
+  moved aside into `<name>.bak-<pid>-<n>` beside it and restored if the
+  publication fails, and the file is created exclusively. Only a regular
+  file is accepted at that name. A `.bak-*` file left beside a proposal is
+  an earlier proposal that a failed restoration could not put back; review
+  and remove it by hand. The error names it.
+- The ingest-log append opens `.audit/ingest-log.md` relative to the
+  verified wiki and `.audit/` directory descriptors with `O_NOFOLLOW`
+  (path-based with `O_NOFOLLOW` on the final component where `dir_fd` is
+  unsupported), writes the whole record, and refuses any symlink on the
+  way.
+- `promote` binds `proposals/.applied` to the proposal boundary before the
+  receipt is written: a symlinked `.applied`, or a file by that name, is
+  refused with nothing written. A receipt's `planned_writes` and
+  `submission_manifest` paths must be normalised relative paths, and each
+  is contained in the wiki before a recovery read; an escaping path makes
+  the outcome uncertain (exit 10) and is never read. A directory `fsync`
+  that fails with a real I/O error stops the promotion; only `EINVAL`,
+  `ENOTSUP`, `EOPNOTSUPP` and `EBADF` (a filesystem that does not sync
+  directories) are ignored.
+- Ingest's wiki state excludes a symlinked page or a page under a
+  symlinked directory from the candidates, and refuses a symlinked
+  `index.md` or `log.md` (exit 4), so no file outside the wiki reaches the
+  prompt.
 - The link rule (`lint`, and so `promote`): the collector returns every
   local link target, not only `.md` ones. Web (`http`, `https`) and
   `mailto` targets are not filesystem links; a `.md` target inside the wiki
@@ -181,6 +212,21 @@ may observe intermediate state.
   occur in the cited page passed the check, and so did a non-empty answer
   with no citation at all. Same reporter. See citation evidence under
   Added. Present since 0.1.0.
+- Found on the 0.6.0 build itself, before release, by the code review of
+  PR #41 (five rounds), and fixed in the same release: a proposal was
+  published in pieces (files, then snapshot, then audit record) with the
+  lock released in between, so a concurrent `promote` could archive a
+  half-published proposal; the ingest-log append followed a symlinked
+  `.audit/` or `ingest-log.md` and could report a short write as success;
+  a symlinked `proposals/.applied` received the archive and the source
+  proposal was removed; a receipt's tracked paths were joined to the wiki
+  directory and read during recovery without containment; ingest's
+  candidate pages, `index.md` and `log.md` were read through symlinks into
+  the model prompt; a directory `fsync` failure (`EIO`, `ENOSPC`) was
+  swallowed and the promotion continued; the legacy single-source proposal
+  was written through a pre-existing symlink and a failed publication could
+  delete or overwrite an earlier proposal at the same deterministic name.
+  See Changed for the behaviour each fix introduces.
 
 ### Upgrade notes
 

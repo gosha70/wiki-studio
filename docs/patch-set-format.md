@@ -220,10 +220,21 @@ proposal directory by hand. Promote never does this automatically. The
 protocol covers failures between its steps; it does not claim recovery from
 an arbitrary crash inside the commit beyond the exception rollback.
 
-Windows: the lock has an `msvcrt.locking` backend and the identity falls
-back to `os.stat` with staging by path, but this release is not tested on
-Windows and its classifier says POSIX; that behaviour is unsupported rather
-than a weaker guarantee.
+Before the receipt is written, `promote` binds `proposals/.applied` to the
+proposal boundary: it must be a real directory (or absent) inside the
+proposals directory; a symlink or a file by that name is refused with
+nothing written. A receipt's `planned_writes[].path` and
+`submission_manifest[].path` must be normalised relative paths (no empty,
+`.` or `..` component, no backslash) or the receipt is corrupt, and each
+tracked path is contained in the wiki again before every recovery read: a
+path that escapes, or reaches a symlink, matches neither state and the
+outcome is uncertain (exit 10); the file is never read.
+
+Windows: the lock has an `msvcrt.locking` backend, the identity falls
+back to `os.stat` with staging by path, and the ingest-log append opens
+the log by path with `O_NOFOLLOW` on the final component after re-checking
+containment, but this release is not tested on Windows and its classifier
+says POSIX; that behaviour is unsupported rather than a weaker guarantee.
 
 ## Writing one from a library
 
