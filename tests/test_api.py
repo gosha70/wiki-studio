@@ -302,6 +302,8 @@ class TestAuditFlush(_LayoutCase):
         self._git("init", "-q")
         self._git("config", "user.email", "t@example.com")
         self._git("config", "user.name", "T")
+        self._git("config", "gc.auto", "0")  # no background gc racing the temp-dir cleanup
+        self._git("config", "maintenance.auto", "false")
         self._git("add", ".")
         self._git("commit", "-q", "-m", "init")
         api.ingest(self.sample, self.paths, backend="test")

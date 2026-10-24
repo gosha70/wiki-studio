@@ -348,6 +348,8 @@ class TestCliAuditFlush(_LayoutCase):
         subprocess.run([*git, "init", "-q"], check=True)
         subprocess.run([*git, "config", "user.email", "t@example.com"], check=True)
         subprocess.run([*git, "config", "user.name", "T"], check=True)
+        subprocess.run([*git, "config", "gc.auto", "0"], check=True)  # no background gc racing the cleanup
+        subprocess.run([*git, "config", "maintenance.auto", "false"], check=True)
         subprocess.run([*git, "add", "."], check=True)
         subprocess.run([*git, "commit", "-q", "-m", "init"], check=True)
         self.assertEqual(self.run_cli("ingest", str(self.sample), "--backend", "test").returncode, 0)
