@@ -42,6 +42,7 @@ from .errors import (
     PromoteApplyError,
     PromoteValidationError,
 )
+from .fact_diff import FACT_ERROR_UNREADABLE
 from .paths import (
     DEFAULT_LOCK_TIMEOUT,
     DEFAULT_PROPOSALS_DIR,
@@ -447,7 +448,10 @@ def _print_fact_warnings(patch_dir: Path | None) -> None:
     for edit in json.loads(plan_path.read_text(encoding="utf-8")).get("edits", []):
         error = edit.get("fact_check_error")
         if error:
-            print(f"fact-check: {edit['path']}: not compared ({error})", file=sys.stderr)
+            # An unreadable live page means nothing was compared; any other error
+            # (malformed sources) is partial and already says what was skipped.
+            shown = f"not compared ({error})" if error.startswith(FACT_ERROR_UNREADABLE) else error
+            print(f"fact-check: {edit['path']}: {shown}", file=sys.stderr)
         items = edit.get("fact_warnings") or []
         if items:
             print(f"fact-check: {edit['path']}: {len(items)} item(s) removed", file=sys.stderr)

@@ -41,21 +41,35 @@ _NUMBER_RE = re.compile(
 )
 
 
-def _split_frontmatter(text: str) -> tuple[list[str], str]:
-    """Frontmatter ``sources[].path`` values and the body; no frontmatter gives ``([], text)``."""
+# Prefix of the ``fact_check_error`` the plan writer records when the live page
+# could not be read at all; the CLI prints such an error as "not compared".
+FACT_ERROR_UNREADABLE = "live page not readable"
+
+
+def _split_frontmatter(text: str) -> tuple[list[str], str, str | None]:
+    """Frontmatter ``sources[].path`` values, the body, and why the sources could not be read, if they could not.
+
+    No frontmatter gives ``([], text, None)``. A ``sources`` key that is not a
+    list of mappings is reported rather than silently yielding no paths, so a
+    dropped citation on such a page is never hidden behind a clean comparison.
+    """
     lines = text.splitlines()
     if not lines or lines[0].strip() != "---":
-        return [], text
+        return [], text, None
     for i, line in enumerate(lines[1:], start=1):
         if line.strip() == "---":
             body = "\n".join(lines[i + 1 :])
             try:
-                sources = yaml_lite.parse_frontmatter(text).get("sources") or []
-            except ContractViolationError:
-                return [], body
-            paths = [str(s["path"]).strip() for s in sources if isinstance(s, dict) and s.get("path")]
-            return paths, body
-    return [], text
+                sources = yaml_lite.parse_frontmatter(text).get("sources")
+            except ContractViolationError as exc:
+                return [], body, f"frontmatter could not be parsed ({exc})"
+            if sources is None:
+                return [], body, None
+            if not isinstance(sources, list) or not all(isinstance(entry, dict) for entry in sources):
+                return [], body, "frontmatter `sources` is not a list of mappings"
+            paths = [str(entry["path"]).strip() for entry in sources if entry.get("path")]
+            return paths, body, None
+    return [], text, None
 
 
 def _without_fences(body: str) -> str:
@@ -94,24 +108,48 @@ def _normalize_number(sign: str, integer: str, fraction: str | None, unit: str) 
     return f"{number}{unit}" if unit == "%" else f"{number} {unit}"
 
 
-def _facts(text: str) -> list[str]:
-    """Every fact on the page, normalized, in first-seen order, without duplicates."""
-    source_paths, body = _split_frontmatter(text)
-    found: list[str] = list(source_paths)
-    found += [m.group(1) for m in _BODY_PATH_RE.finditer(body)]
-    found += [f"{m.group(1)}:{m.group(2)}" for m in _PATH_LINE_RE.finditer(body)]
+def _facts_checked(text: str) -> tuple[list[str], str | None]:
+    """Every fact on the page, normalized, in first-seen order, without duplicates, and any sources problem.
+
+    All three kinds are taken from the fence-free text: a ``path:line``
+    reference or a ``path:`` line inside a fenced block is a code sample, not
+    a citation, exactly as a backticked word or a number there is not a fact.
+    """
+    source_paths, body, error = _split_frontmatter(text)
     prose = _without_fences(body)
+    found: list[str] = list(source_paths)
+    found += [m.group(1) for m in _BODY_PATH_RE.finditer(prose)]
+    found += [f"{m.group(1)}:{m.group(2)}" for m in _PATH_LINE_RE.finditer(prose)]
     found += [_normalize_identifier(m.group(1)) for m in _BACKTICK_RE.finditer(prose)]
     found += [_normalize_number(*m.groups()) for m in _NUMBER_RE.finditer(prose)]
-    return list(dict.fromkeys(f for f in found if f))
+    return list(dict.fromkeys(f for f in found if f)), error
+
+
+def removed_facts_checked(old: str, new: str) -> tuple[list[str], str | None]:
+    """:func:`removed_facts` plus the reason, if any, that a page's ``sources`` could not be compared.
+
+    When either page's frontmatter ``sources`` is malformed, the body facts
+    are still compared and the second value names the page and the problem;
+    the plan writer records it as ``fact_check_error`` beside any warnings.
+    """
+    new_facts, new_error = _facts_checked(new)
+    old_facts, old_error = _facts_checked(old)
+    kept = set(new_facts)
+    kept |= {fact.rsplit(":", 1)[0] for fact in kept if _PATH_LINE_RE.fullmatch(fact)}
+    removed = [fact for fact in old_facts if fact not in kept]
+    problems = [f"live page: {old_error}" if old_error else "", f"new content: {new_error}" if new_error else ""]
+    problem = "; ".join(x for x in problems if x)
+    return removed, (f"sources not compared ({problem})" if problem else None)
 
 
 def removed_facts(old: str, new: str) -> list[str]:
     """Facts in ``old`` that ``new`` no longer has, in the order ``old`` has them.
 
     A path-only citation counts as kept when the new page still cites that
-    path with a line number.
+    path with a line number. A number and its unit may be separated by
+    spaces or by one line break with only whitespace around it (a wrapped
+    line); sentence punctuation after the number, or a blank line, ends the
+    number and no unit is joined to it. This is a heuristic and that rule is
+    its contract.
     """
-    kept = set(_facts(new))
-    kept |= {fact.rsplit(":", 1)[0] for fact in kept if _PATH_LINE_RE.fullmatch(fact)}
-    return [fact for fact in _facts(old) if fact not in kept]
+    return removed_facts_checked(old, new)[0]

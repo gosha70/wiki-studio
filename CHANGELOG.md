@@ -6,6 +6,17 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- The fact check (`fact_warnings`, issue #33): a `path:line` reference or a
+  `path:` line inside a fenced code block is a code sample, not a citation,
+  and is no longer reported as a removed fact; the number-and-unit rule is
+  stated as the contract (a unit may follow its number across one wrapped
+  line, never across sentence punctuation or a blank line); a page whose
+  frontmatter `sources` is not a list of mappings is reported as
+  `fact_check_error: sources not compared (…)` while its body facts are
+  still compared, instead of silently dropping its citations.
+
 ## [0.6.0] — 2026-10-24
 
 The safe-changes release (Release A of `docs/roadmap.md`, closes #39). Five

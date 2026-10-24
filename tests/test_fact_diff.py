@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 
 from wiki_studio import api
-from wiki_studio.fact_diff import removed_facts
+from wiki_studio.fact_diff import removed_facts, removed_facts_checked
 from wiki_studio.paths import WikiPaths
 from wiki_studio.proposal import PageEdit
 
@@ -89,6 +89,31 @@ class TestRemovedFacts(unittest.TestCase):
         self.assertEqual(removed_facts("Limit .5 s.\n", "Limit 0.5 s.\n"), [])
         self.assertEqual(removed_facts("Limit -.5 s.\n", "Limit .5 s.\n"), ["-0.5 s"])
         self.assertEqual(removed_facts("Wait v1.5 s.\n", "Wait.\n"), [])
+
+    def test_citations_inside_fenced_code_are_code_samples(self) -> None:
+        """Issue #33: a path:line or path: line inside a fence is not a citation."""
+        self.assertEqual(removed_facts("See:\n\n```\nsrc/x.py:12\npath: docs/a.md\n```\n", "See.\n"), [])
+        self.assertEqual(removed_facts("See src/x.py:12.\n", "See.\n"), ["src/x.py:12"])
+
+    def test_number_unit_join_rule(self) -> None:
+        """Issue #33: the stated contract for a unit on the next line."""
+        self.assertEqual(removed_facts("Wait 250 ms.\n", "Wait 250\nms.\n"), [])  # wrapped line
+        self.assertEqual(removed_facts("Keep 12.\nmin ago it ran.\n", "Keep.\n"), [])  # sentence ends
+        self.assertEqual(removed_facts("Keep 12\n\nmin ago it ran.\n", "Keep.\n"), [])  # paragraph ends
+        self.assertEqual(removed_facts("Keep 12\nmin per run.\n", "Keep.\n"), ["12 min"])  # wrapped
+
+    def test_malformed_sources_are_reported_not_silently_dropped(self) -> None:
+        """Issue #33: a `sources` that is not a list of mappings is an error beside the body comparison."""
+        bad = "---\npage_type: concept\nslug: a\nsources: notes.md\n---\n\nBody `kept` and `gone` 5 ms.\n"
+        good = "---\npage_type: concept\nslug: a\nsources:\n  - path: notes.md\n---\n\nBody `kept`.\n"
+        removed, problem = removed_facts_checked(bad, good)
+        self.assertEqual(removed, ["gone", "5 ms"])
+        self.assertEqual(problem, "sources not compared (live page: frontmatter `sources` is not a list of mappings)")
+        # The other way round the citation has no parseable home in the new page: reported removed, with the reason.
+        removed, problem = removed_facts_checked(good, bad)
+        self.assertEqual(removed, ["notes.md"])
+        self.assertIn("new content:", problem or "")
+        self.assertEqual(removed_facts_checked(good, good), ([], None))
 
     def test_fenced_code_is_not_an_identifier_source(self) -> None:
         old = "Run:\n\n```sh\necho `date` 5 ms\n```\n"
@@ -173,6 +198,16 @@ class TestProposeFactWarnings(unittest.TestCase):
         with mock.patch.object(Path, "read_text", read_text):
             [edit] = self.plan_edits([PageEdit("decisions/retry-backoff.md", "update", DROPPED, "tighten")], "denied")
         self.assertEqual(edit["fact_check_error"], "live page not readable: Permission denied")
+
+    def test_malformed_sources_on_the_live_page_write_error_and_warnings(self) -> None:
+        live = self.paths.wiki_dir / "decisions" / "retry-backoff.md"
+        live.write_text(PAGE.replace("sources:\n  - path: notes.md\n  - path: docs/retry.md\n", "sources: notes.md\n"))
+        [edit] = self.plan_edits([PageEdit("decisions/retry-backoff.md", "update", DROPPED, "tighten")], "bad-src")
+        self.assertEqual(
+            edit["fact_check_error"],
+            "sources not compared (live page: frontmatter `sources` is not a list of mappings)",
+        )
+        self.assertEqual(edit["fact_warnings"], ["retry_budget", "8 s"])
 
     def test_create_edit_writes_no_key(self) -> None:
         page = PAGE.replace("retry-backoff", "jitter").replace("Retry backoff", "Jitter")
