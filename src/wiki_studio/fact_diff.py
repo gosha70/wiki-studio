@@ -125,10 +125,6 @@ def _facts_checked(text: str) -> tuple[list[str], str | None]:
     return list(dict.fromkeys(f for f in found if f)), error
 
 
-def _facts(text: str) -> list[str]:
-    return _facts_checked(text)[0]
-
-
 def removed_facts_checked(old: str, new: str) -> tuple[list[str], str | None]:
     """:func:`removed_facts` plus the reason, if any, that a page's ``sources`` could not be compared.
 
