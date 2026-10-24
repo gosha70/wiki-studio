@@ -996,7 +996,7 @@ def _write_archive_file(path: Path, data: bytes) -> None:
 
 
 def _publish_archive(tmp: Path, target: Path) -> None:
-    """Atomically rename the complete temporary archive to its applied name."""
+    """Publish the complete temporary archive with one ``rename``: a reader sees no archive or the whole one."""
     os.rename(tmp, target)
 
 

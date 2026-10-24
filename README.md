@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/gosha70/wiki-studio/v0.5.0/docs/assets/wiki-studio-banner.png" alt="Wiki-Studio — Turn information into living knowledge." width="760">
+  <img src="https://raw.githubusercontent.com/gosha70/wiki-studio/v0.6.0/docs/assets/wiki-studio-banner.png" alt="Wiki-Studio — Turn information into living knowledge." width="760">
 </p>
 <p align="center">
   <a href="https://memkernel.dev/wiki-studio/">memkernel.dev/wiki-studio</a> ·
@@ -22,7 +22,7 @@ The code was extracted from
 ```bash
 pip install wiki-studio          # Python 3.11–3.13, no runtime dependencies
 wiki-studio --help
-wiki-studio --version           # 0.5.0
+wiki-studio --version           # 0.6.0
 ```
 
 From a checkout: `poetry install`, then `poetry run wiki-studio --help`.
@@ -59,8 +59,11 @@ An `update` to a page the wiki already has is compared with the live page.
 Citations (`sources[].path`, `path:` in the body, `path:line`), backticked
 identifiers and numbers with a unit that the new content drops are recorded as
 `edits[].fact_warnings` in `plan.json` and printed to stderr as
-`fact-check: <path>: N item(s) removed`. The warnings are advisory: the
-exit code does not change and `promote` ignores them. A live page that
+`fact-check: <path>: N item(s) removed`. The check is a heuristic over
+citations, identifiers and quantities: it compares those three kinds of
+token as sets and does not detect a change of meaning, a reworded claim
+or a dropped sentence that carries none of them. The warnings are
+advisory: the exit code does not change and `promote` ignores them. A live page that
 cannot be read or decoded is reported as `not compared` and recorded as
 `edits[].fact_check_error`; the patch-set is still written. See
 `docs/patch-set-format.md`.
@@ -77,11 +80,19 @@ cannot be read or decoded is reported as `not compared` and recorded as
 
 ### `wiki-studio promote <proposal-dir>`
 
-Applies a patch-set to the wiki atomically. The staged tree is validated
-page by page and by the structural linter before anything is written; on
-success the proposal directory moves to `<proposals-dir>/.applied/` and
-the accepted proposal is archived under `<wiki-dir>/.audit/proposals/`.
-This is the only code path that writes into the wiki.
+Applies a patch-set to the wiki. A promotion is validated, serialised
+against other wiki-studio writers on the same machine, and rolled back on
+failure; it is not crash-safe across files, and uncoordinated readers may
+observe intermediate state. The staged tree is validated page by page and
+by the structural linter before anything is written; the commit writes only
+the paths the patch-set names plus the proposal's own archive under
+`<wiki-dir>/.audit/proposals/`; on an exception during the commit every
+touched file is restored to its exact previous bytes. A process killed in
+the middle of the commit can leave some files written and others not: the
+receipt described below recovers from a failure between the protocol's
+steps, not from a crash inside the commit. On success the proposal
+directory is archived under `<proposals-dir>/.applied/`. This is the only
+code path that writes into the wiki.
 
 | Flag | Effect |
 |---|---|
@@ -100,9 +111,17 @@ land on the current content, which was staged under the same lock.
 
 Promote writes a `receipt.json` beside the proposal (moved with it into
 `.applied/`) that records the outcome; promoting the same directory again
-finishes an interrupted archive step and never re-applies an edit. The lock
-file is `<wiki-parent>/.<wiki-dir-name>.wiki-studio.lock`, outside the wiki;
-add it to `.gitignore`. Details: `docs/patch-set-format.md`.
+finishes an interrupted archive step and never re-applies an edit.
+
+The wiki lock is an OS advisory lock on
+`<wiki-parent>/.<wiki-dir-name>.wiki-studio.lock`, outside the wiki (add it
+to `.gitignore`), keyed to the resolved wiki directory and taken by
+`promote`, `propose --promote`, proposal-directory creation, the ingest-log
+append and `audit-flush`. Its scope is one machine and one filesystem: it
+is not distributed, it does not protect against direct edits of wiki files
+by an editor or a script that does not take it, and network filesystems
+are out of scope. Recovery of an interrupted promotion needs a filesystem
+with stable inode identity. Details: `docs/patch-set-format.md`.
 
 ### `wiki-studio read <path>`
 
@@ -158,7 +177,7 @@ The audit tree under `.audit/` is always checked against
 
 | Flag | Effect |
 |---|---|
-| `--health` | add the knowledge-health checks: stale `path:` sources, weak orphans, missing cross-links and, with a backend, contradictions |
+| `--health` | add the knowledge-health checks: stale `path:` sources (a heuristic that verifies the cited path still exists, not that the recorded revision is current), weak orphans, missing cross-links and, with a backend, contradictions |
 | `--prose` | add the prose checks: sentence length, semicolons, filler phrases, Summary and Key-ideas length, and the glossary term lock (an `avoid:` term used instead of its glossary term); advisory, exit 0 unless `--strict` |
 | `--strict` | audit-format, health and prose findings become fatal (structural violations always are) |
 | `--paths P [P ...]` | with `--health` or `--prose`, scope the findings to these wiki-relative pages (the term lock still reads the whole glossary) |

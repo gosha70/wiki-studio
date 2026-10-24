@@ -1,6 +1,8 @@
 # Patch-set directory format
 
-A patch-set is the unit `wiki-studio promote` applies to the wiki atomically.
+A patch-set is the unit `wiki-studio promote` applies to the wiki in one
+promotion: validated, serialised against other wiki-studio writers on the
+same machine, rolled back on failure, and not crash-safe across files.
 `wiki-studio ingest` writes one from a backend's answer; a library caller
 writes one with `wiki_studio.api.propose`. Both produce the same directory,
 and `promote` does not care which produced it. The format is public and

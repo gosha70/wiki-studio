@@ -15,7 +15,7 @@ poetry install                                   # once
 poetry run pytest -q -p no:cacheprovider          # unit + e2e (test backend, no network)
 poetry run ruff check src/ tests/ && poetry run ruff format --check src/ tests/
 poetry run mypy src/
-poetry run pytest -q --cov=wiki_studio --cov-fail-under=80
+poetry run pytest -q --cov=wiki_studio --cov-fail-under=92
 poetry run wiki-studio --help                        # the CLI
 poetry build                                     # wheel + sdist
 ```

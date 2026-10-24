@@ -14,7 +14,8 @@ Two artifacts live under `.audit/`:
 1. `.audit/ingest-log.md` — an append-only NDJSON ledger, one line per
    `wiki ingest` call.
 2. `.audit/proposals/<date>-<slug>/` — one directory per accepted
-   proposal, written atomically by `wiki promote`.
+   proposal, written by `wiki promote` as part of its commit (rolled back
+   with the rest of the commit on failure; not crash-safe across files).
 
 ## `ingest-log.md`
 
