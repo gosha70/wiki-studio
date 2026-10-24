@@ -3,7 +3,7 @@ spec_mode: full
 feature_id: wiki-studio-0-6-0
 risk_category: feature
 justification: "Changes the write path of the only module that writes into the wiki, adds an OS lock and a receipt artifact, adds an optional key to the published patch-set format and fields to the public API, and rewrites published guarantees; a full spec pins each behaviour before an unattended build."
-status: draft
+status: approved
 date: 2026-10-23
 collaboration_mode: single
 origin:
