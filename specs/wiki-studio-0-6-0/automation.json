@@ -51,8 +51,10 @@
     "command": ""
   },
   "pr": {
-    "closes": [],
-    "title": "fix: wiki-studio 0.6.0 \u2014 safe changes: commit scope, wiki lock, revision preconditions, containment, citation evidence"
+    "closes": [
+      39
+    ],
+    "title": "fix: wiki-studio 0.6.0 — safe changes: commit scope, wiki lock, revision preconditions, containment, citation evidence"
   },
   "merge": {
     "enabled": false,
