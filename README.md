@@ -37,6 +37,7 @@ code-copilot-team layout under the git toplevel of the current directory:
 | root (confines sources and proposals; anchors `path:` citations) | git toplevel of the current directory, else the current directory | `--root` | `WIKI_STUDIO_ROOT` |
 | wiki directory | `<root>/knowledge/wiki` | `--wiki-dir` | `WIKI_STUDIO_WIKI_DIR` |
 | proposals directory | `<root>/doc_internal/proposals` | `--proposals-dir` | `WIKI_STUDIO_PROPOSALS_DIR` |
+| allowed source roots (directories outside the root that local links in pages may reference) | none | `--source-root` (repeatable) | `WIKI_STUDIO_SOURCE_ROOTS` (`os.pathsep`-separated) |
 | query log | `<root>/doc_internal/wiki-query-log.jsonl` | | |
 | ingest audit log | `<wiki-dir>/.audit/ingest-log.md` | | |
 | schema override | `<wiki-dir>/schema/` (used when present) | | |
@@ -275,6 +276,7 @@ redacted fingerprint of it unless `--debug-unsafe-output` is given.
 | `WIKI_STUDIO_ROOT` | project root (see Layout) |
 | `WIKI_STUDIO_WIKI_DIR` | wiki directory |
 | `WIKI_STUDIO_PROPOSALS_DIR` | proposals directory |
+| `WIKI_STUDIO_SOURCE_ROOTS` | `os.pathsep`-separated directories outside the root that local links in pages may reference (see Layout) |
 | `WIKI_STUDIO_BACKEND` | default backend name |
 | `WIKI_STUDIO_ENABLE_PI` | `1` adds `pi` to the auto-detect order |
 | `WIKI_INGEST_BACKEND` | deprecated alias of `WIKI_STUDIO_BACKEND` |

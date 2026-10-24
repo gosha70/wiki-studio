@@ -126,29 +126,14 @@ def proposal_hash(proposal_dir: Path) -> str:
       4. SHA-256 the concatenated buffer; return lowercase hex.
 
     Kept to verify those records; new records and receipts use :func:`payload_digest`.
+    The enumeration is the same as recipe 2's, so a symlink under the proposal is
+    refused here too (``PromoteValidationError``) instead of being read through.
     """
-    files: list[Path] = []
-
-    plan = proposal_dir / PLAN_FILE_NAME
-    if plan.is_file():
-        files.append(plan)
-
-    preview = proposal_dir / PREVIEW_DIR_NAME
-    if preview.is_dir():
-        for p in preview.rglob("*"):
-            if p.is_file():
-                files.append(p)
-
-    def _is_excluded(p: Path) -> bool:
-        """True if any path component begins with '.' (dotfile/dotdir)."""
-        # Check each component relative to proposal_dir.
-        try:
-            rel = p.relative_to(proposal_dir)
-        except ValueError:
-            return True
-        return any(part.startswith(".") for part in rel.parts)
-
-    included = {f.relative_to(proposal_dir).as_posix(): f.read_bytes() for f in files if not _is_excluded(f)}
+    included = {
+        rel: path.read_bytes()
+        for rel, path in _identity_files(proposal_dir).items()
+        if not any(part.startswith(".") for part in Path(rel).parts)
+    }
     return _canonical_digest(included)
 
 

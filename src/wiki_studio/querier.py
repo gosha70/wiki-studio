@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import datetime
 import json
+import posixpath
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -36,6 +37,8 @@ from .errors import (
     SourceMissingError,
 )
 from .ingestor_multi import DefaultMultiIngestor
+from .lint import NON_FILESYSTEM_SCHEMES
+from .paths import ContainmentError, contain, is_absolute_path
 from .prompt import load_schema_files
 from .proposal import Citation, IngestRequest, QueryAnswer, WikiPatchSet
 from .wiki_state import _read_text_or_empty, _tokenise
@@ -54,21 +57,42 @@ DEFAULT_MAX_QUERY_PAGES = 5
 _MD_LINK_RE = re.compile(r"\]\(([^)]+\.md)(?:#[^)]*)?\)")
 
 
-def _extract_index_links(index_md: str) -> list[str]:
+def _index_entry_inside_wiki(target: str, wiki_dir: Path | None) -> bool:
+    """The index-entry rule of the structural linter, applied as a defence (FR-013).
+
+    A target is kept only when it is a relative ``.md`` path that stays
+    inside the wiki: no web URL, no absolute path, no ``..`` escape and, when
+    ``wiki_dir`` is given, no symlink on the way and no resolution outside the
+    wiki directory. Lint reports such entries first; this keeps ``find``,
+    ``query`` and the eval selector from reading a file outside the wiki when
+    it has not run.
+    """
+    if target.startswith(NON_FILESYSTEM_SCHEMES) or is_absolute_path(target):
+        return False
+    normalised = posixpath.normpath(target)
+    if normalised == ".." or normalised.startswith("../"):
+        return False
+    if wiki_dir is None:
+        return True
+    try:
+        contain(target, wiki_dir)
+    except ContainmentError:
+        return False
+    return True
+
+
+def _extract_index_links(index_md: str, wiki_dir: Path | None = None) -> list[str]:
     """Return the list of wiki-relative .md paths linked from index.md.
 
-    Filters out external URLs, mailto:, fragment-only links, and
-    paths starting with ``../`` (escape links — index.md should not
-    have any, but be safe). Order is significant — first-occurrence
-    wins for relevance ranking ties.
+    Keeps only entries that stay inside the wiki (:func:`_index_entry_inside_wiki`);
+    with ``wiki_dir`` the check resolves each target on disk. Order is
+    significant — first-occurrence wins for relevance ranking ties.
     """
     paths: list[str] = []
     seen: set[str] = set()
     for m in _MD_LINK_RE.finditer(index_md):
         target = m.group(1).strip()
-        if not target:
-            continue
-        if target.startswith(("http://", "https://", "mailto:", "../")):
+        if not target or not _index_entry_inside_wiki(target, wiki_dir):
             continue
         if target in seen:
             continue
@@ -100,7 +124,7 @@ def _select_query_candidates(
     # Score each index-linked page by token overlap with the question.
     # Pages not in the index are unreachable.
     question_tokens = _tokenise(question)
-    candidate_paths = _extract_index_links(index_md)
+    candidate_paths = _extract_index_links(index_md, wiki_dir)
 
     scored: list[tuple[int, str]] = []
     for rel in candidate_paths:

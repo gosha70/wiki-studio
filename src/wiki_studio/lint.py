@@ -8,12 +8,23 @@ Checks (per ``schema/lint-rules.md``):
 2. ``page_type`` is one of the known types.
 3. ``slug`` equals the filename stem (``<dir>/index.md`` uses the directory name) and is unique.
 4. ``page_type`` matches the directory the page lives in.
-5. Intra-wiki ``[text](path.md)`` links resolve to an existing file.
-6. Every page except ``index.md`` and ``log.md`` is reachable from ``index.md``.
+5. Every local link target is classified and checked (the link rule, FR-013):
+   web (``http``, ``https``) and ``mailto`` targets are not filesystem links;
+   a ``.md`` target that resolves inside the wiki is a wiki-page link and must
+   exist; a ``.md`` target outside the wiki and any non-``.md`` target (image,
+   data or source file) is a source reference and must resolve inside the
+   project root or an allowed source root; an absolute target, a target that
+   leaves the root, one that passes through a symlink, and an ``index.md``
+   entry outside the wiki are violations. ``../`` targets that stay inside
+   the root are legal.
+6. Every page except ``index.md`` and ``log.md`` is reachable from ``index.md``
+   over wiki-page links.
 
-Pages under ``schema/``, ``scripts/`` and ``.audit/`` are not wiki content and
-are skipped. Messages keep the wording of the bash linter so output is
-unchanged for consumers that grep it.
+A symlink inside the wiki (file or directory) is a violation: pages are
+regular files, and ``promote`` refuses to stage a symlink. Pages under
+``schema/``, ``scripts/`` and ``.audit/`` are not wiki content and are
+skipped. Messages keep the wording of the bash linter where a check is
+unchanged so output stays stable for consumers that grep it.
 
 ``VALID_PAGE_TYPES``, ``PAGE_TYPE_DIRS`` and ``REQUIRED_KEYS`` are defined in
 :mod:`wiki_studio.schema` and re-exported here for 0.1.0 compatibility.
@@ -22,37 +33,75 @@ unchanged for consumers that grep it.
 from __future__ import annotations
 
 import os
+import posixpath
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING
 
+from .paths import CONTAIN_ABSOLUTE, CONTAIN_SYMLINK, ContainmentError, contain, default_root
 from .schema import PAGE_TYPE_DIRS, REQUIRED_KEYS, SOURCELESS_PAGE_TYPES, VALID_PAGE_TYPES
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 EXCLUDED_DIRS: frozenset[str] = frozenset({"schema", "scripts", ".audit"})
 
 MAX_FRONTMATTER_CLOSE_LINE = 50
 INDEX_NAME = "index.md"
 LOG_NAME = "log.md"
+PAGE_SUFFIX = ".md"
+
+# Link targets that are not filesystem paths (the link rule, FR-013).
+NON_FILESYSTEM_SCHEMES: tuple[str, ...] = ("http://", "https://", "mailto:")
 
 _FM_CLOSE_RE = re.compile(r"^---\s*$")
 _MD_LINK_RE = re.compile(r"\]\(([^)]+)\)")
+# An optional link title after the target: ``[t](x.png "Title")``.
+_LINK_TITLE_RE = re.compile(r"""\s+(?:"[^"]*"|'[^']*')\s*$""")
 _SOURCES_KEY_RE = re.compile(r"^sources:\s*$")
 _LIST_ITEM_RE = re.compile(r"^\s*-\s+")
 _TOP_LEVEL_KEY_RE = re.compile(r"^[^\s-]")
 
 
+def _walk_wiki(wiki_dir: Path) -> list[tuple[Path, list[str], list[str]]]:
+    """``os.walk`` over the wiki without following symlinks, the excluded top-level directories pruned."""
+    found: list[tuple[Path, list[str], list[str]]] = []
+    for dirpath, dirnames, filenames in os.walk(wiki_dir, followlinks=False):
+        base = Path(dirpath)
+        if base == wiki_dir:
+            dirnames[:] = [d for d in dirnames if d not in EXCLUDED_DIRS]
+        found.append((base, list(dirnames), filenames))
+        # A symlinked directory is reported by ``symlinks_in`` and never descended into.
+        dirnames[:] = [d for d in dirnames if not (base / d).is_symlink()]
+    return found
+
+
 def list_pages(wiki_dir: Path) -> list[Path]:
-    """All ``*.md`` files under ``wiki_dir`` except those under the excluded top-level directories, sorted."""
+    """All ``*.md`` regular files under ``wiki_dir`` except under the excluded top-level directories, sorted.
+
+    A symlink is not a page and is never followed (see :func:`symlinks_in`).
+    """
     if not wiki_dir.is_dir():
         return []
     pages: list[Path] = []
-    for path in sorted(wiki_dir.rglob("*.md")):
-        if not path.is_file():
-            continue
-        parts = path.relative_to(wiki_dir).parts
-        if parts and parts[0] in EXCLUDED_DIRS:
-            continue
-        pages.append(path)
-    return pages
+    for base, _dirnames, filenames in _walk_wiki(wiki_dir):
+        for name in filenames:
+            path = base / name
+            if name.endswith(PAGE_SUFFIX) and not path.is_symlink() and path.is_file():
+                pages.append(path)
+    return sorted(pages)
+
+
+def symlinks_in(wiki_dir: Path) -> list[str]:
+    """Wiki-relative POSIX paths of every symlink (file or directory) under ``wiki_dir`` outside the excluded dirs."""
+    if not wiki_dir.is_dir():
+        return []
+    links: list[str] = []
+    for base, dirnames, filenames in _walk_wiki(wiki_dir):
+        for name in (*dirnames, *filenames):
+            if (base / name).is_symlink():
+                links.append((base / name).relative_to(wiki_dir).as_posix())
+    return sorted(links)
 
 
 def _read(path: Path) -> str:
@@ -110,16 +159,27 @@ def _has_sources(fm_lines: list[str]) -> bool:
 
 
 def md_links(text: str) -> list[str]:
-    """Intra-wiki ``.md`` link targets (fragment stripped); external, mailto and fragment-only links are dropped."""
+    """Every local link target in ``text`` (fragment and title stripped), in order of appearance.
+
+    Pages, images, data and source files alike: a non-``.md`` local target is
+    part of the containment boundary (FR-013). Web (``http``, ``https``),
+    ``mailto`` and fragment-only links are not filesystem links and are
+    dropped. :func:`md_page_links` is the wiki-page view used for reachability.
+    """
     targets: list[str] = []
     for match in _MD_LINK_RE.finditer(text):
         raw = match.group(1)
-        if not raw or raw.startswith(("http://", "https://", "mailto:", "#")):
+        if not raw or raw.startswith((*NON_FILESYSTEM_SCHEMES, "#")):
             continue
-        target = raw.split("#", 1)[0]
-        if target and target.endswith(".md"):
+        target = _LINK_TITLE_RE.sub("", raw.split("#", 1)[0])
+        if target:
             targets.append(target)
     return targets
+
+
+def md_page_links(text: str) -> list[str]:
+    """The ``.md`` targets among :func:`md_links`: the links that can reach another wiki page."""
+    return [target for target in md_links(text) if target.endswith(PAGE_SUFFIX)]
 
 
 def _canonical(path: Path) -> Path:
@@ -127,35 +187,82 @@ def _canonical(path: Path) -> Path:
     return path.parent.resolve() / path.name
 
 
-def _link_resolves(page: Path, target: str, wiki_dir: Path, live_wiki_dir: Path | None) -> bool:
-    """True when ``target`` (relative to ``page``) exists.
+def _link_violation(
+    rel: str,
+    target: str,
+    *,
+    wiki_dir: Path,
+    live_wiki_dir: Path,
+    boundaries: Sequence[Path],
+) -> str | None:
+    """Classify one local link target of page ``rel`` and return its violation, or None when it is legal.
 
-    A link that escapes the wiki (``../docs/x.md``) is checked at the live
-    wiki's location when ``live_wiki_dir`` is given: a staged copy carries the
-    wiki's pages but not its neighbours. Links inside the wiki are always
-    judged against the tree being linted.
+    The target is resolved from the page's directory at the live wiki (a
+    staged copy carries the wiki's pages but not its neighbours) with
+    :func:`wiki_studio.paths.contain`, so a symlink on the way and an
+    absolute target are refused before anything else. A ``.md`` target that
+    lands inside the wiki is a wiki-page link and must exist in the tree
+    being linted; any other target is a source reference and must exist
+    inside the first of ``boundaries`` (the root, then the allowed source
+    roots) that contains it. A root ``index.md`` entry must land inside the
+    wiki.
     """
-    candidate = page.parent / target
-    if candidate.exists():
-        return True
-    if live_wiki_dir is None:
-        return False
-    normalized = Path(os.path.normpath(candidate))
-    if normalized.is_relative_to(Path(os.path.normpath(wiki_dir))):
-        return False
-    return (live_wiki_dir / page.parent.relative_to(wiki_dir) / target).exists()
+    page_dir = posixpath.dirname(rel)
+    candidate = posixpath.join(page_dir, target) if page_dir else target
+    live_real = live_wiki_dir.resolve()
+    try:
+        real: Path | None = contain(candidate, live_wiki_dir)
+    except ContainmentError as exc:
+        if exc.reason == CONTAIN_ABSOLUTE:
+            return f"{rel}: absolute link target → {target}"
+        if exc.reason == CONTAIN_SYMLINK:
+            return f"{rel}: link target passes through a symlink → {target}"
+        real = None
+    if real is not None:
+        # Inside the wiki: a page link, or a source reference the wiki carries itself (an image).
+        in_tree = wiki_dir / real.relative_to(live_real)
+        if target.endswith(PAGE_SUFFIX):
+            return None if in_tree.is_file() else f"{rel}: broken intra-wiki link → {target}"
+        return None if in_tree.exists() else f"{rel}: broken source reference → {target}"
+    if rel == INDEX_NAME:
+        return f"{rel}: index entry outside the wiki → {target}"
+    for boundary in boundaries:
+        try:
+            real = contain(candidate, boundary, base=live_wiki_dir)
+        except ContainmentError as exc:
+            if exc.reason == CONTAIN_SYMLINK:
+                return f"{rel}: link target passes through a symlink → {target}"
+            continue
+        return None if real.exists() else f"{rel}: broken source reference → {target}"
+    return f"{rel}: link target escapes the project root → {target}"
 
 
-def lint_wiki(wiki_dir: Path, *, live_wiki_dir: Path | None = None) -> list[str]:
+def lint_wiki(
+    wiki_dir: Path,
+    *,
+    live_wiki_dir: Path | None = None,
+    root: Path | None = None,
+    source_roots: Sequence[Path] = (),
+) -> list[str]:
     """Run the six structural checks over ``wiki_dir`` and return the violations (empty when clean).
 
     ``live_wiki_dir`` is where the wiki really lives when ``wiki_dir`` is a
-    staged copy of it (``promote``): escape links are resolved there.
+    staged copy of it (``promote``): link targets are resolved there. ``root``
+    is the project root that bounds source references (default: the git
+    toplevel containing the wiki, else the wiki directory itself, as
+    ``WikiPaths`` would resolve it) and ``source_roots`` the directories
+    ``--source-root`` admits besides it.
     """
     wiki_dir = Path(wiki_dir)
+    live = Path(live_wiki_dir) if live_wiki_dir is not None else wiki_dir
+    boundaries: list[Path] = [Path(root) if root is not None else default_root(wiki_dir), *map(Path, source_roots)]
     violations: list[str] = []
     pages = list_pages(wiki_dir)
     slugs_seen: dict[str, str] = {}
+
+    # ── Symlinks: not pages, never followed, refused by promote ──
+    for rel in symlinks_in(wiki_dir):
+        violations.append(f"{rel}: symlink inside the wiki (pages and their directories must be regular files)")
 
     # ── Per-page checks ──────────────────────────────────────
     for page in pages:
@@ -205,14 +312,15 @@ def lint_wiki(wiki_dir: Path, *, live_wiki_dir: Path | None = None) -> list[str]
         if page_type not in SOURCELESS_PAGE_TYPES and not _has_sources(fm_lines):
             violations.append(f"{rel}: missing 'sources:' frontmatter (or empty list)")
 
-    # ── Intra-wiki link integrity ────────────────────────────
+    # ── The link rule: every local target classified and checked ──
     for page in pages:
         rel = page.relative_to(wiki_dir).as_posix()
         for target in md_links(_read(page)):
-            if not _link_resolves(page, target, wiki_dir, live_wiki_dir):
-                violations.append(f"{rel}: broken intra-wiki link → {target}")
+            problem = _link_violation(rel, target, wiki_dir=wiki_dir, live_wiki_dir=live, boundaries=boundaries)
+            if problem is not None:
+                violations.append(problem)
 
-    # ── Orphan check: BFS from index.md over links that stay inside the wiki ──
+    # ── Orphan check: BFS from index.md over wiki-page links that stay inside the wiki ──
     index = wiki_dir / INDEX_NAME
     if not index.is_file():
         violations.append(f"wiki: missing {INDEX_NAME} at {index}")
@@ -223,9 +331,9 @@ def lint_wiki(wiki_dir: Path, *, live_wiki_dir: Path | None = None) -> list[str]
     queue: list[Path] = [index]
     while queue:
         current = queue.pop(0)
-        for target in md_links(_read(current)):
+        for target in md_page_links(_read(current)):
             resolved = current.parent / target
-            if not resolved.is_file():
+            if resolved.is_symlink() or not resolved.is_file():
                 continue
             canonical = _canonical(resolved)
             if not canonical.is_relative_to(wiki_canonical) or canonical in reached:

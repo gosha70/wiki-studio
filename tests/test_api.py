@@ -143,23 +143,35 @@ class TestPromote(_LayoutCase):
             self.assertEqual(len(result.applied_paths), 5)
 
     def test_promote_resolves_escape_links_of_a_wiki_outside_the_root(self) -> None:
-        # Regression: the staged copy has no neighbours, so ``../guide.md`` used to
-        # be reported as broken although the live wiki (and api.lint) resolve it.
+        # Regression: the staged copy has no neighbours, so ``../../guide.md`` used to
+        # be reported as broken although the live wiki (and api.lint) resolve it. The
+        # wiki lies outside the root, so the reference needs ``source_roots`` (FR-012);
+        # an index entry may not leave the wiki (FR-013), so a page carries the link.
         with tempfile.TemporaryDirectory() as other:
             elsewhere = Path(other)
             (elsewhere / "guide.md").write_text("# guide\n", encoding="utf-8")
             wiki = elsewhere / "kb"
-            wiki.mkdir()
+            (wiki / "concepts").mkdir(parents=True)
             (wiki / "index.md").write_text(
                 "---\npage_type: index\nslug: index\ntitle: KB\nstatus: stable\nlast_reviewed: 2026-05-06\n---\n\n"
-                "# KB\n\n- [guide](../guide.md)\n",
+                "# KB\n\n- [notes](concepts/notes.md)\n",
+                encoding="utf-8",
+            )
+            (wiki / "concepts" / "notes.md").write_text(
+                "---\npage_type: concept\nslug: notes\ntitle: Notes\nstatus: stable\nlast_reviewed: 2026-05-06\n"
+                "sources:\n  - path: src.md\n    sha: abc\n---\n\n# Notes\n\nSee the [guide](../../guide.md).\n",
                 encoding="utf-8",
             )
             (wiki / "log.md").write_text(
                 "---\npage_type: log\nslug: log\ntitle: Log\nstatus: stable\nlast_reviewed: 2026-05-06\n---\n\n# Log\n",
                 encoding="utf-8",
             )
-            paths = WikiPaths.for_root(self.root, wiki_dir=wiki)
+            unadmitted = WikiPaths.for_root(self.root, wiki_dir=wiki)
+            self.assertIn(
+                "concepts/notes.md: link target escapes the project root → ../../guide.md",
+                api.lint(unadmitted).violations,
+            )
+            paths = WikiPaths.for_root(self.root, wiki_dir=wiki, source_roots=[elsewhere])
             self.assertTrue(api.lint(paths).passed)
             prop = _proposals_dir(self.root)
             self.assertTrue(api.promote(prop, paths, dry_run=True).dry_run)

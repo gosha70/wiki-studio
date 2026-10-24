@@ -54,6 +54,7 @@ import json
 import os
 import posixpath
 import shutil
+import stat
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -72,7 +73,7 @@ from .errors import (
     PromoteValidationError,
 )
 from .lint import lint_wiki
-from .paths import APPLIED_DIR_NAME, AUDIT_DIR_NAME
+from .paths import APPLIED_DIR_NAME, AUDIT_DIR_NAME, ContainmentError, contain
 from .proposal import (
     PageEdit,
     WikiPatchSet,
@@ -107,6 +108,8 @@ PROMOTE_ENTRY_POINT_CLI = "cli"
 # (POSIX), so identity and staged reads refer to one directory object. Elsewhere
 # staging reads by path: the weaker binding, unsupported in this release.
 _FD_STAGING = os.scandir in os.supports_fd and os.open in os.supports_dir_fd
+_O_DIRECTORY = getattr(os, "O_DIRECTORY", 0)
+_O_NOFOLLOW = getattr(os, "O_NOFOLLOW", 0)
 
 
 @dataclass(frozen=True)
@@ -197,8 +200,28 @@ class _Capture:
         return [{"path": rel, "sha256": sha} for rel, sha in sorted(self.shas.items())]
 
 
+def _proposal_file(rel: str, proposals_dir: Path) -> Path:
+    """The proposal boundary (FR-012): ``rel`` must stay inside the proposal directory and reach no symlink.
+
+    Checked before any proposal input is read (``plan.json``, each preview,
+    every file an enumeration meets under ``preview/`` and
+    ``.ingest-snapshot/``, ``receipt.json``). ``PromoteValidationError``
+    names the offending path.
+    """
+    try:
+        return contain(rel, proposals_dir)
+    except ContainmentError as exc:
+        raise PromoteValidationError(f"{rel} in {proposals_dir} is outside the proposal boundary ({exc})") from exc
+
+
 def _capture_submission(proposals_dir: Path, *, skip: frozenset[str] = frozenset()) -> _Capture:
-    """Read every regular file under ``proposals_dir`` once; refuse symlinks and other non-regular entries."""
+    """Read every regular file under ``proposals_dir`` once; refuse symlinks and other non-regular entries.
+
+    The enumeration never follows a symlink: a symlinked directory or file
+    anywhere under the proposal, referenced by a pointer or not, is refused
+    before any byte of it is read, and every file passes the proposal
+    boundary (:func:`_proposal_file`) before its read.
+    """
     files: dict[str, bytes] = {}
     for dirpath, dirnames, filenames in os.walk(proposals_dir, followlinks=False):
         base = Path(dirpath)
@@ -211,10 +234,12 @@ def _capture_submission(proposals_dir: Path, *, skip: frozenset[str] = frozenset
             rel = path.relative_to(proposals_dir).as_posix()
             if rel in skip:
                 continue
-            if path.is_symlink() or not path.is_file():
+            if path.is_symlink():
+                raise PromoteValidationError(f"{rel} in {proposals_dir} is a symlink; refusing to read through it")
+            if not path.is_file():
                 raise PromoteValidationError(f"{rel} in {proposals_dir} is not a regular file; refusing to read it")
             try:
-                files[rel] = path.read_bytes()
+                files[rel] = _proposal_file(rel, proposals_dir).read_bytes()
             except OSError as exc:
                 raise PromoteApplyError(f"could not read {rel} in {proposals_dir}: {exc}") from exc
     return _Capture(files)
@@ -329,34 +354,105 @@ def _open_wiki(wiki_dir: Path) -> _WikiHandle:
     return _WikiHandle(fd=fd, st_dev=int(st.st_dev), st_ino=int(st.st_ino), resolved=str(wiki_dir.resolve()))
 
 
-def _copy_tree_from_fd(dir_fd: int, dest: Path) -> None:
-    """Copy the directory behind ``dir_fd`` into ``dest``, opening every entry relative to the descriptor."""
+def _symlink_in_wiki(rel: str) -> PromoteValidationError:
+    return PromoteValidationError(
+        f"{rel}: symlink inside the wiki; promote refuses to stage or write through it "
+        "(pages and their directories must be regular files)"
+    )
+
+
+def _refuse_entry(entry: os.DirEntry[str], rel: str) -> None:
+    """Refuse a staging entry that is a symlink or neither a file nor a directory (FR-012)."""
+    if entry.is_symlink():
+        raise _symlink_in_wiki(rel)
+    if not entry.is_dir(follow_symlinks=False) and not entry.is_file(follow_symlinks=False):
+        raise PromoteValidationError(f"{rel}: not a regular file or directory inside the wiki; refusing to stage it")
+
+
+def _copy_tree_from_fd(dir_fd: int, dest: Path, rel: str = "") -> None:
+    """Copy the directory behind ``dir_fd`` into ``dest``, opening every entry relative to the descriptor.
+
+    No symlink is followed: one anywhere in the wiki stops the staging with
+    ``PromoteValidationError`` naming it; ``O_NOFOLLOW`` guards each open.
+    """
     dest.mkdir(parents=True, exist_ok=True)
     with os.scandir(dir_fd) as it:
         entries = sorted(it, key=lambda entry: entry.name)
     for entry in entries:
-        if entry.is_dir():
-            child = os.open(entry.name, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0), dir_fd=dir_fd)
+        entry_rel = f"{rel}{entry.name}"
+        _refuse_entry(entry, entry_rel)
+        if entry.is_dir(follow_symlinks=False):
+            child = os.open(entry.name, os.O_RDONLY | _O_DIRECTORY | _O_NOFOLLOW, dir_fd=dir_fd)
             try:
-                _copy_tree_from_fd(child, dest / entry.name)
+                _copy_tree_from_fd(child, dest / entry.name, f"{entry_rel}/")
             finally:
                 os.close(child)
         else:
-            fd = os.open(entry.name, os.O_RDONLY, dir_fd=dir_fd)
+            fd = os.open(entry.name, os.O_RDONLY | _O_NOFOLLOW, dir_fd=dir_fd)
             with os.fdopen(fd, "rb") as handle:
                 data = handle.read()
             (dest / entry.name).write_bytes(data)
 
 
+def _copy_tree_by_path(src: Path, dest: Path, rel: str = "") -> None:
+    """The path-based staging copy (no ``dir_fd`` support): same walk, same symlink refusal."""
+    dest.mkdir(parents=True, exist_ok=True)
+    with os.scandir(src) as it:
+        entries = sorted(it, key=lambda entry: entry.name)
+    for entry in entries:
+        entry_rel = f"{rel}{entry.name}"
+        _refuse_entry(entry, entry_rel)
+        if entry.is_dir(follow_symlinks=False):
+            _copy_tree_by_path(src / entry.name, dest / entry.name, f"{entry_rel}/")
+        else:
+            (dest / entry.name).write_bytes((src / entry.name).read_bytes())
+
+
 def _stage_wiki(handle: _WikiHandle, wiki_dir: Path, dest: Path) -> None:
-    """Copy the current wiki tree to ``dest`` (relative to the open descriptor where supported)."""
+    """Copy the current wiki tree to ``dest`` (relative to the open descriptor where supported).
+
+    Staging refuses any symlink inside the wiki, file or directory, with
+    ``PromoteValidationError`` naming it (FR-012).
+    """
     if dest.exists():
         shutil.rmtree(dest)
     if _FD_STAGING and handle.fd is not None:
         _copy_tree_from_fd(handle.fd, dest)
         return
     # A wiki is small (tens of pages); a full copy is the simplest staging primitive.
-    shutil.copytree(wiki_dir, dest)
+    _copy_tree_by_path(wiki_dir, dest)
+
+
+def _wiki_write_target(rel: str, wiki_dir: Path) -> Path:
+    """The wiki boundary for a write (FR-012): ``rel`` must stay inside ``wiki_dir`` and reach no symlink.
+
+    Used for every staged write and, under the lock, for every live path the
+    commit will write. ``PromoteValidationError`` names the path.
+    """
+    try:
+        contain(rel, wiki_dir)
+    except ContainmentError as exc:
+        raise PromoteValidationError(f"{rel}: path escapes the wiki directory ({exc})") from exc
+    return wiki_dir / rel
+
+
+def _recheck_write_targets(planned: list[_PlannedWrite], wiki_dir: Path) -> None:
+    """Immediately before the commit, under the lock: ``os.lstat`` every component of every planned write.
+
+    A symlink that appeared since staging (the page itself or a directory on
+    the way) is refused with ``PromoteValidationError``; nothing has been
+    written, and no receipt exists yet.
+    """
+    for plan in planned:
+        probe = wiki_dir
+        for part in Path(plan.rel).parts:
+            probe = probe / part
+            try:
+                st = os.lstat(probe)
+            except (FileNotFoundError, NotADirectoryError):
+                break  # the commit creates the rest
+            if stat.S_ISLNK(st.st_mode):
+                raise _symlink_in_wiki(probe.relative_to(wiki_dir).as_posix())
 
 
 def _apply_edit(stage_dir: Path, edit: PageEdit) -> None:
@@ -372,9 +468,7 @@ def _apply_edit(stage_dir: Path, edit: PageEdit) -> None:
     per-edit validator catches most of these earlier; this is a
     defense-in-depth check at apply time.
     """
-    target = stage_dir / edit.path
-    if not Path(os.path.normpath(target)).is_relative_to(Path(os.path.normpath(stage_dir))):
-        raise PromoteValidationError(f"{edit.path}: path escapes the wiki directory")
+    target = _wiki_write_target(edit.path, stage_dir)
     if edit.action == "create":
         if target.exists():
             raise PromoteApplyError(
@@ -450,7 +544,7 @@ def _lint_staged_tree(stage_dir: Path, paths: WikiPaths) -> list[str]:
     resolved at ``paths.wiki_dir`` while every intra-wiki link is judged
     against the staged (post-apply) tree.
     """
-    return lint_wiki(stage_dir, live_wiki_dir=paths.wiki_dir)
+    return lint_wiki(stage_dir, live_wiki_dir=paths.wiki_dir, root=paths.root, source_roots=paths.source_roots)
 
 
 def _validate_before_staging(patch: WikiPatchSet, paths: WikiPaths) -> None:
@@ -656,7 +750,8 @@ def _plan_commit(stage_dir: Path, paths: WikiPaths, patch: WikiPatchSet, archive
         if not staged.is_file():
             continue
         new_bytes = staged.read_bytes()
-        target = wiki_dst / rel
+        # The live target passes the wiki boundary (no escape, no symlink on the way) before it is read.
+        target = _wiki_write_target(rel, wiki_dst)
         original_bytes: bytes | None = None
         if target.exists():
             try:
@@ -782,6 +877,7 @@ def _load_receipt(proposals_dir: Path) -> dict[str, Any] | None:
     receipt_path = proposals_dir / RECEIPT_FILE_NAME
     if receipt_path.is_symlink():
         raise PromoteValidationError(f"{receipt_path} is a symlink; refusing to read through it")
+    _proposal_file(RECEIPT_FILE_NAME, proposals_dir)
     if not receipt_path.exists():
         return None
     try:
@@ -978,6 +1074,8 @@ def _find_complete_archive(applied_root: Path, name: str, digest: str, manifest:
             candidate.name.startswith(f"{name}-") and candidate.name[len(name) + 1 :].isdigit()
         ):
             continue
+        if (candidate / RECEIPT_FILE_NAME).is_symlink():
+            continue  # never read through a symlink, even in the archive
         try:
             data = json.loads((candidate / RECEIPT_FILE_NAME).read_bytes().decode("utf-8"))
         except (OSError, ValueError):
@@ -1084,6 +1182,8 @@ def _commit_and_archive(
     unguarded: list[str],
 ) -> PromoteResult:
     """Steps 1 to 4 for a fresh promotion whose stage validated and whose preconditions held."""
+    # FR-012: the last look at the live targets before anything is written.
+    _recheck_write_targets(planned, paths.wiki_dir)
     receipt = _build_receipt(
         proposals_dir=proposals_dir,
         capture=capture,

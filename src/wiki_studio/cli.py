@@ -49,6 +49,7 @@ from .paths import (
     ENV_LOCK_TIMEOUT,
     ENV_PROPOSALS_DIR,
     ENV_ROOT,
+    ENV_SOURCE_ROOTS,
     ENV_WIKI_DIR,
     WikiPaths,
 )
@@ -78,13 +79,23 @@ _ERROR_PREFIXES: tuple[tuple[type[IngestError], str], ...] = (
 
 
 def _add_path_options(parser: argparse.ArgumentParser, *, suppress_defaults: bool) -> None:
-    """The three global location options and the wiki-lock timeout.
+    """The three global location options, the allowed source roots and the wiki-lock timeout.
 
     They live on the top-level parser and, with suppressed defaults, on every
     verb parser, so a value given after the verb is not clobbered by a
     missing one before it.
     """
     default = argparse.SUPPRESS if suppress_defaults else None
+    parser.add_argument(
+        "--source-root",
+        type=Path,
+        action="append",
+        default=default,
+        metavar="PATH",
+        help="A directory outside the root whose files pages may reference with local links (images, data, "
+        "source files); repeatable. A local link target must otherwise resolve inside the root. "
+        f"Default: {ENV_SOURCE_ROOTS} ({os.pathsep!r}-separated), else none.",
+    )
     parser.add_argument(
         "--root",
         type=Path,
@@ -418,6 +429,7 @@ def _paths_from_args(args: argparse.Namespace) -> WikiPaths:
         wiki_dir=getattr(args, "wiki_dir", None),
         proposals_dir=getattr(args, "proposals_dir", None),
         lock_timeout=getattr(args, "lock_timeout", None),
+        source_roots=getattr(args, "source_root", None),
     )
 
 
@@ -656,6 +668,7 @@ def _do_info(args: argparse.Namespace) -> int:
         "schema_dir": str(paths.schema_dir),
         "lock_file": str(lock_path_for(paths.wiki_dir)),
         "lock_timeout": paths.lock_timeout,
+        "source_roots": [str(p) for p in paths.source_roots],
     }
     if args.json:
         print(json.dumps(info, indent=2))
@@ -672,6 +685,7 @@ def _do_info(args: argparse.Namespace) -> int:
     print(f"audit-log: {paths.audit_log}")
     print(f"schema: {schema}" + (f" copy at {paths.schema_dir}" if schema == _SCHEMA_PROJECT else ""))
     print(f"lock-file: {lock_path_for(paths.wiki_dir)}  (timeout {paths.lock_timeout:g}s)")
+    print("source-roots: " + (", ".join(str(p) for p in paths.source_roots) or "(none; links stay inside the root)"))
     return 0
 
 
@@ -747,7 +761,7 @@ def _do_find(args: argparse.Namespace) -> int:
 _VERBS = ("ingest", "promote", "query", "lint", "audit-flush", "info", "init", "propose", "find", "read")
 
 # Global options that take a value; their value is not a positional for the legacy shim.
-_GLOBAL_VALUE_OPTIONS = ("--root", "--wiki-dir", "--proposals-dir", "--lock-timeout")
+_GLOBAL_VALUE_OPTIONS = ("--root", "--wiki-dir", "--proposals-dir", "--source-root", "--lock-timeout")
 
 
 def _inject_legacy_v1_prefix(argv: list[str]) -> list[str]:

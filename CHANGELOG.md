@@ -50,8 +50,35 @@ uses [Semantic Versioning](https://semver.org/).
   `update` edits without a base hash and records them as `unguarded_paths` in
   the receipt. `PromoteResult.unguarded_paths` and `PromoteResult.warnings`
   (both last, with defaults); the CLI prints the warnings to stderr.
+- Containment boundaries (`wiki_studio.paths.contain`, one check that
+  resolves both sides, refuses absolute candidates and any symlink on the
+  way, and is applied before every read and write): the wiki boundary for
+  page writes, staging, `read` / `api.read_page` and the navigation reads of
+  `find`, `query` and the eval selector; the proposal boundary for
+  `plan.json`, every `preview` pointer, every file the digest enumeration
+  and the curator delta read (referenced or not) and `receipt.json`; the
+  source boundary for local links in page text. Staging refuses any symlink
+  inside the wiki (exit 9 naming it) and the commit re-checks every target
+  with `os.lstat` under the lock. `--source-root PATH` (repeatable) and
+  `WIKI_STUDIO_SOURCE_ROOTS` (`os.pathsep`-separated) admit directories
+  outside the root for source references; `WikiPaths.source_roots`; `info`
+  prints them.
 
 ### Changed
+
+- The link rule (`lint`, and so `promote`): the collector returns every
+  local link target, not only `.md` ones. Web (`http`, `https`) and
+  `mailto` targets are not filesystem links; a `.md` target inside the wiki
+  is a wiki-page link and must exist; a `.md` target outside the wiki and
+  any non-`.md` target (image, data, source file) is a source reference
+  that must resolve inside the root or an allowed source root; absolute
+  targets, targets that leave the root, targets that pass through a
+  symlink, an `index.md` entry outside the wiki and a symlink inside the
+  wiki are violations. `../` targets inside the root stay legal.
+  Reachability counts wiki-page links only. `_extract_index_links` applies
+  the index-entry rule as a defence, so `find` and `query` never list a
+  file outside the wiki. `lint_wiki` takes `root` and `source_roots`
+  (default: the git toplevel containing the wiki, else the wiki itself).
 
 - An `update` without `base_sha256` is refused (exit 9) with the two
   remedies named: regenerate the proposal from a fresh `read`, or pass the

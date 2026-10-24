@@ -53,6 +53,7 @@ from .health_lint import lint_health
 from .ingestor import DefaultIngestor
 from .ingestor_multi import COLLISION_ERROR, COLLISION_SUFFIX, DefaultMultiIngestor, write_patch_set_dir
 from .lint import lint_wiki, list_pages
+from .paths import CONTAIN_SYMLINK, ContainmentError, contain, is_absolute_path
 from .promoter import (
     DEFAULT_WIKI_TITLE,
     INDEX_NAME,
@@ -575,23 +576,24 @@ class ReadResult:
 def _wiki_relative_page(path: str | os.PathLike[str], paths: WikiPaths) -> tuple[str, Path]:
     """Normalise a wiki-relative page path and refuse one that leaves the wiki or passes through a symlink.
 
-    The wiki boundary (FR-012): the candidate must be relative, resolve inside
+    The wiki boundary (FR-012), checked by :func:`wiki_studio.paths.contain`
+    before anything is read: the candidate must be relative, resolve inside
     the resolved wiki directory, and no component of it may be a symlink.
     """
     raw = Path(path)
-    rel = posixpath.normpath(raw.as_posix())
-    if raw.is_absolute() or rel == "." or rel.startswith("../") or rel == "..":
+    text = raw.as_posix()
+    rel = posixpath.normpath(text)
+    if is_absolute_path(text) or rel == "." or rel.startswith("../") or rel == "..":
         raise PathOutsideRootError(f"page path must be wiki-relative and stay inside the wiki: {path}")
-    target = paths.wiki_dir / rel
-    wiki = paths.wiki_dir.resolve()
-    probe = paths.wiki_dir
-    for part in Path(rel).parts:
-        probe = probe / part
-        if probe.is_symlink():
-            raise PathOutsideRootError(f"page path passes through a symlink, which is outside the wiki boundary: {rel}")
-    if not target.resolve().is_relative_to(wiki):
-        raise PathOutsideRootError(f"page path escapes the wiki directory {paths.wiki_dir}: {rel}")
-    return rel, target
+    try:
+        contain(rel, paths.wiki_dir)
+    except ContainmentError as exc:
+        if exc.reason == CONTAIN_SYMLINK:
+            raise PathOutsideRootError(
+                f"page path passes through a symlink, which is outside the wiki boundary: {rel}"
+            ) from exc
+        raise PathOutsideRootError(f"page path escapes the wiki directory {paths.wiki_dir}: {rel}") from exc
+    return rel, paths.wiki_dir / rel
 
 
 def read_page(path: str | os.PathLike[str], paths: WikiPaths) -> ReadResult:
@@ -821,7 +823,7 @@ def lint(
     Avoid-format problems are reported by the health tier when it runs and
     by the prose tier otherwise, so each appears once.
     """
-    violations = tuple(lint_wiki(paths.wiki_dir))
+    violations = tuple(lint_wiki(paths.wiki_dir, root=paths.root, source_roots=paths.source_roots))
     pages_checked = len(list_pages(paths.wiki_dir))
     audit_errors = tuple(validate_audit_tree(paths))
     health_result: HealthLintResult | None = None

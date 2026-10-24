@@ -53,16 +53,33 @@ Same for `concept` → `concepts/`, `workflow` → `workflows/`,
 `glossary` → `glossary/`, `open-question` → `open-questions/`.
 `index`, `log`, and `overview` must be at the wiki root.
 
-### 5. Intra-wiki link integrity
+### 5. Link integrity (the link rule)
 
-Every markdown link of the form `[text](relative/path.md)` (or with
-a fragment, `…#section`) inside a wiki page must point to a file
-that exists. External links (`http(s)://…`) are not checked.
+Every local markdown link target (`[text](path)`, `![alt](path)`,
+with or without a `#fragment`) inside a wiki page is classified and
+checked. Web links (`http(s)://…`) and `mailto:` links are not
+filesystem links and are not checked.
+
+- A `.md` target that resolves inside the wiki directory is a
+  wiki-page link and must point to a page that exists.
+- A `.md` target outside the wiki, and any non-`.md` target (an
+  image, a data file, a source file), is a source reference and must
+  resolve inside the project root or a directory admitted with
+  `--source-root` / `WIKI_STUDIO_SOURCE_ROOTS`. `../` targets that
+  stay inside the root are legal.
+- An absolute target, a target that leaves the root, and a target
+  that passes through a symlink are violations.
+- An `index.md` entry whose target resolves outside the wiki is a
+  violation, so `promote` rejects it and `find` / `query` never list
+  a file outside the wiki.
+
+A symlink inside the wiki (file or directory) is itself a violation:
+pages are regular files, and `promote` refuses to stage a symlink.
 
 ### 6. Orphan pages
 
 Every page (except `index` and `log`) must be reachable from
-`index.md` via a chain of markdown links. The linter does a BFS
+`index.md` via a chain of wiki-page links. The linter does a BFS
 from `index.md` and reports any wiki page not reached.
 
 ## What `lint --prose` checks (advisory)

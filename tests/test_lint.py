@@ -9,7 +9,16 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from wiki_studio.lint import EXCLUDED_DIRS, PAGE_TYPE_DIRS, VALID_PAGE_TYPES, lint_wiki, list_pages, md_links
+from wiki_studio.lint import (
+    EXCLUDED_DIRS,
+    PAGE_TYPE_DIRS,
+    VALID_PAGE_TYPES,
+    lint_wiki,
+    list_pages,
+    md_links,
+    md_page_links,
+    symlinks_in,
+)
 
 _FM = (
     "---\npage_type: {page_type}\nslug: {slug}\ntitle: {title}\nstatus: stable\nlast_reviewed: 2026-05-06\n{extra}---\n"
@@ -187,8 +196,15 @@ class TestLinksAndReachability(_WikiCase):
         _clean_wiki(self.wiki)
 
     def test_md_links_extraction(self) -> None:
+        # Every local target is collected (FR-013); the page view keeps the ``.md`` ones for reachability.
         text = "[a](x.md) [b](y.md#frag) [c](https://e.com/z.md) [d](mailto:x) [e](#frag) [f](img.png) [g](../out.md)"
-        self.assertEqual(md_links(text), ["x.md", "y.md", "../out.md"])
+        self.assertEqual(md_links(text), ["x.md", "y.md", "img.png", "../out.md"])
+        self.assertEqual(md_page_links(text), ["x.md", "y.md", "../out.md"])
+
+    def test_md_links_strips_a_link_title(self) -> None:
+        self.assertEqual(
+            md_links("[a](img.png \"Diagram\") [b](x.md 't') [c](/abs/p.md)"), ["img.png", "x.md", "/abs/p.md"]
+        )
 
     def test_broken_intra_wiki_link(self) -> None:
         _page(self.wiki, "concepts/alpha.md", page_type="concept", body="See [gone](gone.md) and [beta](beta.md).\n")
@@ -201,11 +217,12 @@ class TestLinksAndReachability(_WikiCase):
         self.assertEqual(lint_wiki(self.wiki), [])
 
     def test_escape_link_to_project_file_resolves(self) -> None:
+        # ``../`` that stays inside the root is a legal source reference.
         (self.root / "README.md").write_text("# root\n", encoding="utf-8")
         _page(
             self.wiki, "concepts/alpha.md", page_type="concept", body="[readme](../../../README.md) [beta](beta.md)\n"
         )
-        self.assertEqual(lint_wiki(self.wiki), [])
+        self.assertEqual(lint_wiki(self.wiki, root=self.root), [])
 
     def test_orphan_page_is_reported(self) -> None:
         _page(self.wiki, "concepts/gamma.md", page_type="concept")
@@ -239,16 +256,128 @@ class TestLiveWikiDir(_WikiCase):
         shutil.copytree(self.wiki, self.copy)
 
     def test_live_wiki_passes_and_bare_copy_fails(self) -> None:
-        self.assertEqual(lint_wiki(self.wiki), [])
-        self.assertViolation(lint_wiki(self.copy), "concepts/alpha.md: broken intra-wiki link → ../../guide.md")
+        self.assertEqual(lint_wiki(self.wiki, root=self.root), [])
+        self.assertViolation(
+            lint_wiki(self.copy, root=self.root), "concepts/alpha.md: broken source reference → ../../guide.md"
+        )
 
     def test_copy_with_live_wiki_dir_resolves_escape_links(self) -> None:
-        self.assertEqual(lint_wiki(self.copy, live_wiki_dir=self.wiki), [])
+        self.assertEqual(lint_wiki(self.copy, live_wiki_dir=self.wiki, root=self.root), [])
 
     def test_intra_wiki_links_are_judged_against_the_copy(self) -> None:
         (self.copy / "concepts" / "beta.md").unlink()
-        violations = lint_wiki(self.copy, live_wiki_dir=self.wiki)
+        violations = lint_wiki(self.copy, live_wiki_dir=self.wiki, root=self.root)
         self.assertViolation(violations, "concepts/alpha.md: broken intra-wiki link → beta.md")
+
+    def test_default_root_is_the_git_toplevel_or_the_wiki_itself(self) -> None:
+        # Without ``root`` a wiki outside any git repository bounds source references to itself,
+        # so the escape to ``knowledge/guide.md`` is reported as leaving the root.
+        self.assertViolation(
+            lint_wiki(self.wiki), "concepts/alpha.md: link target escapes the project root → ../../guide.md"
+        )
+
+
+class TestLinkRule(_WikiCase):
+    """FR-013: every local target classified; absolute, root-escaping and symlinked targets are violations."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        _clean_wiki(self.wiki)
+        self.outside = self.root.parent / f"{self.root.name}-outside"
+        self.outside.mkdir(exist_ok=True)
+        (self.outside / "diagram.png").write_bytes(b"png")
+        (self.outside / "notes.md").write_text("# notes\n", encoding="utf-8")
+
+    def tearDown(self) -> None:
+        shutil.rmtree(self.outside, ignore_errors=True)
+        super().tearDown()
+
+    def _alpha(self, body: str) -> None:
+        _page(self.wiki, "concepts/alpha.md", page_type="concept", body=body + " [beta](beta.md)\n")
+
+    def test_absolute_target_is_a_violation(self) -> None:
+        self._alpha(f"[abs]({self.outside / 'notes.md'}) ![img](/tmp/diagram.png)")
+        violations = lint_wiki(self.wiki, root=self.root)
+        self.assertViolation(violations, f"concepts/alpha.md: absolute link target → {self.outside / 'notes.md'}")
+        self.assertViolation(violations, "concepts/alpha.md: absolute link target → /tmp/diagram.png")
+
+    def test_escape_leaving_the_root_is_a_violation(self) -> None:
+        target = f"../../../../{self.outside.name}/notes.md"
+        self._alpha(f"[notes]({target})")
+        self.assertViolation(lint_wiki(self.wiki, root=self.root), f"link target escapes the project root → {target}")
+
+    def test_source_reference_outside_the_wiki_inside_the_root_is_legal(self) -> None:
+        (self.root / "knowledge" / "docs").mkdir()
+        (self.root / "knowledge" / "docs" / "guide.md").write_text("# guide\n", encoding="utf-8")
+        (self.root / "data.csv").write_text("a,b\n", encoding="utf-8")
+        self._alpha("[guide](../../docs/guide.md) [data](../../../data.csv)")
+        self.assertEqual(lint_wiki(self.wiki, root=self.root), [])
+
+    def test_non_md_local_target_is_a_source_reference(self) -> None:
+        (self.wiki / "assets").mkdir()
+        (self.wiki / "assets" / "diagram.png").write_bytes(b"png")
+        self._alpha("![d](../assets/diagram.png) ![missing](../assets/gone.png)")
+        violations = lint_wiki(self.wiki, root=self.root)
+        self.assertEqual(violations, ["concepts/alpha.md: broken source reference → ../assets/gone.png"])
+
+    def test_image_escaping_the_permitted_roots_is_a_violation_until_a_source_root_admits_it(self) -> None:
+        target = f"../../../../{self.outside.name}/diagram.png"
+        self._alpha(f"![d]({target})")
+        self.assertViolation(lint_wiki(self.wiki, root=self.root), f"link target escapes the project root → {target}")
+        self.assertEqual(lint_wiki(self.wiki, root=self.root, source_roots=[self.outside]), [])
+        (self.outside / "diagram.png").unlink()
+        self.assertViolation(
+            lint_wiki(self.wiki, root=self.root, source_roots=[self.outside]),
+            f"concepts/alpha.md: broken source reference → {target}",
+        )
+
+    def test_web_urls_are_not_filesystem_links(self) -> None:
+        self._alpha("[a](https://example.com/x.png) [b](http://example.com/../../etc) [m](mailto:a@b.c)")
+        self.assertEqual(lint_wiki(self.wiki, root=self.root), [])
+
+    def test_index_entry_outside_the_wiki_is_a_violation(self) -> None:
+        (self.root / "knowledge" / "guide.md").write_text("# guide\n", encoding="utf-8")
+        index = self.wiki / "index.md"
+        index.write_text(
+            index.read_text(encoding="utf-8") + "- [Guide](../guide.md)\n- [Abs](/etc/x.md)\n", encoding="utf-8"
+        )
+        violations = lint_wiki(self.wiki, root=self.root)
+        self.assertViolation(violations, "index.md: index entry outside the wiki → ../guide.md")
+        self.assertViolation(violations, "index.md: absolute link target → /etc/x.md")
+
+    def test_symlinked_page_is_reported_and_links_to_it_pass_through_a_symlink(self) -> None:
+        (self.wiki / "concepts" / "gamma.md").symlink_to(self.outside / "notes.md")
+        _page(self.wiki, "concepts/beta.md", page_type="concept", body="[alpha](alpha.md) [gamma](gamma.md)\n")
+        violations = lint_wiki(self.wiki, root=self.root)
+        self.assertViolation(violations, "concepts/gamma.md: symlink inside the wiki")
+        self.assertViolation(violations, "concepts/beta.md: link target passes through a symlink → gamma.md")
+        self.assertEqual(symlinks_in(self.wiki), ["concepts/gamma.md"])
+        self.assertNotIn(self.wiki / "concepts" / "gamma.md", list_pages(self.wiki))
+
+    def test_symlinked_directory_is_reported_and_never_followed(self) -> None:
+        (self.wiki / "decisions").symlink_to(self.outside, target_is_directory=True)
+        _page(self.wiki, "concepts/beta.md", page_type="concept", body="[alpha](alpha.md) [n](../decisions/notes.md)\n")
+        violations = lint_wiki(self.wiki, root=self.root)
+        self.assertViolation(violations, "decisions: symlink inside the wiki")
+        self.assertViolation(
+            violations, "concepts/beta.md: link target passes through a symlink → ../decisions/notes.md"
+        )
+        self.assertFalse(any("notes.md:" in v for v in violations))
+
+    def test_a_symlink_cancelled_by_a_parent_step_is_still_refused(self) -> None:
+        (self.wiki / "concepts" / "link").symlink_to(self.outside, target_is_directory=True)
+        self._alpha("[beta-again](link/../beta.md)")
+        self.assertViolation(
+            lint_wiki(self.wiki, root=self.root),
+            "concepts/alpha.md: link target passes through a symlink → link/../beta.md",
+        )
+
+    def test_reachability_counts_page_links_only(self) -> None:
+        _page(self.wiki, "concepts/gamma.md", page_type="concept")
+        _page(self.wiki, "concepts/beta.md", page_type="concept", body="[alpha](alpha.md) [gamma](gamma)\n")
+        violations = lint_wiki(self.wiki, root=self.root)
+        self.assertViolation(violations, "concepts/beta.md: broken source reference → gamma")
+        self.assertViolation(violations, "concepts/gamma.md: orphan — not reachable from index.md")
 
 
 class TestAuditExclusion(_WikiCase):
