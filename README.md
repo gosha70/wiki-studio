@@ -66,11 +66,14 @@ or a dropped sentence that carries none of them. The warnings are
 advisory: the exit code does not change and `promote` ignores them. A live page that
 cannot be read or decoded is reported as `not compared` and recorded as
 `edits[].fact_check_error`; the patch-set is still written. See
-`docs/patch-set-format.md`.
+`docs/patch-set-format.md`. The proposal directory, its files, the
+`.ingest-snapshot/` copy and the ingest-log record are all written under
+the wiki lock, and a publication that fails part-way is removed before the
+lock is released.
 
 | Flag | Effect |
 |---|---|
-| `--legacy-single-source` | v1 single-page proposal: one `<date>-<slug>.md` file instead of a patch-set |
+| `--legacy-single-source` | v1 single-page proposal: one `<date>-<slug>.md` file instead of a patch-set; a previous file of that name is moved aside and restored if publication fails (a leftover `<name>.bak-<pid>-<n>` beside it is that earlier proposal, to review by hand) |
 | `--backend NAME` | `claude`, `codex`, `cursor`, `pi` or `test` (see Backends) |
 | `--dry-run` | gate only, no draft body (legacy) / audit record marked as a dry run (multi-page) |
 | `--check` | run the gate with zero filesystem side effects; exit 0 accept, 1 reject. Mutually exclusive with `--dry-run` |

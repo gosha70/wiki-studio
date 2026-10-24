@@ -31,13 +31,19 @@ advisory unless you ask otherwise.
   default (`--allow-out-of-repo` lifts that deliberately); every read and
   write of a wiki page, a proposal file or a local link target passes one
   containment check that resolves the path and refuses an escape or a
-  symlink (`wiki_studio.paths.contain`).
+  symlink (`wiki_studio.paths.contain`). The same check covers the archive
+  root `proposals/.applied`, the paths a receipt names for recovery, the
+  legacy proposal file, the pages ingest reads into its prompt, and the
+  ingest-log append, which is bound to the verified `.audit/` directory
+  descriptor on POSIX.
 - A promotion is validated (a staged copy of the wiki is linted in a
   private temporary directory before anything is written), serialised
   against other wiki-studio writers on the same machine by an OS advisory
   lock, and rolled back on failure. It is not crash-safe across files: a
   process killed inside the commit can leave some files written and
-  others not, and uncoordinated readers may observe intermediate state.
+  others not, and uncoordinated readers may observe intermediate state. A
+  receipt or archive that could not be synced to disk (a real `fsync`
+  error) stops the promotion rather than continuing.
   The lock covers one machine and one filesystem; it is not distributed,
   does not protect against direct edits of wiki files, and network
   filesystems are out of scope.
