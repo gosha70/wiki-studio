@@ -7,3 +7,6 @@ Review: PASS (see specs/wiki-studio-0-6-0/collaboration/build-review.md).
 
 ### Phase 3 complete — US3: Containment (2026-10-24T08:44:04Z)
 Review: PASS (see specs/wiki-studio-0-6-0/collaboration/build-review.md).
+
+### Phase 4 complete — US4: Citation evidence (2026-10-24T12:43:03Z)
+Review: PASS (see specs/wiki-studio-0-6-0/collaboration/build-review.md).
