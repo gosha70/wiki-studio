@@ -28,7 +28,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Literal, Protocol, runtime_checkable
 
 from .errors import BackendInvocationError, ContractViolationError, SourceMissingError
-from .fact_diff import removed_facts
+from .fact_diff import FACT_ERROR_UNREADABLE, removed_facts_checked
 from .paths import DEFAULT_LOCK_TIMEOUT
 from .prompt import (
     compose_multi_prompt,
@@ -292,12 +292,15 @@ def _write_patch_set_files(patch: WikiPatchSet, output_dir: Path, wiki_dir: Path
             try:
                 old_content = live.read_text(encoding="utf-8")
             except UnicodeDecodeError:
-                entry["fact_check_error"] = "live page not readable: not valid UTF-8"
+                entry["fact_check_error"] = f"{FACT_ERROR_UNREADABLE}: not valid UTF-8"
             except OSError as exc:
                 # The plan is archived into the wiki on promote: record the error kind, not a machine path.
-                entry["fact_check_error"] = f"live page not readable: {exc.strerror or type(exc).__name__}"
+                entry["fact_check_error"] = f"{FACT_ERROR_UNREADABLE}: {exc.strerror or type(exc).__name__}"
             else:
-                warnings = removed_facts(old_content, e.new_content)
+                warnings, problem = removed_facts_checked(old_content, e.new_content)
+                if problem:
+                    # Malformed `sources` on either side: the body was compared, the citations were not.
+                    entry["fact_check_error"] = problem
                 if warnings:
                     entry["fact_warnings"] = warnings
         plan_edits.append(entry)

@@ -299,6 +299,16 @@ class TestProposeFactWarnings(_Workspace):
         self.assertNotIn("fact_warnings", plan["edits"][0])
         self.assertIn("live page not readable", plan["edits"][0]["fact_check_error"])
 
+    def test_malformed_sources_print_the_partial_error_and_the_items(self) -> None:
+        live = self.paths.wiki_dir / "decisions" / "retry-backoff.md"
+        live.write_text(DECISION.replace("sources:\n  - path: notes.md\n", "sources: notes.md\n"), encoding="utf-8")
+        result = self.cli("propose", "--from", str(self.draft), "--name", "rewrite")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("fact-check: decisions/retry-backoff.md: sources not compared (live page:", result.stderr)
+        self.assertNotIn("not compared (sources", result.stderr)
+        self.assertIn("fact-check: decisions/retry-backoff.md: 1 item(s) removed", result.stderr)
+        self.assertIn("  - 8 s", result.stderr)
+
     def test_with_promote_warns_before_the_apply_line_and_applies(self) -> None:
         code, output = self.cli_merged("propose", "--from", str(self.draft), "--name", "rewrite", "--promote")
         self.assertEqual(code, 0, output)
