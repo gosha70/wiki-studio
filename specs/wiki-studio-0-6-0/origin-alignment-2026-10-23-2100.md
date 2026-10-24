@@ -1,5 +1,7 @@
 # Origin alignment check — wiki-studio-0-6-0
 
+**Superseded.** This record covers the bundle as approved at PR #37 head 7d0e4cd. The bundle returned to `draft` at 0e3e1c2 for the plan-review revisions; a new record against the re-approved head replaces this one before the build.
+
 Gate: spec, plan and tasks reviewed twice on PR #37 and approved by the owner (Gate 1, at plan approval), 2026-10-23 21:00 UTC, against `main` at 41cfe54 and the bundle at PR #37 head 7d0e4cd. Written by hand from the review record; the automated gate re-runs before the build.
 
 Origin: the owner's product proposal of 23 October 2026 (`Wiki_Studio_Product_Proposal.docx`, "Release A — Safe changes"), its revision-3 review of the same date, and the two spec reviews on PR #37. The proposal's own evidence register pins wiki-studio at 41cfe54 and memkernel at 2d41062.

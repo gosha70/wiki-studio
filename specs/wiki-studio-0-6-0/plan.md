@@ -73,10 +73,13 @@ Every file and line the spec relies on was checked on `main` at 41cfe54 on
   recipe in the receipt and as an optional key on new ingest-log records, and
   keeps recipe 1 for verifying older records.
   Promote captures the payload once under the lock and parses, hashes, stages
-  and archives from that capture (the archive is written from the captured
-  bytes and the original removed only when it still matches), and the
-  patch-set writer never reuses a proposal directory, so the receipt and the
-  archive cannot identify bytes other than the ones applied.
+  and archives from that capture (a complete tree manifest, published by
+  atomic rename from a temporary sibling, the original removed only when it
+  still matches the manifest), and the patch-set writer never silently reuses
+  a proposal directory (suffix for generated names, `OutputWriteError` for
+  caller-selected ones as today), so the receipt and the archive cannot
+  identify bytes other than the ones applied and no file is deleted that was
+  not archived.
   The ingest log keeps the generated payload's hash and the receipt the
   promoted payload's; they differ after curator edits by design. The receipt
   names the wiki it was written for by device and inode (the path is a
@@ -122,8 +125,10 @@ under the lock. US3 and US4 are independent of US2. US5 last.
 `specs/wiki-studio-0-6-0/automation.json`: profile `pr`, branch
 `feature/wiki-studio-0-6-0` off `main`, five phases with no milestone pause,
 DeepSeek gating review (max 3 rounds per phase), caps as for 0.5.0. The
-origin-alignment record `origin-alignment-2026-10-23-2100.md` accompanies the
-approved plan; the gate re-runs it before the build.
+origin-alignment record `origin-alignment-2026-10-23-2100.md` covers the
+bundle as approved at PR head 7d0e4cd; the bundle returned to draft for the
+plan-review revisions, and a new record against the re-approved head replaces
+it before the build.
 
 ## Test strategy
 

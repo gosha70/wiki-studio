@@ -186,4 +186,6 @@ crash-safe multi-file transactions unless a deployment need justifies them.
 
 - 2026-10-22: code review reproduces five defects on 41cfe54.
 - 2026-10-23: product proposal adopted with amendments; Release A specified
-  (PR #37), reviewed twice and approved; this roadmap written.
+  (PR #37), reviewed twice and approved; this roadmap written. A plan review
+  the same day returned the bundle to draft for revisions to the submission
+  identity, recovery and containment requirements; re-approval pending.
