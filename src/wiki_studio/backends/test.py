@@ -24,6 +24,18 @@ def _to_kebab(title: str) -> str:
     return slug or "untitled"
 
 
+def _quote_first_line(content: str) -> str:
+    """The first non-blank line of ``content`` (at most 120 characters), or ''.
+
+    A query citation must quote the cited page as it was in the prompt
+    (FR-014), so the fragment is taken from the page text itself.
+    """
+    for line in content.splitlines():
+        if line.strip():
+            return line[:120]
+    return ""
+
+
 class TestBackend:
     """Deterministic in-process backend for unit and integration tests.
 
@@ -56,7 +68,10 @@ class TestBackend:
 
         Returns an answer derived from the question + cites every
         candidate page that was loaded into the prompt. Idempotent
-        and stable — useful for index-first navigation tests.
+        and stable — useful for index-first navigation tests. Every
+        fragment is quoted from the prompt's own text (the first
+        non-blank line of the page, or of index.md for the abstention
+        form), so the reply satisfies the citation-evidence rule.
         """
         question = prompt.get("source", {}).get("content", "")
         wiki_state = prompt.get("wiki_state", {})
@@ -64,16 +79,10 @@ class TestBackend:
 
         # Synthesise a stable answer from the question + page paths.
         if candidates:
-            citations = [
-                {
-                    "page": rel,
-                    "fragment": (content[:120].splitlines()[0] if content else ""),
-                }
-                for rel, content in candidates.items()
-            ]
+            citations = [{"page": rel, "fragment": _quote_first_line(content)} for rel, content in candidates.items()]
             answer = f"Test backend deterministic answer to: {question.strip()!r}. Consulted {len(candidates)} page(s)."
         else:
-            citations = [{"page": "index.md", "fragment": "(index only — no candidates loaded)"}]
+            citations = [{"page": "index.md", "fragment": _quote_first_line(wiki_state.get("index_md", ""))}]
             answer = ""  # empty signals "not enough info"
 
         return {

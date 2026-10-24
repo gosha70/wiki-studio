@@ -1,24 +1,32 @@
 # Copyright (c) 2026 EGOGE
 # SPDX-License-Identifier: Apache-2.0
-"""WikiPaths: defaults, the flag > environment > default precedence, and the helpers (FR-004)."""
+"""WikiPaths: defaults, the flag > environment > default precedence, the helpers (FR-004) and ``contain`` (FR-012)."""
 
 from __future__ import annotations
 
+import os
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 
 from wiki_studio.paths import (
+    CONTAIN_ABSOLUTE,
+    CONTAIN_OUTSIDE,
+    CONTAIN_SYMLINK,
     DEFAULT_PROPOSALS_DIR,
     DEFAULT_QUERY_LOG,
     DEFAULT_WIKI_DIR,
     ENV_PROPOSALS_DIR,
     ENV_ROOT,
+    ENV_SOURCE_ROOTS,
     ENV_WIKI_DIR,
+    ContainmentError,
     WikiPaths,
+    contain,
     default_root,
     git_toplevel,
+    is_absolute_path,
 )
 
 
@@ -137,6 +145,94 @@ class TestHelpers(unittest.TestCase):
             paths = WikiPaths.for_root(root)
             self.assertTrue(paths.within_root(root / "x" / "y.md"))
             self.assertFalse(paths.within_root(Path("/")))
+
+
+class TestSourceRoots(unittest.TestCase):
+    """``--source-root`` / ``WIKI_STUDIO_SOURCE_ROOTS`` → ``WikiPaths.source_roots`` (FR-012); default empty."""
+
+    def test_default_is_empty(self) -> None:
+        self.assertEqual(WikiPaths.for_root(Path("/proj")).source_roots, ())
+        self.assertEqual(WikiPaths.resolve(root="/r", env={}, cwd=Path("/cwd")).source_roots, ())
+
+    def test_flag_values_are_made_absolute_and_kept_in_order(self) -> None:
+        paths = WikiPaths.resolve(
+            root="/r", source_roots=["/a", "rel"], env={ENV_SOURCE_ROOTS: "/env"}, cwd=Path("/cwd")
+        )
+        self.assertEqual(paths.source_roots, (Path("/a"), Path("/cwd/rel")))
+        self.assertEqual(WikiPaths.for_root("/proj", source_roots=["x"]).source_roots, (Path.cwd() / "x",))
+
+    def test_environment_list_is_split_on_the_path_separator(self) -> None:
+        env = {ENV_SOURCE_ROOTS: os.pathsep.join(["/one", "", "two"])}
+        paths = WikiPaths.resolve(root="/r", env=env, cwd=Path("/cwd"))
+        self.assertEqual(paths.source_roots, (Path("/one"), Path("/cwd/two")))
+
+    def test_with_wiki_dir_keeps_the_source_roots(self) -> None:
+        paths = WikiPaths.for_root("/proj", source_roots=["/a"]).with_wiki_dir(Path("/stage"))
+        self.assertEqual(paths.source_roots, (Path("/a"),))
+
+
+class TestContain(unittest.TestCase):
+    """``contain``: resolve both sides, refuse absolute candidates, symlinks on the way and escapes (FR-012)."""
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory(prefix="wiki_studio-contain-")
+        base = Path(self._tmp.name)
+        self.boundary = base / "wiki"
+        (self.boundary / "concepts").mkdir(parents=True)
+        (self.boundary / "concepts" / "a.md").write_text("a\n", encoding="utf-8")
+        self.outside = base / "outside"
+        self.outside.mkdir()
+        (self.outside / "secret.md").write_text("s\n", encoding="utf-8")
+
+    def tearDown(self) -> None:
+        self._tmp.cleanup()
+
+    def test_paths_inside_the_boundary_pass_and_the_real_path_is_returned(self) -> None:
+        real = contain("concepts/a.md", self.boundary)
+        self.assertEqual(real, (self.boundary / "concepts" / "a.md").resolve())
+        self.assertEqual(contain("concepts/../concepts/a.md", self.boundary), real)
+        self.assertEqual(contain(".", self.boundary), self.boundary.resolve())
+        # Existence is not required: a page about to be created passes on its path alone.
+        self.assertEqual(contain("concepts/new.md", self.boundary), self.boundary.resolve() / "concepts" / "new.md")
+
+    def test_escapes_and_absolute_candidates_are_refused(self) -> None:
+        for candidate in ("../outside/secret.md", "..", "concepts/../../outside/secret.md"):
+            with self.subTest(candidate=candidate), self.assertRaises(ContainmentError) as ctx:
+                contain(candidate, self.boundary)
+            self.assertEqual(ctx.exception.reason, CONTAIN_OUTSIDE)
+        for candidate in (str(self.boundary / "concepts" / "a.md"), "/etc/passwd", "C:/x.md", "\\\\host\\share\\x"):
+            with self.subTest(candidate=candidate), self.assertRaises(ContainmentError) as ctx:
+                contain(candidate, self.boundary)
+            self.assertEqual(ctx.exception.reason, CONTAIN_ABSOLUTE)
+            self.assertTrue(is_absolute_path(candidate))
+
+    def test_symlinked_file_and_directory_are_refused_even_when_the_target_is_inside(self) -> None:
+        (self.boundary / "concepts" / "alias.md").symlink_to(self.boundary / "concepts" / "a.md")
+        (self.boundary / "decisions").symlink_to(self.outside, target_is_directory=True)
+        for candidate in ("concepts/alias.md", "decisions/secret.md", "decisions"):
+            with self.subTest(candidate=candidate), self.assertRaises(ContainmentError) as ctx:
+                contain(candidate, self.boundary)
+            self.assertEqual(ctx.exception.reason, CONTAIN_SYMLINK)
+
+    def test_a_symlink_a_later_parent_step_cancels_is_still_refused(self) -> None:
+        (self.boundary / "link").symlink_to(self.outside, target_is_directory=True)
+        with self.assertRaises(ContainmentError) as ctx:
+            contain("link/../concepts/a.md", self.boundary)
+        self.assertEqual(ctx.exception.reason, CONTAIN_SYMLINK)
+
+    def test_base_may_differ_from_the_boundary(self) -> None:
+        # A link resolved from a wiki outside the root that lands inside the root passes;
+        # the same link from a base inside the boundary that leaves it does not.
+        (self.outside / "kb").mkdir()
+        real = contain("../../wiki/concepts/a.md", self.boundary, base=self.outside / "kb")
+        self.assertEqual(real, (self.boundary / "concepts" / "a.md").resolve())
+        with self.assertRaises(ContainmentError):
+            contain("../../outside/secret.md", self.boundary, base=self.boundary / "concepts")
+
+    def test_a_symlink_above_the_boundary_is_not_a_traversal(self) -> None:
+        alias = Path(self._tmp.name) / "alias"
+        alias.symlink_to(self.boundary, target_is_directory=True)
+        self.assertEqual(contain("concepts/a.md", alias), (self.boundary / "concepts" / "a.md").resolve())
 
 
 if __name__ == "__main__":

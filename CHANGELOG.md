@@ -6,10 +6,240 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-10-24
+
+The safe-changes release (Release A of `docs/roadmap.md`, closes #39). Five
+defects reproduced on `main` at 41cfe54 broke promises the README made: two
+promotes that started together reverted each other's pages; a replacement
+carried no record of the page it was drafted from; a symlinked page, an
+outside link and `find` escaped the wiki; the query check accepted a forged
+quotation; and "atomic promotion" meant rollback on exception. This release
+fixes the first four, states the fifth as it is, and makes each reproduction a
+regression test through both `promote` and `api.promote`. Exit codes 0 and
+2..11 are unchanged; the patch-set format gains optional keys only; the `api`
+changes are additive with defaults.
+
+The guarantee this release earns is bounded: wiki-studio writers that
+cooperate through its API or CLI on one machine do not lose each other's
+changes and do not apply stale replacements. A promotion is validated,
+serialised against other wiki-studio writers on the same machine, and rolled
+back on failure; it is not crash-safe across files, and uncoordinated readers
+may observe intermediate state.
+
+### Added
+
+- The wiki lock (`wiki_studio.wikilock.WikiLock`): an OS advisory lock
+  (`fcntl.flock` on POSIX) on `<wiki-parent>/.<wiki-dir-name>.wiki-studio.lock`,
+  keyed to the resolved wiki directory and held by `promote`,
+  `propose --promote`, proposal-directory creation (`ingest`, `query
+  --file-back`, `api.propose`), the ingest-log append and `audit-flush`. Two
+  promotes that start together on the same machine no longer revert each
+  other's pages (the lock is not distributed and does not cover direct edits).
+  `--lock-timeout` and `WIKI_STUDIO_LOCK_TIMEOUT` (default 30 s; `inf` waits
+  indefinitely); on expiry every holder, `ingest` included, exits 10 with
+  reason `lock_timeout`. `info` prints the lock file and timeout.
+- Receipts: `promote` writes `receipt.json` into the proposal directory before
+  the commit (`committing`), rewrites it after (`committed`) and archives it
+  with the proposal: the submission digest and manifest, the wiki's device and
+  inode, every tracked write with its pre- and post-commit sha256, timing and
+  the promoter's identity. Promoting the same directory again resolves the
+  receipt instead of re-applying anything; refusals exit 10 with reasons
+  `uncertain_outcome`, `wiki_mismatch`, `wiki_identity_unavailable` or
+  `payload_changed`. Documented in `docs/patch-set-format.md`.
+- `PromoteApplyError.reason` (`wiki_studio.errors.REASON_*`); the CLI prints
+  it as `[reason=...]`.
+- Base revisions for replacements: `PageEdit.base_sha256` (last field,
+  default `None`) and the optional `plan.json` key `edits[].base_sha256`, the
+  sha256 of the page bytes the author read. `ingest` records the hash of the
+  exact bytes it placed in the prompt for each candidate page it shows (the
+  model cannot set or change it); `propose --from` reads `<draft>/.base.json`
+  (wiki path to sha256) and never the live page; `api.propose` passes the
+  caller's value through.
+- `wiki-studio read <path>` and `api.read_page(path, paths)`: one page, read
+  once, returning bytes, UTF-8 text and the sha256 of those bytes (`--json`
+  prints `{"path", "sha256", "content"}`); a path outside the wiki or through
+  a symlink exits 7, a missing page 5, a page that is not UTF-8 exits 4. The
+  documented procedure for a replacement is read, draft, record.
+- Revision preconditions, checked under the lock immediately before the
+  commit: a `create` requires its target absent, an `update` with
+  `base_sha256` requires the live page to still have that hash, appends land
+  on the current content. A mismatch is `PromoteValidationError` (exit 9)
+  naming the page, with nothing written.
+- `--allow-unguarded-updates` / `api.promote(allow_unguarded_updates=True)`:
+  compatibility mode with incomplete conflict protection that applies
+  `update` edits without a base hash and records them as `unguarded_paths` in
+  the receipt. `PromoteResult.unguarded_paths` and `PromoteResult.warnings`
+  (both last, with defaults); the CLI prints the warnings to stderr.
+- Containment boundaries (`wiki_studio.paths.contain`, one check that
+  resolves both sides, refuses absolute candidates and any symlink on the
+  way, and is applied before every read and write): the wiki boundary for
+  page writes, staging, `read` / `api.read_page` and the navigation reads of
+  `find`, `query` and the eval selector; the proposal boundary for
+  `plan.json`, every `preview` pointer, every file the digest enumeration
+  and the curator delta read (referenced or not) and `receipt.json`; the
+  source boundary for local links in page text. Staging refuses any symlink
+  inside the wiki (exit 9 naming it) and the commit re-checks every target
+  with `os.lstat` under the lock. `--source-root PATH` (repeatable) and
+  `WIKI_STUDIO_SOURCE_ROOTS` (`os.pathsep`-separated) admit directories
+  outside the root for source references; `WikiPaths.source_roots`; `info`
+  prints them.
+- Citation evidence for `query`: each citation's fragment must occur, after
+  whitespace normalisation, in the `index.md` or page text that was in the
+  prompt (never a file reread after the backend returned), and a non-empty
+  answer must carry at least one citation; a reply that fails exits 4
+  naming the page. The abstention form (empty answer, one citation quoting
+  `index.md`) still passes. The check verifies quotation, not logical
+  support. The test backend quotes the first non-blank line of each page it
+  cites.
+
 ### Changed
 
+- The link rule (`lint`, and so `promote`): the collector returns every
+  local link target, not only `.md` ones. Web (`http`, `https`) and
+  `mailto` targets are not filesystem links; a `.md` target inside the wiki
+  is a wiki-page link and must exist; a `.md` target outside the wiki and
+  any non-`.md` target (image, data, source file) is a source reference
+  that must resolve inside the root or an allowed source root; absolute
+  targets, targets that leave the root, targets that pass through a
+  symlink, an `index.md` entry outside the wiki and a symlink inside the
+  wiki are violations. `../` targets inside the root stay legal.
+  Reachability counts wiki-page links only. `_extract_index_links` applies
+  the index-entry rule as a defence, so `find` and `query` never list a
+  file outside the wiki. `lint_wiki` takes `root` and `source_roots`
+  (default: the git toplevel containing the wiki, else the wiki itself).
+
+- An `update` without `base_sha256` is refused (exit 9) with the two
+  remedies named: regenerate the proposal from a fresh `read`, or pass the
+  compatibility option. Creates and appends from older proposals promote
+  unchanged.
+- `promote --dry-run` takes the lock, stages, checks the revision
+  preconditions against the live wiki, releases the lock and then validates
+  the staged snapshot; it still writes nothing. The result is point-in-time
+  evidence; a real promote checks again.
+
+- The commit writes only the paths the patch-set names plus the proposal's own
+  `.audit/proposals/` archive; a staged file outside that set is never written
+  back.
+- The archive under `<proposals-dir>/.applied/<name>/` is written from the
+  captured bytes into a hidden temporary sibling and published by one
+  `rename`, so a reader sees no archive at the applied name or the whole
+  one; names are unchanged (`<name>`, `-2`, `-3`). The original directory
+  is removed only while it still matches the archive. Archived proposals
+  now carry `receipt.json` beside `plan.json`, `preview/` and
+  `.ingest-snapshot/`; those three are byte-identical copies of the
+  submission and are never rewritten.
+- Digest recipe 2 (`audit.payload_digest`: no dot-component exclusion) for
+  receipts and for new ingest-log records, which carry the optional key
+  `hash_recipe: 2`; recipe 1 (`audit.proposal_hash`) stays implemented to
+  verify records written before 0.6.0. The audit lint accepts the optional key
+  in `v: 1`. A consumer that recomputes `proposal_hash` against the documented
+  recipe must pick the recipe by the key (`schema/audit-rules.md`).
+- A `preview` pointer that does not name a regular file under `preview/` is a
+  contract violation (exit 4).
+- Proposal directories are created exclusively under the lock: `ingest` and
+  `query --file-back` take `<name>-2`, `-3` on a clash instead of writing into
+  an existing directory; `api.propose` still raises `OutputWriteError`.
+- The `Operating System` classifier is narrowed to POSIX: the `msvcrt` lock
+  backend and the path-based staging fallback exist but are untested and
+  unsupported in this release.
 - Package metadata and the README point to the project page at
   https://memkernel.dev/wiki-studio/ (PyPI shows the link from the next release).
+- The guarantees are stated as they are. The README, `SECURITY.md`,
+  `docs/patch-set-format.md`, `schema/audit-rules.md` and the promoter
+  docstrings no longer call promotion "atomic": it is validated, serialised
+  against other wiki-studio writers on the same machine, rolled back on
+  failure, not crash-safe across files, and uncoordinated readers may
+  observe intermediate state. The lock's scope (one machine, one
+  filesystem; not distributed; no protection against direct edits; network
+  filesystems out of scope) is documented. The fact-preservation check is
+  described as a heuristic over citations, identifiers and quantities that
+  does not detect a change of meaning; the stale-source check as verifying
+  that a cited path exists, not that the recorded revision is current.
+- The enforced coverage gate is 92 percent (`--cov-fail-under=92` in CI and
+  `CLAUDE.md`), matching the level the suite holds, instead of 80.
+- README banner pinned to the `v0.6.0` tag. The memkernel arm
+  (`docs/agent-arm/`) stays pinned at `wiki-studio==0.4.1` with its note:
+  the arm was checked against the 0.4.1 wheel and its frozen run is kept as
+  measured.
+
+### Security
+
+- Containment escapes in `promote`, `lint` and `find`. Credit: the
+  independent code review of 23 October 2026 (revision 3), which reported
+  and reproduced each escape on `main` at 41cfe54 and was adopted with the
+  owner's product proposal of the same date
+  (`docs/proposals/2026-10-23-product-proposal.md`). A symlinked page
+  inside the wiki was staged and written
+  through to its target; a page could link to an absolute path or a path
+  outside the project and lint accepted it; an `index.md` entry pointing
+  outside the wiki was followed by `find` and `query`; a `preview` pointer
+  or an unreferenced symlink under `preview/` or `.ingest-snapshot/` could
+  make the digest or the curator delta read a file outside the proposal
+  directory. Every read and write surface now passes the containment check
+  described under Added. Present since 0.1.0 (`find` since 0.4.0).
+- A fabricated citation was accepted by `query`: a fragment that did not
+  occur in the cited page passed the check, and so did a non-empty answer
+  with no citation at all. Same reporter. See citation evidence under
+  Added. Present since 0.1.0.
+
+### Upgrade notes
+
+Stated per operation. The patch-set format and the library API are
+supersets of 0.5.0; what changes is what `promote` accepts.
+
+- `create` edits from proposals written before 0.6.0 promote unchanged,
+  unless the target page now exists (exit 9, as `create` of an existing
+  page always was at validation time; now also checked under the lock).
+- `append-index` and `append-log` edits from older proposals promote
+  unchanged; the lines land on the current content.
+- `update` edits from older proposals carry no `base_sha256` and are refused
+  (exit 9) with the two remedies named. Either regenerate the proposal from
+  a fresh `wiki-studio read <path> --json` (or `api.read_page`) so the edit
+  records the page it was drafted from, or pass `--allow-unguarded-updates`
+  (`api.promote(allow_unguarded_updates=True)`). That option is
+  compatibility mode with incomplete conflict protection: a stale draft can
+  overwrite a newer page, and the paths are recorded as `unguarded_paths` in
+  the receipt and in `PromoteResult`.
+- `ingest` records `base_sha256` for an `update` to a page the prompt showed
+  the model (the hash of the exact bytes it placed there); an `update` to a
+  page the prompt did not show is unguarded. A
+  `propose --from` draft needs `<draft>/.base.json` for each replaced page;
+  `propose` never fills it from the live page. An `api.propose` caller
+  passes `PageEdit.base_sha256` itself.
+- Pages that link to a file outside the project root (or through a symlink)
+  now fail `lint`, and so `promote`. Add `--source-root PATH` or
+  `WIKI_STUDIO_SOURCE_ROOTS` for directories outside the root that pages
+  may legitimately reference; `../` targets inside the root need nothing.
+- `lint_wiki` callers that pass only a wiki directory are unchanged; the
+  new `root` and `source_roots` parameters default to the git toplevel
+  containing the wiki, else the wiki itself.
+- A proposal directory with a leftover `receipt.json` from an interrupted
+  promotion is resolved, not re-applied; the refusal reasons and the manual
+  remedy are in `docs/patch-set-format.md`. Add
+  `.<wiki-dir-name>.wiki-studio.lock` (beside the wiki) to `.gitignore`.
+- Consumers that recompute the ingest-log `proposal_hash` must pick the
+  recipe by the record's `hash_recipe` key (`schema/audit-rules.md`).
+- Windows is no longer in the `Operating System` classifier; see Changed.
+
+### Limitations
+
+- The lock serialises wiki-studio writers on one machine and one
+  filesystem. It is not distributed, does not cover direct edits of wiki
+  files by other tools, and network filesystems are out of scope.
+- A promotion is not crash-safe across files. A process killed inside the
+  commit can leave some files written and others not; the receipt protocol
+  recovers from a failure between its steps (before the commit, between the
+  commit and the archive, during the archive) and not from a crash inside
+  the commit itself. Recovery needs a filesystem with stable inode identity.
+- memkernel's wiki bridge takes a whole-wiki snapshot around its lifecycle
+  and rolls the wiki back to it on failure. That outer rollback can still
+  undo another writer's committed changes until memkernel holds the same
+  lock across its lifecycle or removes that workaround. Mixed-writer safety
+  across the memkernel stack is therefore not claimed by this release; it is
+  claimed only when both halves ship, after the combined integration gate
+  (bridge compatibility of creates and appends through `api.propose`,
+  receipt and `.applied/` layout, lock coordination) that is the first item
+  of Release B in `docs/roadmap.md`.
 
 ## [0.5.0] — 2026-10-20
 
@@ -449,5 +679,6 @@ for 0.2 rather than changed in the extraction release:
   the value of a flag other than the three global options as a positional
   when deciding whether a verb is present; the documented shapes work.
 
-[Unreleased]: https://github.com/gosha70/wiki-studio/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/gosha70/wiki-studio/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/gosha70/wiki-studio/compare/v0.5.0...v0.6.0
 [0.1.0]: https://github.com/gosha70/wiki-studio/releases/tag/v0.1.0

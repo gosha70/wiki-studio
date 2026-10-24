@@ -4,8 +4,8 @@
 
 | Version | Supported |
 |---|---|
-| 0.5.x | yes |
-| 0.4.x, 0.3.x, 0.2.x, 0.1.x | no (upgrade to 0.5; the library API is a superset) |
+| 0.6.x | yes |
+| 0.5.x, 0.4.x, 0.3.x, 0.2.x, 0.1.x | no (upgrade to 0.6; the library API is a superset, see the upgrade notes in `CHANGELOG.md`) |
 
 Fixes are released as patch versions of the latest minor line.
 
@@ -28,9 +28,19 @@ advisory unless you ask otherwise.
   stderr may echo them; error messages therefore carry only a redacted
   fingerprint of stderr unless `--debug-unsafe-output` is given.
 - Sources and proposal directories are confined to the project root by
-  default (`--allow-out-of-repo` lifts that deliberately); `promote`
-  validates and lints a staged copy of the wiki in a private temporary
-  directory before writing anything.
+  default (`--allow-out-of-repo` lifts that deliberately); every read and
+  write of a wiki page, a proposal file or a local link target passes one
+  containment check that resolves the path and refuses an escape or a
+  symlink (`wiki_studio.paths.contain`).
+- A promotion is validated (a staged copy of the wiki is linted in a
+  private temporary directory before anything is written), serialised
+  against other wiki-studio writers on the same machine by an OS advisory
+  lock, and rolled back on failure. It is not crash-safe across files: a
+  process killed inside the commit can leave some files written and
+  others not, and uncoordinated readers may observe intermediate state.
+  The lock covers one machine and one filesystem; it is not distributed,
+  does not protect against direct edits of wiki files, and network
+  filesystems are out of scope.
 - `promote` is the only code path that writes into the wiki, and
   `audit-flush` is the only one that runs `git commit`.
 

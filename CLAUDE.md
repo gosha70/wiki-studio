@@ -15,7 +15,7 @@ poetry install                                   # once
 poetry run pytest -q -p no:cacheprovider          # unit + e2e (test backend, no network)
 poetry run ruff check src/ tests/ && poetry run ruff format --check src/ tests/
 poetry run mypy src/
-poetry run pytest -q --cov=wiki_studio --cov-fail-under=80
+poetry run pytest -q --cov=wiki_studio --cov-fail-under=92
 poetry run wiki-studio --help                        # the CLI
 poetry build                                     # wheel + sdist
 ```
@@ -28,7 +28,8 @@ Format with `poetry run ruff format src/ tests/` before finishing.
 src/wiki_studio/cli.py          verb dispatcher: ingest | promote | query | lint | audit-flush (exit codes 0,2..8 are a contract)
 src/wiki_studio/paths.py        WikiPaths: root, wiki_dir, proposals_dir, query log, audit log (the only place paths are resolved)
 src/wiki_studio/ingestor*.py    single-source and multi-page ingest (proposal generation; never writes the wiki)
-src/wiki_studio/promoter.py     THE ONLY MODULE THAT WRITES INTO THE WIKI DIRECTORY (atomic, lint-gated)
+src/wiki_studio/promoter.py     THE ONLY MODULE THAT WRITES INTO THE WIKI DIRECTORY (lint-gated, scoped commit, receipt protocol)
+src/wiki_studio/wikilock.py     WikiLock: the OS advisory lock beside the resolved wiki that serialises cooperating writers
 src/wiki_studio/querier.py      index-first question answering over wiki pages
 src/wiki_studio/lint.py         structural linter (frontmatter, page_type, slug, placement, links, reachability)
 src/wiki_studio/health_lint.py  knowledge-health checks (contradictions, stale claims, weak orphans, cross-links)

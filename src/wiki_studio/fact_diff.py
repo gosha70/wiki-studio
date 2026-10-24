@@ -10,6 +10,9 @@
 #   (b) inline backticked identifiers;
 #   (c) numbers with a unit from schema.FACT_UNITS.
 # Whole-page sets make a moved citation or a reflowed paragraph a no-op.
+# The check is a heuristic over those three kinds of token: it does not
+# detect a change of meaning, a reworded claim or a dropped sentence that
+# carries no citation, identifier or quantity.
 # The result is advisory: write_patch_set_dir records it in plan.json and
 # the CLI prints it; promote never reads it.
 

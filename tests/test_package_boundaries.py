@@ -121,9 +121,10 @@ class TestLayoutContract(unittest.TestCase):
             self.assertFalse((root / "knowledge").exists())
 
     def test_promote_with_a_deep_wiki_dir_resolves_escape_links_through_siblings(self) -> None:
-        # Wiki at <root>/a/b/kb; index links to a root-level sibling (docs/) and to a
-        # sibling two levels down (a/notes/), both outside the wiki. The staged-tree
-        # lint must mirror both levels or promote would report broken links.
+        # Wiki at <root>/a/b/kb; a page links to a root-level sibling (docs/) and to a
+        # sibling two levels down (a/notes/), both outside the wiki and inside the root.
+        # The staged-tree lint must mirror both levels or promote would report broken
+        # links. (An index entry may not leave the wiki, FR-013, so a page carries them.)
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "docs").mkdir()
@@ -131,10 +132,16 @@ class TestLayoutContract(unittest.TestCase):
             (root / "a" / "notes").mkdir(parents=True)
             (root / "a" / "notes" / "todo.md").write_text("# todo\n", encoding="utf-8")
             wiki = root / "a" / "b" / "kb"
-            wiki.mkdir(parents=True)
+            (wiki / "concepts").mkdir(parents=True)
             (wiki / "index.md").write_text(
                 "---\npage_type: index\nslug: index\ntitle: KB\nstatus: stable\nlast_reviewed: 2026-05-06\n---\n\n"
-                "# KB\n\n- [guide](../../../docs/guide.md)\n- [todo](../../notes/todo.md)\n",
+                "# KB\n\n- [links](concepts/links.md)\n",
+                encoding="utf-8",
+            )
+            (wiki / "concepts" / "links.md").write_text(
+                "---\npage_type: concept\nslug: links\ntitle: Links\nstatus: stable\nlast_reviewed: 2026-05-06\n"
+                "sources:\n  - path: src.md\n    sha: abc\n---\n\n# Links\n\n"
+                "- [guide](../../../../docs/guide.md)\n- [todo](../../../notes/todo.md)\n",
                 encoding="utf-8",
             )
             (wiki / "log.md").write_text(

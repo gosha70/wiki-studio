@@ -11,8 +11,10 @@
 #   1. contradictions   — pairs of pages making conflicting claims
 #                         about the same entity/decision (LLM-checked
 #                         over candidate pairs)
-#   2. stale claims     — pages whose cited path: sources have moved
-#                         or no longer exist
+#   2. stale claims     — pages whose cited path: sources no longer
+#                         exist (a heuristic: it verifies that the cited
+#                         path exists, not that the recorded revision
+#                         is current)
 #   3. weak orphans     — pages reachable from index.md via only one
 #                         inbound edge (one hub away from disconnect)
 #   4. missing cross-   — entities (page title slugs) appearing in N≥3
@@ -105,10 +107,11 @@ def _check_stale_claims(paths: WikiPaths) -> list[HealthFinding]:
     ``path:`` references resolve. Missing paths → stale-claim
     warning.
 
-    Does NOT verify ``sha:`` against git (that would require shelling
-    out and is left to a future check). Does NOT HEAD-fetch URLs
+    A heuristic: it verifies that each cited path exists, not that the
+    recorded revision is current. It does NOT verify ``sha:`` against
+    git (that would require shelling out) and does NOT HEAD-fetch URLs
     (network-dependent; out of scope for the deterministic in-process
-    pass).
+    pass), so a source that changed in place is not reported.
     """
     wiki_dir = paths.wiki_dir
     findings: list[HealthFinding] = []

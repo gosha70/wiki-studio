@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import datetime
 import json
+import posixpath
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -36,6 +37,8 @@ from .errors import (
     SourceMissingError,
 )
 from .ingestor_multi import DefaultMultiIngestor
+from .lint import NON_FILESYSTEM_SCHEMES
+from .paths import ContainmentError, contain, is_absolute_path
 from .prompt import load_schema_files
 from .proposal import Citation, IngestRequest, QueryAnswer, WikiPatchSet
 from .wiki_state import _read_text_or_empty, _tokenise
@@ -54,21 +57,42 @@ DEFAULT_MAX_QUERY_PAGES = 5
 _MD_LINK_RE = re.compile(r"\]\(([^)]+\.md)(?:#[^)]*)?\)")
 
 
-def _extract_index_links(index_md: str) -> list[str]:
+def _index_entry_inside_wiki(target: str, wiki_dir: Path | None) -> bool:
+    """The index-entry rule of the structural linter, applied as a defence (FR-013).
+
+    A target is kept only when it is a relative ``.md`` path that stays
+    inside the wiki: no web URL, no absolute path, no ``..`` escape and, when
+    ``wiki_dir`` is given, no symlink on the way and no resolution outside the
+    wiki directory. Lint reports such entries first; this keeps ``find``,
+    ``query`` and the eval selector from reading a file outside the wiki when
+    it has not run.
+    """
+    if target.startswith(NON_FILESYSTEM_SCHEMES) or is_absolute_path(target):
+        return False
+    normalised = posixpath.normpath(target)
+    if normalised == ".." or normalised.startswith("../"):
+        return False
+    if wiki_dir is None:
+        return True
+    try:
+        contain(target, wiki_dir)
+    except ContainmentError:
+        return False
+    return True
+
+
+def _extract_index_links(index_md: str, wiki_dir: Path | None = None) -> list[str]:
     """Return the list of wiki-relative .md paths linked from index.md.
 
-    Filters out external URLs, mailto:, fragment-only links, and
-    paths starting with ``../`` (escape links — index.md should not
-    have any, but be safe). Order is significant — first-occurrence
-    wins for relevance ranking ties.
+    Keeps only entries that stay inside the wiki (:func:`_index_entry_inside_wiki`);
+    with ``wiki_dir`` the check resolves each target on disk. Order is
+    significant — first-occurrence wins for relevance ranking ties.
     """
     paths: list[str] = []
     seen: set[str] = set()
     for m in _MD_LINK_RE.finditer(index_md):
         target = m.group(1).strip()
-        if not target:
-            continue
-        if target.startswith(("http://", "https://", "mailto:", "../")):
+        if not target or not _index_entry_inside_wiki(target, wiki_dir):
             continue
         if target in seen:
             continue
@@ -100,9 +124,12 @@ def _select_query_candidates(
     # Score each index-linked page by token overlap with the question.
     # Pages not in the index are unreachable.
     question_tokens = _tokenise(question)
-    candidate_paths = _extract_index_links(index_md)
+    candidate_paths = _extract_index_links(index_md, wiki_dir)
 
+    # One read per page: the text scored here is the text the prompt carries
+    # and the text the reply's citations are checked against (FR-014).
     scored: list[tuple[int, str]] = []
+    contents: dict[str, str] = {}
     for rel in candidate_paths:
         page_path = wiki_dir / rel
         if not page_path.exists():
@@ -117,6 +144,7 @@ def _select_query_candidates(
         score = len(question_tokens & signal)
         if score > 0:
             scored.append((score, rel))
+            contents[rel] = content
 
     # Stable: highest score first, then path order in the index.
     index_position = {rel: i for i, rel in enumerate(candidate_paths)}
@@ -124,8 +152,68 @@ def _select_query_candidates(
 
     selected = scored[:max_pages]
     pages_loaded = [rel for _score, rel in selected]
-    pages_content = {rel: _read_text_or_empty(wiki_dir / rel) for rel in pages_loaded}
+    pages_content = {rel: contents[rel] for rel in pages_loaded}
     return index_md, pages_loaded, pages_content
+
+
+def _normalise_whitespace(text: str) -> str:
+    """Collapse every whitespace run to one space and trim: the comparison form of FR-014."""
+    return " ".join(text.split())
+
+
+def validate_citation_evidence(
+    answer: QueryAnswer,
+    *,
+    index_md: str,
+    pages_loaded: list[str],
+    pages_content: dict[str, str],
+) -> None:
+    """Check a reply's citations against the prompt snapshot (FR-014).
+
+    ``index_md`` and ``pages_content`` are the texts that went into the
+    prompt. Nothing is reread from disk here, so a page that changed while
+    the backend ran can neither fail a quotation of the text the model saw
+    nor pass a quotation of text it never saw. Each citation must name
+    ``index.md`` or a loaded page and quote text that occurs in that page
+    after whitespace normalisation; a non-empty answer needs at least one
+    citation; the abstention form (empty answer, one citation quoting
+    ``index.md``) passes. The check verifies that the quotation is real,
+    not that it supports the answer.
+
+    Raises :class:`ContractViolationError` (exit 4) naming the page.
+    """
+    if answer.answer.strip() and not answer.citations:
+        raise ContractViolationError(
+            "query response has a non-empty answer and no citations; an answer "
+            "must cite at least one page loaded into the prompt (or index.md) "
+            "with a fragment quoted from it."
+        )
+    snapshot = dict(pages_content)
+    snapshot["index.md"] = index_md
+    for c in answer.citations:
+        if c.page not in snapshot:
+            raise ContractViolationError(
+                f"query response cites {c.page!r}, which was not in "
+                f"the index-first selection. Allowed citations are "
+                f"index.md and the pages loaded into the prompt: "
+                f"{sorted(pages_loaded)}. The backend may have "
+                f"hallucinated this page."
+            )
+        fragment = _normalise_whitespace(c.fragment)
+        if not fragment:
+            raise ContractViolationError(
+                f"query response cites {c.page!r} with an empty "
+                f"fragment; every citation must include a supporting "
+                f"text excerpt from the cited page."
+            )
+        if fragment not in _normalise_whitespace(snapshot[c.page]):
+            raise ContractViolationError(
+                f"query response cites {c.page!r} with a fragment that does "
+                f"not occur in the text of that page as supplied to the "
+                f"backend: {c.fragment[:120]!r}. A citation must quote the "
+                f"cited page (whitespace runs are collapsed before comparing); "
+                f"the backend may have fabricated this evidence."
+            )
 
 
 def compose_query_prompt(
@@ -277,27 +365,16 @@ class DefaultQuerier:
 
         answer = parse_query_response(response)
 
-        # Validate citations against pages_loaded. The prompt contract
-        # says answers must use ONLY the provided pages; a backend that
-        # cites pages_loaded ∪ {index.md} is honest, anything else is
-        # fabrication and must be rejected fail-fast (otherwise the
-        # caller surfaces hallucinated citations as if they were real).
-        allowed = set(pages_loaded) | {"index.md"}
-        for c in answer.citations:
-            if c.page not in allowed:
-                raise ContractViolationError(
-                    f"query response cites {c.page!r}, which was not in "
-                    f"the index-first selection. Allowed citations are "
-                    f"index.md and the pages loaded into the prompt: "
-                    f"{sorted(pages_loaded)}. The backend may have "
-                    f"hallucinated this page."
-                )
-            if not c.fragment.strip():
-                raise ContractViolationError(
-                    f"query response cites {c.page!r} with an empty "
-                    f"fragment; every citation must include a supporting "
-                    f"text excerpt from the cited page."
-                )
+        # The evidence check runs against the snapshot the prompt carried
+        # (index_md, pages_content), never against files reread now: a
+        # fabricated page, a fabricated quotation or an answer with no
+        # citation is rejected fail-fast (FR-014).
+        validate_citation_evidence(
+            answer,
+            index_md=index_md,
+            pages_loaded=pages_loaded,
+            pages_content=pages_content,
+        )
 
         # Re-pack with the pages_loaded list filled in by selection.
         answer = QueryAnswer(

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/gosha70/wiki-studio/v0.5.0/docs/assets/wiki-studio-banner.png" alt="Wiki-Studio — Turn information into living knowledge." width="760">
+  <img src="https://raw.githubusercontent.com/gosha70/wiki-studio/v0.6.0/docs/assets/wiki-studio-banner.png" alt="Wiki-Studio — Turn information into living knowledge." width="760">
 </p>
 <p align="center">
   <a href="https://memkernel.dev/wiki-studio/">memkernel.dev/wiki-studio</a> ·
@@ -22,7 +22,7 @@ The code was extracted from
 ```bash
 pip install wiki-studio          # Python 3.11–3.13, no runtime dependencies
 wiki-studio --help
-wiki-studio --version           # 0.5.0
+wiki-studio --version           # 0.6.0
 ```
 
 From a checkout: `poetry install`, then `poetry run wiki-studio --help`.
@@ -37,6 +37,7 @@ code-copilot-team layout under the git toplevel of the current directory:
 | root (confines sources and proposals; anchors `path:` citations) | git toplevel of the current directory, else the current directory | `--root` | `WIKI_STUDIO_ROOT` |
 | wiki directory | `<root>/knowledge/wiki` | `--wiki-dir` | `WIKI_STUDIO_WIKI_DIR` |
 | proposals directory | `<root>/doc_internal/proposals` | `--proposals-dir` | `WIKI_STUDIO_PROPOSALS_DIR` |
+| allowed source roots (directories outside the root that local links in pages may reference) | none | `--source-root` (repeatable) | `WIKI_STUDIO_SOURCE_ROOTS` (`os.pathsep`-separated) |
 | query log | `<root>/doc_internal/wiki-query-log.jsonl` | | |
 | ingest audit log | `<wiki-dir>/.audit/ingest-log.md` | | |
 | schema override | `<wiki-dir>/schema/` (used when present) | | |
@@ -58,8 +59,11 @@ An `update` to a page the wiki already has is compared with the live page.
 Citations (`sources[].path`, `path:` in the body, `path:line`), backticked
 identifiers and numbers with a unit that the new content drops are recorded as
 `edits[].fact_warnings` in `plan.json` and printed to stderr as
-`fact-check: <path>: N item(s) removed`. The warnings are advisory: the
-exit code does not change and `promote` ignores them. A live page that
+`fact-check: <path>: N item(s) removed`. The check is a heuristic over
+citations, identifiers and quantities: it compares those three kinds of
+token as sets and does not detect a change of meaning, a reworded claim
+or a dropped sentence that carries none of them. The warnings are
+advisory: the exit code does not change and `promote` ignores them. A live page that
 cannot be read or decoded is reported as `not compared` and recorded as
 `edits[].fact_check_error`; the patch-set is still written. See
 `docs/patch-set-format.md`.
@@ -76,22 +80,83 @@ cannot be read or decoded is reported as `not compared` and recorded as
 
 ### `wiki-studio promote <proposal-dir>`
 
-Applies a patch-set to the wiki atomically. The staged tree is validated
-page by page and by the structural linter before anything is written; on
-success the proposal directory moves to `<proposals-dir>/.applied/` and
-the accepted proposal is archived under `<wiki-dir>/.audit/proposals/`.
-This is the only code path that writes into the wiki.
+Applies a patch-set to the wiki. A promotion is validated, serialised
+against other wiki-studio writers on the same machine, and rolled back on
+failure; it is not crash-safe across files, and uncoordinated readers may
+observe intermediate state. The staged tree is validated page by page and
+by the structural linter before anything is written; the commit writes only
+the paths the patch-set names plus the proposal's own archive under
+`<wiki-dir>/.audit/proposals/`; on an exception during the commit every
+touched file is restored to its exact previous bytes. A process killed in
+the middle of the commit can leave some files written and others not: the
+receipt described below recovers from a failure between the protocol's
+steps, not from a crash inside the commit. On success the proposal
+directory is archived under `<proposals-dir>/.applied/`. This is the only
+code path that writes into the wiki.
 
 | Flag | Effect |
 |---|---|
-| `--dry-run` | build and validate the staged tree, change nothing |
+| `--dry-run` | take the lock, stage, check the revision preconditions against the live wiki, release the lock, then validate the staged snapshot; writes nothing. Point-in-time evidence: a real promote checks again |
 | `--allow-out-of-repo` | accept a proposal directory outside the root (otherwise exit 7) |
+| `--allow-unguarded-updates` | apply `update` edits that carry no `base_sha256` (proposals from before 0.6.0, drafts without `.base.json`). Compatibility mode with incomplete conflict protection: a stale draft can overwrite a newer page; the paths are recorded as `unguarded_paths` in the receipt and printed as warnings. Without it such an update exits 9 |
+| `--lock-timeout SECONDS` | how long to wait for the wiki lock that serialises wiki-studio writers on this machine (default 30, or `WIKI_STUDIO_LOCK_TIMEOUT`; `inf` waits indefinitely); on expiry exit 10 with reason `lock_timeout`. Also accepted by every other verb |
+
+Before the commit, still under the lock, promote checks the revision
+preconditions against the live wiki: a `create` needs its target absent; an
+`update` is applied only while the live page's sha256 equals the edit's
+`base_sha256` (the hash of the page as its author read it, see `read`); an
+`update` without a base hash is refused unless `--allow-unguarded-updates`
+is passed. A mismatch exits 9 naming the page and writes nothing. Appends
+land on the current content, which was staged under the same lock.
+
+Promote writes a `receipt.json` beside the proposal (moved with it into
+`.applied/`) that records the outcome; promoting the same directory again
+finishes an interrupted archive step and never re-applies an edit.
+
+The wiki lock is an OS advisory lock on
+`<wiki-parent>/.<wiki-dir-name>.wiki-studio.lock`, outside the wiki (add it
+to `.gitignore`), keyed to the resolved wiki directory and taken by
+`promote`, `propose --promote`, proposal-directory creation, the ingest-log
+append and `audit-flush`. Its scope is one machine and one filesystem: it
+is not distributed, it does not protect against direct edits of wiki files
+by an editor or a script that does not take it, and network filesystems
+are out of scope. Recovery of an interrupted promotion needs a filesystem
+with stable inode identity. Details: `docs/patch-set-format.md`.
+
+### `wiki-studio read <path>`
+
+Prints one wiki page, read exactly once. `<path>` is wiki-relative
+(`index.md`, `concepts/<slug>.md`); a path outside the wiki, or one that
+passes through a symlink, exits 7, a missing page exits 5 and a page that is
+not UTF-8 exits 4 with no content printed.
+
+| Flag | Effect |
+|---|---|
+| `--json` | print `{"path", "sha256", "content"}`: the decoded text and the sha256 of the bytes it was decoded from |
+
+This is how a replacement records the page it was drafted from. The
+procedure is read, draft, record: read the page with `read --json`, write
+the new version from that content, and record the printed `sha256` as the
+edit's base revision, in `.base.json` beside a `propose --from` draft or as
+`PageEdit.base_sha256` for `api.propose`. `promote` then applies the
+replacement only while the live page still has that hash. `find` lists
+pages and does not hash them; `info` stays configuration.
 
 ### `wiki-studio query "<question>"`
 
 Reads `index.md` first, loads the most relevant linked pages, asks the
 backend, and prints the answer; citations and the pages loaded go to
 stderr and the pages-loaded set is appended to the query log.
+
+Every citation in the reply is checked against the text that was in the
+prompt: the cited page must be `index.md` or one of the pages loaded, and
+the fragment must occur in that page's captured text (whitespace runs are
+collapsed before comparing). A non-empty answer needs at least one
+citation; an empty answer with one citation quoting `index.md` is the
+abstention form. A reply that fails the check exits 4 naming the page.
+The check verifies that the quotation is real, against the snapshot the
+model saw rather than a file reread afterwards; it does not verify that
+the fragment logically supports the answer.
 
 | Flag | Effect |
 |---|---|
@@ -112,7 +177,7 @@ The audit tree under `.audit/` is always checked against
 
 | Flag | Effect |
 |---|---|
-| `--health` | add the knowledge-health checks: stale `path:` sources, weak orphans, missing cross-links and, with a backend, contradictions |
+| `--health` | add the knowledge-health checks: stale `path:` sources (a heuristic that verifies the cited path still exists, not that the recorded revision is current), weak orphans, missing cross-links and, with a backend, contradictions |
 | `--prose` | add the prose checks: sentence length, semicolons, filler phrases, Summary and Key-ideas length, and the glossary term lock (an `avoid:` term used instead of its glossary term); advisory, exit 0 unless `--strict` |
 | `--strict` | audit-format, health and prose findings become fatal (structural violations always are) |
 | `--paths P [P ...]` | with `--health` or `--prose`, scope the findings to these wiki-relative pages (the term lock still reads the whole glossary) |
@@ -166,12 +231,26 @@ and `<dir>/log.md` hold the lines to append, one per line, never a page.
 |---|---|
 | `--promote` | apply the patch-set right after writing it |
 | `--allow-out-of-repo` | with `--promote`: accept a proposals directory outside the root (otherwise the promote step exits 7, as `promote` does, and the written proposal stays there to promote later) |
+| `--allow-unguarded-updates` | with `--promote`: as for `promote` (compatibility mode with incomplete conflict protection) |
 | `--name NAME` | proposal directory name (default `<date>-<dir-name>`) |
 | `--rationale TEXT` | recorded in `plan.json` and the audit archive |
 
 Invalid pages exit 4 with every problem listed and nothing written. An
 `update` prints the fact warnings described under `ingest` after the
 patch-set is written and before the optional `--promote` step.
+
+An `update` carries the base revision recorded in `<dir>/.base.json`, a
+JSON object mapping each replaced wiki path to the `sha256` that
+`wiki-studio read <path> --json` printed for the page the draft was made
+from:
+
+```json
+{"decisions/retry-backoff.md": "3f6c…e1"}
+```
+
+`propose` never fills a missing hash from the live page: a page without a
+manifest entry is an unguarded update, which `promote` refuses unless
+`--allow-unguarded-updates` is passed.
 
 ### `wiki-studio find "<question>"`
 
@@ -180,9 +259,9 @@ Prints what `query` would put in front of a model, without calling one:
 share with the question, each with its title. Writes no query log. `--json`
 for a JSON object, `--max-pages N` for a different limit.
 
-`init`, `propose --from` and `find` are what an agent needs to use the wiki
-from a shell with no model backend; `docs/agent-arm/` holds a ready arm for
-memkernel's lifecycle suite built on them (issue #10).
+`init`, `propose --from`, `find` and `read` are what an agent needs to use
+the wiki from a shell with no model backend; `docs/agent-arm/` holds a ready
+arm for memkernel's lifecycle suite built on them (issue #10).
 
 ## Exit codes
 
@@ -192,12 +271,12 @@ memkernel's lifecycle suite built on them (issue #10).
 | 1 | `ingest --check` rejected; fatal lint findings; a rejected flag combination |
 | 2 | backend not found (unknown name, CLI not on PATH, nothing to auto-detect); usage error |
 | 3 | backend invocation failed (non-zero exit, timeout) |
-| 4 | contract violation: the backend's response failed shape or semantic validation |
-| 5 | source file or proposal directory missing |
+| 4 | contract violation: the backend's response failed shape or semantic validation; a page `read` that is not UTF-8 |
+| 5 | source file, page or proposal directory missing |
 | 6 | output write failure |
-| 7 | source or proposal path outside the root (`--allow-out-of-repo` overrides) |
+| 7 | source or proposal path outside the root (`--allow-out-of-repo` overrides); a `read` path outside the wiki |
 | 8 | verb not implemented |
-| 9 | promote: staged tree failed validation; the wiki is unchanged |
+| 9 | promote: staged tree failed validation, or a revision precondition failed (stale or unguarded `update`, `create` of a page that now exists); the wiki is unchanged |
 | 10 | promote: a write into the wiki failed; every file it touched, including the failed one, rolled back |
 | 11 | audit-flush: not a git work tree, append-only invariant violated, malformed log, or git failed |
 
@@ -226,6 +305,7 @@ redacted fingerprint of it unless `--debug-unsafe-output` is given.
 | `WIKI_STUDIO_ROOT` | project root (see Layout) |
 | `WIKI_STUDIO_WIKI_DIR` | wiki directory |
 | `WIKI_STUDIO_PROPOSALS_DIR` | proposals directory |
+| `WIKI_STUDIO_SOURCE_ROOTS` | `os.pathsep`-separated directories outside the root that local links in pages may reference (see Layout) |
 | `WIKI_STUDIO_BACKEND` | default backend name |
 | `WIKI_STUDIO_ENABLE_PI` | `1` adds `pi` to the auto-detect order |
 | `WIKI_INGEST_BACKEND` | deprecated alias of `WIKI_STUDIO_BACKEND` |
@@ -290,6 +370,20 @@ edits = [
 ]
 proposal = api.propose(edits, paths, name="2026-10-15-retry-budget")   # Path; ContractViolationError on bad edits
 api.promote(proposal, paths)
+```
+
+A replacement names the revision it was drafted from. `read_page` reads the
+page once and returns its bytes, text and the sha256 of those bytes; pass
+that hash as the edit's `base_sha256` and `promote` applies the update only
+while the live page still has it (`PromoteValidationError`, exit 9,
+otherwise). `promote(..., allow_unguarded_updates=True)` applies updates
+without a hash and lists them in `PromoteResult.unguarded_paths` and
+`.warnings` (compatibility mode with incomplete conflict protection).
+
+```python
+page = api.read_page("concepts/retry-budget.md", paths)          # ReadResult: path, data, text, sha256
+edit = PageEdit("concepts/retry-budget.md", "update", page.text + "\nMore.\n", "Extend.", base_sha256=page.sha256)
+api.promote(api.propose([edit], paths, name="2026-10-16-retry-budget-more"), paths)
 ```
 
 The functions raise the exceptions in `wiki_studio.errors`; each carries the

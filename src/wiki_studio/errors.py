@@ -55,10 +55,27 @@ class PromoteValidationError(IngestError):
 
 class PromoteApplyError(IngestError):
     """Phase-2 promote: filesystem failure during stage→wiki commit
-    (rare; usually means the wiki dir is read-only or a TOCTOU race).
-    Exit 10."""
+    (rare; usually means the wiki dir is read-only or a TOCTOU race),
+    or a refusal of the lock and recovery protocol. Exit 10.
+
+    ``reason`` is a stable machine-readable tag when the failure is one
+    the protocol names: ``lock_timeout``, ``uncertain_outcome``,
+    ``wiki_mismatch``, ``wiki_identity_unavailable`` or ``payload_changed``;
+    None for a plain filesystem failure."""
 
     exit_code: int = 10
+
+    def __init__(self, message: str, *, reason: str | None = None) -> None:
+        super().__init__(message)
+        self.reason = reason
+
+
+# Stable ``PromoteApplyError.reason`` tags (exit 10).
+REASON_LOCK_TIMEOUT = "lock_timeout"
+REASON_UNCERTAIN_OUTCOME = "uncertain_outcome"
+REASON_WIKI_MISMATCH = "wiki_mismatch"
+REASON_WIKI_IDENTITY_UNAVAILABLE = "wiki_identity_unavailable"
+REASON_PAYLOAD_CHANGED = "payload_changed"
 
 
 class AuditFlushError(IngestError):
