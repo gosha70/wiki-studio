@@ -119,8 +119,8 @@ may observe intermediate state.
   is contained in the wiki before a recovery read; an escaping path makes
   the outcome uncertain (exit 10) and is never read. A directory `fsync`
   that fails with a real I/O error stops the promotion; only `EINVAL`,
-  `ENOTSUP` and `EBADF` (a filesystem that does not sync directories) are
-  ignored.
+  `ENOTSUP`, `EOPNOTSUPP` and `EBADF` (a filesystem that does not sync
+  directories) are ignored.
 - Ingest's wiki state excludes a symlinked page or a page under a
   symlinked directory from the candidates, and refuses a symlinked
   `index.md` or `log.md` (exit 4), so no file outside the wiki reaches the
