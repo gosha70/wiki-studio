@@ -3,7 +3,7 @@ spec_mode: full
 feature_id: wiki-studio-0-7-0
 risk_category: feature
 justification: "Adds a root manifest and approval records that promoter.py writes into the wiki, a new write verb (approve) and three read surfaces (info, review_state, findings) to the public API and CLI, two optional keys to the page schema shared with memkernel (ADR-0002, schema version 2), optional keys to plan.json and the receipt, and new refusals on propose and promote; a full spec pins each behaviour, every record path and the cut order before an unattended build."
-status: draft
+status: approved
 date: 2026-10-25
 collaboration_mode: single
 origin:
