@@ -433,8 +433,10 @@ cannot, see the edit-path rule below). Three keys only:
   approves each page it wrote, except drafts, under the promoter's actor.
 
 `policy_sha256` is the sha256 of the canonical JSON (sorted keys, no
-whitespace) of the keys that define acceptance, `approval_required` and
-`approver_required`, only. `auto_approve_on_promote` is a convenience of
+whitespace) of the one key that defines acceptance, `approver_required`,
+only (owner decision, 2026-10-26: `approval_required` decides whether
+approval is enforced, not what it accepts, so turning a managed wiki
+governed keeps its approvals). `auto_approve_on_promote` is a convenience of
 how a record comes to exist, not of what it accepts, so toggling it never
 makes an approved page `policy-changed`. A wiki without a manifest has no policy and cannot
 be approved into: `approve` refuses (exit 4) until `init` writes one.
@@ -854,3 +856,4 @@ decisions and adopted all three. The pitch above follows them.
 | 2026-10-25 | shaped (revised, 6) | Seventh review on PR #44: managed replaces ungoverned in the drift rule and the policy default; the drift warning's surfaces are named (info, stderr, result warnings) with api.info as the host's pre-write check; the reserved-path rule applies to the normalised path and `./index.md` stays legal; the empty-override fingerprint is the digest of empty input; `review_state` looks in both namespaces after a page gains a `page_id`; bet log in date order. |
 | 2026-10-25 | bet | Bet for cycle 02. |
 | 2026-10-25 | building | Cycle 02 started; hill chart initialized. |
+| 2026-10-26 | building | Spec review on PR #46, owner decisions: `policy_sha256` covers `approver_required` only, so turning a wiki governed keeps its approvals; the unattended run's caps are raised to 12h and $150 with no milestone pause. |

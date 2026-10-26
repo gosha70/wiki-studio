@@ -34,8 +34,8 @@
     "loop_timeout_sec": 2700
   },
   "caps": {
-    "wall_clock_sec": 21600,
-    "cost_usd": 100
+    "wall_clock_sec": 43200,
+    "cost_usd": 150
   },
   "unattended": {
     "on_review_breaker": "terminate",

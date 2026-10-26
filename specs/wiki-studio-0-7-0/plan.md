@@ -141,8 +141,10 @@ If S6 is cut (circuit breaker step 1), US6 keeps only its release tasks.
 
 `specs/wiki-studio-0-7-0/automation.json`: profile `pr`, branch
 `feature/wiki-studio-0-7-0` off `main`, six phases with no milestone pause (`milestone_every: 7`, above the phase count, so the driver finalises and opens the PR after phase 6 instead of pausing),
-DeepSeek gating review (max 3 rounds per phase), test command and caps as
-for 0.6.0, `pr.closes: [45]` (see above). The bundle is a draft: an origin-alignment record is written
+DeepSeek gating review (max 3 rounds per phase), test command as for
+0.6.0, caps raised to 12 hours and $150 because the run has six phases and
+about twice 0.6.0's work (owner decision, 2026-10-26; 0.6.0 spent $63.94
+over five phases), `pr.closes: [45]` (see above). The bundle is a draft: an origin-alignment record is written
 only after approval, before the build.
 
 ## Test strategy
@@ -170,8 +172,9 @@ only after approval, before the build.
 
 - **memkernel's schedule.** The exit evidence is a joint loop. Mitigation:
   the circuit breaker's step 4 ships 0.7.0 with the limitation and keeps
-  Release B open; the harness job stays non-blocking until memkernel's
-  counterpart merges.
+  Release B open; the `memkernel-loop` job is labelled expected-to-fail and stays
+  non-blocking until memkernel's counterpart merges, while
+  `memkernel-compat` turns blocking as soon as it is green.
 - **Review depth.** S4 adds a record format and a new write path into the
   wiki; 0.6.0 needed five review rounds on one PR. Mitigation: the record
   path, digest recipe, verification and publication rules are pinned in
