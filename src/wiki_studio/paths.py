@@ -59,6 +59,8 @@ AUDIT_DIR_NAME = ".audit"
 AUDIT_LOG_NAME = "ingest-log.md"
 SCHEMA_DIR_NAME = "schema"
 APPLIED_DIR_NAME = ".applied"
+# The root manifest: the wiki's identity, schema contract and policy (written only by ``init``).
+MANIFEST_NAME = ".wiki-studio.json"
 
 
 def looks_wiki_relative(path: str) -> bool:

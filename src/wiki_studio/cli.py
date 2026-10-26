@@ -29,14 +29,18 @@ import json
 import os
 import re
 import sys
+import warnings
+from dataclasses import replace
 from pathlib import Path
 
 from . import __version__, api
 from .audit_flush import describe_flush
 from .backends import ENV_BACKEND, ENV_BACKEND_DEPRECATED
+from .contract import MANIFEST_PRESENT
 from .errors import (
     BackendInvocationError,
     ContractViolationError,
+    DriftWarning,
     IngestError,
     PathOutsideRootError,
     PromoteApplyError,
@@ -52,6 +56,7 @@ from .paths import (
     ENV_ROOT,
     ENV_SOURCE_ROOTS,
     ENV_WIKI_DIR,
+    MANIFEST_NAME,
     WikiPaths,
 )
 from .wikilock import lock_path_for
@@ -357,7 +362,9 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         "info",
         parents=[common],
         help="Print the resolved layout (root, wiki dir, proposals dir, logs, schema copy) and where each "
-        "location came from: flag, WIKI_STUDIO_* variable or default. Read-only; exits 0.",
+        "location came from: flag, WIKI_STUDIO_* variable or default; then the knowledge contract: package "
+        "version, schema contract and fingerprints (drift), format versions, capabilities and the root "
+        "manifest. Read-only; exits 0 (4 for a malformed or newer manifest).",
     )
     p_info.add_argument("--json", action="store_true", help="Print the same facts as one JSON object.")
 
@@ -366,9 +373,17 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         "init",
         parents=[common],
         help="Create the wiki directory with a minimal index.md and log.md when they are absent "
-        "(promote needs both). Never overwrites; running it twice is a no-op. Exits 0.",
+        "(promote needs both) and the root manifest .wiki-studio.json (wiki_id, schema contract, schema "
+        "fingerprint, policy). Never overwrites; a wiki without a manifest gains one and nothing else changes; "
+        "running it twice is a no-op. Exits 0.",
     )
     p_init.add_argument("--title", default=api.DEFAULT_WIKI_TITLE, help="Title for a new index.md and log.md.")
+    p_init.add_argument(
+        "--update-schema",
+        action="store_true",
+        help="Acknowledge changed project schema overrides (<wiki>/schema/ingest-rules.md, page-types.md, "
+        "citation-rules.md): rewrite only the manifest's schema_fingerprint, atomically under the wiki lock.",
+    )
 
     # ── propose ────────────────────────────────────────────────
     p_propose = sub.add_parser(
@@ -674,6 +689,11 @@ def _do_info(args: argparse.Namespace) -> int:
         "lock_timeout": paths.lock_timeout,
         "source_roots": [str(p) for p in paths.source_roots],
     }
+    # The 0.7.0 contract keys follow the 0.6.0 layout keys, which keep their names and meaning.
+    contract = api.info(paths)
+    info.update(contract.as_dict())
+    for warning in contract.warnings:
+        print(f"warning: {warning}", file=sys.stderr)
     if args.json:
         print(json.dumps(info, indent=2))
         return 0
@@ -690,17 +710,33 @@ def _do_info(args: argparse.Namespace) -> int:
     print(f"schema: {schema}" + (f" copy at {paths.schema_dir}" if schema == _SCHEMA_PROJECT else ""))
     print(f"lock-file: {lock_path_for(paths.wiki_dir)}  (timeout {paths.lock_timeout:g}s)")
     print("source-roots: " + (", ".join(str(p) for p in paths.source_roots) or "(none; links stay inside the root)"))
+    print(f"package-version: {contract.package_version}")
+    sc = contract.schema_contract
+    print(f"schema-contract: {sc.schema_id} version {sc.version} ({sc.source} rules)")
+    print(f"schema-fingerprint: {sc.fingerprint}")
+    print(f"declared-fingerprint: {sc.declared_fingerprint or '(none)'}  (drift: {'yes' if sc.drift else 'no'})")
+    print("formats: " + ", ".join(f"{name} {version}" for name, version in contract.formats.items()))
+    print("capabilities: " + ", ".join(contract.capabilities))
+    manifest = contract.manifest
+    if manifest.state == MANIFEST_PRESENT:
+        policy = ", ".join(f"{key}={str(value).lower()}" for key, value in (manifest.policy or {}).items())
+        print(f"manifest: present, mode {manifest.mode}, manifest_version {manifest.manifest_version}")
+        print(f"wiki-id: {manifest.wiki_id}")
+        print(f"policy: {policy}")
+    else:
+        print(f"manifest: missing, mode {manifest.mode}; {manifest.instruction}")
     return 0
 
 
 def _do_init(args: argparse.Namespace) -> int:
     """Create the scaffold the other verbs need; report what was created."""
     paths = _paths_from_args(args)
-    result = api.init(paths, title=args.title)
+    result = api.init(paths, title=args.title, update_schema=args.update_schema)
     if result.created:
         print(f"initialised {paths.wiki_dir}: created {', '.join(result.created)}")
     else:
         print(f"already initialised: {paths.wiki_dir} has index.md and log.md")
+    print(f"manifest: {result.manifest} ({paths.wiki_dir / MANIFEST_NAME})")
     return 0
 
 
@@ -722,7 +758,14 @@ def _do_propose(args: argparse.Namespace) -> int:
     paths = _paths_from_args(args)
     edits = api.edits_from_dir(args.source_dir, paths, rationale=args.rationale)
     name = args.name or _default_proposal_name(args.source_dir, paths.proposals_dir)
-    written = api.propose(edits, paths, name=name, source=str(args.source_dir), rationale=args.rationale, backend="cli")
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always", DriftWarning)
+        written = api.propose(
+            edits, paths, name=name, source=str(args.source_dir), rationale=args.rationale, backend="cli"
+        )
+    drift = [str(w.message) for w in caught if issubclass(w.category, DriftWarning)]
+    for message in drift:
+        print(f"warning: {message}", file=sys.stderr)
     print(str(written))
     for edit in edits:
         print(f"  {edit.action} {edit.path}")
@@ -737,7 +780,8 @@ def _do_propose(args: argparse.Namespace) -> int:
         entry_point=api.PROMOTE_ENTRY_POINT_CLI,
         allow_unguarded_updates=args.allow_unguarded_updates,
     )
-    _print_promote_warnings(result)
+    # The drift warning was printed once already, by propose.
+    _print_promote_warnings(replace(result, warnings=[w for w in result.warnings if w not in drift]))
     print(f"applied {len(result.applied_paths)} edit(s); {_archived_note(result)}")
     return 0
 

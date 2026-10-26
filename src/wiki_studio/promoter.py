@@ -57,12 +57,24 @@ import posixpath
 import shutil
 import stat
 import tempfile
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from . import __version__
 from .audit import HASH_RECIPE_PAYLOAD_DIGEST, PLAN_FILE_NAME, PREVIEW_DIR_NAME, payload_digest_from_files
+from .contract import (
+    KEY_SCHEMA_FINGERPRINT,
+    PACKAGE_NAME,
+    RECEIPT_VERSION,
+    check_write_contract,
+    load_schema,
+    manifest_bytes,
+    new_manifest,
+    parse_manifest,
+    read_manifest,
+    read_manifest_bytes,
+)
 from .errors import (
     REASON_PAYLOAD_CHANGED,
     REASON_UNCERTAIN_OUTCOME,
@@ -74,7 +86,7 @@ from .errors import (
     PromoteValidationError,
 )
 from .lint import lint_wiki
-from .paths import APPLIED_DIR_NAME, AUDIT_DIR_NAME, ContainmentError, contain, is_absolute_path
+from .paths import APPLIED_DIR_NAME, AUDIT_DIR_NAME, MANIFEST_NAME, ContainmentError, contain, is_absolute_path
 from .proposal import (
     PageEdit,
     WikiPatchSet,
@@ -97,11 +109,9 @@ _ARCHIVE_TMP_SUFFIX = ".tmp"
 # ``.audit/proposals`` inside the wiki: the archive the commit writes for this proposal.
 _AUDIT_PROPOSALS_REL = f"{AUDIT_DIR_NAME}/proposals"
 
-# receipt.json contract.
-RECEIPT_VERSION = 1
+# receipt.json contract (its version and the package name are published in ``contract``).
 STATE_COMMITTING = "committing"
 STATE_COMMITTED = "committed"
-PACKAGE_NAME = "wiki-studio"
 PROMOTE_ENTRY_POINT_API = "api"
 PROMOTE_ENTRY_POINT_CLI = "cli"
 
@@ -141,8 +151,9 @@ class PromoteResult:
         conflict protection); also recorded in the receipt. Empty
         otherwise. Added in 0.6.0 with a default.
     warnings : list[str]
-        Human-readable findings that did not stop the promotion, one per
-        unguarded path. Added in 0.6.0 with a default.
+        Human-readable findings that did not stop the promotion: schema
+        drift on a managed wiki (0.7.0), then one per unguarded path. Added
+        in 0.6.0 with a default.
     """
 
     applied_paths: list[str]
@@ -1540,7 +1551,10 @@ def promote(
     against the live wiki: a ``create`` needs its target absent, an
     ``update`` with ``base_sha256`` needs the live page to still carry that
     hash, and an ``update`` without one is refused (exit 9) unless
-    ``allow_unguarded_updates`` is set.
+    ``allow_unguarded_updates`` is set. First of all, under the lock, the
+    wiki's knowledge contract is checked: a malformed or newer manifest and
+    schema drift on a governed wiki raise ``ContractViolationError`` (exit
+    4), dry run included; drift on a managed wiki is a warning.
 
     Parameters
     ----------
@@ -1598,6 +1612,9 @@ def promote(
     with tempfile.TemporaryDirectory(prefix="wiki-stage-") as stage:
         stage_dir = Path(stage) / "wiki"
         with lock:
+            # The knowledge contract first (FR-009, FR-011): a newer or malformed
+            # manifest, and drift on a governed wiki, refuse before anything is staged.
+            contract_warnings = check_write_contract(paths)
             handle = _open_wiki(paths.wiki_dir)
             try:
                 outcome = _promote_locked(
@@ -1614,7 +1631,9 @@ def promote(
             finally:
                 handle.close()
         if not isinstance(outcome, _StagedDryRun):
-            return outcome
+            if not contract_warnings:
+                return outcome
+            return replace(outcome, warnings=[*contract_warnings, *outcome.warnings])
         # Lock released: the staged tree is a point-in-time snapshot of the
         # wiki plus the edits, validated here without holding other writers up.
         _validate_staged_tree(stage_dir, paths, outcome.patch)
@@ -1624,7 +1643,7 @@ def promote(
             archived_dir=None,
             dry_run=True,
             unguarded_paths=list(outcome.unguarded),
-            warnings=_unguarded_warnings(outcome.unguarded),
+            warnings=[*contract_warnings, *_unguarded_warnings(outcome.unguarded)],
         )
 
 
@@ -1642,22 +1661,169 @@ _LOG_TEMPLATE = (
 )
 
 
+# ``InitResult.manifest``: what ``init`` did to the root manifest.
+MANIFEST_CREATED = "created"
+MANIFEST_EXISTING = "existing"
+MANIFEST_UPDATED = "updated"
+
+# Manifest writes relative to the wiki-directory descriptor where the platform can (POSIX).
+_DIR_FD_MANIFEST = os.open in os.supports_dir_fd and os.rename in os.supports_dir_fd and os.unlink in os.supports_dir_fd
+
+
 @dataclass(frozen=True)
 class InitResult:
-    """What ``init_wiki`` did: the wiki directory and the files it created (wiki-relative)."""
+    """What ``init_wiki`` did: the wiki directory, the files it created (wiki-relative) and the manifest outcome.
+
+    ``manifest`` is ``created``, ``existing`` or ``updated`` (only with
+    ``update_schema``). Added in 0.7.0 with a default.
+    """
 
     wiki_dir: Path
     created: list[str]
+    manifest: str = ""
 
 
-def init_wiki(paths: WikiPaths, *, title: str = DEFAULT_WIKI_TITLE) -> InitResult:
-    """Create the wiki directory with a minimal ``index.md`` and ``log.md`` when they are absent.
+def _refuse_manifest_symlinks(paths: WikiPaths) -> None:
+    """The manifest's boundary (FR-006), checked before ``init`` touches anything: no symlinked wiki dir or manifest."""
+    if paths.wiki_dir.is_symlink():
+        raise ContractViolationError(
+            f"wiki directory {paths.wiki_dir} is a symlink; init refuses to write the manifest through it"
+        )
+    try:
+        contain(MANIFEST_NAME, paths.wiki_dir)
+    except ContainmentError as exc:
+        raise ContractViolationError(
+            f"manifest {paths.wiki_dir / MANIFEST_NAME} is outside the wiki boundary ({exc}); refusing to write it"
+        ) from exc
+
+
+def _open_wiki_dir_nofollow(wiki_dir: Path) -> int:
+    """A descriptor on the wiki directory itself, refusing a symlink there (``ContractViolationError``)."""
+    try:
+        return os.open(wiki_dir, os.O_RDONLY | _O_DIRECTORY | _O_NOFOLLOW)
+    except OSError as exc:
+        if exc.errno in (errno.ELOOP, errno.ENOTDIR) and wiki_dir.is_symlink():
+            raise ContractViolationError(
+                f"wiki directory {wiki_dir} is a symlink; refusing to write the manifest through it"
+            ) from exc
+        raise
+
+
+def _write_new_file(name: str, data: bytes, wiki_dir: Path, dir_fd: int | None) -> bool:
+    """Create ``<wiki>/<name>`` exclusively and no-follow, write and fsync ``data``; False when the name exists.
+
+    A partly written file is removed before the error propagates.
+    """
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | _O_NOFOLLOW
+    try:
+        fd = (
+            os.open(name, flags, 0o644, dir_fd=dir_fd) if dir_fd is not None else os.open(wiki_dir / name, flags, 0o644)
+        )
+    except FileExistsError:
+        return False
+    try:
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(data)
+            handle.flush()
+            os.fsync(handle.fileno())
+    except BaseException:
+        with contextlib.suppress(OSError):
+            if dir_fd is not None:
+                os.unlink(name, dir_fd=dir_fd)
+            else:
+                os.unlink(wiki_dir / name)
+        raise
+    return True
+
+
+def _create_manifest(paths: WikiPaths, data: bytes) -> bool:
+    """Write the manifest by exclusive no-follow creation; False when one already exists (never overwritten)."""
+    dir_fd = _open_wiki_dir_nofollow(paths.wiki_dir) if _DIR_FD_MANIFEST else None
+    try:
+        created = _write_new_file(MANIFEST_NAME, data, paths.wiki_dir, dir_fd)
+    finally:
+        if dir_fd is not None:
+            os.close(dir_fd)
+    if created:
+        _fsync_dir(paths.wiki_dir)
+    return created
+
+
+def _replace_manifest(paths: WikiPaths, data: bytes) -> None:
+    """Replace the manifest atomically: an exclusive no-follow temporary sibling, fsync, rename over it.
+
+    Never written in place; a symlink at the manifest name would be replaced,
+    never followed (and the caller has already refused one on read).
+    """
+    tmp = f"{MANIFEST_NAME}.{os.getpid()}.tmp"
+    dir_fd = _open_wiki_dir_nofollow(paths.wiki_dir) if _DIR_FD_MANIFEST else None
+    try:
+        # A temporary name left by an earlier crash of this pid is ours to clear.
+        with contextlib.suppress(FileNotFoundError):
+            if dir_fd is not None:
+                os.unlink(tmp, dir_fd=dir_fd)
+            else:
+                os.unlink(paths.wiki_dir / tmp)
+        if not _write_new_file(tmp, data, paths.wiki_dir, dir_fd):
+            raise OutputWriteError(f"could not reserve the temporary manifest {paths.wiki_dir / tmp}")
+        try:
+            if dir_fd is not None:
+                os.replace(tmp, MANIFEST_NAME, src_dir_fd=dir_fd, dst_dir_fd=dir_fd)
+            else:
+                os.replace(paths.wiki_dir / tmp, paths.wiki_dir / MANIFEST_NAME)
+        except BaseException:
+            with contextlib.suppress(OSError):
+                if dir_fd is not None:
+                    os.unlink(tmp, dir_fd=dir_fd)
+                else:
+                    os.unlink(paths.wiki_dir / tmp)
+            raise
+    finally:
+        if dir_fd is not None:
+            os.close(dir_fd)
+    _fsync_dir(paths.wiki_dir)
+
+
+def _update_schema_fingerprint(paths: WikiPaths) -> str:
+    """``init --update-schema``: under the wiki lock, rewrite only ``schema_fingerprint`` to the current one."""
+    with WikiLock(paths.wiki_dir, paths.lock_timeout):
+        data = read_manifest_bytes(paths)
+        if data is None:
+            created = _create_manifest(paths, manifest_bytes(new_manifest(load_schema(paths).fingerprint)))
+            return MANIFEST_CREATED if created else MANIFEST_EXISTING
+        manifest = parse_manifest(data, str(paths.wiki_dir / MANIFEST_NAME))
+        current = load_schema(paths).fingerprint
+        if manifest.schema_fingerprint == current:
+            return MANIFEST_EXISTING
+        updated = dict(manifest.raw)
+        updated[KEY_SCHEMA_FINGERPRINT] = current
+        _replace_manifest(paths, manifest_bytes(updated))
+    return MANIFEST_UPDATED
+
+
+def init_wiki(paths: WikiPaths, *, title: str = DEFAULT_WIKI_TITLE, update_schema: bool = False) -> InitResult:
+    """Create the wiki directory with a minimal ``index.md`` and ``log.md`` when they are absent, and the manifest.
 
     ``promote`` stages a copy of the wiki and appends index and log lines, so
     both files must exist before the first patch-set; a fresh wiki gets them
     here. Existing files are never touched, so running it twice is a no-op.
     The scaffold lints clean.
+
+    The root manifest ``.wiki-studio.json`` (FR-006) is created by exclusive,
+    no-follow creation after the containment check, never overwritten: a
+    wiki without one (made before 0.7.0) gains it and nothing else changes.
+    A symlinked wiki directory or manifest, a symlinked schema override, a
+    malformed manifest and one newer than this package are refused
+    (``ContractViolationError``, exit 4) before anything is written.
+    ``update_schema`` acknowledges a changed project schema: it rewrites only
+    ``schema_fingerprint``, through a temporary sibling and an atomic replace
+    under the wiki lock (FR-009).
     """
+    _refuse_manifest_symlinks(paths)
+    existing = read_manifest_bytes(paths)
+    if existing is not None:
+        parse_manifest(existing, str(paths.wiki_dir / MANIFEST_NAME))
+    fingerprint = load_schema(paths).fingerprint
     today = datetime.date.today().isoformat()
     paths.wiki_dir.mkdir(parents=True, exist_ok=True)
     created: list[str] = []
@@ -1670,4 +1836,12 @@ def init_wiki(paths: WikiPaths, *, title: str = DEFAULT_WIKI_TITLE) -> InitResul
         except FileExistsError:
             continue
         created.append(name)
-    return InitResult(wiki_dir=paths.wiki_dir, created=created)
+    manifest_state = MANIFEST_EXISTING
+    if existing is None and _create_manifest(paths, manifest_bytes(new_manifest(fingerprint))):
+        manifest_state = MANIFEST_CREATED
+    elif existing is None:
+        # A concurrent init won the exclusive create; its manifest must still pass the checks.
+        read_manifest(paths)
+    if update_schema and manifest_state != MANIFEST_CREATED:
+        manifest_state = _update_schema_fingerprint(paths)
+    return InitResult(wiki_dir=paths.wiki_dir, created=created, manifest=manifest_state)

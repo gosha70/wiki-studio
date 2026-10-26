@@ -14,6 +14,37 @@ uses [Semantic Versioning](https://semver.org/).
   the outer-snapshot hazard, and clean-install CI jobs against a pinned
   memkernel. `docs/consumers.md` describes the gate path without an outer
   rollback. The memkernel limitation in 0.6.0's notes still stands.
+- The versioned knowledge contract (0.7.0, US2). `init` writes a root
+  manifest, `<wiki>/.wiki-studio.json`, by exclusive no-follow creation: a
+  `wiki_id`, the schema identity and version (`wiki-studio/page-schema`,
+  version 1), the fingerprint of the project schema overrides, a policy of
+  three booleans and `created_by`. It never overwrites; on a wiki made before
+  0.7.0 it adds the manifest and nothing else. `InitResult.manifest` reports
+  `created`, `existing` or `updated`.
+- `api.info(paths) -> InfoResult` and new `info` keys: `package_version`,
+  `schema_contract` (id, version, source, current and declared fingerprint,
+  drift), `formats`, `capabilities` and `manifest`. Every 0.6.0 `info --json`
+  key keeps its name and meaning.
+- Schema drift: a changed project override (`<wiki>/schema/ingest-rules.md`,
+  `page-types.md`, `citation-rules.md`) is refused by `propose` and `promote`
+  (exit 4) on a governed wiki and is a warning on a managed one: stderr,
+  `PromoteResult.warnings`, and a `DriftWarning` from `api.propose`.
+  `init --update-schema` (`api.init(..., update_schema=True)`) acknowledges
+  it. A package upgrade alone never causes drift. The recipe is in
+  `docs/knowledge-contract.md`.
+- `docs/compatibility.md`: the tested wiki-studio and memkernel pairs, their
+  evidence, the capabilities each side needs, and how to re-create a proposal
+  written before 0.6.0.
+
+### Changed
+
+- The schema documents are read by one contained loader: a symlinked project
+  schema override or schema directory is refused (exit 4) with its target
+  unread, on every wiki. `prompt.load_schema_files` keeps its name, signature
+  and return value.
+- `init`, `propose`, `promote` and `info` refuse a malformed manifest, one
+  whose `manifest_version` or `schema.version` is newer than this package, and
+  an unknown `schema.id` (exit 4). A wiki without a manifest works as in 0.6.0.
 
 ### Fixed
 

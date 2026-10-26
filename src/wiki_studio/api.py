@@ -40,6 +40,7 @@ import posixpath
 import re
 import shutil
 import stat
+import warnings
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -49,7 +50,8 @@ from .audit_flush import FlushResult, flush_state
 from .audit_lint import validate_audit_tree
 from .backends import resolve_backend
 from .backends.copilot_cli import CopilotCliBackend
-from .errors import ContractViolationError, OutputWriteError, PathOutsideRootError, SourceMissingError
+from .contract import InfoResult, check_write_contract, describe
+from .errors import ContractViolationError, DriftWarning, OutputWriteError, PathOutsideRootError, SourceMissingError
 from .health_lint import lint_health
 from .ingestor import DefaultIngestor
 from .ingestor_multi import COLLISION_ERROR, COLLISION_SUFFIX, DefaultMultiIngestor, write_patch_set_dir
@@ -107,6 +109,7 @@ __all__ = [
     "PageEdit",
     "FindResult",
     "FoundPage",
+    "InfoResult",
     "InitResult",
     "PromoteResult",
     "QueryAnswer",
@@ -117,6 +120,7 @@ __all__ = [
     "edits_from_dir",
     "find",
     "backend_display_name",
+    "info",
     "ingest",
     "init",
     "lint",
@@ -573,12 +577,22 @@ def propose(
     written. Whatever the failure while writing, the directory (and a
     proposals directory this call created) is removed again. Returns the
     absolute directory path.
+
+    The wiki's knowledge contract is checked first: a malformed manifest, one
+    newer than this package, and schema drift on a governed wiki raise
+    ``ContractViolationError`` (exit 4); drift on a managed wiki is emitted at
+    once as a :class:`~wiki_studio.errors.DriftWarning` and the proposal is
+    still written.
     """
     if not _PROPOSAL_NAME_RE.fullmatch(name):
         raise ValueError(
             "name must be one path component of ASCII letters, digits, '.', '_' and '-' "
             f"not starting with '.', got {name!r}"
         )
+    # The knowledge contract (FR-009, FR-011): refused on a newer or malformed
+    # manifest and on governed drift; managed drift is a DriftWarning, now.
+    for message in check_write_contract(paths):
+        warnings.warn(message, DriftWarning, stacklevel=2)
     patch = WikiPatchSet(edits=list(edits), source_path=source, backend=backend, rationale=rationale)
     set_errors = validate_patch_set(patch)
     if set_errors:
@@ -755,15 +769,41 @@ def read_page(path: str | os.PathLike[str], paths: WikiPaths) -> ReadResult:
 # ── init ──────────────────────────────────────────────────────
 
 
-def init(paths: WikiPaths, *, title: str = DEFAULT_WIKI_TITLE) -> InitResult:
-    """Create the wiki directory with a minimal ``index.md`` and ``log.md`` when absent; never overwrites.
+def init(paths: WikiPaths, *, title: str = DEFAULT_WIKI_TITLE, update_schema: bool = False) -> InitResult:
+    """Create the wiki directory with a minimal ``index.md`` and ``log.md`` when absent, and the root manifest.
 
-    Raises ``OutputWriteError`` when the directory or a file cannot be written.
+    Never overwrites: a wiki without a manifest gains one and nothing else
+    changes. ``update_schema`` acknowledges changed project schema overrides
+    by rewriting only the manifest's ``schema_fingerprint``.
+    ``InitResult.manifest`` says what happened (``created``, ``existing``,
+    ``updated``).
+
+    Raises ``ContractViolationError`` (exit 4) for a symlinked wiki directory,
+    manifest or schema override, and for a malformed or newer manifest;
+    ``OutputWriteError`` when the directory or a file cannot be written.
     """
     try:
-        return init_wiki(paths, title=title)
+        return init_wiki(paths, title=title, update_schema=update_schema)
     except OSError as exc:
         raise OutputWriteError(f"could not initialise the wiki at {paths.wiki_dir}: {exc}") from exc
+
+
+# ── info: the contract this build and this wiki follow ────────
+
+
+def info(paths: WikiPaths) -> InfoResult:
+    """Describe the shipped build and the wiki's knowledge contract (FR-010); reads only, takes no lock.
+
+    ``package_version``; ``schema_contract`` (schema id and version, whether
+    the rules come from project overrides, the current and the declared
+    fingerprint, drift); ``formats`` and ``capabilities`` of this build; and
+    ``manifest`` (``present`` with its version, ``wiki_id``, policy and mode,
+    or ``missing`` for a legacy wiki with the instruction to run ``init``).
+    ``warnings`` carries the drift message ``propose`` and ``promote`` give.
+    A host checks this before it writes. Raises ``ContractViolationError``
+    (exit 4) for a malformed or newer manifest and a symlinked override.
+    """
+    return describe(paths)
 
 
 # ── propose from a directory of agent-written files ───────────

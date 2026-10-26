@@ -89,6 +89,15 @@ SOURCELESS_PAGE_TYPES: frozenset[str] = frozenset(
     name for name, spec in PAGE_TYPES.items() if not spec.sources_required
 )
 
+# The identity of these rules in a wiki's root manifest. Only a decision record
+# (docs/adr/) bumps the version; version 1 is the 0.6.0 page schema.
+SCHEMA_ID = "wiki-studio/page-schema"
+SCHEMA_VERSION = 1
+
+# The schema documents the prompts load; a project copy of any of them under
+# ``<wiki>/schema/`` overrides the packaged one and enters the schema fingerprint.
+PROMPT_SCHEMA_DOCUMENTS: tuple[str, ...] = ("ingest-rules", "page-types", "citation-rules")
+
 # Frontmatter keys every page must carry.
 REQUIRED_KEYS: tuple[str, ...] = ("page_type", "slug", "title", "status", "last_reviewed")
 
