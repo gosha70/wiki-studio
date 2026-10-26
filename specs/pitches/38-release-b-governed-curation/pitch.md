@@ -4,7 +4,7 @@ title: "Release B, governed curation (wiki-studio side): combined integration ga
 appetite: 6w
 bet_status: shaped
 cycle: ""
-circuit_breaker: "Core is S1, S2 and S4; they are never cut. If S1 and S2 are not downhill at the end of week 2, cut S6. If S4 is not downhill at the end of week 4, also cut S3's rename identity (page_id); approvals and findings then key by wiki path. If S5's lint rules are not done at the end of week 5, ship S5 as its ADR, its key and the superseded review state. If memkernel's counterpart is not merged by the end of week 5, ship 0.7.0 with this side only, keep the memkernel limitation in the CHANGELOG and do not declare Release B closed. Never take approval from frontmatter, weaken a gate test, add a dependency, a model call or an exit code, or make WikiLock reentrant to stay on schedule."
+circuit_breaker: "Core is S1, S2 and S4; they are never cut. If S1 and S2 are not downhill at the end of week 2, cut S6. If S4 is not downhill at the end of week 4, also cut S3's rename identity (page_id); approvals and findings then key by wiki path, 0.7.0 may ship, and Release B stays open until page_id lands. If S5's lint rules are not done at the end of week 5, ship S5 as its ADR, its key and the superseded review state. If memkernel's counterpart is not merged by the end of week 5, ship 0.7.0 with this side only, keep the memkernel limitation in the CHANGELOG and do not declare Release B closed. Never take approval from frontmatter, weaken a gate test, add a dependency, a model call or an exit code, or make WikiLock reentrant to stay on schedule."
 shaped_by: "pitch-shaper (Claude Code) for gosha70"
 shaped_date: 2026-10-24
 ---
@@ -103,9 +103,13 @@ wiki-studio was read at main 4979178 and memkernel at its local checkout
    carry versions: `plan.json` `version: 1` (`ingestor_multi.py:308`),
    `receipt_version = 1` (`promoter.py:101`), ingest-log `v: 1`.
 9. **`init` writes no manifest.** `init_wiki` creates `index.md` and
-   `log.md` only (`promoter.py:1653-1673`). A project schema copy wins over
-   the packaged one file by file (`prompt.py:36-46`), so the package
-   version cannot identify the rules a wiki uses.
+   `log.md` only (`promoter.py:1653-1673`). The packaged rules the code
+   runs are Python constants (`schema/__init__.py`, `lint.py`); the
+   markdown documents are loaded only by the prompts, and only three of
+   them (`ingest-rules`, `page-types`, `citation-rules`), where a project
+   copy under `<wiki>/schema/` wins file by file (`prompt.py:36-46`). So
+   the package version identifies the packaged rules, and only a project
+   override can make a wiki's rules differ from them.
 10. **The page schema has no identity, approval or supersession keys.**
     Required keys are `page_type, slug, title, status, last_reviewed`
     (`schema/__init__.py:93`); `status` is `draft | stable | deprecated`
@@ -272,31 +276,52 @@ chooses the held-lock alternative, S1 grows by about 3h (Rabbit holes).
 ### S2: The versioned knowledge contract, ~7-9h
 
 - **Root manifest.** `init` writes `<wiki>/.wiki-studio.json` with
-  exclusive creation, never overwriting. A dot-file keeps it out of page
-  listing and lint, and `init_wiki` is already in `promoter.py`, so the
-  single-writer rule holds. Keys:
+  exclusive creation, never overwriting, through the containment check
+  with `O_NOFOLLOW`: a symlink at that path, or a symlinked wiki parent,
+  is refused and its target untouched, as Release A requires of every
+  write. Every read of the manifest passes the same check. A dot-file
+  keeps it out of page listing and lint, and `init_wiki` is already in
+  `promoter.py`, so the single-writer rule holds. Keys:
   - `manifest_version: 1`;
   - `wiki_id`: a random UUID, the wiki's identity across clones and moves
     (the receipt's device and inode stay for recovery only);
   - `schema`: `{id: "wiki-studio/page-schema", version: 2}` (version 1 is
     the 0.6.0 schema, version 2 adds S3 and S5's optional keys);
-  - `schema_source`: `packaged` or `project`, and `schema_fingerprint`;
+  - `schema_fingerprint` (S2's recipe); `schema_source` is **derived** at
+    read time (`project` when any loaded override exists, else
+    `packaged`), never persisted, so it cannot go stale;
   - `policy`: S4's section, defaulting to ungoverned;
   - `created_by`: package and version.
   `init` on an existing wiki without a manifest adds one and touches
   nothing else.
-- **Fingerprint.** sha256 over the **effective** schema: the packaged
-  `schema/*.md` files with the project's files overriding them one by one,
-  which is the rule set the prompts and the linter actually run. Sorted by
-  name, each as name, a NUL byte, then the raw bytes. No normalisation.
-  The recipe is documented. A project directory alone would omit the
-  packaged files it falls back to, so it is never fingerprinted by itself.
-  **Drift:** the manifest stores the fingerprint declared at `init`; `info`
-  reports the declared and the current fingerprint; the governed writers
-  (`propose`, `promote`, `approve`) refuse a mismatch (exit 4, naming both)
-  until the manifest is deliberately updated with `init --update-schema`,
-  which rewrites only that key. An ungoverned wiki (no manifest) has no
-  declared fingerprint and nothing to drift from.
+- **Schema identity.** The packaged rules are identified by
+  `schema.version`, which only an ADR bumps; a package upgrade that keeps
+  the version changes nothing a wiki must react to. The **fingerprint**
+  covers only the project's override files that are actually loaded
+  (`ingest-rules.md`, `page-types.md`, `citation-rules.md` under
+  `<wiki>/schema/`, finding 9): sha256 over the present ones, sorted by
+  name, each as name, a NUL byte, then the raw bytes; the empty string
+  when there is no override. The recipe is documented. The bytes come
+  from **one shared loader** that replaces `load_schema_files`
+  (`prompt.py:36-46`, which today follows a symlink through `is_file()`
+  and `read_text()`): it passes each override through the containment
+  check and opens it with `O_NOFOLLOW`, refusing (exit 4) a symlinked
+  override or schema directory, and the exact bytes it returns feed both
+  the prompt and the fingerprint, so what is hashed is what the model
+  was shown. A test plants an override symlink pointing outside the wiki
+  and checks it is refused with its target unread. **Drift** is
+  judged on that project part only: the manifest stores the fingerprint
+  declared at `init`, `info` reports declared and current, and a mismatch
+  is refused (exit 4, naming both) by `propose`, `promote` and `approve`
+  only on a **governed** wiki (see the definition under S4); an
+  ungoverned wiki gets a warning. `init --update-schema` rewrites only
+  that key, by writing the whole manifest to a temporary sibling and
+  replacing it atomically under the lock, never in place; tests cover
+  adding the first override and removing the last one, and `info`
+  reporting the derived source correctly after each. A wiki without a manifest has nothing to drift from. This
+  rule never blocks a write after an ordinary package upgrade: 0.5.0 and
+  0.6.0 both changed packaged schema bytes, and neither would have
+  tripped it.
 - **`api.info(paths) -> InfoResult`** and new keys in `info --json`:
   package version, `schema` (id, version, source, fingerprint), `formats`
   (`patch_set: 1`, `receipt: 1`, `ingest_log: 1`, `approval: 1`,
@@ -325,8 +350,10 @@ chooses the held-lock alternative, S1 grows by about 3h (Rabbit holes).
   states how to re-create a pre-0.6.0 proposal whose `update` edits lack
   revision preconditions (`read --json`, then `propose` again).
 - **Tests.** `init` creates the manifest once and never overwrites it.
-  The fingerprint changes when one schema byte changes and is independent
-  of directory listing order. `info --json` pins the new keys. A newer
+  The fingerprint changes when one byte of a loaded project override
+  changes, is independent of directory listing order, ignores packaged
+  files and files the prompts do not load, and a package upgrade alone
+  never trips the drift check. `info --json` pins the new keys. A newer
   manifest is refused with exit 4. A wiki without a manifest behaves as in
   0.6.0.
 
@@ -336,16 +363,24 @@ chooses the held-lock alternative, S1 grows by about 3h (Rabbit holes).
 
 - Optional frontmatter key `page_id: pg-<32 hex>`, a single-line scalar.
   That form survives memkernel's parse and render (ADR-0001's finding).
-- `propose` and `ingest` add a fresh `page_id` to a `create` edit whose
-  content has none, so the preview, the commit and any approval cover the
-  same bytes. The caller sees it in the preview. A caller-supplied
+- The CLI (`propose --from`) and `ingest` add a fresh `page_id` to a
+  `create` edit whose content has none, so the preview, the commit and any
+  approval cover the same bytes. `api.propose` does **not** change a
+  caller's bytes by default: it takes `assign_page_ids=False`, so the
+  memkernel bridge's creates land byte for byte as today until it opts
+  in (listed in memkernel #48's counterpart items). A caller-supplied
   `page_id` is kept if well formed.
 - Structural lint: a malformed `page_id`, or two pages with the same one,
   is a violation. This also stops a `create` that copies an existing id.
 - Identity rule: a page's key is its `page_id`, or its wiki-relative path
   when it has none. Approval records, `review_state` and findings use that
-  key. An approval binds the content hash, so a byte-identical rename by
-  hand keeps the page approved under its new path.
+  key. A byte-identical rename does not exist here: lint requires `slug`
+  to equal the file stem and the page type fixes the directory, so any
+  rename changes the bytes and the page goes `stale`. What `page_id`
+  buys is thinner: after a rename, `review_state` reports `stale` with
+  the earlier record and its approved revision, instead of `unapproved`,
+  and memkernel can keep one memory identity across the move. That is
+  why S3a is the first scope cut after S6.
 - No `move` or `delete` action (No-gos). Existing pages get a `page_id`
   through an ordinary guarded `update`.
 
@@ -371,17 +406,25 @@ decision record, schema version 2.
 ### S4: Approval bound to the revision and the policy, ~10-13h
 
 **Policy** (the manifest's `policy` section; the host edits it, a proposal
-cannot). Three keys only:
+cannot, see the edit-path rule below). Three keys only:
 
-- `approval_required` (default `false`): the wiki is governed. memkernel's
-  governed configuration can require it through `info`.
+- `approval_required` (default `false`): the wiki is **governed**. That is
+  the one meaning of the word in this pitch: a wiki with a manifest whose
+  policy sets `approval_required: true`. A wiki with a manifest and the
+  default policy is *managed*: it has an identity, can be approved into,
+  and gets drift warnings rather than refusals. A wiki without a manifest
+  is *legacy*. memkernel's governed configuration can require governed
+  through `info`.
 - `approver_required` (default `false`): `approve` refuses without an
   actor name.
 - `auto_approve_on_promote` (default `false`): a successful promote also
   approves each page it wrote, except drafts, under the promoter's actor.
 
-`policy_sha256` is the sha256 of the section's canonical JSON (sorted
-keys, no whitespace). A wiki without a manifest has no policy and cannot
+`policy_sha256` is the sha256 of the canonical JSON (sorted keys, no
+whitespace) of the keys that define acceptance, `approval_required` and
+`approver_required`, only. `auto_approve_on_promote` is a convenience of
+how a record comes to exist, not of what it accepts, so toggling it never
+makes an approved page `policy-changed`. A wiki without a manifest has no policy and cannot
 be approved into: `approve` refuses (exit 4) until `init` writes one.
 
 **`approve`.** `wiki-studio approve <page>... [--revision SHA] [--by NAME]`
@@ -406,14 +449,40 @@ wiki lock:
    pages published and the pages not. Running `approve` again is
    idempotent: the published tuples are reported, the rest are written.
 
-**Record.** `<wiki>/.audit/approvals/<page-key>/<sha256>/<policy-sha256>.json`:
-the identity of a decision is the tuple (page key, revision, policy,
-decision), so the same bytes approved again under a changed policy get
-their own record instead of colliding with, or overwriting, the earlier
-one. The file is written to a temporary name and published by an
-exclusive link or create that never replaces an existing file; a record
-that already exists for the exact tuple is reported as the no-op, never
-rewritten. Keys:
+**Record** (every component of the approval tree is created, enumerated
+and read inside the wiki boundary: directories created with no symlink
+followed, records opened with `O_NOFOLLOW`, enumeration skipping and
+reporting any symlink, and a test that a symlink planted anywhere under
+`.audit/approvals/` pointing outside the wiki is refused with its target
+untouched).
+`<wiki>/.audit/approvals/id/<page_id>/<sha256>/<policy-sha256>/<decision>.json`
+for a page with a `page_id`, and
+`<wiki>/.audit/approvals/path/<path-digest>/<sha256>/<policy-sha256>/<decision>.json`
+for one without, where `<path-digest>` is the SHA-256, lowercase hex, of
+the canonical wiki-relative path: the edit path normalised with
+`posixpath.normpath` (so `./concepts/x.md` and `concepts/x.md` are one
+page), with forward slashes, no leading `./` or `/`, encoded as UTF-8.
+The identity of a decision is the tuple (page key, revision, policy,
+decision) and every element is in the path, so the same bytes approved
+again under a changed policy get their own record instead of colliding
+with, or overwriting, the earlier one. The page key maps to a directory
+in one of two namespaces, so a path-derived key can never share a
+directory with a `page_id`: `.audit/approvals/id/<page_id>/` for a page
+with an id, and `.audit/approvals/path/<sha256-of-the-wiki-path>/` for
+one without. The digest is injective in practice and keeps every path
+character out of the filesystem; the record's `page_key` and `path` keys
+hold the readable identity, and every read verifies the stored
+`page_key` against the key being looked up before a record counts, so
+an enumeration of stale records can never attribute another page's
+history to the current page. A collision test covers `concepts/x.md`
+beside a root page named `concepts__x.md`, and a `page_id` equal to a
+path-derived name; an equivalence test checks that `concepts/x.md` and
+`./concepts/x.md` locate the same records. The mapped name passes the containment check against
+`.audit/approvals/` before anything is created. The file
+is written to a temporary name and published by an exclusive link or
+create that never replaces an existing file (never a plain `rename`,
+which replaces on POSIX); a record that already exists for the exact
+tuple is reported as the no-op, never rewritten. Keys:
 
 - `approval_version: 1`, `wiki_id`;
 - `page_key` (the `page_id` or the path), `path`, `sha256`;
@@ -441,6 +510,13 @@ point-in-time, like `promote --dry-run`. Each page gets one state:
 It also returns the approved sha256 and record path, so an importer can
 compare the bytes it reads.
 
+**Reserved paths.** `propose` and `promote` refuse (exit 4, naming the
+path) any edit whose path has a dot-prefixed component or lies under
+`schema/`, with a test for the manifest, an approval record and a schema
+override. Today those paths are refused only incidentally, by the
+page-type placement rule; the named rule is what keeps the policy, the
+records and the rules out of a proposal's reach.
+
 **Self-declared approval.** `propose` and `promote` refuse frontmatter
 keys reserved for the gate's record: `approved`, `approved_by`,
 `approval`, `review_state` (exit 4, naming the key). The spec checks the
@@ -453,12 +529,28 @@ makes a page `approved`.
 `committed`, archive published), not part of the receipt protocol: the
 records are not planned in the `committing` receipt, not tracked, and
 never affect recovery. `promote` runs it as `approve` would, taking the
-lock again, over the content pages the promotion created or updated,
-from their committed bytes; `index.md` and `log.md` appends are never
-approval targets. A failure there leaves the pages committed and
-`unapproved`, is reported in `PromoteResult.warnings`, and is never a
-failed promote; a crash between the records is recovered by nothing more
-than running `approve` again, which is idempotent per tuple.
+lock again, over the content pages the promotion created or updated;
+`index.md` and `log.md` appends are never approval targets. Because the
+lock was released in between, another writer may have replaced a page by
+then, so auto-approval validates **per page**, not as the all-or-nothing
+batch `api.approve` runs for a caller: under one lock acquisition it
+checks each promoted page's live hash against the receipt's post-commit
+hash, approves the pages that still match, and writes **no record and
+no promoter attribution** for a page whose bytes no longer match, with a
+warning naming it. That page's review state is whatever the records say
+(`stale` if an older record exists, `approved` if another operation
+already approved the intervening revision, else `unapproved`); the
+guarantee is only that this promotion did not approve bytes it did not
+promote. One intervening edit never blocks the approval of the other
+pages. A failure there is never a failed promote: the promotion stays
+committed, the approvals already published in this operation remain,
+each failed or mismatched page gets a warning in
+`PromoteResult.warnings`, and its review state derives from the records
+that exist. A crash between the records is recovered by nothing more
+than running `approve` again, which is idempotent per tuple. An interleaving test over a multi-page promotion (a second writer
+updating one page between the archive and the auto-approval) pins that
+no record is written for the intervening revision under the promoter's
+identity, while the unchanged pages are approved.
 
 **Tests**, one per acceptance case on this side:
 
@@ -544,6 +636,9 @@ repository.
   source content hashes with git revision metadata.
 - The gate checklist items in #48 that only the bridge can tick: consume
   receipts, ignore the lock file, honour `hash_recipe`.
+- Opt into `page_id` assignment on its creates (`api.propose(...,
+  assign_page_ids=True)`) when it is ready to carry the key; until then
+  its bytes land unchanged.
 
 ## Exit evidence
 
@@ -643,8 +738,8 @@ are open in Questions for the owner.
   own permissions.
 - **A durable approval ledger.** An append-only log invites compaction,
   replay and a recovery protocol of its own. *Workaround:* one immutable
-  file per decision, created exclusively and published by `rename` under
-  the lock. Its absence means "not approved", which is the safe reading.
+  file per decision, published by an exclusive link or create that never
+  replaces a file, under the lock. Its absence means "not approved", which is the safe reading.
   No signatures and no hash chain (No-gos).
 - **Rename identity.** A `move` action, redirect stubs, history chains and
   automatic `page_id` backfill of a whole wiki can each eat days.
@@ -693,7 +788,9 @@ are never cut. The triggers and actions, in order:
 2. **End of week 4.** If S4 is not downhill, also cut S3a (`page_id` and
    rename identity). Approvals and findings key by wiki path. ADR-0002
    drops the `page_id` section. S3b attribution stays, because S4's record
-   needs the approver.
+   needs the approver. 0.7.0 may still ship, but the roadmap requires
+   stable page identity for Release B, so Release B stays open until S3a
+   lands in a later release, exactly as it does for a memkernel slip.
 3. **End of week 5.** If S5's lint rules are not done, ship S5 as its ADR
    text, the key and the `superseded` review state, without the chain and
    cycle checks.
@@ -707,12 +804,16 @@ are never cut. The triggers and actions, in order:
    dependency, a model call or an exit code; make `WikiLock` reentrant;
    write memkernel code from here; ship a schema key without its ADR.
 
-"Exhausted" means six working weeks have passed, or the review loop is in
-a third round on the same scope.
+"Exhausted" means six working weeks have passed. A third review round on
+one scope is not exhaustion (0.6.0 needed five on one PR); it is an
+escalation to the owner, who decides between a fix session, a cut from
+the list above, or a hold.
 
-## Owner decisions (2026-10-24)
+## Owner decisions (2026-10-24, confirmed 2026-10-25)
 
-Answered by the owner after the pitch review; the pitch above follows them.
+Proposed by the first pitch review on 2026-10-24 and recorded then; on
+2026-10-25 the owner was asked directly whether to adopt them as their own
+decisions and adopted all three. The pitch above follows them.
 
 1. **Appetite:** one 6w bet, released as 0.7.0. The A/B split stays
    possible at the scope boundary but is not taken.
@@ -731,4 +832,8 @@ Answered by the owner after the pitch review; the pitch above follows them.
 |------|------------|------|
 | 2026-10-24 | shaping | Pitch drafted from wiki-studio #38 and memkernel #48. wiki-studio read at main 4979178, memkernel at 9d93544. |
 | 2026-10-24 | shaping → shaped | 6 scopes, 6w appetite, one bet (assumption), 0.7.0. Core S1, S2, S4; trim S6, then S3a. Snapshot closure recommended: remove; to be settled with memkernel before build. 3 owner questions with stated assumptions. |
+| 2026-10-25 | shaped (revised, 5) | Fifth and sixth reviews on PR #44: both approval-record layouts documented with a canonical path-digest recipe (normalised POSIX path, UTF-8, SHA-256) and an equivalence test; auto-approval's guarantee restated as "no record and no attribution for mismatched bytes", not a review state; a per-page failure leaves the promotion committed and published approvals in place, with review state from the records. |
+| 2026-10-25 | shaped (revised, 4) | Fourth review on PR #44: one contained, no-follow schema loader feeds both the prompt and the fingerprint (an outside-pointing override symlink is refused unread); approval records live in separate `id/` and `path/<sha256>` namespaces with the stored `page_key` verified on every read; auto-approval validates per page under one lock, approving unchanged pages and warning on changed ones. |
+| 2026-10-25 | shaped (revised, 3) | Third review on PR #44: auto-approval passes the receipt's post-commit hashes as `expected`, so an intervening writer's revision is never approved under the promoter's identity (interleaving test); the manifest and every approval-tree component are created, enumerated and read inside the wiki boundary with no symlink followed, the manifest is replaced atomically and `schema_source` is derived, not persisted; cutting S3a keeps Release B open like a memkernel slip. The three owner decisions, first proposed by the review, were put to the owner directly and adopted. |
+| 2026-10-24 | shaped (revised, 2) | Second pitch review on PR #44: schema identity is `schema.version`, the fingerprint covers only the loaded project overrides and drift is refused only on a governed wiki (a package upgrade never blocks writes); one definition of governed / managed / legacy; `policy_sha256` over the acceptance keys only; `decision` in the record path, page-key mapping and containment stated, no `rename` publication; an explicit reserved-path refusal for dot components and `schema/`; `page_id` opt-in on `api.propose`; the rename claim restated as what `page_id` actually buys; a third review round is an escalation, not exhaustion. |
 | 2026-10-24 | shaped (revised) | Pitch review, six findings folded in: approval records keyed by (page, revision, policy, decision) and never replaced; `approve`, auto-approval and governed import require a manifest, `review_state` reports `manifest_missing`; the fingerprint covers the effective merged schema, with declared-versus-current drift refused by governed writers until `init --update-schema`; auto-approval is a separate post-promotion operation outside the receipt, content pages only; batch approval takes a per-path `expected` mapping, preflights the batch and documents partial publication; `info` lists only shipped capabilities. Owner decisions recorded: one 6w bet; memkernel in the same cycle; week 0 = remove the snapshot, memkernel-owned `corrects` with a grammar still to define. |
