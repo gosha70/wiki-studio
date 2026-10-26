@@ -2,7 +2,7 @@
 pitch_id: 38-release-b-governed-curation
 title: "Release B, governed curation (wiki-studio side): combined integration gate, versioned contract, identity, approval bound to the revision, superseded_by, model-free findings"
 appetite: 6w
-bet_status: bet
+bet_status: building
 cycle: "02"
 circuit_breaker: "Core is S1, S2 and S4; they are never cut. If S1 and S2 are not downhill at the end of week 2, cut S6. If S4 is not downhill at the end of week 4, also cut S3's rename identity (page_id); approvals and findings then key by wiki path, 0.7.0 may ship, and Release B stays open until page_id lands. If S5's lint rules are not done at the end of week 5, ship S5 as its ADR, its key and the superseded review state. If memkernel's counterpart is not merged by the end of week 5, ship 0.7.0 with this side only, keep the memkernel limitation in the CHANGELOG and do not declare Release B closed. Never take approval from frontmatter, weaken a gate test, add a dependency, a model call or an exit code, or make WikiLock reentrant to stay on schedule."
 shaped_by: "pitch-shaper (Claude Code) for gosha70"
@@ -853,3 +853,4 @@ decisions and adopted all three. The pitch above follows them.
 | 2026-10-25 | shaped (revised, 5) | Fifth and sixth reviews on PR #44: both approval-record layouts documented with a canonical path-digest recipe (normalised POSIX path, UTF-8, SHA-256) and an equivalence test; auto-approval's guarantee restated as "no record and no attribution for mismatched bytes", not a review state; a per-page failure leaves the promotion committed and published approvals in place, with review state from the records. |
 | 2026-10-25 | shaped (revised, 6) | Seventh review on PR #44: managed replaces ungoverned in the drift rule and the policy default; the drift warning's surfaces are named (info, stderr, result warnings) with api.info as the host's pre-write check; the reserved-path rule applies to the normalised path and `./index.md` stays legal; the empty-override fingerprint is the digest of empty input; `review_state` looks in both namespaces after a page gains a `page_id`; bet log in date order. |
 | 2026-10-25 | bet | Bet for cycle 02. |
+| 2026-10-25 | building | Cycle 02 started; hill chart initialized. |
