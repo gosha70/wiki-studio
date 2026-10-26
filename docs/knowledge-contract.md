@@ -115,8 +115,8 @@ string key `schema` is still `project` when `<wiki>/schema/` exists and
 |---|---|
 | `package_version` | The installed wiki-studio version. |
 | `schema_contract` | `id`, `version` (the manifest's, else this package's), `source`, `fingerprint` (current), `declared_fingerprint` (the manifest's, or `null`), `drift`. |
-| `formats` | `patch_set: 1`, `receipt: 1`, `ingest_log: 1`, `approval: 1`. |
-| `capabilities` | `wiki-lock`, `receipts`, `base-revision`, `root-manifest`, `page-id`, `attribution`, `approval-record`. |
+| `formats` | `patch_set: 1`, `receipt: 1`, `ingest_log: 1`, `approval: 1`, `findings: 1`. |
+| `capabilities` | `wiki-lock`, `receipts`, `base-revision`, `root-manifest`, `page-id`, `attribution`, `approval-record`, `superseded-by`, `findings`. |
 | `manifest` | Present: `state`, `manifest_version`, `wiki_id`, `policy`, `mode` (`governed` or `managed`). Missing: `state`, `mode: legacy` and an `instruction` to run `wiki-studio init`. |
 
 Both lists describe the shipped build. A scope that does not ship adds no
@@ -302,6 +302,50 @@ published remain, and each skipped, failed or changed page gets a warning in
 `PromoteResult.warnings`. `PromoteResult.approved_paths` lists the pages that
 carry a record for their committed bytes. A crash between records is
 recovered by running `approve` again.
+
+## Findings
+
+`api.findings(paths, *, pages=None) -> FindingsResult` and
+`wiki-studio findings [--json] [--paths PAGE ...]` report what needs a
+curator's attention. They take no backend parameter and resolve no backend,
+so no code path reaches a model. They read only and take no lock. A completed
+run exits 0 whatever it finds; `lint --health --strict` stays the CI gate.
+`pages=None` covers the whole wiki; an explicit list scopes every kind to
+those pages.
+
+The JSON form, `findings_version: 1`:
+
+```json
+{
+  "findings_version": 1,
+  "counts": {"unapproved": 2, "approval-stale": 1, "no-page-id": 3},
+  "pages_checked": 7,
+  "findings": [
+    {"kind": "approval-stale", "severity": "warning", "pages": ["concepts/x.md"], "description": "..."}
+  ]
+}
+```
+
+`counts` names every kind this build reports, zero included, so a host can
+report curation debt at session start without reading the findings.
+`pages_checked` is the number of pages in scope. Each finding has `kind`,
+`severity`, `pages` (wiki-relative) and `description`, the shape memkernel's
+`HealthItem` mirrors. Key order carries no meaning: read keys by name.
+
+| Kind | Severity | When |
+|---|---|---|
+| `stale-claim` | `warning` | A cited `path:` source no longer exists. |
+| `weak-orphan` | `warning` | A page is reachable through one inbound link only. |
+| `missing-cross-link` | `warning` | An entity is mentioned in three or more pages but cross-linked from fewer than two. |
+| `avoid-format` | `warning` | A glossary avoid list is in a refused form. |
+| `unapproved` | `warning` | Review state `unapproved` (no record, a draft, or a legacy wiki). |
+| `approval-stale` | `warning` | Review state `stale`: the live bytes differ from the approved ones. |
+| `approval-policy-changed` | `warning` | Review state `policy-changed`. |
+| `superseded-still-indexed` | `warning` | `index.md` links a page that carries `superseded_by`. |
+| `no-page-id` | `warning` | A content page has no `page_id`. |
+
+The health checks run without a backend, so `contradiction` never appears;
+run `lint --health --backend NAME` for it.
 
 ## Reserved edits
 

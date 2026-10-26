@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/gosha70/wiki-studio/v0.6.0/docs/assets/wiki-studio-banner.png" alt="Wiki-Studio — Turn information into living knowledge." width="760">
+  <img src="https://raw.githubusercontent.com/gosha70/wiki-studio/v0.7.0/docs/assets/wiki-studio-banner.png" alt="Wiki-Studio — Turn information into living knowledge." width="760">
 </p>
 <p align="center">
   <a href="https://memkernel.dev/wiki-studio/">memkernel.dev/wiki-studio</a> ·
@@ -22,7 +22,7 @@ The code was extracted from
 ```bash
 pip install wiki-studio          # Python 3.11–3.13, no runtime dependencies
 wiki-studio --help
-wiki-studio --version           # 0.6.0
+wiki-studio --version           # 0.7.0
 ```
 
 From a checkout: `poetry install`, then `poetry run wiki-studio --help`.
@@ -204,6 +204,22 @@ policy requires one. A legacy wiki (no manifest) is refused (exit 4); run
 |---|---|
 | `--revision SHA` | the sha256 you reviewed (`read --json`); refused when the live page differs; one page only |
 | `--by NAME` | the approver, recorded with source `flag` (else `WIKI_STUDIO_ACTOR`); attribution, not authentication |
+
+### `wiki-studio findings`
+
+Reports what needs a curator's attention without calling a model: counts by
+kind, then each finding. The kinds are the health checks that need no backend
+(`stale-claim`, `weak-orphan`, `missing-cross-link`, `avoid-format`), the
+review kinds `unapproved`, `approval-stale` and `approval-policy-changed`,
+`superseded-still-indexed` (`index.md` links a superseded page) and
+`no-page-id`. It takes no backend, reads only, takes no lock, and exits 0 on a
+completed run whatever it finds; `lint --health --strict` stays the CI gate.
+The JSON format is in `docs/knowledge-contract.md`.
+
+| Flag | Effect |
+|---|---|
+| `--json` | print `findings_version`, `counts`, `pages_checked` and `findings` as one JSON object |
+| `--paths P [P ...]` | scope every kind to these wiki-relative pages |
 
 ### `wiki-studio audit-flush`
 
@@ -398,6 +414,9 @@ print(answer.answer, [c.page for c in answer.citations])
 
 report = api.lint(paths, health=True, strict=True)     # LintResult
 print(report.passed, report.violations, report.health.findings)
+
+debt = api.findings(paths)                             # FindingsResult; no backend, no model call
+print(debt.counts)
 
 api.audit_flush(paths, dry_run=True)                   # AuditFlushResult
 ```

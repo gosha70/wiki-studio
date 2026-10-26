@@ -52,6 +52,8 @@ from .backends import resolve_backend
 from .backends.copilot_cli import CopilotCliBackend
 from .contract import InfoResult, check_write_contract, describe
 from .errors import ContractViolationError, DriftWarning, OutputWriteError, PathOutsideRootError, SourceMissingError
+from .findings import Finding, FindingsResult
+from .findings import findings as _findings
 from .health_lint import lint_health
 from .ingestor import DefaultIngestor
 from .ingestor_multi import COLLISION_ERROR, COLLISION_SUFFIX, DefaultMultiIngestor, write_patch_set_dir
@@ -105,6 +107,8 @@ __all__ = [
     "PROPOSE_BACKEND",
     "ApproveResult",
     "AuditFlushResult",
+    "Finding",
+    "FindingsResult",
     "FlushResult",
     "IngestLogRecord",
     "IngestProposal",
@@ -127,6 +131,7 @@ __all__ = [
     "audit_flush",
     "edits_from_dir",
     "find",
+    "findings",
     "backend_display_name",
     "info",
     "ingest",
@@ -797,6 +802,22 @@ def review_state(paths: WikiPaths, *, pages: list[str] | None = None) -> list[Re
     the approved sha256 and the record it rests on.
     """
     return review_states(paths, pages)
+
+
+def findings(paths: WikiPaths, *, pages: list[str] | None = None) -> FindingsResult:
+    """What needs a curator's attention, from code that takes no backend and calls no model (FR-037, FR-038).
+
+    Counts by kind first, then the findings: the deterministic health kinds
+    (``stale-claim``, ``weak-orphan``, ``missing-cross-link``,
+    ``avoid-format``), the review kinds from :func:`review_state`
+    (``unapproved``, ``approval-stale``, ``approval-policy-changed``),
+    ``superseded-still-indexed`` and ``no-page-id``. Reads only, takes no
+    lock. ``pages=None`` covers the whole wiki; an explicit list scopes every
+    kind to those pages (``PathOutsideRootError`` / ``SourceMissingError`` as
+    ``read_page``). A completed run is a result whatever it finds;
+    ``lint --health --strict`` stays the CI gate.
+    """
+    return _findings(paths, pages=pages)
 
 
 # ── read: one page, its text and the hash of the bytes read ───

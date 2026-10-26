@@ -6,6 +6,18 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-10-26
+
+Governed curation, wiki-studio's half of Release B in `docs/roadmap.md`
+(issue #38). It proves the bridge path that memkernel's exporter uses. It
+also publishes a versioned contract a host can check before it writes, names
+pages and actors, and records approval as a fact about one revision under one
+policy. Replacement becomes explicit, and `findings` reports curation debt
+without a model. Exit codes 0 and 2..11 are unchanged. The patch-set format
+gains optional keys only, the receipt stays version 1, and the `api` changes
+are additive with defaults. Release B is not closed by this release; see
+Limitations.
+
 ### Added
 
 - Contract tests for memkernel's wiki bridge (0.7.0, US1): the bridge's
@@ -91,6 +103,17 @@ uses [Semantic Versioning](https://semver.org/).
   a page carrying `superseded_by` `superseded` whatever its records say.
   memkernel's `corrects` line is kept byte for byte and not interpreted. `info`
   advertises the capability `superseded-by`.
+- Findings without a model call (0.7.0, US6). `wiki-studio findings [--json]
+  [--paths ...]` and `api.findings(paths, *, pages=None) -> FindingsResult`
+  report counts by kind, then each finding. The kinds are the health checks
+  that need no backend (`stale-claim`, `weak-orphan`, `missing-cross-link`,
+  `avoid-format`); `unapproved`, `approval-stale` and
+  `approval-policy-changed` from `review_state`; `superseded-still-indexed`
+  (`index.md` links a superseded page); and `no-page-id`. There is no backend
+  parameter, and a completed run exits 0 whatever it finds. The JSON
+  (`findings_version`, `counts`, `pages_checked`, `findings`) is documented
+  in `docs/knowledge-contract.md`. `info` advertises the capability
+  `findings` and the format `findings: 1`.
 
 ### Changed
 
@@ -122,6 +145,60 @@ uses [Semantic Versioning](https://semver.org/).
   frontmatter `sources` is not a list of mappings is reported as
   `fact_check_error: sources not compared (…)` while its body facts are
   still compared, instead of silently dropping its citations.
+
+### Upgrade notes
+
+- A wiki made before 0.7.0 has no manifest and is a legacy wiki. It works as
+  in 0.6.0 until `wiki-studio init` (or `api.init`) adds a manifest, which
+  touches nothing else. Three refusals apply to every wiki, legacy included:
+  a symlinked project schema override or schema directory, an edit whose
+  normalised path is reserved (a dot-prefixed component or `schema/`), and a
+  create or update whose frontmatter carries `approved`, `approved_by`,
+  `approval` or `review_state` (all exit 4).
+- A manifest is required to approve. `approve` on a legacy wiki exits 4
+  naming `init`, auto-approval is skipped, and `review_state` reports every
+  page `unapproved` with reason `manifest_missing`.
+- To turn a wiki governed, set `policy.approval_required` to `true` in
+  `<wiki>/.wiki-studio.json`. Schema drift is then refused (exit 4) instead
+  of warned about. Turning a managed wiki governed keeps every existing
+  approval `approved`, because the policy hash covers `approver_required`
+  only. Turning `approver_required` on makes approvals without a named
+  approver `policy-changed`.
+- `approved` means this revision was accepted under the approver rule. It
+  does not mean the page is valid against the latest schema:
+  `init --update-schema` leaves existing approvals as they were.
+- `api.propose` never assigns a `page_id` unless called with
+  `assign_page_ids=True`, so a library caller's bytes land unchanged.
+  `propose --from` and multi-page `ingest` assign one to each create.
+- A path-keyed approval is a fact about a path and its exact bytes. A page
+  recreated at a deleted page's path reads `stale` when its bytes differ and
+  `approved` when they are identical. A create that receives a fresh
+  `page_id` reads `unapproved`.
+- Add the lock file `.<wiki-dir-name>.wiki-studio.lock` (beside the wiki) to
+  `.gitignore` if 0.6.0 did not already prompt it.
+
+### Limitations
+
+- memkernel's wiki bridge takes a whole-wiki snapshot around its export and
+  restores it outside the wiki lock on failure. That restore can still
+  rewrite another writer's committed pages and delete its archived
+  `plan.json`; `tests/test_snapshot_hazard.py` reproduces it. Mixed-writer
+  safety across the memkernel stack is therefore not claimed. This item
+  stays until `docs/compatibility.md` lists a tested memkernel release
+  without the snapshot.
+- Release B is not declared closed. It closes only when the joint
+  correction loop (`tests/integration/test_release_b_loop.py`) passes on
+  clean installs with memkernel's counterpart, memkernel #48. That
+  counterpart was not merged into the memkernel revision this release is
+  tested against, so the `memkernel-compat` and `memkernel-loop` CI jobs stay
+  non-blocking (`continue-on-error`), `release.yml` does not run them, and
+  `memkernel-loop` is expected to fail. No combined safety claim is made.
+- No scope was cut by the circuit breaker. `page_id`, `superseded_by` with
+  its chain and cycle checks, and `findings` all ship.
+- Approval records follow 0.6.0's guarantee: validated, serialised and
+  rolled back on failure, but not crash-safe across files. `--by` and the
+  records are attribution and traceability, not authentication or
+  tamper-proof evidence.
 
 ## [0.6.0] — 2026-10-24
 
@@ -842,6 +919,7 @@ for 0.2 rather than changed in the extraction release:
   the value of a flag other than the three global options as a positional
   when deciding whether a verb is present; the documented shapes work.
 
-[Unreleased]: https://github.com/gosha70/wiki-studio/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/gosha70/wiki-studio/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/gosha70/wiki-studio/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/gosha70/wiki-studio/compare/v0.5.0...v0.6.0
 [0.1.0]: https://github.com/gosha70/wiki-studio/releases/tag/v0.1.0

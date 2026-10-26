@@ -55,7 +55,9 @@ class TestApiInfo(ManifestCase):
                 "drift": False,
             },
         )
-        self.assertEqual(dict(info.formats), {"patch_set": 1, "receipt": 1, "ingest_log": 1, "approval": 1})
+        self.assertEqual(
+            dict(info.formats), {"patch_set": 1, "receipt": 1, "ingest_log": 1, "approval": 1, "findings": 1}
+        )
         self.assertEqual(
             info.capabilities,
             (
@@ -67,6 +69,7 @@ class TestApiInfo(ManifestCase):
                 "attribution",
                 "approval-record",
                 "superseded-by",
+                "findings",
             ),
         )
         self.assertEqual(
@@ -179,6 +182,7 @@ class TestAdvertisedContract(ManifestCase):
             "superseded-by": lambda: (
                 bool(schema.SUPERSEDED_BY_KEY) and callable(lint.lint_wiki) and callable(api.review_state)
             ),
+            "findings": lambda: "findings" in _VERBS and callable(api.findings) and "findings" in data["formats"],
         }
         for capability in CAPABILITIES:
             with self.subTest(capability):

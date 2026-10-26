@@ -25,8 +25,12 @@ Format with `poetry run ruff format src/ tests/` before finishing.
 ## Layout
 
 ```
-src/wiki_studio/cli.py          verb dispatcher: ingest | promote | query | lint | audit-flush (exit codes 0,2..8 are a contract)
+src/wiki_studio/cli.py          verb dispatcher: init | ingest | propose | promote | approve | read | query | find | lint | findings | audit-flush | info (exit codes 0,2..11 are a contract)
+src/wiki_studio/api.py          the public library API every verb calls (additive changes with defaults only)
 src/wiki_studio/paths.py        WikiPaths: root, wiki_dir, proposals_dir, query log, audit log (the only place paths are resolved)
+src/wiki_studio/contract.py     root manifest (.wiki-studio.json) read side, contained schema loader, fingerprint, drift, info formats and capabilities
+src/wiki_studio/review.py       page keys, approval-record verification and review_state (read side; promoter.py writes records)
+src/wiki_studio/findings.py     model-free findings: deterministic health kinds plus review, superseded-still-indexed and no-page-id kinds
 src/wiki_studio/ingestor*.py    single-source and multi-page ingest (proposal generation; never writes the wiki)
 src/wiki_studio/promoter.py     THE ONLY MODULE THAT WRITES INTO THE WIKI DIRECTORY (lint-gated, scoped commit, receipt protocol)
 src/wiki_studio/wikilock.py     WikiLock: the OS advisory lock beside the resolved wiki that serialises cooperating writers
@@ -46,7 +50,8 @@ tests/                     unittest-style tests run by pytest; fixtures under te
 - **No runtime dependencies.** The package imports only the standard library; backends shell out to CLIs.
 - Ruff: line length 120, rule sets E/F/W/I/N/UP/B/A/SIM/TCH.
 - Every source file starts with `# Copyright (c) 2026 EGOGE` / `# SPDX-License-Identifier: Apache-2.0`.
-- CLI exit codes are stable: 0 ok, 2 backend not found, 3 backend failed, 4 contract violation, 5 source missing, 6 output write failure, 7 path outside root, 8 not implemented.
+- CLI exit codes are stable: 0 ok, 1 fatal lint, 2 backend not found, 3 backend failed, 4 contract violation, 5 source missing, 6 output write failure, 7 path outside root, 8 not implemented, 9 promote validation or approve refused, 10 promote apply failed, 11 audit-flush error.
+- No code path from `findings`, `approve` or `review_state` reaches a model; `WikiLock` is not reentrant.
 - `promoter.py` is the single writer into the wiki directory; a test scans the package for violations.
 - Defaults reproduce `code-copilot-team`'s layout (`knowledge/wiki`, `doc_internal/proposals`) so its wrapper is `exec wiki-studio "$@"`; every path is overridable by flag and `WIKI_STUDIO_*` environment variable.
 - The page schema (frontmatter keys, page types, directories) is a published contract shared with memkernel's `WikiExporter`/`WikiImporter`; changing it needs a decision record in `docs/adr/`.

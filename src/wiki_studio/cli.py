@@ -144,7 +144,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         prog="wiki-studio",
         description=(
             "Karpathy-pattern LLM Wiki maintainer. Verbs: "
-            "init|ingest|propose|promote|approve|read|query|find|lint|audit-flush|info. "
+            "init|ingest|propose|promote|approve|read|query|find|lint|findings|audit-flush|info. "
             "``wiki-studio <verb> --help`` for per-verb help."
         ),
         epilog=(
@@ -371,6 +371,25 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         help="With --health: backend for the LLM-dependent "
         "contradiction check. When omitted, contradictions are "
         "skipped (the other three checks run without a backend).",
+    )
+
+    # ── findings ───────────────────────────────────────────────
+    p_findings = sub.add_parser(
+        "findings",
+        parents=[common],
+        help="Report what needs a curator's attention without calling a model: counts by kind, then each finding. "
+        "Kinds: stale-claim, weak-orphan, missing-cross-link, avoid-format (the health checks without a backend), "
+        "unapproved, approval-stale, approval-policy-changed (review state), superseded-still-indexed and "
+        "no-page-id. Read-only; takes no lock; exits 0 on a completed run whatever it finds "
+        "(lint --health --strict is the CI gate).",
+    )
+    p_findings.add_argument(
+        "--json",
+        action="store_true",
+        help="Print findings_version, counts, pages_checked and findings as one JSON object.",
+    )
+    p_findings.add_argument(
+        "--paths", nargs="+", default=None, metavar="PAGE", help="Scope every kind to these wiki-relative pages."
     )
 
     # ── audit-flush ────────────────────────────────────────────
@@ -698,6 +717,19 @@ def _do_lint(args: argparse.Namespace) -> int:
     return 0 if result.passed else 1
 
 
+def _do_findings(args: argparse.Namespace) -> int:
+    """Model-free curation report: counts by kind, then each finding; exit 0 on a completed run."""
+    result = api.findings(_paths_from_args(args), pages=args.paths)
+    if args.json:
+        print(json.dumps(result.as_dict(), indent=2))
+        return 0
+    counts = ", ".join(f"{kind} {n}" for kind, n in result.counts.items() if n)
+    print(f"findings: {len(result.findings)} across {result.pages_checked} pages" + (f" ({counts})" if counts else ""))
+    for finding in result.findings:
+        print(f"  [{finding.kind} / {finding.severity}] {', '.join(finding.pages)}: {finding.description}")
+    return 0
+
+
 def _do_audit_flush(args: argparse.Namespace) -> int:
     """Commit pending ingest-log lines (or dry-run report them)."""
     result = api.audit_flush(_paths_from_args(args), dry_run=args.dry_run)
@@ -880,7 +912,20 @@ def _do_find(args: argparse.Namespace) -> int:
     return 0
 
 
-_VERBS = ("ingest", "promote", "approve", "query", "lint", "audit-flush", "info", "init", "propose", "find", "read")
+_VERBS = (
+    "ingest",
+    "promote",
+    "approve",
+    "query",
+    "lint",
+    "findings",
+    "audit-flush",
+    "info",
+    "init",
+    "propose",
+    "find",
+    "read",
+)
 
 # Global options that take a value; their value is not a positional for the legacy shim.
 _GLOBAL_VALUE_OPTIONS = ("--root", "--wiki-dir", "--proposals-dir", "--source-root", "--lock-timeout")
@@ -954,6 +999,7 @@ def main(argv: list[str] | None = None) -> int:
         "approve": _do_approve,
         "query": _do_query,
         "lint": _do_lint,
+        "findings": _do_findings,
         "audit-flush": _do_audit_flush,
         "info": _do_info,
         "init": _do_init,
