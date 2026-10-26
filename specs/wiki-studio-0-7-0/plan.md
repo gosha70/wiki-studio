@@ -142,7 +142,7 @@ If S6 is cut (circuit breaker step 1), US6 keeps only its release tasks.
 `specs/wiki-studio-0-7-0/automation.json`: profile `pr`, branch
 `feature/wiki-studio-0-7-0` off `main`, six phases with no milestone pause (`milestone_every: 7`, above the phase count, so the driver finalises and opens the PR after phase 6 instead of pausing),
 DeepSeek gating review (max 3 rounds per phase), test command as for
-0.6.0, caps raised to 12 hours and $150 because the run has six phases and
+0.6.0, caps raised to 12 hours and $150, and the circuit breaker's week checkpoints are manual cycle gates applied by the owner at the build-PR review (FR-040) because the run has six phases and
 about twice 0.6.0's work (owner decision, 2026-10-26; 0.6.0 spent $63.94
 over five phases), `pr.closes: [45]` (see above). The bundle is a draft: an origin-alignment record is written
 only after approval, before the build.
