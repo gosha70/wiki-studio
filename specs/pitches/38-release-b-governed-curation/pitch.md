@@ -2,8 +2,8 @@
 pitch_id: 38-release-b-governed-curation
 title: "Release B, governed curation (wiki-studio side): combined integration gate, versioned contract, identity, approval bound to the revision, superseded_by, model-free findings"
 appetite: 6w
-bet_status: shaped
-cycle: ""
+bet_status: building
+cycle: "02"
 circuit_breaker: "Core is S1, S2 and S4; they are never cut. If S1 and S2 are not downhill at the end of week 2, cut S6. If S4 is not downhill at the end of week 4, also cut S3's rename identity (page_id); approvals and findings then key by wiki path, 0.7.0 may ship, and Release B stays open until page_id lands. If S5's lint rules are not done at the end of week 5, ship S5 as its ADR, its key and the superseded review state. If memkernel's counterpart is not merged by the end of week 5, ship 0.7.0 with this side only, keep the memkernel limitation in the CHANGELOG and do not declare Release B closed. Never take approval from frontmatter, weaken a gate test, add a dependency, a model call or an exit code, or make WikiLock reentrant to stay on schedule."
 shaped_by: "pitch-shaper (Claude Code) for gosha70"
 shaped_date: 2026-10-24
@@ -433,8 +433,10 @@ cannot, see the edit-path rule below). Three keys only:
   approves each page it wrote, except drafts, under the promoter's actor.
 
 `policy_sha256` is the sha256 of the canonical JSON (sorted keys, no
-whitespace) of the keys that define acceptance, `approval_required` and
-`approver_required`, only. `auto_approve_on_promote` is a convenience of
+whitespace) of the one key that defines acceptance, `approver_required`,
+only (owner decision, 2026-10-26: `approval_required` decides whether
+approval is enforced, not what it accepts, so turning a managed wiki
+governed keeps its approvals). `auto_approve_on_promote` is a convenience of
 how a record comes to exist, not of what it accepts, so toggling it never
 makes an approved page `policy-changed`. A wiki without a manifest has no policy and cannot
 be approved into: `approve` refuses (exit 4) until `init` writes one.
@@ -514,7 +516,9 @@ point-in-time, like `promote --dry-run`. Each page gets one state:
   `policy_sha256`;
 - `stale`: a record exists for the page, but not for its live bytes. This
   is the manual-edit and update case;
-- `policy-changed`: a record for the live bytes under another policy;
+- `policy-changed`: records for the live bytes exist but none satisfies the
+  current policy (records are judged against the current policy, so
+  relaxing it reopens nothing; owner decision, 2026-10-26);
 - `superseded`: the page carries `superseded_by` (S5);
 - `unapproved`: no record. This includes every draft and every page that
   only declares itself stable.
@@ -573,7 +577,8 @@ identity, while the unchanged pages are approved.
   proposal carrying `approved_by:` is refused;
 - an approved page edited by hand is `stale`, and approving its new bytes
   makes it `approved` again;
-- a policy edit makes approved pages `policy-changed`.
+- tightening the policy makes approver-less pages `policy-changed`, and
+  relaxing it reopens nothing.
 
 S1's clean-install harness gains the four cases end to end once
 memkernel's importer reads `review_state`.
@@ -852,3 +857,8 @@ decisions and adopted all three. The pitch above follows them.
 | 2026-10-25 | shaped (revised, 4) | Fourth review on PR #44: one contained, no-follow schema loader feeds both the prompt and the fingerprint (an outside-pointing override symlink is refused unread); approval records live in separate `id/` and `path/<sha256>` namespaces with the stored `page_key` verified on every read; auto-approval validates per page under one lock, approving unchanged pages and warning on changed ones. |
 | 2026-10-25 | shaped (revised, 5) | Fifth and sixth reviews on PR #44: both approval-record layouts documented with a canonical path-digest recipe (normalised POSIX path, UTF-8, SHA-256) and an equivalence test; auto-approval's guarantee restated as "no record and no attribution for mismatched bytes", not a review state; a per-page failure leaves the promotion committed and published approvals in place, with review state from the records. |
 | 2026-10-25 | shaped (revised, 6) | Seventh review on PR #44: managed replaces ungoverned in the drift rule and the policy default; the drift warning's surfaces are named (info, stderr, result warnings) with api.info as the host's pre-write check; the reserved-path rule applies to the normalised path and `./index.md` stays legal; the empty-override fingerprint is the digest of empty input; `review_state` looks in both namespaces after a page gains a `page_id`; bet log in date order. |
+| 2026-10-25 | bet | Bet for cycle 02. |
+| 2026-10-25 | building | Cycle 02 started; hill chart initialized. |
+| 2026-10-26 | building | Spec review on PR #46, owner decisions: `policy_sha256` covers `approver_required` only, so turning a wiki governed keeps its approvals; the unattended run's caps are raised to 12h and $150 with no milestone pause. |
+| 2026-10-26 | building | Owner decision on the spec review: `review_state` judges a record against the current policy, so relaxing `approver_required` reopens nothing and tightening it reopens only records without a named approver; record paths keep the policy hash. |
+| 2026-10-26 | building | Owner decisions on the PR #46 review: a path-keyed approval is a fact about a path and exact bytes, so identical-byte recreation keeps it and recreation safety comes from a fresh `page_id`; an acknowledged schema change does not reopen approvals; the week checkpoints are manual cycle gates applied at the build-PR review. |
