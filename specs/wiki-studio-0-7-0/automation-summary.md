@@ -13,3 +13,6 @@ Review: PASS (see specs/wiki-studio-0-7-0/collaboration/build-review.md).
 
 ### Phase 5 complete — US5: `superseded_by` (2026-10-26T22:50:02Z)
 Review: PASS (see specs/wiki-studio-0-7-0/collaboration/build-review.md).
+
+### Phase 6 complete — US6: Findings without a model call, and release 0.7.0 (2026-10-26T23:01:50Z)
+Review: PASS (see specs/wiki-studio-0-7-0/collaboration/build-review.md).
