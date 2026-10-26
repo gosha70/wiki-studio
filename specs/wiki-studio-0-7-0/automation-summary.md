@@ -7,3 +7,6 @@ Review: PASS (see specs/wiki-studio-0-7-0/collaboration/build-review.md).
 
 ### Phase 3 complete — US3: Identity and attribution (2026-10-26T22:08:08Z)
 Review: PASS (see specs/wiki-studio-0-7-0/collaboration/build-review.md).
+
+### Phase 4 complete — US4: Approval bound to the revision and the policy (2026-10-26T22:40:55Z)
+Review: PASS (see specs/wiki-studio-0-7-0/collaboration/build-review.md).
