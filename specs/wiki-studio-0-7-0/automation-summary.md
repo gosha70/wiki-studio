@@ -16,3 +16,7 @@ Review: PASS (see specs/wiki-studio-0-7-0/collaboration/build-review.md).
 
 ### Phase 6 complete — US6: Findings without a model call, and release 0.7.0 (2026-10-26T23:01:50Z)
 Review: PASS (see specs/wiki-studio-0-7-0/collaboration/build-review.md).
+
+## Run complete (2026-10-26T23:01:52Z)
+Profile: pr — branch feature/wiki-studio-0-7-0 pushed to origin; a pull request tracks the work (the driver never merges).
+Review artifacts: specs/wiki-studio-0-7-0/collaboration/.
