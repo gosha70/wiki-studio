@@ -24,3 +24,5 @@ Review artifacts: specs/wiki-studio-0-7-0/collaboration/.
 ## Run complete (2026-10-26T23:53:18Z)
 Profile: pr — branch feature/wiki-studio-0-7-0 pushed to origin; a pull request tracks the work (the driver never merges).
 Review artifacts: specs/wiki-studio-0-7-0/collaboration/.
+
+Outcome: PR #47 updated (https://github.com/gosha70/wiki-studio/pull/47); merge: not in this profile (pr).
