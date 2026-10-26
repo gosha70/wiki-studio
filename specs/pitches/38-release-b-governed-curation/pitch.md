@@ -516,7 +516,9 @@ point-in-time, like `promote --dry-run`. Each page gets one state:
   `policy_sha256`;
 - `stale`: a record exists for the page, but not for its live bytes. This
   is the manual-edit and update case;
-- `policy-changed`: a record for the live bytes under another policy;
+- `policy-changed`: records for the live bytes exist but none satisfies the
+  current policy (records are judged against the current policy, so
+  relaxing it reopens nothing; owner decision, 2026-10-26);
 - `superseded`: the page carries `superseded_by` (S5);
 - `unapproved`: no record. This includes every draft and every page that
   only declares itself stable.
@@ -575,7 +577,8 @@ identity, while the unchanged pages are approved.
   proposal carrying `approved_by:` is refused;
 - an approved page edited by hand is `stale`, and approving its new bytes
   makes it `approved` again;
-- a policy edit makes approved pages `policy-changed`.
+- tightening the policy makes approver-less pages `policy-changed`, and
+  relaxing it reopens nothing.
 
 S1's clean-install harness gains the four cases end to end once
 memkernel's importer reads `review_state`.
@@ -857,3 +860,4 @@ decisions and adopted all three. The pitch above follows them.
 | 2026-10-25 | bet | Bet for cycle 02. |
 | 2026-10-25 | building | Cycle 02 started; hill chart initialized. |
 | 2026-10-26 | building | Spec review on PR #46, owner decisions: `policy_sha256` covers `approver_required` only, so turning a wiki governed keeps its approvals; the unattended run's caps are raised to 12h and $150 with no milestone pause. |
+| 2026-10-26 | building | Owner decision on the spec review: `review_state` judges a record against the current policy, so relaxing `approver_required` reopens nothing and tightening it reopens only records without a named approver; record paths keep the policy hash. |
