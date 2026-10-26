@@ -414,5 +414,80 @@ class TestSourcesInlineForm(_WikiCase):
         self.assertViolation(lint_wiki(self.wiki), "concepts/alpha.md: missing 'sources:' frontmatter (or empty list)")
 
 
+class TestSupersededBy(_WikiCase):
+    """The optional ``superseded_by`` target (0.7.0 FR-034)."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        _clean_wiki(self.wiki)
+
+    def supersede(self, rel: str, target: str) -> list[str]:
+        """Rewrite concept page ``rel`` with ``superseded_by: target`` and lint."""
+        body = "See [beta](beta.md).\n" if rel.endswith("alpha.md") else "See [alpha](alpha.md).\n"
+        _page(self.wiki, rel, page_type="concept", body=body, extra=f"superseded_by: {target}\n")
+        return lint_wiki(self.wiki)
+
+    def test_a_target_that_is_another_page_is_clean(self) -> None:
+        self.assertEqual(self.supersede("concepts/alpha.md", "concepts/beta.md"), [])
+
+    def test_the_target_is_normalised(self) -> None:
+        self.assertEqual(self.supersede("concepts/alpha.md", "./concepts/../concepts/beta.md"), [])
+
+    def test_a_missing_target(self) -> None:
+        self.assertViolation(
+            self.supersede("concepts/alpha.md", "concepts/gone.md"),
+            "concepts/alpha.md: superseded_by target does not exist → concepts/gone.md",
+        )
+
+    def test_the_target_is_wiki_relative_not_page_relative(self) -> None:
+        self.assertViolation(
+            self.supersede("concepts/alpha.md", "beta.md"), "concepts/alpha.md: superseded_by target does not exist"
+        )
+
+    def test_a_target_that_is_not_a_page(self) -> None:
+        (self.wiki / "schema").mkdir()
+        _page(self.wiki, "schema/notes.md", page_type="concept")
+        (self.wiki / "concepts" / "data.json").write_text("{}\n", encoding="utf-8")
+        for target in ("concepts", "concepts/data.json", "schema/notes.md"):
+            with self.subTest(target):
+                self.assertViolation(
+                    self.supersede("concepts/alpha.md", target),
+                    f"concepts/alpha.md: superseded_by target is not a page → {target}",
+                )
+
+    def test_the_page_itself(self) -> None:
+        self.assertViolation(
+            self.supersede("concepts/alpha.md", "./concepts/alpha.md"),
+            "concepts/alpha.md: superseded_by target is the page itself",
+        )
+
+    def test_a_chain_is_reported_on_the_page_pointing_at_a_superseded_page(self) -> None:
+        _page(self.wiki, "concepts/gamma.md", page_type="concept")
+        self.supersede("concepts/beta.md", "concepts/gamma.md")
+        violations = self.supersede("concepts/alpha.md", "concepts/beta.md")
+        self.assertViolation(violations, "concepts/alpha.md: superseded_by target is itself superseded")
+        self.assertFalse(any(v.startswith("concepts/beta.md: superseded_by") for v in violations), violations)
+
+    def test_a_cycle_is_reported_on_both_pages(self) -> None:
+        self.supersede("concepts/beta.md", "concepts/alpha.md")
+        violations = self.supersede("concepts/alpha.md", "concepts/beta.md")
+        self.assertViolation(violations, "concepts/alpha.md: superseded_by target is itself superseded")
+        self.assertViolation(violations, "concepts/beta.md: superseded_by target is itself superseded")
+
+    def test_an_absolute_an_escaping_and_an_empty_target(self) -> None:
+        cases = {
+            "/etc/hosts": "target is absolute",
+            "C:\\wiki\\beta.md": "target is absolute",
+            "../outside.md": "target escapes the wiki",
+            "concepts/../../outside.md": "target escapes the wiki",
+            "": "is empty",
+        }
+        for target, fragment in cases.items():
+            with self.subTest(target):
+                self.assertViolation(
+                    self.supersede("concepts/alpha.md", target), f"concepts/alpha.md: superseded_by {fragment}"
+                )
+
+
 if __name__ == "__main__":
     unittest.main()

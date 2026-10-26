@@ -9,7 +9,7 @@ import inspect
 import json
 
 from tests.test_manifest import EMPTY_SHA256, ManifestCase, decision_edit
-from wiki_studio import __version__, api, lint, paths, promoter, wikilock
+from wiki_studio import __version__, api, lint, paths, promoter, schema, wikilock
 from wiki_studio.cli import _VERBS
 from wiki_studio.contract import CAPABILITIES, FORMATS, MANIFEST_INSTRUCTION
 from wiki_studio.proposal import PageEdit
@@ -58,7 +58,16 @@ class TestApiInfo(ManifestCase):
         self.assertEqual(dict(info.formats), {"patch_set": 1, "receipt": 1, "ingest_log": 1, "approval": 1})
         self.assertEqual(
             info.capabilities,
-            ("wiki-lock", "receipts", "base-revision", "root-manifest", "page-id", "attribution", "approval-record"),
+            (
+                "wiki-lock",
+                "receipts",
+                "base-revision",
+                "root-manifest",
+                "page-id",
+                "attribution",
+                "approval-record",
+                "superseded-by",
+            ),
         )
         self.assertEqual(
             info.manifest.as_dict(),
@@ -166,6 +175,9 @@ class TestAdvertisedContract(ManifestCase):
                 and callable(api.approve)
                 and callable(api.review_state)
                 and "approval" in data["formats"]
+            ),
+            "superseded-by": lambda: (
+                bool(schema.SUPERSEDED_BY_KEY) and callable(lint.lint_wiki) and callable(api.review_state)
             ),
         }
         for capability in CAPABILITIES:

@@ -100,6 +100,9 @@ PAGE_ID_KEY = "page_id"
 PAGE_ID_PREFIX = "pg-"
 PAGE_ID_PATTERN = r"^pg-[0-9a-f]{32}$"
 
+# The optional replacement marker (ADR-0002): ``superseded_by: <wiki-relative path>`` on the replaced page.
+SUPERSEDED_BY_KEY = "superseded_by"
+
 # Frontmatter keys reserved for the gate's approval record (ADR-0002): a create or
 # update carrying one is refused, so a page can never declare itself approved.
 RESERVED_APPROVAL_KEYS: tuple[str, ...] = ("approved", "approved_by", "approval", "review_state")

@@ -46,7 +46,7 @@ from .paths import (
     is_absolute_path,
 )
 from .proposal import is_page_id, is_sha256_hex
-from .schema import PAGE_ID_KEY
+from .schema import PAGE_ID_KEY, SUPERSEDED_BY_KEY
 from .wiki_state import read_page_content
 
 if TYPE_CHECKING:
@@ -58,7 +58,6 @@ if TYPE_CHECKING:
 # Frontmatter keys review reads (lifecycle labels; never approval).
 STATUS_KEY = "status"
 STATUS_DRAFT = "draft"
-SUPERSEDED_BY_KEY = "superseded_by"
 
 # The approval tree (FR-023).
 APPROVALS_DIR_NAME = "approvals"

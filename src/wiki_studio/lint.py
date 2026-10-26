@@ -7,7 +7,8 @@ Checks (per ``schema/lint-rules.md``):
 1. Frontmatter present, well-formed (closing ``---`` within the first 50 lines), with the required keys.
 2. ``page_type`` is one of the known types.
 3. ``slug`` equals the filename stem (``<dir>/index.md`` uses the directory name) and is unique; an
-   optional ``page_id`` matches ``pg-<32 lowercase hex>`` and is unique (ADR-0002).
+   optional ``page_id`` matches ``pg-<32 lowercase hex>`` and is unique, and an optional
+   ``superseded_by`` names another existing page that is not superseded in turn (ADR-0002).
 4. ``page_type`` matches the directory the page lives in.
 5. Every local link target is classified and checked (the link rule, FR-013):
    web (``http``, ``https``) and ``mailto`` targets are not filesystem links;
@@ -39,8 +40,16 @@ import re
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from .paths import CONTAIN_ABSOLUTE, CONTAIN_SYMLINK, ContainmentError, contain, default_root
-from .schema import PAGE_ID_KEY, PAGE_ID_PATTERN, PAGE_TYPE_DIRS, REQUIRED_KEYS, SOURCELESS_PAGE_TYPES, VALID_PAGE_TYPES
+from .paths import CONTAIN_ABSOLUTE, CONTAIN_SYMLINK, ContainmentError, contain, default_root, is_absolute_path
+from .schema import (
+    PAGE_ID_KEY,
+    PAGE_ID_PATTERN,
+    PAGE_TYPE_DIRS,
+    REQUIRED_KEYS,
+    SOURCELESS_PAGE_TYPES,
+    SUPERSEDED_BY_KEY,
+    VALID_PAGE_TYPES,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -239,6 +248,29 @@ def _link_violation(
     return f"{rel}: link target escapes the project root → {target}"
 
 
+def _superseded_by_violation(
+    rel: str, target: str, wiki_dir: Path, pages: set[str], superseded: set[str]
+) -> str | None:
+    """Check one ``superseded_by`` value of page ``rel`` (a wiki-relative path); its violation, or None (FR-034)."""
+    prefix = f"{rel}: {SUPERSEDED_BY_KEY}"
+    if not target:
+        return f"{prefix} is empty (expected a wiki-relative page path)"
+    if is_absolute_path(target):
+        return f"{prefix} target is absolute → {target}"
+    normalised = posixpath.normpath(target)
+    if normalised == ".." or normalised.startswith("../"):
+        return f"{prefix} target escapes the wiki → {target}"
+    if normalised == rel:
+        return f"{prefix} target is the page itself → {target}"
+    if normalised not in pages:
+        if os.path.lexists(wiki_dir / normalised):
+            return f"{prefix} target is not a page → {target}"
+        return f"{prefix} target does not exist → {target}"
+    if normalised in superseded:
+        return f"{prefix} target is itself superseded (no chains) → {target}"
+    return None
+
+
 def lint_wiki(
     wiki_dir: Path,
     *,
@@ -262,6 +294,7 @@ def lint_wiki(
     pages = list_pages(wiki_dir)
     slugs_seen: dict[str, str] = {}
     page_ids: dict[str, list[str]] = {}
+    superseded: dict[str, str] = {}
 
     # ── Symlinks: not pages, never followed, refused by promote ──
     for rel in symlinks_in(wiki_dir):
@@ -322,6 +355,15 @@ def lint_wiki(
                 violations.append(f"{rel}: malformed {PAGE_ID_KEY} '{page_id}' (expected pg- and 32 lowercase hex)")
             else:
                 page_ids.setdefault(page_id, []).append(rel)
+
+        if any(line.startswith(f"{SUPERSEDED_BY_KEY}:") for line in fm_lines):
+            superseded[rel] = _field(fm_lines, SUPERSEDED_BY_KEY).strip()
+
+    page_rels = {page.relative_to(wiki_dir).as_posix() for page in pages}
+    for rel, target in superseded.items():
+        problem = _superseded_by_violation(rel, target, wiki_dir, page_rels, set(superseded))
+        if problem is not None:
+            violations.append(problem)
 
     for page_id, holders in page_ids.items():
         if len(holders) > 1:

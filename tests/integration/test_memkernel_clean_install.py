@@ -173,6 +173,21 @@ class TestMemkernelCleanInstall(unittest.TestCase):
             sorted(m.source for m in wiki_memories()), sorted(exported.written), "a second import adds no memory"
         )
 
+    def test_memkernel_parses_several_corrections_as_the_line_wiki_studio_keeps(self) -> None:
+        """FR-036: the ``corrects`` fixture, parsed by memkernel's page parser, keeps the one scalar line."""
+        from memkernel.wiki import parse_page, render_page
+
+        from wiki_studio.yaml_lite import parse_frontmatter
+
+        fixture = Path(__file__).resolve().parent.parent / "fixtures" / "corrects" / "multi-corrections.md"
+        text = fixture.read_text(encoding="utf-8")
+        value = parse_frontmatter(text)["corrects"]
+        page = parse_page(text)
+        self.assertEqual(page.extra["corrects"], value)
+        rendered = render_page(page)
+        self.assertIn(f"corrects: {value}\n", rendered, "memkernel writes the line back as wiki-studio reads it")
+        self.assertEqual(parse_frontmatter(rendered)["corrects"], value)
+
 
 if __name__ == "__main__":
     unittest.main()

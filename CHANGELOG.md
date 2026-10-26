@@ -82,6 +82,15 @@ uses [Semantic Versioning](https://semver.org/).
   documented in `docs/knowledge-contract.md`. `info` advertises the
   capability `approval-record` and the format `approval: 1`. The audit lint
   validates `.audit/approvals/`.
+- Explicit replacement (0.7.0, US5). The structural linter checks
+  `superseded_by: <wiki-relative path>`: once normalised, the target must be
+  an existing page other than the page itself and not superseded in turn (no
+  chains, so no cycles); an empty, absolute or escaping target is a
+  violation, so a broken target after a hand rename fails lint and a
+  `promote` that would create one is refused (exit 9). `review_state` reports
+  a page carrying `superseded_by` `superseded` whatever its records say.
+  memkernel's `corrects` line is kept byte for byte and not interpreted. `info`
+  advertises the capability `superseded-by`.
 
 ### Changed
 
