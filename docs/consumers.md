@@ -130,6 +130,36 @@ them with `wiki_studio.schema.PAGE_TYPES` (directory and required H2
 sections per page type). On 0.1.0 `import wiki_studio.schema` succeeds as an
 empty namespace package, so probe for `PAGE_TYPES`, not for the import.
 
+#### Since wiki-studio 0.6.0: the lock, receipts, no outer rollback
+
+`api.propose` and `api.promote` take the wiki lock themselves, and `promote`
+writes only the paths the patch-set names, archives the proposal under
+`<proposals>/.applied/<name>/` with a `receipt.json`, and rolls back its own
+writes on failure. A bridge therefore needs no rollback of its own:
+
+- **The gate path** is `api.propose` then `api.promote`, as above. Do not
+  take a whole-wiki snapshot around it and restore it on failure: that
+  restore runs outside the lock and can undo another writer's committed
+  pages (memkernel #48). On a `GateError` report the error and leave the
+  wiki to `promote`'s own rollback.
+- **Recovery is by receipt.** A promotion interrupted between its commit
+  and its archive leaves `receipt.json` in the proposal directory; calling
+  `api.promote` on that directory again resolves it from the receipt and
+  never re-applies an append. See the recovery rules in
+  [`patch-set-format.md`](patch-set-format.md).
+- **The scaffold comes from `api.init`.** It creates `index.md` and
+  `log.md` only when absent and never overwrites; a bridge should call it
+  rather than write the scaffold itself.
+- **Ignore the lock file.** The lock is
+  `.<wiki-dir-name>.wiki-studio.lock` beside the wiki directory; add it to
+  `.gitignore` where the wiki lives in a git checkout.
+
+The contract tests in `tests/test_bridge_contract.py` replay the bridge's
+calls against wiki-studio, and `tests/test_snapshot_hazard.py` reproduces
+the outer-rollback hazard with a copy of the bridge's snapshot. The
+clean-install CI job `memkernel-compat` runs the real packages against a
+pinned memkernel revision named in the workflow.
+
 The fixture `tests/fixtures/wiki/` in this repository contains three
 exporter-shaped pages (`decision`, `concept`, `workflow`); the test suite
 asserts they lint clean, which pins the schema contract between the two

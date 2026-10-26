@@ -83,6 +83,43 @@ jobs:
         # toolchain resolved in poetry.lock.
         run: poetry run pip-audit --skip-editable
 
+  memkernel-compat:
+    # The clean-install harness (0.7.0 FR-004): the wheel and a pinned memkernel
+    # in a fresh virtual environment, and tests/integration/ driving the real
+    # WikiExporter and WikiImporter against the installed wiki-studio. Separate
+    # from the coverage job; memkernel is never a dependency of the package or
+    # of the default dev group. Non-blocking (continue-on-error) until the job
+    # is green on main, then the flag goes. The `memkernel-loop` job (the four
+    # Release B loop cases) is added with the approval scope.
+    name: memkernel integration (compat)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 30
+    env:
+      # The memkernel revision the harness is tested against: a git ref of
+      # gosha70/memkernel (main at the merge of release/0.5.0rc1, 2026-10-26).
+      # Also listed in docs/compatibility.md.
+      MEMKERNEL_REF: 641a508a2289b2d20775e6d149a0bb47678d1621
+      MEMKERNEL_REPO: https://github.com/gosha70/memkernel.git
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - uses: snok/install-poetry@v1
+      - name: Build the wheel
+        run: poetry build
+      - name: Install the wheel, pytest and the pinned memkernel into a fresh virtual environment
+        run: |
+          python -m venv /tmp/compat
+          /tmp/compat/bin/pip install --quiet --upgrade pip
+          /tmp/compat/bin/pip install --quiet dist/*.whl pytest "memkernel @ git+${MEMKERNEL_REPO}@${MEMKERNEL_REF}"
+          /tmp/compat/bin/pip check
+          /tmp/compat/bin/python -c "import memkernel.wiki.sync, wiki_studio.api; print(wiki_studio.api.__file__)"
+      - name: Run the clean-install harness against the installed packages
+        # The import check above guarantees the suite is not skipped here.
+        run: /tmp/compat/bin/python -m pytest -q -p no:cacheprovider -rs tests/integration/
+
   build-check:
     name: Build Check
     runs-on: ubuntu-latest

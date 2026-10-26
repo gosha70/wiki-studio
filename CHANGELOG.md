@@ -6,6 +6,15 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Contract tests for memkernel's wiki bridge (0.7.0, US1): the bridge's
+  create, append-index and append-log calls through `api.propose` and
+  `api.promote`, a concurrency test with a CLI `promote`, a reproduction of
+  the outer-snapshot hazard, and clean-install CI jobs against a pinned
+  memkernel. `docs/consumers.md` describes the gate path without an outer
+  rollback. The memkernel limitation in 0.6.0's notes still stands.
+
 ### Fixed
 
 - The fact check (`fact_warnings`, issue #33): a `path:line` reference or a
