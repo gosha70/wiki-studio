@@ -1,6 +1,6 @@
 # Copyright (c) 2026 EGOGE
 # SPDX-License-Identifier: Apache-2.0
-"""wiki_studio.api — the library surface: ``ingest``, ``propose``, ``promote``, ``read_page``, ``query``, ``lint``.
+"""wiki_studio.api — the library surface: ``ingest``, ``propose``, ``promote``, ``approve``, ``read_page``, ``lint``...
 
 Each function takes a :class:`~wiki_studio.paths.WikiPaths`, returns a typed result
 and raises the exceptions in :mod:`wiki_studio.errors`. Nothing here prints; the
@@ -63,10 +63,12 @@ from .promoter import (
     LOG_NAME,
     PROMOTE_ENTRY_POINT_API,
     PROMOTE_ENTRY_POINT_CLI,
+    ApproveResult,
     InitResult,
     PromoteResult,
     init_wiki,
 )
+from .promoter import approve as _approve
 from .promoter import promote as _promote
 from .proposal import (
     IngestLogRecord,
@@ -76,6 +78,7 @@ from .proposal import (
     PageEdit,
     QueryAnswer,
     WikiPatchSet,
+    check_reserved_edits,
     is_sha256_hex,
     render_proposal_file,
     validate_page_edit_semantics,
@@ -84,6 +87,7 @@ from .proposal import (
 from .proposal import assign_page_ids as _assign_page_ids
 from .prose_lint import run_prose_lint
 from .querier import DEFAULT_MAX_QUERY_PAGES, DefaultQuerier, _select_query_candidates
+from .review import ReviewState, review_states
 from .wiki_state import read_page_content
 from .wikilock import WikiLock
 
@@ -99,6 +103,7 @@ __all__ = [
     "PROMOTE_ENTRY_POINT_API",
     "PROMOTE_ENTRY_POINT_CLI",
     "PROPOSE_BACKEND",
+    "ApproveResult",
     "AuditFlushResult",
     "FlushResult",
     "IngestLogRecord",
@@ -116,7 +121,9 @@ __all__ = [
     "QueryAnswer",
     "QueryResult",
     "ReadResult",
+    "ReviewState",
     "WikiPatchSet",
+    "approve",
     "audit_flush",
     "edits_from_dir",
     "find",
@@ -130,6 +137,7 @@ __all__ = [
     "propose",
     "query",
     "read_page",
+    "review_state",
 ]
 
 # ``propose --from``: the optional manifest an agent writes beside its draft, mapping each wiki
@@ -595,6 +603,13 @@ def propose(
     ``page_id: pg-<32 hex>`` as its last frontmatter line before the preview
     is written; by default the caller's bytes are written unchanged, and a
     caller-supplied ``page_id`` is never rewritten.
+
+    Every wiki, legacy included, refuses (``ContractViolationError``, exit 4)
+    an edit whose normalised path has a dot-prefixed component or lies under
+    ``schema/`` (the manifest, the audit trail and approval records, schema
+    overrides) and a ``create`` or ``update`` whose frontmatter carries a key
+    reserved for the approval record (``approved``, ``approved_by``,
+    ``approval``, ``review_state``).
     """
     if not _PROPOSAL_NAME_RE.fullmatch(name):
         raise ValueError(
@@ -613,6 +628,8 @@ def propose(
     set_errors = validate_patch_set(patch)
     if set_errors:
         raise ContractViolationError("patch-set failed set-level validation:\n  - " + "\n  - ".join(set_errors))
+    # FR-028 / FR-029: after the escape checks; every wiki, legacy included.
+    check_reserved_edits(patch.edits)
     per_edit_errors = [error for edit in patch.edits for error in validate_page_edit_semantics(edit, paths)]
     if per_edit_errors:
         raise ContractViolationError(
@@ -697,7 +714,11 @@ def promote(
     ``entry_point`` (``"api"`` or ``"cli"``) is recorded in the receipt as
     software identity. ``by`` names who promotes; the receipt records it as
     ``actor`` ``{name, source}`` by the rule :func:`propose` uses for
-    ``proposer`` (attribution, not authentication).
+    ``proposer`` (attribution, not authentication). When the manifest's
+    policy sets ``auto_approve_on_promote``, each created or updated content
+    page whose live bytes still match the committed ones is then approved
+    under that actor (drafts never); ``PromoteResult.approved_paths`` lists
+    them and a skipped page is a warning, never a failed promotion.
 
     Raises ``SourceMissingError`` when the directory does not exist,
     ``PathOutsideRootError`` when it lies outside the root without
@@ -719,6 +740,63 @@ def promote(
         allow_unguarded_updates=allow_unguarded_updates,
         by=by,
     )
+
+
+# ── approve and review_state: approval bound to the revision and the policy ──
+
+
+def approve(
+    pages: list[str],
+    paths: WikiPaths,
+    *,
+    by: str | None = None,
+    expected: dict[str, str] | None = None,
+) -> ApproveResult:
+    """Record that each page's live revision is approved under the wiki's current policy (FR-021).
+
+    ``pages`` are wiki-relative paths; ``expected`` maps a page path to the
+    sha256 the caller reviewed (``read_page``), and a page whose live bytes
+    differ is refused. ``by`` names the approver (``flag``; else
+    ``WIKI_STUDIO_ACTOR``, ``env``; else none), attribution, not
+    authentication. Each decision is one immutable record under
+    ``<wiki>/.audit/approvals/``, written by ``promoter.py`` under the wiki
+    lock; a page whose live bytes already carry a record that satisfies the
+    policy is reported in ``ApproveResult.existing`` and nothing is written.
+
+    Raises ``PathOutsideRootError`` (7) and ``SourceMissingError`` (5) as
+    ``read_page``; ``PromoteValidationError`` (9, nothing written) naming
+    each page and reason: expected revision differs, a structural-lint
+    violation for the page, ``status: draft``, ``superseded_by``, an approver
+    required and none named; ``ContractViolationError`` (4) for a legacy wiki
+    (run ``init``), a newer or malformed manifest, drift on a governed wiki
+    and a symlink in the approval tree; ``OutputWriteError`` (6) when
+    publication fails part way, naming the pages published and not (running
+    ``approve`` again is idempotent). Drift on a managed wiki is in
+    ``ApproveResult.warnings``.
+    """
+    try:
+        return _approve(list(pages), paths, by=by, expected=expected)
+    except OSError as exc:
+        raise OutputWriteError(f"could not write an approval record under {paths.wiki_dir}: {exc}") from exc
+
+
+def review_state(paths: WikiPaths, *, pages: list[str] | None = None) -> list[ReviewState]:
+    """Each page's review state from its verified approval records; reads only, takes no lock (FR-026).
+
+    Advisory and point-in-time, like ``promote --dry-run``. ``pages=None``
+    covers every page the structural linter lists except the root
+    ``index.md`` and ``log.md``; an explicit list covers exactly those pages
+    (exit 7 / 5 as ``read_page``). States, decided in order: a legacy wiki
+    reads ``unapproved`` with reason ``manifest_missing``; a page carrying
+    ``superseded_by`` reads ``superseded``; a live ``status: draft`` reads
+    ``unapproved`` with reason ``draft``; then ``approved`` when a verified
+    record for the live bytes satisfies the current policy,
+    ``policy-changed`` when such records exist but none satisfies it,
+    ``stale`` when only records for other bytes exist, else ``unapproved``.
+    Frontmatter never makes a page approved. Each state names the live and
+    the approved sha256 and the record it rests on.
+    """
+    return review_states(paths, pages)
 
 
 # ── read: one page, its text and the hash of the bytes read ───

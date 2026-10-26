@@ -3,10 +3,13 @@
 # tests/test_audit_lint.py — Phase-1 audit-format lint + .audit/ reader exclusion.
 
 import json
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
 
+from tests.test_approve import ApprovalCase
+from wiki_studio import api
 from wiki_studio.audit_lint import (
     INGEST_LOG_MARKER,
     validate_audit_dir,
@@ -145,6 +148,68 @@ class TestAuditReaderExclusion(unittest.TestCase):
                 any(".audit" in p.parts for p in pages),
                 [str(p) for p in pages],
             )
+
+
+class TestAuditApprovals(ApprovalCase):
+    """0.7.0 (FR-031): ``approvals/`` is admitted in ``.audit/``'s closed set and its tree is validated."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.rel = self.create("a")
+        self.written = api.approve([self.rel], self.paths).published[0]
+        self.audit = self.wiki / ".audit"
+        self.record = self.wiki / self.written
+
+    def errors(self) -> list[str]:
+        return validate_audit_dir(self.audit)
+
+    def test_a_tree_written_by_approve_is_clean(self) -> None:
+        self.assertEqual(self.errors(), [])
+        self.assertEqual(api.lint(self.paths).audit_errors, ())
+
+    def test_unexpected_names_at_each_level_are_reported(self) -> None:
+        approvals = self.audit / "approvals"
+        (approvals / "other").mkdir()
+        (approvals / "path" / "not-hex").mkdir()
+        (approvals / "id" / "pg-short").mkdir(parents=True)
+        (self.record.parent.parent / "not-a-policy").mkdir()
+        (self.record.parent.parent.parent / "not-a-revision").mkdir()
+        (self.record.parent / "rejected.json").write_text("{}", encoding="utf-8")
+        joined = "\n".join(self.errors())
+        for needle in (
+            "only id/ and path/",
+            "64 lowercase hex",
+            "a page_id",
+            "policy entries",
+            "revision entries",
+            "<decision>.json",
+        ):
+            self.assertIn(needle, joined)
+
+    def test_a_record_invalid_for_its_location_is_reported(self) -> None:
+        data = json.loads(self.record.read_text(encoding="utf-8"))
+        data["decision"] = "rejected"
+        self.record.write_text(json.dumps(data), encoding="utf-8")
+        self.assertTrue(any("invalid approval record" in e for e in self.errors()), self.errors())
+        data["decision"], data["page_key"] = "approved", "decisions/b.md"
+        self.record.write_text(json.dumps(data), encoding="utf-8")
+        self.assertTrue(any("page_key is not a canonical path" in e for e in self.errors()), self.errors())
+
+    def test_symlinks_and_stray_temporary_files_are_reported(self) -> None:
+        (self.record.parent / ".approved.json.123.abcd.tmp").write_text("{", encoding="utf-8")
+        (self.record.parent.parent / ("b" * 64)).symlink_to(self.root)
+        joined = "\n".join(self.errors())
+        self.assertIn("stray temporary file", joined)
+        self.assertIn("symlink in the approval tree", joined)
+
+    def test_records_without_a_manifest_are_reported(self) -> None:
+        self.manifest.unlink()
+        self.assertTrue(any("need the wiki's manifest" in e for e in self.errors()), self.errors())
+
+    def test_approvals_must_be_a_directory(self) -> None:
+        shutil.rmtree(self.audit / "approvals")
+        (self.audit / "approvals").write_text("x", encoding="utf-8")
+        self.assertTrue(any("approvals must be a directory" in e for e in self.errors()))
 
 
 if __name__ == "__main__":

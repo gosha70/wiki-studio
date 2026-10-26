@@ -8,7 +8,7 @@ pair that is not listed here is not claimed as compatible.
 
 | wiki-studio | memkernel | Evidence | Status |
 |---|---|---|---|
-| 0.7.0 (unreleased, `feature/wiki-studio-0-7-0`) | git ref `641a508a2289b2d20775e6d149a0bb47678d1621` (main at the merge of `release/0.5.0rc1`, 2026-10-26) | The `memkernel-compat` job in `.github/workflows/ci.yml`: it builds the wheel, installs it with memkernel at that ref into a fresh virtual environment and runs `tests/integration/` | Not yet claimed. The job is non-blocking and no green run on main is recorded yet. |
+| 0.7.0 (unreleased, `feature/wiki-studio-0-7-0`) | git ref `641a508a2289b2d20775e6d149a0bb47678d1621` (main at the merge of `release/0.5.0rc1`, 2026-10-26) | The `memkernel-compat` job in `.github/workflows/ci.yml`: it builds the wheel, installs it with memkernel at that ref into a fresh virtual environment and runs `tests/integration/test_memkernel_clean_install.py`. The `memkernel-loop` job runs the four Release B loop cases (`tests/integration/test_release_b_loop.py`) the same way; it is expected to fail until memkernel #48 is merged | Not yet claimed. Both jobs are non-blocking and no green run on main is recorded yet. |
 
 The bridge-shaped tests (`tests/test_bridge_contract.py`) replay memkernel's
 call sequence without importing memkernel. They run in every build. They are

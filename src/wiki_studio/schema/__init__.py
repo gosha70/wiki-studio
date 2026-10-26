@@ -100,6 +100,10 @@ PAGE_ID_KEY = "page_id"
 PAGE_ID_PREFIX = "pg-"
 PAGE_ID_PATTERN = r"^pg-[0-9a-f]{32}$"
 
+# Frontmatter keys reserved for the gate's approval record (ADR-0002): a create or
+# update carrying one is refused, so a page can never declare itself approved.
+RESERVED_APPROVAL_KEYS: tuple[str, ...] = ("approved", "approved_by", "approval", "review_state")
+
 # The schema documents the prompts load; a project copy of any of them under
 # ``<wiki>/schema/`` overrides the packaged one and enters the schema fingerprint.
 PROMPT_SCHEMA_DOCUMENTS: tuple[str, ...] = ("ingest-rules", "page-types", "citation-rules")

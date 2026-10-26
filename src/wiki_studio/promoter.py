@@ -57,6 +57,7 @@ import posixpath
 import shutil
 import stat
 import tempfile
+import uuid
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -66,8 +67,11 @@ from .audit import HASH_RECIPE_PAYLOAD_DIGEST, PLAN_FILE_NAME, PREVIEW_DIR_NAME,
 from .contract import (
     KEY_SCHEMA_FINGERPRINT,
     PACKAGE_NAME,
+    POLICY_APPROVER_REQUIRED,
+    POLICY_AUTO_APPROVE_ON_PROMOTE,
     RECEIPT_VERSION,
     check_write_contract,
+    drift_warnings,
     load_schema,
     manifest_bytes,
     new_manifest,
@@ -81,11 +85,12 @@ from .errors import (
     REASON_WIKI_IDENTITY_UNAVAILABLE,
     REASON_WIKI_MISMATCH,
     ContractViolationError,
+    IngestError,
     OutputWriteError,
     PromoteApplyError,
     PromoteValidationError,
 )
-from .lint import lint_wiki
+from .lint import lint_wiki, list_pages
 from .paths import (
     ACTOR_SOURCE_NONE,
     ACTOR_SOURCES,
@@ -101,16 +106,48 @@ from .paths import (
 from .proposal import (
     PageEdit,
     WikiPatchSet,
+    check_reserved_edits,
     is_sha256_hex,
     validate_page_edit_semantics,
     validate_patch_set,
+)
+from .review import (
+    APPROVAL_VERSION,
+    DECISION_APPROVED,
+    KEY_APPROVAL_VERSION,
+    KEY_APPROVER,
+    KEY_DECISION,
+    KEY_PAGE_KEY,
+    KEY_PATH,
+    KEY_POLICY_SHA256,
+    KEY_PROMOTER,
+    KEY_PROPOSAL,
+    KEY_PROPOSER,
+    KEY_SHA256,
+    KEY_TIMESTAMP,
+    KEY_WIKI_ID,
+    RECORD_TMP_SUFFIX,
+    TIMESTAMP_FORMAT,
+    canonical_path,
+    is_actor,
+    is_draft,
+    newest,
+    page_key,
+    policy_sha256,
+    read_live_page,
+    record_rel,
+    record_satisfies,
+    scan_page,
+    superseded_by,
 )
 from .wikilock import WikiLock
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
 
+    from .contract import Manifest
     from .paths import WikiPaths
+    from .wiki_state import PageContent
 
 # Fixed names inside a proposal directory and its archive.
 RECEIPT_FILE_NAME = "receipt.json"
@@ -163,8 +200,14 @@ class PromoteResult:
         otherwise. Added in 0.6.0 with a default.
     warnings : list[str]
         Human-readable findings that did not stop the promotion: schema
-        drift on a managed wiki (0.7.0), then one per unguarded path. Added
+        drift on a managed wiki (0.7.0), then one per unguarded path, then
+        one per page auto-approval skipped, failed or found changed. Added
         in 0.6.0 with a default.
+    approved_paths : list[str]
+        Content pages this promotion wrote that carry a verified approval
+        record for the committed bytes after auto-approval
+        (``auto_approve_on_promote``); empty otherwise. Added in 0.7.0 with
+        a default.
     """
 
     applied_paths: list[str]
@@ -173,6 +216,7 @@ class PromoteResult:
     dry_run: bool
     unguarded_paths: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+    approved_paths: list[str] = field(default_factory=list)
 
 
 def _sha256(data: bytes) -> str:
@@ -623,6 +667,8 @@ def _validate_before_staging(patch: WikiPatchSet, paths: WikiPaths) -> None:
     set_errors = validate_patch_set(patch)
     if set_errors:
         raise PromoteValidationError("Patch-set validation failed:\n  - " + "\n  - ".join(set_errors))
+    # FR-028 / FR-029: after the escape checks, before anything is staged (exit 4).
+    check_reserved_edits(patch.edits)
     per_edit_errors: list[str] = []
     for edit in patch.edits:
         per_edit_errors.extend(validate_page_edit_semantics(edit, paths))
@@ -1594,7 +1640,10 @@ def promote(
     ``allow_unguarded_updates`` is set. First of all, under the lock, the
     wiki's knowledge contract is checked: a malformed or newer manifest and
     schema drift on a governed wiki raise ``ContractViolationError`` (exit
-    4), dry run included; drift on a managed wiki is a warning.
+    4), dry run included; drift on a managed wiki is a warning. With the
+    policy ``auto_approve_on_promote``, a completed promotion is followed by
+    auto-approval under a second lock acquisition (FR-030): it never fails
+    the promotion and reports in ``approved_paths`` and ``warnings``.
 
     Parameters
     ----------
@@ -1678,9 +1727,10 @@ def promote(
             finally:
                 handle.close()
         if not isinstance(outcome, _StagedDryRun):
-            if not contract_warnings:
-                return outcome
-            return replace(outcome, warnings=[*contract_warnings, *outcome.warnings])
+            if contract_warnings:
+                outcome = replace(outcome, warnings=[*contract_warnings, *outcome.warnings])
+            # FR-030: a separate operation after the promotion has completed, under a new lock acquisition.
+            return _with_auto_approval(outcome, paths)
         # Lock released: the staged tree is a point-in-time snapshot of the
         # wiki plus the edits, validated here without holding other writers up.
         _validate_staged_tree(stage_dir, paths, outcome.patch)
@@ -1744,14 +1794,14 @@ def _refuse_manifest_symlinks(paths: WikiPaths) -> None:
         ) from exc
 
 
-def _open_wiki_dir_nofollow(wiki_dir: Path) -> int:
+def _open_wiki_dir_nofollow(wiki_dir: Path, what: str = "the manifest") -> int:
     """A descriptor on the wiki directory itself, refusing a symlink there (``ContractViolationError``)."""
     try:
         return os.open(wiki_dir, os.O_RDONLY | _O_DIRECTORY | _O_NOFOLLOW)
     except OSError as exc:
         if exc.errno in (errno.ELOOP, errno.ENOTDIR) and wiki_dir.is_symlink():
             raise ContractViolationError(
-                f"wiki directory {wiki_dir} is a symlink; refusing to write the manifest through it"
+                f"wiki directory {wiki_dir} is a symlink; refusing to write {what} through it"
             ) from exc
         raise
 
@@ -1892,3 +1942,579 @@ def init_wiki(paths: WikiPaths, *, title: str = DEFAULT_WIKI_TITLE, update_schem
     if update_schema and manifest_state != MANIFEST_CREATED:
         manifest_state = _update_schema_fingerprint(paths)
     return InitResult(wiki_dir=paths.wiki_dir, created=created, manifest=manifest_state)
+
+
+# ── Approval records: publication, approve, auto-approval ─────
+#
+# A decision is one immutable file whose path carries the whole tuple (page
+# key, revision, policy, decision); see ``review``. Records are written only
+# here, under the wiki lock: every directory is created without following a
+# symlink, the record goes to a temporary name in its directory, is fsynced,
+# and is published by an exclusive ``os.link`` (or, where the filesystem has
+# no hard links, an exclusive create of the final name). Neither ever
+# replaces a file, so an existing record is never rewritten (FR-025).
+
+_DIR_FD_RECORDS = all(func in os.supports_dir_fd for func in (os.open, os.mkdir, os.link, os.unlink))
+# errno values that mean "no hard links on this filesystem": publication falls back to an exclusive create.
+_LINK_UNSUPPORTED = frozenset(
+    code
+    for code in (getattr(errno, name, None) for name in ("EPERM", "ENOTSUP", "EOPNOTSUPP", "ENOSYS", "EXDEV", "EMLINK"))
+    if code
+)
+_LEGACY_APPROVE = (
+    "no manifest (legacy wiki): an approval record needs the wiki's wiki_id and policy; "
+    "run `wiki-studio init` to add one, then approve again"
+)
+_CONTENT_ACTIONS = ("create", "update")
+
+
+@dataclass(frozen=True)
+class ApproveResult:
+    """What ``approve`` did (FR-021).
+
+    ``published`` lists the record paths written (wiki-relative), ``existing``
+    the records that already approved a page's live bytes under the current
+    policy (no-ops, nothing written), ``warnings`` schema drift on a managed
+    wiki and the records skipped because they failed verification.
+    """
+
+    published: list[str]
+    existing: list[str]
+    warnings: list[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class _ApprovalPlan:
+    """One page's outcome, decided before anything is written: an existing record, or the record to publish."""
+
+    rel: str
+    record_rel: str
+    existing: str | None
+    record: dict[str, Any] | None
+
+
+def _timestamp() -> str:
+    return datetime.datetime.now(datetime.UTC).strftime(TIMESTAMP_FORMAT)
+
+
+def _record_bytes(record: Mapping[str, Any]) -> bytes:
+    return (json.dumps(record, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+
+
+def _fsync_dir_fd(fd: int) -> None:
+    try:
+        os.fsync(fd)
+    except OSError as exc:
+        if exc.errno not in _FSYNC_DIR_UNSUPPORTED:
+            raise
+
+
+def _refuse_record_component(rel: str, wiki_dir: Path) -> ContractViolationError:
+    return ContractViolationError(
+        f"{rel} in {wiki_dir} is a symlink or not a directory; refusing to create, read or write an approval "
+        "record through it (its target is untouched)"
+    )
+
+
+def _link_record(name: str, data: bytes, directory: Path, dir_fd: int | None) -> bool:
+    """Write ``data`` to a temporary name, fsync it, publish it as ``name`` exclusively; False when ``name`` exists."""
+    tmp = f".{name}.{os.getpid()}.{uuid.uuid4().hex[:8]}{RECORD_TMP_SUFFIX}"
+    if not _write_new_file(tmp, data, directory, dir_fd):
+        raise OutputWriteError(f"could not reserve the temporary record {directory / tmp}")
+    try:
+        try:
+            if dir_fd is not None:
+                os.link(tmp, name, src_dir_fd=dir_fd, dst_dir_fd=dir_fd)
+            else:
+                os.link(directory / tmp, directory / name)
+        except FileExistsError:
+            return False
+        except OSError as exc:
+            if exc.errno not in _LINK_UNSUPPORTED:
+                raise
+            # No hard links here: an exclusive create of the final name, which never replaces either.
+            return _write_new_file(name, data, directory, dir_fd)
+        return True
+    finally:
+        with contextlib.suppress(OSError):
+            if dir_fd is not None:
+                os.unlink(tmp, dir_fd=dir_fd)
+            else:
+                os.unlink(directory / tmp)
+        if dir_fd is not None:
+            _fsync_dir_fd(dir_fd)
+        else:
+            _fsync_dir(directory)
+
+
+def _publish_record(paths: WikiPaths, rel: str, data: bytes) -> bool:
+    """Publish one record at wiki-relative ``rel``; False when a record for the exact tuple already exists.
+
+    The name passes the containment check before anything is created; each
+    directory is created and opened without following a symlink, so a
+    symlinked component is refused (``ContractViolationError``, exit 4) with
+    its target untouched.
+    """
+    try:
+        contain(rel, paths.wiki_dir)
+    except ContainmentError as exc:
+        raise ContractViolationError(
+            f"approval record {rel} leaves the wiki boundary or passes through a symlink ({exc}); refusing to "
+            "write it (its target is untouched)"
+        ) from exc
+    *dirs, name = rel.split("/")
+    if not _DIR_FD_RECORDS:
+        current = paths.wiki_dir
+        for depth, part in enumerate(dirs, start=1):
+            current = current / part
+            with contextlib.suppress(FileExistsError):
+                current.mkdir(mode=0o755)
+            if not stat.S_ISDIR(os.lstat(current).st_mode):
+                raise _refuse_record_component("/".join(dirs[:depth]), paths.wiki_dir)
+        return _link_record(name, data, current, None)
+    fd = _open_wiki_dir_nofollow(paths.wiki_dir, "an approval record")
+    try:
+        for depth, part in enumerate(dirs, start=1):
+            with contextlib.suppress(FileExistsError):
+                os.mkdir(part, 0o755, dir_fd=fd)
+            try:
+                child = os.open(part, os.O_RDONLY | _O_DIRECTORY | _O_NOFOLLOW, dir_fd=fd)
+            except OSError as exc:
+                if exc.errno in (errno.ELOOP, errno.ENOTDIR):
+                    raise _refuse_record_component("/".join(dirs[:depth]), paths.wiki_dir) from exc
+                raise
+            os.close(fd)
+            fd = child
+        return _link_record(name, data, paths.wiki_dir.joinpath(*dirs), fd)
+    finally:
+        os.close(fd)
+
+
+def _lint_for_approval(paths: WikiPaths) -> tuple[set[str], list[str]]:
+    """The pages the structural linter lists and its violations, computed once per batch."""
+    listed = {page.relative_to(paths.wiki_dir).as_posix() for page in list_pages(paths.wiki_dir)}
+    return listed, lint_wiki(paths.wiki_dir, root=paths.root, source_roots=paths.source_roots)
+
+
+def _approval_problems(
+    rel: str,
+    content: PageContent,
+    *,
+    listed: set[str],
+    violations: list[str],
+    policy: Mapping[str, bool],
+    approver_name: str | None,
+) -> list[str]:
+    """``approve``'s per-page conditions (FR-021), shared with auto-approval (FR-030); empty when the page passes."""
+    problems: list[str] = []
+    if rel not in listed:
+        problems.append(f"{rel}: not a page the structural linter lists")
+    problems.extend(f"{rel}: structural lint: {v}" for v in violations if v.startswith(f"{rel}: "))
+    if is_draft(content.text):
+        problems.append(f"{rel}: status is draft; a draft is never approved")
+    target = superseded_by(content.text)
+    if target is not None:
+        problems.append(f"{rel}: carries superseded_by ({target}); a replaced page is never approved")
+    if policy[POLICY_APPROVER_REQUIRED] and approver_name is None:
+        problems.append(
+            f"{rel}: the policy requires an approver (approver_required) and none is named; "
+            "pass --by NAME (by=) or set WIKI_STUDIO_ACTOR"
+        )
+    return problems
+
+
+def _plan_approval(
+    paths: WikiPaths,
+    manifest: Manifest,
+    rel: str,
+    content: PageContent,
+    *,
+    proposal: dict[str, Any] | None,
+    proposer: dict[str, Any] | None,
+    approver: dict[str, Any] | None,
+    promoter: dict[str, Any] | None,
+) -> tuple[_ApprovalPlan, list[str]]:
+    """Decide one page: an existing record that already satisfies the policy, or the record to publish.
+
+    A verified record for the live bytes under any policy hash that satisfies
+    the current policy is reported as existing (a new one would add nothing).
+    A symlink met while reading the page's records is refused (exit 4); a
+    file that occupies the record's name without satisfying the policy is
+    refused (exit 9). Returns the plan and the records skipped.
+    """
+    scan = scan_page(paths, manifest.wiki_id, rel, content.text, sha256=content.sha256)
+    if scan.symlinks:
+        raise ContractViolationError(
+            f"{rel}: symlink in the approval tree at {', '.join(scan.symlinks)}; refusing to read or write "
+            "approval records through it (its target is untouched)"
+        )
+    key = page_key(rel, content.text)
+    policy_hash = policy_sha256(manifest.policy)
+    target = record_rel(key, content.sha256, policy_hash)
+    satisfying = newest(r for r in scan.records if record_satisfies(r, manifest.policy))
+    if satisfying is not None:
+        return _ApprovalPlan(rel, target, satisfying.rel, None), scan.skipped
+    try:
+        contain(target, paths.wiki_dir)
+    except ContainmentError as exc:
+        raise ContractViolationError(
+            f"{rel}: approval record {target} passes through a symlink ({exc}); refusing to write it"
+        ) from exc
+    if os.path.lexists(paths.wiki_dir / target):
+        raise PromoteValidationError(
+            f"{rel}: {target} exists but is not a verified record that satisfies the policy; review it "
+            "(`wiki-studio lint` reports it) and remove it by hand; nothing was written"
+        )
+    record = {
+        KEY_APPROVAL_VERSION: APPROVAL_VERSION,
+        KEY_WIKI_ID: manifest.wiki_id,
+        KEY_PAGE_KEY: key,
+        KEY_PATH: rel,
+        KEY_SHA256: content.sha256,
+        KEY_POLICY_SHA256: policy_hash,
+        KEY_DECISION: DECISION_APPROVED,
+        KEY_PROPOSAL: proposal,
+        KEY_PROPOSER: proposer,
+        KEY_APPROVER: approver,
+        KEY_PROMOTER: promoter,
+        KEY_TIMESTAMP: _timestamp(),
+    }
+    return _ApprovalPlan(rel, target, None, record), scan.skipped
+
+
+def _actor_or_none(value: object) -> dict[str, Any] | None:
+    return dict(value) if isinstance(value, dict) and is_actor(value) else None
+
+
+def _read_json(path: Path) -> Any:
+    """A JSON document read without following a symlink; ``OSError`` or ``ValueError`` when unusable."""
+    fd = os.open(path, os.O_RDONLY | _O_NOFOLLOW)
+    with os.fdopen(fd, "rb") as handle:
+        return json.loads(handle.read().decode("utf-8"))
+
+
+def _receipt_provenance(
+    paths: WikiPaths, rel: str, sha256: str
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None, dict[str, Any] | None]:
+    """``proposal``, ``proposer`` and ``promoter`` for an explicit approve, best effort (FR-024).
+
+    From the newest committed receipt under the caller's own
+    ``<proposals_dir>/.applied/`` whose tracked write gives ``rel`` the live
+    sha256 as its post-commit hash; ``(None, None, None)`` when there is none.
+    """
+    try:
+        applied = contain(APPLIED_DIR_NAME, paths.proposals_dir)
+    except ContainmentError:
+        return None, None, None
+    if not applied.is_dir():
+        return None, None, None
+    best: tuple[str, Path, dict[str, Any]] | None = None
+    for archive in sorted(applied.iterdir()):
+        if archive.name.startswith(".") or archive.is_symlink() or not archive.is_dir():
+            continue
+        try:
+            receipt = _read_json(archive / RECEIPT_FILE_NAME)
+        except (OSError, ValueError):
+            continue
+        if not isinstance(receipt, dict) or receipt.get("state") != STATE_COMMITTED:
+            continue
+        writes = receipt.get("planned_writes")
+        if not isinstance(writes, list) or not any(
+            isinstance(w, dict) and w.get("path") == rel and w.get("post_sha256") == sha256 for w in writes
+        ):
+            continue
+        if not is_sha256_hex(receipt.get("submission_digest")):
+            continue
+        stamp = str(receipt.get("committed_at") or "")
+        if best is None or stamp > best[0]:
+            best = (stamp, archive, receipt)
+    if best is None:
+        return None, None, None
+    _stamp, archive, receipt = best
+    proposal = {"name": str(receipt.get("proposal") or archive.name), "submission_digest": receipt["submission_digest"]}
+    try:
+        plan = _read_json(archive / PLAN_FILE_NAME)
+    except (OSError, ValueError):
+        plan = None
+    proposer = _actor_or_none(plan.get("proposer")) if isinstance(plan, dict) else None
+    return proposal, proposer, _actor_or_none(receipt.get("actor"))
+
+
+def _expected_revisions(expected: Mapping[str, str] | None) -> dict[str, str]:
+    """``expected`` keyed by canonical page path; a malformed key or hash is a contract violation (exit 4)."""
+    normalised: dict[str, str] = {}
+    for path, sha in (expected or {}).items():
+        try:
+            rel = canonical_path(str(path))
+        except ValueError as exc:
+            raise ContractViolationError(f"expected revision for {path!r}: not a wiki-relative page path") from exc
+        if not is_sha256_hex(sha):
+            raise ContractViolationError(
+                f"expected revision for {rel} must be a 64-character lowercase hex sha256, got {sha!r}"
+            )
+        normalised[rel] = sha
+    return normalised
+
+
+def _approval_manifest(paths: WikiPaths) -> tuple[Manifest, list[str]]:
+    """The manifest ``approve`` needs: a legacy wiki is refused naming ``init``; drift as the write verbs judge it."""
+    manifest = read_manifest(paths)
+    if manifest is None:
+        raise ContractViolationError(f"{paths.wiki_dir}: {_LEGACY_APPROVE}")
+    return manifest, drift_warnings(paths, manifest)
+
+
+def approve(
+    pages: list[str],
+    paths: WikiPaths,
+    *,
+    by: str | None = None,
+    expected: Mapping[str, str] | None = None,
+) -> ApproveResult:
+    """Record that each page's live revision is approved under the current policy (FR-021, FR-022).
+
+    Under the wiki lock: each page is read once through the wiki boundary
+    (exit 7 outside it or through a symlink, exit 5 when missing); the whole
+    batch is checked before anything is written and refused with
+    ``PromoteValidationError`` (exit 9) naming each page and reason (an
+    ``expected`` revision differs from the live hash, a structural-lint
+    violation for the page, ``status: draft``, ``superseded_by``, an
+    approver required and none named). A page whose live bytes already have
+    a verified record satisfying the policy is reported in ``existing``;
+    every other page gets one record under the current ``policy_sha256``.
+    Publication is not atomic: an I/O failure after some records are
+    published leaves them in place and raises ``OutputWriteError`` (exit 6)
+    naming the pages published and not; running ``approve`` again is
+    idempotent. A legacy wiki, a newer or malformed manifest and drift on a
+    governed wiki are refused (exit 4); drift on a managed wiki is a warning.
+    """
+    if not pages:
+        raise ContractViolationError("approve needs at least one page")
+    actor = resolve_actor(by)
+    wanted = _expected_revisions(expected)
+    with WikiLock(paths.wiki_dir, paths.lock_timeout):
+        manifest, warnings = _approval_manifest(paths)
+        reads: dict[str, PageContent] = {}
+        for page in pages:
+            rel, content = read_live_page(page, paths)
+            reads.setdefault(rel, content)
+        unknown = sorted(set(wanted) - set(reads))
+        if unknown:
+            raise ContractViolationError(f"an expected revision names a page not being approved: {', '.join(unknown)}")
+        listed, violations = _lint_for_approval(paths)
+        problems: list[str] = []
+        for rel, content in reads.items():
+            want = wanted.get(rel)
+            if want is not None and want != content.sha256:
+                problems.append(
+                    f"{rel}: the live page is not the revision that was reviewed "
+                    f"(expected {want}, live {content.sha256}); read it again"
+                )
+            problems.extend(
+                _approval_problems(
+                    rel,
+                    content,
+                    listed=listed,
+                    violations=violations,
+                    policy=manifest.policy,
+                    approver_name=actor.name,
+                )
+            )
+        if problems:
+            raise PromoteValidationError("approve refused; nothing was written:\n  - " + "\n  - ".join(problems))
+        plans: list[_ApprovalPlan] = []
+        for rel, content in reads.items():
+            proposal, proposer, promoter = _receipt_provenance(paths, rel, content.sha256)
+            plan, skipped = _plan_approval(
+                paths,
+                manifest,
+                rel,
+                content,
+                proposal=proposal,
+                proposer=proposer,
+                approver=actor.as_dict(),
+                promoter=promoter,
+            )
+            plans.append(plan)
+            warnings.extend(skipped)
+        published, existing = _publish_approvals(plans, paths)
+    return ApproveResult(published=published, existing=existing, warnings=warnings)
+
+
+def _publish_approvals(plans: list[_ApprovalPlan], paths: WikiPaths) -> tuple[list[str], list[str]]:
+    """Publish every planned record; an I/O failure part way names what was published and what was not (exit 6)."""
+    published: list[str] = []
+    existing: list[str] = []
+    done: list[str] = []
+    for index, plan in enumerate(plans):
+        if plan.record is None:
+            existing.append(str(plan.existing))
+            done.append(plan.rel)
+            continue
+        try:
+            created = _publish_record(paths, plan.record_rel, _record_bytes(plan.record))
+        except OSError as exc:
+            pending = [p.rel for p in plans[index:]]
+            raise OutputWriteError(
+                f"approval records partly published ({exc}): published or already approved: "
+                f"{', '.join(done) or 'none'}; not published: {', '.join(pending)}. Each published record is "
+                "complete and stays; run approve again: published records are reported as existing and the "
+                "rest are written"
+            ) from exc
+        (published if created else existing).append(plan.record_rel)
+        done.append(plan.rel)
+    return published, existing
+
+
+def _auto_approval_targets(plan: object, receipt: Mapping[str, Any]) -> list[tuple[str, str]]:
+    """The content pages a promotion created or updated, with the post-commit sha256 its receipt tracked."""
+    posts: dict[str, str] = {}
+    for write in receipt.get("planned_writes") or []:
+        if isinstance(write, dict) and isinstance(write.get("path"), str) and is_sha256_hex(write.get("post_sha256")):
+            posts[write["path"]] = write["post_sha256"]
+    edits = plan.get("edits") if isinstance(plan, dict) else None
+    targets: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for edit in edits if isinstance(edits, list) else []:
+        if not isinstance(edit, dict) or edit.get("action") not in _CONTENT_ACTIONS:
+            continue
+        if not isinstance(edit.get("path"), str):
+            continue
+        rel = posixpath.normpath(edit["path"])
+        if rel in posts and rel not in seen:
+            seen.add(rel)
+            targets.append((rel, posts[rel]))
+    return targets
+
+
+def _with_auto_approval(outcome: PromoteResult, paths: WikiPaths) -> PromoteResult:
+    """Auto-approve a completed promotion when the policy asks for it; never fails the promotion (FR-030)."""
+    if outcome.dry_run or not outcome.applied_paths:
+        return outcome
+    try:
+        manifest = read_manifest(paths)
+    except IngestError as exc:
+        return replace(outcome, warnings=[*outcome.warnings, f"auto-approval skipped: {exc}"])
+    if manifest is None or not manifest.policy[POLICY_AUTO_APPROVE_ON_PROMOTE]:
+        return outcome
+    if outcome.archived_dir is None:
+        note = (
+            "auto-approval skipped: the archive step did not complete; promote the directory again to finish "
+            "it, and auto-approval runs then"
+        )
+        return replace(outcome, warnings=[*outcome.warnings, note])
+    approved, notes = _auto_approve(outcome.archived_dir, paths)
+    return replace(outcome, approved_paths=approved, warnings=[*outcome.warnings, *notes])
+
+
+def _auto_approve(archive: Path, paths: WikiPaths) -> tuple[list[str], list[str]]:
+    """After the receipt is committed and the archive published: one lock acquisition, one record per matching page.
+
+    Outside the receipt protocol: nothing here is planned, tracked or used by
+    recovery. A page whose live bytes still equal the receipt's post-commit
+    hash and that passes ``approve``'s per-page conditions gets a record with
+    the promoter's actor as approver and promoter; a changed page gets no
+    record and no attribution. Every skipped, failed or changed page is a
+    warning; a crash part way is recovered by running ``approve``.
+    """
+    try:
+        receipt = _read_json(_proposal_file(RECEIPT_FILE_NAME, archive))
+        plan = _read_json(_proposal_file(PLAN_FILE_NAME, archive))
+    except (OSError, ValueError, IngestError) as exc:
+        return [], [f"auto-approval skipped: could not read the archive {archive}: {exc}; run `wiki-studio approve`"]
+    if not isinstance(receipt, dict):
+        return [], [f"auto-approval skipped: {archive / RECEIPT_FILE_NAME} is not a JSON object"]
+    targets = _auto_approval_targets(plan, receipt)
+    if not targets:
+        return [], []
+    promoter_actor = _actor_or_none(receipt.get("actor"))
+    proposer = _actor_or_none(plan.get("proposer")) if isinstance(plan, dict) else None
+    digest = receipt.get("submission_digest")
+    proposal = (
+        {"name": str(receipt.get("proposal") or archive.name), "submission_digest": digest}
+        if is_sha256_hex(digest)
+        else None
+    )
+    approved: list[str] = []
+    notes: list[str] = []
+    try:
+        with WikiLock(paths.wiki_dir, paths.lock_timeout):
+            manifest = read_manifest(paths)
+            if manifest is None or not manifest.policy[POLICY_AUTO_APPROVE_ON_PROMOTE]:
+                return [], []
+            # Governed drift refuses here as approve would; managed drift was already reported by promote.
+            drift_warnings(paths, manifest)
+            listed, violations = _lint_for_approval(paths)
+            approver_name = promoter_actor["name"] if promoter_actor else None
+            for rel, post in targets:
+                note = _auto_approve_page(
+                    paths,
+                    manifest,
+                    rel,
+                    post,
+                    listed=listed,
+                    violations=violations,
+                    approver_name=approver_name,
+                    proposal=proposal,
+                    proposer=proposer,
+                    promoter=promoter_actor,
+                    notes=notes,
+                )
+                if note is None:
+                    approved.append(rel)
+                else:
+                    notes.append(note)
+    except (IngestError, OSError) as exc:
+        notes.append(
+            f"auto-approval did not run to the end ({exc}); the promotion stays committed and records already "
+            "published remain; run `wiki-studio approve` for the pages it did not approve"
+        )
+    return approved, notes
+
+
+def _auto_approve_page(
+    paths: WikiPaths,
+    manifest: Manifest,
+    rel: str,
+    post: str,
+    *,
+    listed: set[str],
+    violations: list[str],
+    approver_name: str | None,
+    proposal: dict[str, Any] | None,
+    proposer: dict[str, Any] | None,
+    promoter: dict[str, Any] | None,
+    notes: list[str],
+) -> str | None:
+    """Auto-approve one page; None when it is approved, else the warning saying why not."""
+    try:
+        live_rel, content = read_live_page(rel, paths)
+    except IngestError as exc:
+        return f"auto-approval: {rel}: skipped ({exc})"
+    if content.sha256 != post:
+        return (
+            f"auto-approval: {rel}: not approved: the live page changed after this promotion committed it "
+            f"(committed {post}, live {content.sha256}); no record is written for bytes this promotion did not write"
+        )
+    problems = _approval_problems(
+        live_rel, content, listed=listed, violations=violations, policy=manifest.policy, approver_name=approver_name
+    )
+    if problems:
+        return f"auto-approval: {rel}: skipped: " + "; ".join(problems)
+    try:
+        plan, skipped = _plan_approval(
+            paths,
+            manifest,
+            live_rel,
+            content,
+            proposal=proposal,
+            proposer=proposer,
+            approver=promoter,
+            promoter=promoter,
+        )
+        notes.extend(skipped)
+        if plan.record is not None:
+            _publish_record(paths, plan.record_rel, _record_bytes(plan.record))
+    except (IngestError, OSError) as exc:
+        return f"auto-approval: {rel}: failed ({exc})"
+    return None

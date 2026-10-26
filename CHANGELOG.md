@@ -54,8 +54,43 @@ uses [Semantic Versioning](https://semver.org/).
   final) and reserves `approved`, `approved_by`, `approval` and
   `review_state`. `info` advertises the capabilities `page-id` and
   `attribution`.
+- Approval bound to the revision and the policy (0.7.0, US4).
+  `wiki-studio approve <page>... [--revision SHA] [--by NAME]` and
+  `api.approve(pages, paths, *, by=None, expected=None) -> ApproveResult`
+  record that a page's live bytes are approved under the manifest's policy:
+  one immutable file per decision under
+  `<wiki>/.audit/approvals/{id/<page_id>|path/<path-digest>}/<sha256>/<policy_sha256>/approved.json`,
+  written only by `promoter.py` under the wiki lock, published by an
+  exclusive link and never rewritten. The batch is checked first and refused
+  (exit 9, nothing written) for a draft, a page carrying `superseded_by`, a
+  structural-lint violation, a `--revision` that is not the live one, or a
+  missing approver when `approver_required` is set; a legacy wiki is refused
+  (exit 4) until `init` adds a manifest. An I/O failure part way is exit 6
+  naming what was published; a rerun is idempotent.
+- `api.review_state(paths, *, pages=None) -> list[ReviewState]`: `approved`,
+  `policy-changed`, `stale`, `unapproved` (with reason `manifest_missing`,
+  `draft` or `no_record`) or `superseded`, with the live and approved sha256
+  and the record path. It reads verified records only; frontmatter never
+  makes a page approved, and `status: stable` alone is `unapproved`.
+- `auto_approve_on_promote`: after a promotion has committed and archived, a
+  second lock acquisition approves each created or updated content page whose
+  live bytes still equal the receipt's post-commit hash, under the promoter's
+  actor; drafts and changed pages are skipped with a warning, and a failure
+  never fails the promotion. `PromoteResult.approved_paths` (default empty).
+- The `policy_sha256` (SHA-256 of `{"approver_required": <bool>}` as
+  canonical JSON), the record keys, verification and review states are
+  documented in `docs/knowledge-contract.md`. `info` advertises the
+  capability `approval-record` and the format `approval: 1`. The audit lint
+  validates `.audit/approvals/`.
 
 ### Changed
+
+- Reserved edits, on every wiki: `propose` and `promote` refuse (exit 4) an
+  edit whose normalised path has a dot-prefixed component or lies under
+  `schema/` (the manifest, the audit trail, approval records, schema
+  overrides), and a `create` or `update` whose frontmatter carries
+  `approved`, `approved_by`, `approval` or `review_state`. A raw
+  `./index.md` append still passes.
 
 - The schema documents are read by one contained loader: a symlinked project
   schema override or schema directory is refused (exit 4) with its target

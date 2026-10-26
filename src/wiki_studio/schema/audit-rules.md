@@ -16,6 +16,10 @@ Two artifacts live under `.audit/`:
 2. `.audit/proposals/<date>-<slug>/` — one directory per accepted
    proposal, written by `wiki promote` as part of its commit (rolled back
    with the rest of the commit on failure; not crash-safe across files).
+3. `.audit/approvals/` (0.7.0) — one immutable file per approval decision,
+   written only by `promoter.py` (`wiki-studio approve` and auto-approval)
+   under the wiki lock. The layout, record keys and verification are in
+   `docs/knowledge-contract.md`.
 
 ## `ingest-log.md`
 
@@ -148,6 +152,19 @@ be equal.
   `proposal_hash` is `null` or 64 lowercase hex.
 - `.audit/proposals/<dir>/`: `plan.json` exists and is valid JSON;
   `proposal.md` exists; only the permitted entries are present.
+- `.audit/` holds only `ingest-log.md`, `proposals/` and `approvals/`.
+- `.audit/approvals/` (0.7.0): only `id/` and `path/` at its top; `path/`
+  entries are named 64 lowercase hex (the path digest) and `id/` entries a
+  `page_id` (`pg-` and 32 lowercase hex); the revision and policy levels
+  below them are named 64 lowercase hex; files are named `<decision>.json`
+  with a known decision (`approved`); each record is valid for its location
+  (`approval_version` 1, the manifest's `wiki_id`, a `page_key` equal to its
+  `id/` directory name or digesting to its `path/` directory name, and
+  `sha256`, `policy_sha256` and `decision` equal to its directory and file
+  names); no symlink anywhere; a stray temporary file
+  (`.<decision>.json.<pid>.<hex>.tmp`, left by an interrupted publication) is
+  reported for removal by hand. Records need the wiki's manifest to be
+  verified; without one, their presence is reported.
 
 The pass is **advisory by default** and exits non-zero only under
 `wiki lint --strict` (same gating as the structural pass).

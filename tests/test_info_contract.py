@@ -55,10 +55,10 @@ class TestApiInfo(ManifestCase):
                 "drift": False,
             },
         )
-        self.assertEqual(dict(info.formats), {"patch_set": 1, "receipt": 1, "ingest_log": 1})
+        self.assertEqual(dict(info.formats), {"patch_set": 1, "receipt": 1, "ingest_log": 1, "approval": 1})
         self.assertEqual(
             info.capabilities,
-            ("wiki-lock", "receipts", "base-revision", "root-manifest", "page-id", "attribution"),
+            ("wiki-lock", "receipts", "base-revision", "root-manifest", "page-id", "attribution", "approval-record"),
         )
         self.assertEqual(
             info.manifest.as_dict(),
@@ -161,6 +161,12 @@ class TestAdvertisedContract(ManifestCase):
             "root-manifest": lambda: "init" in _VERBS and callable(api.init) and "manifest" in data,
             "page-id": lambda: "assign_page_ids" in propose_params and callable(lint.lint_wiki),
             "attribution": lambda: "by" in propose_params and "by" in promote_params and bool(paths.ENV_ACTOR),
+            "approval-record": lambda: (
+                "approve" in _VERBS
+                and callable(api.approve)
+                and callable(api.review_state)
+                and "approval" in data["formats"]
+            ),
         }
         for capability in CAPABILITIES:
             with self.subTest(capability):

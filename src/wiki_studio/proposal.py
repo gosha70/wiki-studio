@@ -20,13 +20,22 @@
 from __future__ import annotations
 
 import datetime
+import posixpath
 import re
 import uuid
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
-from .schema import PAGE_ID_KEY, PAGE_ID_PATTERN, PAGE_ID_PREFIX, PAGE_TYPE_DIRS, PROMOTABLE_PAGE_TYPES
+from .paths import SCHEMA_DIR_NAME
+from .schema import (
+    PAGE_ID_KEY,
+    PAGE_ID_PATTERN,
+    PAGE_ID_PREFIX,
+    PAGE_TYPE_DIRS,
+    PROMOTABLE_PAGE_TYPES,
+    RESERVED_APPROVAL_KEYS,
+)
 
 if TYPE_CHECKING:
     from .paths import Actor, WikiPaths
@@ -417,6 +426,61 @@ def validate_page_edit_semantics(
             )
 
     return errors
+
+
+def _frontmatter_keys(content: str) -> list[str]:
+    """The column-0 keys of ``content``'s frontmatter block, in order (empty without one)."""
+    lines = content.splitlines()
+    if not lines or lines[0].rstrip() != "---":
+        return []
+    keys: list[str] = []
+    for line in lines[1:]:
+        if _FM_CLOSE_RE.match(line):
+            break
+        if line[:1] not in ("", " ", "\t", "-", "#") and ":" in line:
+            keys.append(line.split(":", 1)[0].strip())
+    return keys
+
+
+def reserved_edit_problems(edits: list[PageEdit]) -> list[str]:
+    """Edits a patch-set may never make, whatever the wiki (FR-028, FR-029); empty when there are none.
+
+    A normalised path (``posixpath.normpath``) with a dot-prefixed component
+    (the root manifest, ``.audit/``, approval records) or under ``schema/``
+    (the project schema overrides) is the gate's own state, not knowledge; a
+    raw ``./index.md`` normalises to ``index.md`` and passes. A ``create`` or
+    ``update`` whose frontmatter carries a key reserved for the approval
+    record (``approved``, ``approved_by``, ``approval``, ``review_state``)
+    would let a page declare itself approved. Run after the escape checks of
+    :func:`validate_patch_set`, which keep their own exit codes.
+    """
+    problems: list[str] = []
+    for edit in edits:
+        parts = posixpath.normpath(edit.path).split("/")
+        if any(part.startswith(".") for part in parts) or parts[0] == SCHEMA_DIR_NAME:
+            problems.append(
+                f"{edit.path}: reserved path (a dot-prefixed component or under {SCHEMA_DIR_NAME}/ is the gate's "
+                "own state: the manifest, the audit trail, approval records, schema overrides); a patch-set "
+                "cannot edit it"
+            )
+            continue
+        if edit.action in ("create", "update"):
+            reserved = [key for key in _frontmatter_keys(edit.new_content) if key in RESERVED_APPROVAL_KEYS]
+            for key in reserved:
+                problems.append(
+                    f"{edit.path}: frontmatter key '{key}' is reserved for the gate's approval record; approval "
+                    "is recorded only by `wiki-studio approve` (or auto-approval on promote), never by the page"
+                )
+    return problems
+
+
+def check_reserved_edits(edits: list[PageEdit]) -> None:
+    """Raise ``ContractViolationError`` (exit 4) naming every :func:`reserved_edit_problems` entry."""
+    problems = reserved_edit_problems(edits)
+    if problems:
+        from .errors import ContractViolationError
+
+        raise ContractViolationError("patch-set makes a reserved edit:\n  - " + "\n  - ".join(problems))
 
 
 def validate_patch_set(patch: WikiPatchSet) -> list[str]:

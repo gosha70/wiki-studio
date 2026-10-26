@@ -187,6 +187,24 @@ The audit tree under `.audit/` is always checked against
 | `--paths P [P ...]` | with `--health` or `--prose`, scope the findings to these wiki-relative pages (the term lock still reads the whole glossary) |
 | `--backend NAME` | with `--health`, the backend for the contradiction check (skipped when omitted) |
 
+### `wiki-studio approve <page>...`
+
+Records that each page's live revision is approved under the wiki's policy:
+one immutable record per decision under `<wiki>/.audit/approvals/`, written
+under the wiki lock. Frontmatter never makes a page approved; `status: stable`
+alone is `unapproved`. The batch is checked first and refused (exit 9,
+nothing written) for a draft, a page carrying `superseded_by`, a
+structural-lint violation for the page, or a missing approver when the
+policy requires one. A legacy wiki (no manifest) is refused (exit 4); run
+`init` first. `api.review_state` reports each page `approved`, `stale`,
+`policy-changed`, `unapproved` or `superseded`. Details in
+`docs/knowledge-contract.md`.
+
+| Flag | Effect |
+|---|---|
+| `--revision SHA` | the sha256 you reviewed (`read --json`); refused when the live page differs; one page only |
+| `--by NAME` | the approver, recorded with source `flag` (else `WIKI_STUDIO_ACTOR`); attribution, not authentication |
+
 ### `wiki-studio audit-flush`
 
 Commits pending lines of the ingest audit log. The only verb that runs
@@ -296,7 +314,7 @@ arm for memkernel's lifecycle suite built on them (issue #10).
 | 6 | output write failure |
 | 7 | source or proposal path outside the root (`--allow-out-of-repo` overrides); a `read` path outside the wiki |
 | 8 | verb not implemented |
-| 9 | promote: staged tree failed validation, or a revision precondition failed (stale or unguarded `update`, `create` of a page that now exists); the wiki is unchanged |
+| 9 | promote: staged tree failed validation, or a revision precondition failed (stale or unguarded `update`, `create` of a page that now exists); the wiki is unchanged. approve: the batch was refused; nothing was written |
 | 10 | promote: a write into the wiki failed; every file it touched, including the failed one, rolled back |
 | 11 | audit-flush: not a git work tree, append-only invariant violated, malformed log, or git failed |
 

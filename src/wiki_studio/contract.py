@@ -83,8 +83,14 @@ SCHEMA_SOURCE_PACKAGED = "packaged"
 RECEIPT_VERSION = 1
 PATCH_SET_FORMAT_VERSION = 1
 INGEST_LOG_FORMAT_VERSION = 1
+APPROVAL_FORMAT_VERSION = 1
 FORMATS: Mapping[str, int] = MappingProxyType(
-    {"patch_set": PATCH_SET_FORMAT_VERSION, "receipt": RECEIPT_VERSION, "ingest_log": INGEST_LOG_FORMAT_VERSION}
+    {
+        "patch_set": PATCH_SET_FORMAT_VERSION,
+        "receipt": RECEIPT_VERSION,
+        "ingest_log": INGEST_LOG_FORMAT_VERSION,
+        "approval": APPROVAL_FORMAT_VERSION,
+    }
 )
 CAPABILITY_WIKI_LOCK = "wiki-lock"
 CAPABILITY_RECEIPTS = "receipts"
@@ -92,6 +98,7 @@ CAPABILITY_BASE_REVISION = "base-revision"
 CAPABILITY_ROOT_MANIFEST = "root-manifest"
 CAPABILITY_PAGE_ID = "page-id"
 CAPABILITY_ATTRIBUTION = "attribution"
+CAPABILITY_APPROVAL_RECORD = "approval-record"
 CAPABILITIES: tuple[str, ...] = (
     CAPABILITY_WIKI_LOCK,
     CAPABILITY_RECEIPTS,
@@ -99,6 +106,7 @@ CAPABILITIES: tuple[str, ...] = (
     CAPABILITY_ROOT_MANIFEST,
     CAPABILITY_PAGE_ID,
     CAPABILITY_ATTRIBUTION,
+    CAPABILITY_APPROVAL_RECORD,
 )
 
 UPDATE_SCHEMA_COMMAND = "wiki-studio init --update-schema"
@@ -381,7 +389,7 @@ def drift_message(declared: str, current: str) -> str:
 
 
 def check_write_contract(paths: WikiPaths) -> list[str]:
-    """The contract check every writing verb runs first (``propose``, ``promote``).
+    """The contract check every writing verb runs first (``propose``, ``promote``, ``approve``).
 
     A legacy wiki passes with no warning. A manifest that is malformed or
     newer than this package is refused (exit 4). Drift is refused (exit 4)
@@ -390,6 +398,11 @@ def check_write_contract(paths: WikiPaths) -> list[str]:
     manifest = read_manifest(paths)
     if manifest is None:
         return []
+    return drift_warnings(paths, manifest)
+
+
+def drift_warnings(paths: WikiPaths, manifest: Manifest) -> list[str]:
+    """Drift against an already read manifest: exit 4 on a governed wiki, the message as a warning on a managed one."""
     current = load_schema(paths).fingerprint
     if current == manifest.schema_fingerprint:
         return []

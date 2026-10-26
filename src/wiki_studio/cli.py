@@ -144,7 +144,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         prog="wiki-studio",
         description=(
             "Karpathy-pattern LLM Wiki maintainer. Verbs: "
-            "init|ingest|propose|promote|read|query|find|lint|audit-flush|info. "
+            "init|ingest|propose|promote|approve|read|query|find|lint|audit-flush|info. "
             "``wiki-studio <verb> --help`` for per-verb help."
         ),
         epilog=(
@@ -153,7 +153,8 @@ def _build_arg_parser() -> argparse.ArgumentParser:
             "4 contract violation; 5 source missing; 6 output write failure; "
             "7 source out of repo, or a page path outside the wiki; 8 verb not yet implemented (Phase N stub); "
             "9 promote validation failed, including a revision precondition (stale or unguarded update, "
-            "create of an existing page); 10 promote apply failed (with a reason: lock_timeout, "
+            "create of an existing page), and approve refused (nothing written); "
+            "10 promote apply failed (with a reason: lock_timeout, "
             "uncertain_outcome, wiki_mismatch, wiki_identity_unavailable, payload_changed); "
             "11 audit-flush error (not a git work tree; append-only invariant "
             "violated; working log malformed; git commit failed)."
@@ -260,6 +261,29 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     )
     p_promote.add_argument("--allow-unguarded-updates", action="store_true", help=_ALLOW_UNGUARDED_HELP)
     p_promote.add_argument("--by", metavar="NAME", default=None, help=_BY_HELP.format(record="the receipt's actor"))
+
+    # ── approve ────────────────────────────────────────────────
+    p_approve = sub.add_parser(
+        "approve",
+        parents=[common],
+        help="Record that each page's live revision is approved under the wiki's policy: one immutable record "
+        "per decision under <wiki>/.audit/approvals/, written under the wiki lock. The whole batch is checked "
+        "first and refused (exit 9, nothing written) for a draft, a page carrying superseded_by, a structural-lint "
+        "violation, a --revision that is not the live one, or a missing approver when the policy requires one. "
+        "A page already approved at its live bytes is reported as existing. Needs a manifest (run init first). "
+        "Frontmatter never makes a page approved.",
+    )
+    p_approve.add_argument(
+        "pages", nargs="+", metavar="page", help="Wiki-relative page path(s): concepts/<slug>.md, ..."
+    )
+    p_approve.add_argument(
+        "--revision",
+        metavar="SHA",
+        default=None,
+        help="The sha256 of the revision you reviewed (from `wiki-studio read --json`); the approval is refused "
+        "when the live page differs. Only with exactly one page (exit 4 otherwise).",
+    )
+    p_approve.add_argument("--by", metavar="NAME", default=None, help=_BY_HELP.format(record="the record's approver"))
 
     # ── query ──────────────────────────────────────────────────
     p_query = sub.add_parser(
@@ -556,6 +580,32 @@ def _do_promote(args: argparse.Namespace) -> int:
     print(f"applied {len(result.applied_paths)} edit(s) from {args.proposal_dir.name}; {_archived_note(result)}")
     for p in result.applied_paths:
         print(f"  + {paths.wiki_label}/{p}")
+    _print_approved(result, paths)
+    return 0
+
+
+def _print_approved(result: api.PromoteResult, paths: WikiPaths) -> None:
+    """The pages auto-approval approved (``auto_approve_on_promote``)."""
+    for p in result.approved_paths:
+        print(f"  approved {paths.wiki_label}/{p}")
+
+
+def _do_approve(args: argparse.Namespace) -> int:
+    """One approval record per page under the wiki lock; written by promoter.py only."""
+    if args.revision is not None and len(args.pages) != 1:
+        raise ContractViolationError(
+            f"--revision names the reviewed revision of exactly one page, but {len(args.pages)} pages were given; "
+            "approve them one at a time with --revision, or without it"
+        )
+    paths = _paths_from_args(args)
+    expected = {args.pages[0]: args.revision} if args.revision is not None else None
+    result = api.approve(args.pages, paths, by=args.by, expected=expected)
+    for warning in result.warnings:
+        print(f"warning: {warning}", file=sys.stderr)
+    for record in result.published:
+        print(f"approved: {paths.wiki_label}/{record}")
+    for record in result.existing:
+        print(f"already approved: {paths.wiki_label}/{record}")
     return 0
 
 
@@ -806,6 +856,7 @@ def _do_propose(args: argparse.Namespace) -> int:
     # The drift warning was printed once already, by propose.
     _print_promote_warnings(replace(result, warnings=[w for w in result.warnings if w not in drift]))
     print(f"applied {len(result.applied_paths)} edit(s); {_archived_note(result)}")
+    _print_approved(result, paths)
     return 0
 
 
@@ -829,7 +880,7 @@ def _do_find(args: argparse.Namespace) -> int:
     return 0
 
 
-_VERBS = ("ingest", "promote", "query", "lint", "audit-flush", "info", "init", "propose", "find", "read")
+_VERBS = ("ingest", "promote", "approve", "query", "lint", "audit-flush", "info", "init", "propose", "find", "read")
 
 # Global options that take a value; their value is not a positional for the legacy shim.
 _GLOBAL_VALUE_OPTIONS = ("--root", "--wiki-dir", "--proposals-dir", "--source-root", "--lock-timeout")
@@ -900,6 +951,7 @@ def main(argv: list[str] | None = None) -> int:
     dispatch = {
         "ingest": _do_ingest,
         "promote": _do_promote,
+        "approve": _do_approve,
         "query": _do_query,
         "lint": _do_lint,
         "audit-flush": _do_audit_flush,
