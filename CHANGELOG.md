@@ -17,7 +17,7 @@ uses [Semantic Versioning](https://semver.org/).
 - The versioned knowledge contract (0.7.0, US2). `init` writes a root
   manifest, `<wiki>/.wiki-studio.json`, by exclusive no-follow creation: a
   `wiki_id`, the schema identity and version (`wiki-studio/page-schema`,
-  version 1), the fingerprint of the project schema overrides, a policy of
+  version 2), the fingerprint of the project schema overrides, a policy of
   three booleans and `created_by`. It never overwrites; on a wiki made before
   0.7.0 it adds the manifest and nothing else. `InitResult.manifest` reports
   `created`, `existing` or `updated`.
@@ -35,6 +35,25 @@ uses [Semantic Versioning](https://semver.org/).
 - `docs/compatibility.md`: the tested wiki-studio and memkernel pairs, their
   evidence, the capabilities each side needs, and how to re-create a proposal
   written before 0.6.0.
+- Page identity (0.7.0, US3). An optional frontmatter key
+  `page_id: pg-<32 hex>`. `propose --from` and multi-page `ingest` add a
+  fresh one to every page they create, before the preview is written, so the
+  preview and the committed page carry the same bytes. `api.propose` adds one
+  only with `assign_page_ids=True` and otherwise writes the caller's bytes
+  unchanged. A caller's `page_id` is never rewritten. The structural linter
+  reports a malformed or duplicated `page_id`.
+- Attribution (0.7.0, US3). `--by NAME` on `propose` and `promote`, `by=` on
+  `api.propose` and `api.promote`, and the `WIKI_STUDIO_ACTOR` variable.
+  `plan.json` gains an optional `proposer` and the receipt an optional
+  `actor`, each `{name, source}` with `source` `flag`, `env` or `none`. The
+  receipt version stays 1. The OS user name is never recorded. This is
+  attribution, not authentication. `WikiPatchSet` gains `proposer` with a
+  default.
+- ADR-0002 (`docs/adr/0002-page-identity-and-review-keys.md`) registers
+  `page_id`, `superseded_by` and memkernel's `corrects` (its syntax not yet
+  final) and reserves `approved`, `approved_by`, `approval` and
+  `review_state`. `info` advertises the capabilities `page-id` and
+  `attribution`.
 
 ### Changed
 
@@ -45,6 +64,9 @@ uses [Semantic Versioning](https://semver.org/).
 - `init`, `propose`, `promote` and `info` refuse a malformed manifest, one
   whose `manifest_version` or `schema.version` is newer than this package, and
   an unknown `schema.id` (exit 4). A wiki without a manifest works as in 0.6.0.
+- The packaged page schema is version 2 (ADR-0002): a new manifest declares
+  `schema.version` 2, and a manifest declaring version 1 is still accepted.
+  `propose --from` and `ingest` creates now carry a `page_id` line.
 
 ### Fixed
 

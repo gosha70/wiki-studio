@@ -86,7 +86,18 @@ from .errors import (
     PromoteValidationError,
 )
 from .lint import lint_wiki
-from .paths import APPLIED_DIR_NAME, AUDIT_DIR_NAME, MANIFEST_NAME, ContainmentError, contain, is_absolute_path
+from .paths import (
+    ACTOR_SOURCE_NONE,
+    ACTOR_SOURCES,
+    APPLIED_DIR_NAME,
+    AUDIT_DIR_NAME,
+    MANIFEST_NAME,
+    Actor,
+    ContainmentError,
+    contain,
+    is_absolute_path,
+    resolve_actor,
+)
 from .proposal import (
     PageEdit,
     WikiPatchSet,
@@ -346,8 +357,26 @@ def _parse_patch(capture: _Capture, proposals_dir: Path) -> tuple[WikiPatchSet, 
         source_path=str(plan.get("source_path", "")),
         backend=str(plan.get("backend", "")),
         rationale=str(plan.get("rationale", "")),
+        proposer=_parse_proposer(plan.get("proposer"), plan_path),
     )
     return patch, _sha256(plan_bytes)
+
+
+def _parse_proposer(raw: object, plan_path: Path) -> Actor | None:
+    """The optional ``plan.json`` ``proposer`` (0.7.0): ``{"name": str | null, "source": flag | env | none}``."""
+    if raw is None:
+        return None
+    if isinstance(raw, dict) and set(raw) == {"name", "source"}:
+        name, source = raw["name"], raw["source"]
+        well_formed = source in ACTOR_SOURCES and (
+            (source == ACTOR_SOURCE_NONE and name is None) or (source != ACTOR_SOURCE_NONE and isinstance(name, str))
+        )
+        if well_formed:
+            return Actor(name, source)
+    raise PromoteValidationError(
+        f'plan.json at {plan_path}: \'proposer\' must be {{"name": <string or null>, "source": '
+        f"{' | '.join(sorted(ACTOR_SOURCES))}}} (a name exactly when the source is not none), got {raw!r}"
+    )
 
 
 # ── The wiki: identity and staging ────────────────────────────
@@ -986,8 +1015,13 @@ def _build_receipt(
     entry_point: str,
     started_at: str,
     unguarded: list[str],
+    actor: Actor,
 ) -> dict[str, Any]:
-    """The ``committing`` receipt: identity of the submission and of the wiki, and every write the commit will make."""
+    """The ``committing`` receipt: identity of the submission and of the wiki, and every write the commit will make.
+
+    ``actor`` is who promoted (``--by`` or ``WIKI_STUDIO_ACTOR``), an optional
+    key since 0.7.0; the receipt version stays 1.
+    """
     return {
         "receipt_version": RECEIPT_VERSION,
         "state": STATE_COMMITTING,
@@ -1012,6 +1046,7 @@ def _build_receipt(
         "committing_at": _now(),
         "committed_at": None,
         "promoter": {"package": PACKAGE_NAME, "version": __version__, "entry_point": entry_point},
+        "actor": actor.as_dict(),
     }
 
 
@@ -1245,6 +1280,7 @@ def _commit_and_archive(
     entry_point: str,
     started_at: str,
     unguarded: list[str],
+    actor: Actor,
 ) -> PromoteResult:
     """Steps 1 to 4 for a fresh promotion whose stage validated and whose preconditions held."""
     # FR-012: the last look at the live targets before anything is written.
@@ -1259,6 +1295,7 @@ def _commit_and_archive(
         entry_point=entry_point,
         started_at=started_at,
         unguarded=unguarded,
+        actor=actor,
     )
     # Step 1: the recovery marker, before any wiki write.
     try:
@@ -1460,6 +1497,7 @@ def _promote_locked(
     lock_wait: float,
     started_at: str,
     stage_dir: Path,
+    actor: Actor,
 ) -> PromoteResult | _StagedDryRun:
     """Everything that happens under the lock; ``stage_dir`` (absent on entry) receives the staged copy.
 
@@ -1530,6 +1568,7 @@ def _promote_locked(
         entry_point=entry_point,
         started_at=started_at,
         unguarded=unguarded,
+        actor=actor,
     )
 
 
@@ -1540,6 +1579,7 @@ def promote(
     *,
     entry_point: str = PROMOTE_ENTRY_POINT_API,
     allow_unguarded_updates: bool = False,
+    by: str | None = None,
 ) -> PromoteResult:
     """Apply a proposals dir's patch-set to the wiki under the wiki lock.
 
@@ -1579,6 +1619,11 @@ def promote(
         them in ``PromoteResult.unguarded_paths`` and the receipt. A stale
         draft can then overwrite a newer page; this option does not prevent
         that.
+    by : str | None
+        Who promotes, recorded as the receipt's ``actor`` with its source:
+        ``flag`` for a non-empty ``by``, else ``env`` from
+        ``WIKI_STUDIO_ACTOR``, else ``none``. Attribution, not
+        authentication; the OS user name is never recorded.
 
     Returns
     -------
@@ -1605,6 +1650,7 @@ def promote(
         raise PromoteValidationError(f"proposals dir not found: {proposals_dir}")
 
     started_at = _now()
+    actor = resolve_actor(by)
     lock = WikiLock(paths.wiki_dir, paths.lock_timeout)
     # The staging directory outlives the lock: a dry run validates its
     # snapshot after the release (FR-011), a real promote commits from it
@@ -1627,6 +1673,7 @@ def promote(
                     lock_wait=lock.wait_seconds,
                     started_at=started_at,
                     stage_dir=stage_dir,
+                    actor=actor,
                 )
             finally:
                 handle.close()

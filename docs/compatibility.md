@@ -28,6 +28,8 @@ host checks them before it writes.
 | `receipts` | A receipt beside each proposal; a retry resolves from it and never re-applies. | Recovery without an outer rollback. |
 | `base-revision` | An `update` carries the `sha256` it was drafted from; a stale one is refused. | Guarded updates of exported pages. |
 | `root-manifest` | `.wiki-studio.json`: `wiki_id`, schema contract, fingerprint, policy. `api.init` scaffolds it. | The scaffold, and the compatibility check before a write. |
+| `page-id` | An optional `page_id: pg-<32 hex>` key; `api.propose(..., assign_page_ids=True)` adds one to each create, and lint refuses a malformed or duplicated one. | One memory identity across a page rename, once the bridge opts in. |
+| `attribution` | `by=` on `api.propose` and `api.promote` (and `WIKI_STUDIO_ACTOR`), recorded as `plan.json` `proposer` and receipt `actor`. Not authentication. | Naming the exporter in the audit trail. |
 
 memkernel's own requirements of wiki-studio are recorded on memkernel's side.
 

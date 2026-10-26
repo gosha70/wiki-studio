@@ -7,6 +7,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -30,6 +31,13 @@ DECISION = (
     "## Context\n\nAgreed with the platform team.\n\n## Alternatives considered\n\nFixed 1 s delay.\n\n"
     "## Consequences\n\nLong outages wait at most 8 s between tries.\n"
 )
+
+
+def without_page_id(text: str) -> str:
+    """The page as the agent wrote it: ``propose --from`` adds one ``page_id`` line to a create (0.7.0)."""
+    stripped, count = re.subn(r"^page_id: pg-[0-9a-f]{32}\n", "", text, flags=re.MULTILINE)
+    assert count == 1, f"expected exactly one page_id line in {text!r}"
+    return stripped
 
 
 class _Workspace(unittest.TestCase):
@@ -90,7 +98,8 @@ class TestProposeFromDir(_Workspace):
         self.assertIn("create decisions/retry-backoff.md", result.stdout)
         self.assertIn("append-index index.md", result.stdout)
         self.assertIn("applied", result.stdout)
-        self.assertEqual((self.paths.wiki_dir / "decisions" / "retry-backoff.md").read_text(encoding="utf-8"), DECISION)
+        page = (self.paths.wiki_dir / "decisions" / "retry-backoff.md").read_text(encoding="utf-8")
+        self.assertEqual(without_page_id(page), DECISION)
         self.assertIn("decisions/retry-backoff.md", (self.paths.wiki_dir / "index.md").read_text(encoding="utf-8"))
         self.assertEqual(lint_wiki(self.paths.wiki_dir), [])
 
@@ -112,7 +121,8 @@ class TestProposeFromDir(_Workspace):
 
         allowed = self.cli(*argv, "--name", "allowed", "--allow-out-of-repo")
         self.assertEqual(allowed.returncode, 0, allowed.stderr)
-        self.assertEqual((self.paths.wiki_dir / "decisions" / "retry-backoff.md").read_text(encoding="utf-8"), DECISION)
+        page = (self.paths.wiki_dir / "decisions" / "retry-backoff.md").read_text(encoding="utf-8")
+        self.assertEqual(without_page_id(page), DECISION)
         self.assertTrue((outside / ".applied" / "allowed").is_dir())
         self.assertEqual(lint_wiki(self.paths.wiki_dir), [])
 

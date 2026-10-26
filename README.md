@@ -102,6 +102,7 @@ code path that writes into the wiki.
 | `--dry-run` | take the lock, stage, check the revision preconditions against the live wiki, release the lock, then validate the staged snapshot; writes nothing. Point-in-time evidence: a real promote checks again |
 | `--allow-out-of-repo` | accept a proposal directory outside the root (otherwise exit 7) |
 | `--allow-unguarded-updates` | apply `update` edits that carry no `base_sha256` (proposals from before 0.6.0, drafts without `.base.json`). Compatibility mode with incomplete conflict protection: a stale draft can overwrite a newer page; the paths are recorded as `unguarded_paths` in the receipt and printed as warnings. Without it such an update exits 9 |
+| `--by NAME` | who promotes, recorded as the receipt's `actor` with source `flag`; see Attribution below |
 | `--lock-timeout SECONDS` | how long to wait for the wiki lock that serialises wiki-studio writers on this machine (default 30, or `WIKI_STUDIO_LOCK_TIMEOUT`; `inf` waits indefinitely); on expiry exit 10 with reason `lock_timeout`. Also accepted by every other verb |
 
 Before the commit, still under the lock, promote checks the revision
@@ -237,6 +238,11 @@ and `<dir>/log.md` hold the lines to append, one per line, never a page.
 | `--allow-unguarded-updates` | with `--promote`: as for `promote` (compatibility mode with incomplete conflict protection) |
 | `--name NAME` | proposal directory name (default `<date>-<dir-name>`) |
 | `--rationale TEXT` | recorded in `plan.json` and the audit archive |
+| `--by NAME` | who proposes, recorded as `plan.json`'s `proposer` (and, with `--promote`, the receipt's `actor`) with source `flag`; see Attribution below |
+
+Every page the patch-set creates gets a fresh `page_id: pg-<32 hex>` as its
+last frontmatter line, in the preview and so in the committed page; a
+`page_id` you wrote yourself is kept.
 
 Invalid pages exit 4 with every problem listed and nothing written. An
 `update` prints the fact warnings described under `ingest` after the
@@ -254,6 +260,17 @@ from:
 `propose` never fills a missing hash from the live page: a page without a
 manifest entry is an unguarded update, which `promote` refuses unless
 `--allow-unguarded-updates` is passed.
+
+#### Attribution
+
+`--by NAME` on `propose` and `promote` (`by=` on `api.propose` and
+`api.promote`) names who acts. Without it the name comes from
+`WIKI_STUDIO_ACTOR`; without either, none is recorded. `plan.json` records
+the proposer and the receipt the promoter as `{name, source}` with `source`
+`flag`, `env` or `none`; the OS user name is never captured. `--by` is
+attribution, not authentication: nothing verifies the name, and the host
+that runs wiki-studio supplies authority. The local audit files give
+traceability, not tamper-proof evidence.
 
 ### `wiki-studio find "<question>"`
 
@@ -309,6 +326,7 @@ redacted fingerprint of it unless `--debug-unsafe-output` is given.
 | `WIKI_STUDIO_WIKI_DIR` | wiki directory |
 | `WIKI_STUDIO_PROPOSALS_DIR` | proposals directory |
 | `WIKI_STUDIO_SOURCE_ROOTS` | `os.pathsep`-separated directories outside the root that local links in pages may reference (see Layout) |
+| `WIKI_STUDIO_ACTOR` | who proposes or promotes when `--by` is not given, recorded with source `env` (attribution, not authentication) |
 | `WIKI_STUDIO_BACKEND` | default backend name |
 | `WIKI_STUDIO_ENABLE_PI` | `1` adds `pi` to the auto-detect order |
 | `WIKI_INGEST_BACKEND` | deprecated alias of `WIKI_STUDIO_BACKEND` |
@@ -328,6 +346,13 @@ that term (`avoid: alignment check, origin check`); a `glossary/index.md`
 entry names its terms on an `Avoid: …` line instead. `lint --prose` reports
 their use on other pages, outside code and quotes. Decision record:
 `docs/adr/0001-glossary-avoid-key.md`.
+
+Schema version 2 (0.7.0) adds optional page keys: `page_id`
+(`pg-<32 hex>`, the page's stable identity, assigned to pages that
+`propose --from` and `ingest` create; lint refuses a malformed or duplicated
+one), `superseded_by` and memkernel's `corrects`, and reserves `approved`,
+`approved_by`, `approval` and `review_state` for the approval record.
+Decision record: `docs/adr/0002-page-identity-and-review-keys.md`.
 
 The same facts are available as code in `wiki_studio.schema`: `PAGE_TYPES`
 maps each page type to a `PageTypeSpec` (`directory`, `required_sections`,

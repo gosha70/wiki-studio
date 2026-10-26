@@ -44,6 +44,9 @@ structure.
   equal the parent directory name (e.g., `glossary/index.md` →
   `slug: glossary`).
 - All `slug` values across the wiki must be unique.
+- The optional `page_id` (ADR-0002), when present, must match
+  `^pg-[0-9a-f]{32}$`, and no two pages may share one; every page in a
+  shared group is reported.
 
 ### 4. Directory placement
 

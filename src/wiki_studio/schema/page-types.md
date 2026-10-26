@@ -28,6 +28,26 @@ sources:
 See [`citation-rules.md`](citation-rules.md) for source-specific
 rules.
 
+### Optional keys (schema version 2)
+
+Each is one single-line `key: value` scalar
+(`docs/adr/0002-page-identity-and-review-keys.md`):
+
+- `page_id: pg-<32 lowercase hex>` — the page's stable identity.
+  `propose --from` and `ingest` add it to every page they create; never
+  write or change one by hand. Lint reports a malformed or duplicated
+  `page_id`.
+- `superseded_by: <wiki-relative path>` — on a page another page
+  replaces. The target must be an existing page that is not itself
+  superseded.
+- `corrects: <memkernel refs>` — memkernel's key, kept byte for byte and
+  not interpreted here; its value syntax is not final.
+
+`approved`, `approved_by`, `approval` and `review_state` are reserved
+for the approval record; never write them in frontmatter. Approval is recorded by
+`wiki-studio approve`, never by frontmatter, and `status: stable` does not
+make a page approved.
+
 ## The types
 
 ### `concept` — `concepts/<slug>.md`

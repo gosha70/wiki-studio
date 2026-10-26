@@ -56,7 +56,7 @@ from .health_lint import lint_health
 from .ingestor import DefaultIngestor
 from .ingestor_multi import COLLISION_ERROR, COLLISION_SUFFIX, DefaultMultiIngestor, write_patch_set_dir
 from .lint import lint_wiki, list_pages
-from .paths import CONTAIN_SYMLINK, ContainmentError, contain, is_absolute_path
+from .paths import CONTAIN_SYMLINK, ContainmentError, contain, is_absolute_path, resolve_actor
 from .promoter import (
     DEFAULT_WIKI_TITLE,
     INDEX_NAME,
@@ -81,6 +81,7 @@ from .proposal import (
     validate_page_edit_semantics,
     validate_patch_set,
 )
+from .proposal import assign_page_ids as _assign_page_ids
 from .prose_lint import run_prose_lint
 from .querier import DEFAULT_MAX_QUERY_PAGES, DefaultQuerier, _select_query_candidates
 from .wiki_state import read_page_content
@@ -557,6 +558,8 @@ def propose(
     source: str = "",
     rationale: str = "",
     backend: str = PROPOSE_BACKEND,
+    by: str | None = None,
+    assign_page_ids: bool = False,
 ) -> Path:
     """Write ``edits`` as a patch-set directory ``<proposals_dir>/<name>/`` for :func:`promote`.
 
@@ -583,6 +586,15 @@ def propose(
     ``ContractViolationError`` (exit 4); drift on a managed wiki is emitted at
     once as a :class:`~wiki_studio.errors.DriftWarning` and the proposal is
     still written.
+
+    ``by`` names who proposes; ``plan.json`` records it as ``proposer``
+    ``{name, source}``: ``flag`` for a non-empty ``by``, else ``env`` from
+    ``WIKI_STUDIO_ACTOR``, else ``none`` (attribution, not authentication;
+    the OS user name is never recorded). With ``assign_page_ids`` every
+    ``create`` whose content has no ``page_id`` gets a fresh
+    ``page_id: pg-<32 hex>`` as its last frontmatter line before the preview
+    is written; by default the caller's bytes are written unchanged, and a
+    caller-supplied ``page_id`` is never rewritten.
     """
     if not _PROPOSAL_NAME_RE.fullmatch(name):
         raise ValueError(
@@ -593,7 +605,11 @@ def propose(
     # manifest and on governed drift; managed drift is a DriftWarning, now.
     for message in check_write_contract(paths):
         warnings.warn(message, DriftWarning, stacklevel=2)
-    patch = WikiPatchSet(edits=list(edits), source_path=source, backend=backend, rationale=rationale)
+    # FR-014: before validation and the preview, so the preview, the commit and any approval cover these bytes.
+    page_edits = _assign_page_ids(list(edits)) if assign_page_ids else list(edits)
+    patch = WikiPatchSet(
+        edits=page_edits, source_path=source, backend=backend, rationale=rationale, proposer=resolve_actor(by)
+    )
     set_errors = validate_patch_set(patch)
     if set_errors:
         raise ContractViolationError("patch-set failed set-level validation:\n  - " + "\n  - ".join(set_errors))
@@ -659,6 +675,7 @@ def promote(
     lock_timeout: float | None = None,
     entry_point: str = PROMOTE_ENTRY_POINT_API,
     allow_unguarded_updates: bool = False,
+    by: str | None = None,
 ) -> PromoteResult:
     """Apply a patch-set directory to the wiki (the only write into the wiki).
 
@@ -678,7 +695,9 @@ def promote(
     releasing it, writing nothing (point-in-time evidence). ``lock_timeout``
     overrides ``paths.lock_timeout`` (seconds to wait for the lock).
     ``entry_point`` (``"api"`` or ``"cli"``) is recorded in the receipt as
-    software identity.
+    software identity. ``by`` names who promotes; the receipt records it as
+    ``actor`` ``{name, source}`` by the rule :func:`propose` uses for
+    ``proposer`` (attribution, not authentication).
 
     Raises ``SourceMissingError`` when the directory does not exist,
     ``PathOutsideRootError`` when it lies outside the root without
@@ -698,6 +717,7 @@ def promote(
         dry_run=dry_run,
         entry_point=entry_point,
         allow_unguarded_updates=allow_unguarded_updates,
+        by=by,
     )
 
 

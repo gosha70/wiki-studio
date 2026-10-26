@@ -49,6 +49,15 @@ advisory unless you ask otherwise.
   filesystems are out of scope.
 - `promote` is the only code path that writes into the wiki, and
   `audit-flush` is the only one that runs `git commit`.
+- `--by NAME` and `WIKI_STUDIO_ACTOR` are attribution, not authentication.
+  The name recorded as `plan.json`'s `proposer` and the receipt's `actor`
+  is whatever the caller supplied; nothing verifies it, and the OS user
+  name is never captured. The host that runs wiki-studio supplies
+  authority. Receipts, archived proposals and the ingest log give
+  traceability, not tamper-proof evidence: anyone who can write the wiki or
+  the proposals directory can change them. A way to forge or alter these
+  records is not a vulnerability; a way to make wiki-studio record a name
+  the caller did not supply is.
 
 Anything that lets a source file, a backend response or a proposal
 directory write outside the wiki and proposals directories, run a command,

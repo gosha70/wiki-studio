@@ -90,9 +90,15 @@ SOURCELESS_PAGE_TYPES: frozenset[str] = frozenset(
 )
 
 # The identity of these rules in a wiki's root manifest. Only a decision record
-# (docs/adr/) bumps the version; version 1 is the 0.6.0 page schema.
+# (docs/adr/) bumps the version; version 1 is the 0.6.0 page schema, version 2
+# adds the optional keys of docs/adr/0002-page-identity-and-review-keys.md.
 SCHEMA_ID = "wiki-studio/page-schema"
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
+
+# The optional page identity (ADR-0002): ``page_id: pg-<32 lowercase hex>``, one single-line scalar.
+PAGE_ID_KEY = "page_id"
+PAGE_ID_PREFIX = "pg-"
+PAGE_ID_PATTERN = r"^pg-[0-9a-f]{32}$"
 
 # The schema documents the prompts load; a project copy of any of them under
 # ``<wiki>/schema/`` overrides the packaged one and enters the schema fingerprint.

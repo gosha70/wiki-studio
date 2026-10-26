@@ -71,6 +71,7 @@ file; `promote` accepts both.
 | `source_path` | What was ingested, as the caller passed it; free text for `propose` (`source=`). |
 | `backend` | Who produced the edits: a backend name for `ingest`, `"api"` by default for `propose` (`backend=`). |
 | `rationale` | Patch-set-level justification, rendered into the audit archive. |
+| `proposer` | Optional (0.7.0, a minor-version addition; older readers ignore it). Who proposed the patch-set, `{"name": <string or null>, "source": "flag" \| "env" \| "none"}`: `flag` for `propose --by NAME` or `api.propose(..., by=NAME)`, else `env` for a non-empty `WIKI_STUDIO_ACTOR`, else `{"name": null, "source": "none"}`. The OS user name is never recorded. `propose` always writes it; `ingest` does not. Attribution, not authentication (see below). `promote` refuses a malformed value (exit 9). |
 | `edits[].path` | Wiki-relative target: `concepts/<slug>.md` for `create`/`update`; `index.md`, `<dir>/index.md` for `append-index`; `log.md` for `append-log`. Relative, no `..`. |
 | `edits[].action` | `create`, `update`, `append-log` or `append-index` (`PageAction`). |
 | `edits[].rationale` | One-line justification for this edit. |
@@ -84,6 +85,20 @@ page (frontmatter and body) for `create` and `update`, or the line(s) to
 append for `append-index` and `append-log`. A curator may edit the preview
 files before promoting; `promote` records the difference against
 `.ingest-snapshot/` as `curator-delta.md` in the audit archive.
+
+### `page_id` assignment
+
+`propose --from` and multi-page `ingest` give every `create` whose content
+has no `page_id` a fresh one, `page_id: pg-<32 lowercase hex>`, inserted as
+the last frontmatter line before the closing `---`. This happens before the
+preview is written, so the preview, the committed page and any approval
+cover the same bytes. `api.propose` does this only with
+`assign_page_ids=True`; by default it writes the caller's bytes unchanged.
+A caller-supplied `page_id` is never rewritten, and `update`,
+`append-index`, `append-log` and the legacy single-source ingest never add
+one. The structural linter refuses a malformed or duplicated `page_id`, so
+a `create` that copies an existing id fails at promote (exit 9). Decision
+record: `docs/adr/0002-page-identity-and-review-keys.md`.
 
 ## What `promote` does with it
 
@@ -178,6 +193,17 @@ attempts and dry runs persist no receipt.
 | `unguarded_paths` | The `update` paths applied without a `base_sha256` under `--allow-unguarded-updates` (compatibility mode with incomplete conflict protection); empty otherwise. |
 | `lock_wait_seconds`, `started_at`, `committing_at`, `committed_at` | Timing. |
 | `promoter` | Software identity only: `package`, `version`, `entry_point` (`cli` or `api`). |
+| `actor` | Optional (0.7.0, a minor-version addition like `base_sha256` in 0.6.0; `receipt_version` stays `1`). Who promoted, `{"name", "source"}` by the rule `plan.json`'s `proposer` follows: `promote --by NAME` or `api.promote(..., by=NAME)` is `flag`, else `WIKI_STUDIO_ACTOR` is `env`, else `{"name": null, "source": "none"}`. Never the OS user name. |
+
+### Attribution is not authentication
+
+`proposer` and `actor` record the name a caller passed with `--by` (or
+`by=`) or set in `WIKI_STUDIO_ACTOR`. Nothing checks that name: `--by` is
+attribution, not authentication, and the host that runs wiki-studio
+supplies authority (who may propose, promote or approve). The receipt, the
+archived `plan.json` and the other local audit files give traceability;
+they are not tamper-proof evidence, because anyone who can write the wiki
+or the proposals directory can change them.
 
 ### Promoting the same directory again
 

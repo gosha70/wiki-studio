@@ -51,6 +51,7 @@ from .paths import (
     DEFAULT_LOCK_TIMEOUT,
     DEFAULT_PROPOSALS_DIR,
     DEFAULT_WIKI_DIR,
+    ENV_ACTOR,
     ENV_LOCK_TIMEOUT,
     ENV_PROPOSALS_DIR,
     ENV_ROOT,
@@ -72,6 +73,11 @@ _ALLOW_UNGUARDED_HELP = (
     ".base.json manifest). Compatibility mode with incomplete conflict protection: a stale draft can "
     "overwrite a newer page, and the paths are recorded as unguarded_paths in the receipt. Without it "
     "such an update exits 9; the safe remedy is to regenerate the proposal from a fresh `wiki-studio read`."
+)
+_BY_HELP = (
+    "Who is acting, recorded as {record} with source flag. Without it the name comes from "
+    f"{ENV_ACTOR} (source env), else none is recorded (source none); the OS user is never used. "
+    "Attribution, not authentication: the host supplies authority."
 )
 
 # Message prefixes that distinguish the error classes on stderr (the exit
@@ -253,6 +259,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         "outside the repo is an avoidable security surface.",
     )
     p_promote.add_argument("--allow-unguarded-updates", action="store_true", help=_ALLOW_UNGUARDED_HELP)
+    p_promote.add_argument("--by", metavar="NAME", default=None, help=_BY_HELP.format(record="the receipt's actor"))
 
     # ── query ──────────────────────────────────────────────────
     p_query = sub.add_parser(
@@ -407,6 +414,12 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     p_propose.add_argument(
         "--allow-unguarded-updates", action="store_true", help="With --promote: " + _ALLOW_UNGUARDED_HELP
     )
+    p_propose.add_argument(
+        "--by",
+        metavar="NAME",
+        default=None,
+        help=_BY_HELP.format(record="plan.json's proposer (and, with --promote, the receipt's actor)"),
+    )
 
     # ── read ───────────────────────────────────────────────────
     p_read = sub.add_parser(
@@ -526,6 +539,7 @@ def _do_promote(args: argparse.Namespace) -> int:
         allow_out_of_repo=args.allow_out_of_repo,
         entry_point=api.PROMOTE_ENTRY_POINT_CLI,
         allow_unguarded_updates=args.allow_unguarded_updates,
+        by=args.by,
     )
     _print_promote_warnings(result)
     if result.dry_run:
@@ -760,8 +774,16 @@ def _do_propose(args: argparse.Namespace) -> int:
     name = args.name or _default_proposal_name(args.source_dir, paths.proposals_dir)
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always", DriftWarning)
+        # Agent-written creates get a fresh page_id in the preview, so the commit carries the same bytes (FR-014).
         written = api.propose(
-            edits, paths, name=name, source=str(args.source_dir), rationale=args.rationale, backend="cli"
+            edits,
+            paths,
+            name=name,
+            source=str(args.source_dir),
+            rationale=args.rationale,
+            backend="cli",
+            by=args.by,
+            assign_page_ids=True,
         )
     drift = [str(w.message) for w in caught if issubclass(w.category, DriftWarning)]
     for message in drift:
@@ -779,6 +801,7 @@ def _do_propose(args: argparse.Namespace) -> int:
         allow_out_of_repo=args.allow_out_of_repo,
         entry_point=api.PROMOTE_ENTRY_POINT_CLI,
         allow_unguarded_updates=args.allow_unguarded_updates,
+        by=args.by,
     )
     # The drift warning was printed once already, by propose.
     _print_promote_warnings(replace(result, warnings=[w for w in result.warnings if w not in drift]))

@@ -21,14 +21,15 @@ from __future__ import annotations
 
 import datetime
 import re
-from dataclasses import dataclass
+import uuid
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
-from .schema import PAGE_TYPE_DIRS, PROMOTABLE_PAGE_TYPES
+from .schema import PAGE_ID_KEY, PAGE_ID_PATTERN, PAGE_ID_PREFIX, PAGE_TYPE_DIRS, PROMOTABLE_PAGE_TYPES
 
 if TYPE_CHECKING:
-    from .paths import WikiPaths
+    from .paths import Actor, WikiPaths
 
 # The only form a sha256 takes anywhere in the package: 64 lowercase hex digits.
 _SHA256_HEX_RE = re.compile(r"[0-9a-f]{64}")
@@ -238,12 +239,57 @@ class WikiPatchSet:
     rationale : str
         One-paragraph patch-set-level rationale: why this source
         touches these pages, in the curator's terms.
+    proposer : Actor | None
+        Who proposed it (``--by`` or ``WIKI_STUDIO_ACTOR``), written to
+        ``plan.json`` as ``proposer`` when set; attribution, not
+        authentication. Added in 0.7.0 with a default.
     """
 
     edits: list[PageEdit]
     source_path: str
     backend: str
     rationale: str
+    proposer: Actor | None = None
+
+
+_PAGE_ID_RE = re.compile(PAGE_ID_PATTERN)
+_FM_CLOSE_RE = re.compile(r"^---\s*$")
+
+
+def is_page_id(value: object) -> bool:
+    """True for a well-formed ``page_id``: ``pg-`` and 32 lowercase hex digits."""
+    return isinstance(value, str) and _PAGE_ID_RE.fullmatch(value) is not None
+
+
+def new_page_id() -> str:
+    """A fresh ``page_id``: ``pg-`` + ``uuid4().hex``."""
+    return PAGE_ID_PREFIX + uuid.uuid4().hex
+
+
+def with_page_id(content: str) -> str:
+    """``content`` with ``page_id: <fresh id>`` as the last frontmatter line, before the closing ``---`` (FR-014).
+
+    Returned unchanged when it already has a ``page_id`` line (a caller's id
+    is never rewritten) or has no complete frontmatter (validation reports
+    that). The new line takes the opening marker's line ending.
+    """
+    lines = content.splitlines(keepends=True)
+    if not lines or lines[0].rstrip("\r\n") != "---":
+        return content
+    for i in range(1, len(lines)):
+        line = lines[i].rstrip("\r\n")
+        if line.startswith(f"{PAGE_ID_KEY}:"):
+            return content
+        if _FM_CLOSE_RE.match(line):
+            newline = lines[0][3:] or "\n"
+            lines.insert(i, f"{PAGE_ID_KEY}: {new_page_id()}{newline}")
+            return "".join(lines)
+    return content
+
+
+def assign_page_ids(edits: list[PageEdit]) -> list[PageEdit]:
+    """``edits`` with a fresh ``page_id`` on every ``create`` that has none; every other edit unchanged."""
+    return [replace(e, new_content=with_page_id(e.new_content)) if e.action == "create" else e for e in edits]
 
 
 def validate_page_edit_semantics(

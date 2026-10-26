@@ -5,10 +5,11 @@
 from __future__ import annotations
 
 import dataclasses
+import inspect
 import json
 
 from tests.test_manifest import EMPTY_SHA256, ManifestCase, decision_edit
-from wiki_studio import __version__, api, promoter, wikilock
+from wiki_studio import __version__, api, lint, paths, promoter, wikilock
 from wiki_studio.cli import _VERBS
 from wiki_studio.contract import CAPABILITIES, FORMATS, MANIFEST_INSTRUCTION
 from wiki_studio.proposal import PageEdit
@@ -55,7 +56,10 @@ class TestApiInfo(ManifestCase):
             },
         )
         self.assertEqual(dict(info.formats), {"patch_set": 1, "receipt": 1, "ingest_log": 1})
-        self.assertEqual(info.capabilities, ("wiki-lock", "receipts", "base-revision", "root-manifest"))
+        self.assertEqual(
+            info.capabilities,
+            ("wiki-lock", "receipts", "base-revision", "root-manifest", "page-id", "attribution"),
+        )
         self.assertEqual(
             info.manifest.as_dict(),
             {
@@ -148,11 +152,15 @@ class TestAdvertisedContract(ManifestCase):
         api.init(self.paths)
         data = json.loads(self.cli("info", "--json").stdout)
         edit_fields = {f.name for f in dataclasses.fields(PageEdit)}
+        propose_params = inspect.signature(api.propose).parameters
+        promote_params = inspect.signature(api.promote).parameters
         resolvers = {
             "wiki-lock": lambda: callable(wikilock.WikiLock) and "lock_file" in data,
             "receipts": lambda: bool(promoter.RECEIPT_FILE_NAME) and "receipt" in data["formats"],
             "base-revision": lambda: callable(api.read_page) and "base_sha256" in edit_fields,
             "root-manifest": lambda: "init" in _VERBS and callable(api.init) and "manifest" in data,
+            "page-id": lambda: "assign_page_ids" in propose_params and callable(lint.lint_wiki),
+            "attribution": lambda: "by" in propose_params and "by" in promote_params and bool(paths.ENV_ACTOR),
         }
         for capability in CAPABILITIES:
             with self.subTest(capability):

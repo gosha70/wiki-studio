@@ -30,7 +30,7 @@ wiki with a manifest changes nothing. `InitResult.manifest` is `created`,
 |---|---|
 | `manifest_version` | `1`. |
 | `wiki_id` | A random UUID. It names the wiki across clones and moves. |
-| `schema` | `{"id": "wiki-studio/page-schema", "version": 1}`. Version 1 is the 0.6.0 page schema. Only a decision record in `docs/adr/` bumps it. |
+| `schema` | `{"id": "wiki-studio/page-schema", "version": 2}`. Version 1 is the 0.6.0 page schema; version 2 adds the optional keys of `docs/adr/0002-page-identity-and-review-keys.md` and accepts version 1 manifests. Only a decision record in `docs/adr/` bumps it. |
 | `schema_fingerprint` | The fingerprint acknowledged at `init` (see below). |
 | `policy` | `approval_required`, `approver_required`, `auto_approve_on_promote`. Each is `false` by default. The host edits them by hand. |
 | `created_by` | `{"package": "wiki-studio", "version": "<version>"}`. |
@@ -115,7 +115,7 @@ string key `schema` is still `project` when `<wiki>/schema/` exists and
 | `package_version` | The installed wiki-studio version. |
 | `schema_contract` | `id`, `version` (the manifest's, else this package's), `source`, `fingerprint` (current), `declared_fingerprint` (the manifest's, or `null`), `drift`. |
 | `formats` | `patch_set: 1`, `receipt: 1`, `ingest_log: 1`. |
-| `capabilities` | `wiki-lock`, `receipts`, `base-revision`, `root-manifest`. |
+| `capabilities` | `wiki-lock`, `receipts`, `base-revision`, `root-manifest`, `page-id`, `attribution`. |
 | `manifest` | Present: `state`, `manifest_version`, `wiki_id`, `policy`, `mode` (`governed` or `managed`). Missing: `state`, `mode: legacy` and an `instruction` to run `wiki-studio init`. |
 
 Both lists describe the shipped build. A scope that does not ship adds no
