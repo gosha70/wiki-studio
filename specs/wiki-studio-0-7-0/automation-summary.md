@@ -10,3 +10,6 @@ Review: PASS (see specs/wiki-studio-0-7-0/collaboration/build-review.md).
 
 ### Phase 4 complete — US4: Approval bound to the revision and the policy (2026-10-26T22:40:55Z)
 Review: PASS (see specs/wiki-studio-0-7-0/collaboration/build-review.md).
+
+### Phase 5 complete — US5: `superseded_by` (2026-10-26T22:50:02Z)
+Review: PASS (see specs/wiki-studio-0-7-0/collaboration/build-review.md).
