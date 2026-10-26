@@ -290,7 +290,7 @@ chooses the held-lock alternative, S1 grows by about 3h (Rabbit holes).
   - `schema_fingerprint` (S2's recipe); `schema_source` is **derived** at
     read time (`project` when any loaded override exists, else
     `packaged`), never persisted, so it cannot go stale;
-  - `policy`: S4's section, defaulting to ungoverned;
+  - `policy`: S4's section, defaulting to managed (no approval required);
   - `created_by`: package and version.
   `init` on an existing wiki without a manifest adds one and touches
   nothing else.
@@ -300,8 +300,9 @@ chooses the held-lock alternative, S1 grows by about 3h (Rabbit holes).
   covers only the project's override files that are actually loaded
   (`ingest-rules.md`, `page-types.md`, `citation-rules.md` under
   `<wiki>/schema/`, finding 9): sha256 over the present ones, sorted by
-  name, each as name, a NUL byte, then the raw bytes; the empty string
-  when there is no override. The recipe is documented. The bytes come
+  name, each as name, a NUL byte, then the raw bytes; with no override the
+  value is the SHA-256 of empty input (`e3b0c442…`), never a literal
+  empty string, so the key is always a digest. The recipe is documented. The bytes come
   from **one shared loader** that replaces `load_schema_files`
   (`prompt.py:36-46`, which today follows a symlink through `is_file()`
   and `read_text()`): it passes each override through the containment
@@ -313,8 +314,14 @@ chooses the held-lock alternative, S1 grows by about 3h (Rabbit holes).
   judged on that project part only: the manifest stores the fingerprint
   declared at `init`, `info` reports declared and current, and a mismatch
   is refused (exit 4, naming both) by `propose`, `promote` and `approve`
-  only on a **governed** wiki (see the definition under S4); an
-  ungoverned wiki gets a warning. `init --update-schema` rewrites only
+  only on a **governed** wiki (see the definition under S4); a managed
+  wiki gets a warning. **Where drift shows:** `info` and `api.info`
+  report the declared and the current fingerprint; `propose` and
+  `promote` print the warning to stderr and return it in their results'
+  `warnings`; `approve` likewise. A host learns about drift on a governed
+  wiki before it writes by checking `api.info` first, which is what
+  memkernel's governed mode does; the exit-4 refusal is the backstop for
+  a host that did not. `init --update-schema` rewrites only
   that key, by writing the whole manifest to a temporary sibling and
   replacing it atomically under the lock, never in place; tests cover
   adding the first override and removing the last one, and `info`
@@ -382,7 +389,12 @@ chooses the held-lock alternative, S1 grows by about 3h (Rabbit holes).
   and memkernel can keep one memory identity across the move. That is
   why S3a is the first scope cut after S6.
 - No `move` or `delete` action (No-gos). Existing pages get a `page_id`
-  through an ordinary guarded `update`.
+  through an ordinary guarded `update`. That update moves the page's key
+  from the `path/` namespace to `id/`, so `review_state` looks in both:
+  `id/<page_id>/` first, then `path/<digest>/` for records written before
+  the page had an id, and reports the newest matching record. Adding the
+  key therefore never hides an earlier approval; the page simply reads
+  `stale` until its new bytes are approved, like any other update.
 
 **S3b, actor attribution (~2-3h, kept).**
 
@@ -511,9 +523,11 @@ It also returns the approved sha256 and record path, so an importer can
 compare the bytes it reads.
 
 **Reserved paths.** `propose` and `promote` refuse (exit 4, naming the
-path) any edit whose path has a dot-prefixed component or lies under
-`schema/`, with a test for the manifest, an approval record and a schema
-override. Today those paths are refused only incidentally, by the
+path) any edit whose **normalised** path (`posixpath.normpath`, as
+`promoter.py` already applies to edit paths) has a dot-prefixed component
+or lies under `schema/`, with a test for the manifest, an approval record
+and a schema override, and a test that a raw `./index.md` still passes,
+as `docs/patch-set-format.md` documents. Today those paths are refused only incidentally, by the
 page-type placement rule; the named rule is what keeps the policy, the
 records and the rules out of a proposal's reach.
 
@@ -832,8 +846,9 @@ decisions and adopted all three. The pitch above follows them.
 |------|------------|------|
 | 2026-10-24 | shaping | Pitch drafted from wiki-studio #38 and memkernel #48. wiki-studio read at main 4979178, memkernel at 9d93544. |
 | 2026-10-24 | shaping → shaped | 6 scopes, 6w appetite, one bet (assumption), 0.7.0. Core S1, S2, S4; trim S6, then S3a. Snapshot closure recommended: remove; to be settled with memkernel before build. 3 owner questions with stated assumptions. |
-| 2026-10-25 | shaped (revised, 5) | Fifth and sixth reviews on PR #44: both approval-record layouts documented with a canonical path-digest recipe (normalised POSIX path, UTF-8, SHA-256) and an equivalence test; auto-approval's guarantee restated as "no record and no attribution for mismatched bytes", not a review state; a per-page failure leaves the promotion committed and published approvals in place, with review state from the records. |
-| 2026-10-25 | shaped (revised, 4) | Fourth review on PR #44: one contained, no-follow schema loader feeds both the prompt and the fingerprint (an outside-pointing override symlink is refused unread); approval records live in separate `id/` and `path/<sha256>` namespaces with the stored `page_key` verified on every read; auto-approval validates per page under one lock, approving unchanged pages and warning on changed ones. |
-| 2026-10-25 | shaped (revised, 3) | Third review on PR #44: auto-approval passes the receipt's post-commit hashes as `expected`, so an intervening writer's revision is never approved under the promoter's identity (interleaving test); the manifest and every approval-tree component are created, enumerated and read inside the wiki boundary with no symlink followed, the manifest is replaced atomically and `schema_source` is derived, not persisted; cutting S3a keeps Release B open like a memkernel slip. The three owner decisions, first proposed by the review, were put to the owner directly and adopted. |
-| 2026-10-24 | shaped (revised, 2) | Second pitch review on PR #44: schema identity is `schema.version`, the fingerprint covers only the loaded project overrides and drift is refused only on a governed wiki (a package upgrade never blocks writes); one definition of governed / managed / legacy; `policy_sha256` over the acceptance keys only; `decision` in the record path, page-key mapping and containment stated, no `rename` publication; an explicit reserved-path refusal for dot components and `schema/`; `page_id` opt-in on `api.propose`; the rename claim restated as what `page_id` actually buys; a third review round is an escalation, not exhaustion. |
 | 2026-10-24 | shaped (revised) | Pitch review, six findings folded in: approval records keyed by (page, revision, policy, decision) and never replaced; `approve`, auto-approval and governed import require a manifest, `review_state` reports `manifest_missing`; the fingerprint covers the effective merged schema, with declared-versus-current drift refused by governed writers until `init --update-schema`; auto-approval is a separate post-promotion operation outside the receipt, content pages only; batch approval takes a per-path `expected` mapping, preflights the batch and documents partial publication; `info` lists only shipped capabilities. Owner decisions recorded: one 6w bet; memkernel in the same cycle; week 0 = remove the snapshot, memkernel-owned `corrects` with a grammar still to define. |
+| 2026-10-24 | shaped (revised, 2) | Second pitch review on PR #44: schema identity is `schema.version`, the fingerprint covers only the loaded project overrides and drift is refused only on a governed wiki (a package upgrade never blocks writes); one definition of governed / managed / legacy; `policy_sha256` over the acceptance keys only; `decision` in the record path, page-key mapping and containment stated, no `rename` publication; an explicit reserved-path refusal for dot components and `schema/`; `page_id` opt-in on `api.propose`; the rename claim restated as what `page_id` actually buys; a third review round is an escalation, not exhaustion. |
+| 2026-10-25 | shaped (revised, 3) | Third review on PR #44: auto-approval passes the receipt's post-commit hashes as `expected`, so an intervening writer's revision is never approved under the promoter's identity (interleaving test); the manifest and every approval-tree component are created, enumerated and read inside the wiki boundary with no symlink followed, the manifest is replaced atomically and `schema_source` is derived, not persisted; cutting S3a keeps Release B open like a memkernel slip. The three owner decisions, first proposed by the review, were put to the owner directly and adopted. |
+| 2026-10-25 | shaped (revised, 4) | Fourth review on PR #44: one contained, no-follow schema loader feeds both the prompt and the fingerprint (an outside-pointing override symlink is refused unread); approval records live in separate `id/` and `path/<sha256>` namespaces with the stored `page_key` verified on every read; auto-approval validates per page under one lock, approving unchanged pages and warning on changed ones. |
+| 2026-10-25 | shaped (revised, 5) | Fifth and sixth reviews on PR #44: both approval-record layouts documented with a canonical path-digest recipe (normalised POSIX path, UTF-8, SHA-256) and an equivalence test; auto-approval's guarantee restated as "no record and no attribution for mismatched bytes", not a review state; a per-page failure leaves the promotion committed and published approvals in place, with review state from the records. |
+| 2026-10-25 | shaped (revised, 6) | Seventh review on PR #44: managed replaces ungoverned in the drift rule and the policy default; the drift warning's surfaces are named (info, stderr, result warnings) with api.info as the host's pre-write check; the reserved-path rule applies to the normalised path and `./index.md` stays legal; the empty-override fingerprint is the digest of empty input; `review_state` looks in both namespaces after a page gains a `page_id`; bet log in date order. |
