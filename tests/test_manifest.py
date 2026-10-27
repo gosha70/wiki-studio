@@ -144,13 +144,16 @@ class TestManifestContainment(ManifestCase):
             api.init(self.paths)
         self.assertFalse(target.exists())
 
-    def test_a_symlinked_wiki_directory_is_refused_and_its_target_untouched(self) -> None:
+    def test_an_alias_spelling_of_the_wiki_directory_reaches_the_real_wiki(self) -> None:
+        """Release A (FR-002) keeps alias spellings: the root is resolved once, then nothing below it is followed."""
         self.wiki.parent.mkdir(parents=True)
-        self.wiki.symlink_to(self.outside, target_is_directory=True)
-        with self.assertRaises(ContractViolationError) as ctx:
-            api.init(self.paths)
-        self.assertIn("symlink", str(ctx.exception))
-        self.assertEqual(list(self.outside.iterdir()), [])
+        real = self.outside / "real-wiki"
+        real.mkdir()
+        self.wiki.symlink_to(real, target_is_directory=True)
+        api.init(self.paths)
+        self.assertTrue(self.wiki.is_symlink(), "the alias stays a link")
+        self.assertTrue((real / ".wiki-studio.json").is_file(), "the manifest lands in the real wiki")
+        self.assertEqual(api.info(self.paths).manifest.state, "present", "contract reads through the alias succeed")
 
     def test_every_writer_refuses_a_symlinked_manifest_unread(self) -> None:
         api.init(self.paths)

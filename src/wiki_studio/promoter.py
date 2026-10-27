@@ -63,7 +63,13 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from . import __version__
-from .audit import HASH_RECIPE_PAYLOAD_DIGEST, PLAN_FILE_NAME, PREVIEW_DIR_NAME, payload_digest_from_files
+from .audit import (
+    HASH_RECIPE_PAYLOAD_DIGEST,
+    PLAN_FILE_NAME,
+    PREVIEW_DIR_NAME,
+    payload_digest,
+    payload_digest_from_files,
+)
 from .contract import (
     KEY_SCHEMA_FINGERPRINT,
     PACKAGE_NAME,
@@ -217,6 +223,20 @@ class PromoteResult:
     unguarded_paths: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
     approved_paths: list[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class _Committed:
+    """A completed promotion plus the plan and committed receipt it validated under its lock.
+
+    Private and never returned to callers: ``promote`` unwraps it, hands
+    ``basis`` to auto-approval in memory, and returns only ``result``, so the
+    plan and receipt never appear in the public ``PromoteResult`` (its repr,
+    equality or ``dataclasses.asdict``).
+    """
+
+    result: PromoteResult
+    basis: tuple[dict[str, Any], dict[str, Any]] | None
 
 
 def _sha256(data: bytes) -> str:
@@ -1327,7 +1347,7 @@ def _commit_and_archive(
     started_at: str,
     unguarded: list[str],
     actor: Actor,
-) -> PromoteResult:
+) -> _Committed:
     """Steps 1 to 4 for a fresh promotion whose stage validated and whose preconditions held."""
     # FR-012: the last look at the live targets before anything is written.
     _recheck_write_targets(planned, paths.wiki_dir)
@@ -1367,7 +1387,7 @@ def _commit_and_archive(
         ) from exc
     # Step 4: archive from the capture, then remove the original.
     archived = _archive_and_cleanup(proposals_dir, paths, {**capture.files, RECEIPT_FILE_NAME: receipt_bytes}, receipt)
-    return PromoteResult(
+    result = PromoteResult(
         applied_paths=applied,
         proposals_dir=proposals_dir,
         archived_dir=archived,
@@ -1375,6 +1395,7 @@ def _commit_and_archive(
         unguarded_paths=list(unguarded),
         warnings=_unguarded_warnings(unguarded),
     )
+    return _Committed(result, _basis_from(capture.files.get(PLAN_FILE_NAME), receipt))
 
 
 def _archive_and_cleanup(
@@ -1408,7 +1429,7 @@ def _unguarded_paths(receipt: dict[str, Any]) -> list[str]:
     return []
 
 
-def _finish_committed(proposals_dir: Path, paths: WikiPaths, receipt: dict[str, Any]) -> PromoteResult:
+def _finish_committed(proposals_dir: Path, paths: WikiPaths, receipt: dict[str, Any]) -> _Committed:
     """Resolve a ``committed`` receipt: finish step 4 only, with no appends and no wiki writes."""
     digest = str(receipt["submission_digest"])
     manifest = {str(e["path"]): str(e["sha256"]) for e in receipt["submission_manifest"]}
@@ -1440,7 +1461,9 @@ def _finish_committed(proposals_dir: Path, paths: WikiPaths, receipt: dict[str, 
         archive_files = {rel: path.read_bytes() for rel, path in _directory_files(archive).items()}
     archived = _archive_and_cleanup(proposals_dir, paths, archive_files, receipt)
     unguarded = _unguarded_paths(receipt)
-    return PromoteResult(
+    # The plan bytes were verified under the lock: from the directory against
+    # the receipt's digest, or from an archive matched to its manifest.
+    result = PromoteResult(
         applied_paths=_written_paths(receipt),
         proposals_dir=proposals_dir,
         archived_dir=archived,
@@ -1448,6 +1471,20 @@ def _finish_committed(proposals_dir: Path, paths: WikiPaths, receipt: dict[str, 
         unguarded_paths=unguarded,
         warnings=_unguarded_warnings(unguarded),
     )
+    return _Committed(result, _basis_from(archive_files.get(PLAN_FILE_NAME), receipt))
+
+
+def _basis_from(plan_bytes: bytes | None, receipt: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]] | None:
+    """The validated plan and a deep copy of the committed receipt, for auto-approval; None if the plan is unusable."""
+    if plan_bytes is None:
+        return None
+    try:
+        plan = json.loads(plan_bytes.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError):
+        return None
+    if not isinstance(plan, dict):
+        return None
+    return plan, json.loads(json.dumps(receipt))
 
 
 def _classify_committing(receipt: dict[str, Any], paths: WikiPaths, receipt_path: Path) -> bool:
@@ -1498,7 +1535,7 @@ def _classify_committing(receipt: dict[str, Any], paths: WikiPaths, receipt_path
 
 def _resolve_receipt(
     proposals_dir: Path, paths: WikiPaths, receipt: dict[str, Any], handle: _WikiHandle
-) -> PromoteResult | None:
+) -> _Committed | None:
     """Resolve an existing receipt under the lock; None means "not committed, promote afresh"."""
     receipt_path = proposals_dir / RECEIPT_FILE_NAME
     _check_wiki_target(receipt, receipt_path, handle)
@@ -1544,7 +1581,7 @@ def _promote_locked(
     started_at: str,
     stage_dir: Path,
     actor: Actor,
-) -> PromoteResult | _StagedDryRun:
+) -> PromoteResult | _StagedDryRun | _Committed:
     """Everything that happens under the lock; ``stage_dir`` (absent on entry) receives the staged copy.
 
     A dry run returns ``_StagedDryRun`` once the preconditions have been
@@ -1727,10 +1764,12 @@ def promote(
             finally:
                 handle.close()
         if not isinstance(outcome, _StagedDryRun):
+            basis = outcome.basis if isinstance(outcome, _Committed) else None
+            result = outcome.result if isinstance(outcome, _Committed) else outcome
             if contract_warnings:
-                outcome = replace(outcome, warnings=[*contract_warnings, *outcome.warnings])
+                result = replace(result, warnings=[*contract_warnings, *result.warnings])
             # FR-030: a separate operation after the promotion has completed, under a new lock acquisition.
-            return _with_auto_approval(outcome, paths)
+            return _with_auto_approval(result, paths, basis)
         # Lock released: the staged tree is a point-in-time snapshot of the
         # wiki plus the edits, validated here without holding other writers up.
         _validate_staged_tree(stage_dir, paths, outcome.patch)
@@ -1781,11 +1820,11 @@ class InitResult:
 
 
 def _refuse_manifest_symlinks(paths: WikiPaths) -> None:
-    """The manifest's boundary (FR-006), checked before ``init`` touches anything: no symlinked wiki dir or manifest."""
-    if paths.wiki_dir.is_symlink():
-        raise ContractViolationError(
-            f"wiki directory {paths.wiki_dir} is a symlink; init refuses to write the manifest through it"
-        )
+    """The manifest's boundary (FR-006), checked before ``init`` touches anything: no symlinked manifest.
+
+    The wiki directory's configured spelling may be a symlink alias (Release
+    A, FR-002); it is resolved once and nothing below it is followed.
+    """
     try:
         contain(MANIFEST_NAME, paths.wiki_dir)
     except ContainmentError as exc:
@@ -1795,13 +1834,20 @@ def _refuse_manifest_symlinks(paths: WikiPaths) -> None:
 
 
 def _open_wiki_dir_nofollow(wiki_dir: Path, what: str = "the manifest") -> int:
-    """A descriptor on the wiki directory itself, refusing a symlink there (``ContractViolationError``)."""
+    """A descriptor on the real wiki directory, opened with ``O_NOFOLLOW``.
+
+    The configured spelling may be a symlink alias of the wiki (Release A,
+    FR-002: two spellings share one lock); it is resolved once, here, and the
+    real directory is opened without following a link, so every component
+    below it is then reached descriptor-relative and a later swap is refused.
+    """
+    real = wiki_dir.resolve()
     try:
-        return os.open(wiki_dir, os.O_RDONLY | _O_DIRECTORY | _O_NOFOLLOW)
+        return os.open(real, os.O_RDONLY | _O_DIRECTORY | _O_NOFOLLOW)
     except OSError as exc:
-        if exc.errno in (errno.ELOOP, errno.ENOTDIR) and wiki_dir.is_symlink():
+        if exc.errno in (errno.ELOOP, errno.ENOTDIR):
             raise ContractViolationError(
-                f"wiki directory {wiki_dir} is a symlink; refusing to write {what} through it"
+                f"wiki directory {wiki_dir} (resolved {real}) changed into a symlink; refusing to write {what}"
             ) from exc
         raise
 
@@ -2204,10 +2250,12 @@ def _receipt_provenance(
     """
     try:
         applied = contain(APPLIED_DIR_NAME, paths.proposals_dir)
-    except ContainmentError:
+        wiki_st = os.stat(paths.wiki_dir)
+    except (ContainmentError, OSError):
         return None, None, None
     if not applied.is_dir():
         return None, None, None
+    wiki_identity = (int(wiki_st.st_dev), int(wiki_st.st_ino))
     best: tuple[str, Path, dict[str, Any]] | None = None
     for archive in sorted(applied.iterdir()):
         if archive.name.startswith(".") or archive.is_symlink() or not archive.is_dir():
@@ -2224,6 +2272,20 @@ def _receipt_provenance(
         ):
             continue
         if not is_sha256_hex(receipt.get("submission_digest")):
+            continue
+        # Only a receipt written for this wiki (device and inode, as recovery
+        # checks them) and whose archive still holds the payload it names: a
+        # proposals directory shared by two wikis, or an edited archive, must
+        # never lend another wiki's proposal, proposer or promoter.
+        target = receipt.get("wiki_target")
+        if not isinstance(target, dict) or (target.get("st_dev"), target.get("st_ino")) != wiki_identity:
+            continue
+        if 0 in wiki_identity:
+            continue
+        try:
+            if payload_digest(archive) != receipt["submission_digest"]:
+                continue
+        except (OSError, ValueError, IngestError):
             continue
         stamp = str(receipt.get("committed_at") or "")
         if best is None or stamp > best[0]:
@@ -2353,7 +2415,11 @@ def _publish_approvals(plans: list[_ApprovalPlan], paths: WikiPaths) -> tuple[li
             continue
         try:
             created = _publish_record(paths, plan.record_rel, _record_bytes(plan.record))
-        except OSError as exc:
+        except (OSError, IngestError) as exc:
+            if isinstance(exc, IngestError) and not done:
+                # Nothing published yet: the batch is untouched and the
+                # error keeps its own contract (exit 4 or 9).
+                raise
             pending = [p.rel for p in plans[index:]]
             raise OutputWriteError(
                 f"approval records partly published ({exc}): published or already approved: "
@@ -2387,7 +2453,9 @@ def _auto_approval_targets(plan: object, receipt: Mapping[str, Any]) -> list[tup
     return targets
 
 
-def _with_auto_approval(outcome: PromoteResult, paths: WikiPaths) -> PromoteResult:
+def _with_auto_approval(
+    outcome: PromoteResult, paths: WikiPaths, basis: tuple[dict[str, Any], dict[str, Any]] | None
+) -> PromoteResult:
     """Auto-approve a completed promotion when the policy asks for it; never fails the promotion (FR-030)."""
     if outcome.dry_run or not outcome.applied_paths:
         return outcome
@@ -2403,11 +2471,17 @@ def _with_auto_approval(outcome: PromoteResult, paths: WikiPaths) -> PromoteResu
             "it, and auto-approval runs then"
         )
         return replace(outcome, warnings=[*outcome.warnings, note])
-    approved, notes = _auto_approve(outcome.archived_dir, paths)
+    if basis is None:
+        note = "auto-approval skipped: the promotion's plan could not be carried forward; run `wiki-studio approve`"
+        return replace(outcome, warnings=[*outcome.warnings, note])
+    plan, receipt = basis
+    approved, notes = _auto_approve(outcome.archived_dir, paths, plan, receipt)
     return replace(outcome, approved_paths=approved, warnings=[*outcome.warnings, *notes])
 
 
-def _auto_approve(archive: Path, paths: WikiPaths) -> tuple[list[str], list[str]]:
+def _auto_approve(
+    archive: Path, paths: WikiPaths, plan: dict[str, Any], receipt: dict[str, Any]
+) -> tuple[list[str], list[str]]:
     """After the receipt is committed and the archive published: one lock acquisition, one record per matching page.
 
     Outside the receipt protocol: nothing here is planned, tracked or used by
@@ -2416,14 +2490,12 @@ def _auto_approve(archive: Path, paths: WikiPaths) -> tuple[list[str], list[str]
     the promoter's actor as approver and promoter; a changed page gets no
     record and no attribution. Every skipped, failed or changed page is a
     warning; a crash part way is recovered by running ``approve``.
+
+    ``plan`` and ``receipt`` are the ones this promotion validated under its
+    lock and committed, carried forward in memory: the archive on disk is
+    mutable once the lock is released and is never reread here, so editing
+    it cannot add a target or change the attribution.
     """
-    try:
-        receipt = _read_json(_proposal_file(RECEIPT_FILE_NAME, archive))
-        plan = _read_json(_proposal_file(PLAN_FILE_NAME, archive))
-    except (OSError, ValueError, IngestError) as exc:
-        return [], [f"auto-approval skipped: could not read the archive {archive}: {exc}; run `wiki-studio approve`"]
-    if not isinstance(receipt, dict):
-        return [], [f"auto-approval skipped: {archive / RECEIPT_FILE_NAME} is not a JSON object"]
     targets = _auto_approval_targets(plan, receipt)
     if not targets:
         return [], []

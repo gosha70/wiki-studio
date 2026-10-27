@@ -35,7 +35,16 @@ advisory unless you ask otherwise.
   root `proposals/.applied`, the paths a receipt names for recovery, the
   legacy proposal file, the pages ingest reads into its prompt, and the
   ingest-log append, which is bound to the verified `.audit/` directory
-  descriptor on POSIX.
+  descriptor on POSIX. The wiki directory's configured spelling may itself
+  be a symlink alias (two spellings share one lock); it is resolved once,
+  and on POSIX the manifest, schema overrides and approval records are
+  reached from the real directory component by component with
+  `O_NOFOLLOW`, so a component swapped for a symlink later is refused.
+  Where the platform has no descriptor-relative opens (`dir_fd`, as on
+  Windows, which the package does not claim to support), the approval-record
+  scan falls back to checking each component with `lstat` before reading it
+  by path: a weaker binding, since a swap between the check and the read is
+  not caught, as for the ingest-log append.
 - A promotion is validated (a staged copy of the wiki is linted in a
   private temporary directory before anything is written), serialised
   against other wiki-studio writers on the same machine by an OS advisory

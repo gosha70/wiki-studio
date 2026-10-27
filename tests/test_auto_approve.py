@@ -129,11 +129,49 @@ class TestAutoApprovalNeverFailsThePromotion(AutoApproveCase):
         finished = api.promote(self.paths.proposals_dir / "noarchive", self.paths, by="carol")
         self.assertEqual(finished.approved_paths, ["decisions/a.md"], "the finishing promote auto-approves")
 
-    def test_an_unreadable_archive_is_a_warning(self) -> None:
+    def test_the_archive_on_disk_is_never_reread(self) -> None:
+        """PR #47 review: auto-approval uses the plan and receipt validated under the lock, not the mutable archive."""
         with patch.object(promoter, "_read_json", side_effect=OSError(5, "I/O error")):
             result = api.promote(self.propose_pages("unreadable", "a"), self.paths, by="carol")
-        self.assertEqual(result.approved_paths, [])
-        self.assertTrue(any("could not read the archive" in w for w in result.warnings))
+        self.assertEqual(result.approved_paths, ["decisions/a.md"])
+
+    def test_the_handoff_never_reaches_the_public_result(self) -> None:
+        """PR #47 review: the validated plan and receipt travel privately, not on PromoteResult."""
+        import dataclasses
+
+        result = api.promote(self.propose_pages("public", "a"), self.paths, by="carol")
+        self.assertEqual(result.approved_paths, ["decisions/a.md"])
+        fields = {f.name for f in dataclasses.fields(result)}
+        self.assertFalse(any(name.startswith("_") for name in fields), fields)
+        dumped = json.dumps(dataclasses.asdict(result), default=str)
+        self.assertNotIn("planned_writes", dumped)
+        self.assertNotIn("submission_digest", dumped)
+
+    def test_an_archive_edited_after_the_lock_cannot_add_or_reattribute_a_target(self) -> None:
+        """PR #47 review: rewriting plan.json and receipt.json in the gap approves nothing extra under this promoter."""
+        self.create("c", by="erin")
+        before_c = self.records_for("decisions/c.md")
+        real = promoter._auto_approve
+
+        def tamper_then_approve(archive: Path, paths: Any, *basis: Any) -> tuple[list[str], list[str]]:
+            plan = json.loads((archive / "plan.json").read_text(encoding="utf-8"))
+            receipt = json.loads((archive / "receipt.json").read_text(encoding="utf-8"))
+            live_c = api.read_page("decisions/c.md", self.paths).sha256
+            plan["edits"].append(
+                {"path": "decisions/c.md", "action": "update", "preview": "preview/x", "rationale": "x"}
+            )
+            receipt["planned_writes"].append({"path": "decisions/c.md", "pre_sha256": None, "post_sha256": live_c})
+            receipt["actor"] = {"name": "mallory", "source": "flag"}
+            (archive / "plan.json").write_text(json.dumps(plan), encoding="utf-8")
+            (archive / "receipt.json").write_text(json.dumps(receipt), encoding="utf-8")
+            return real(archive, paths, *basis)
+
+        with patch.object(promoter, "_auto_approve", tamper_then_approve):
+            result = api.promote(self.propose_pages("tamper", "a"), self.paths, by="carol")
+        self.assertEqual(result.approved_paths, ["decisions/a.md"])
+        self.assertEqual(self.records_for("decisions/c.md"), before_c, "no record added for the injected page")
+        for record in self.records_for("decisions/a.md"):
+            self.assertEqual(record["promoter"], {"name": "carol", "source": "flag"})
 
 
 class TestInterleaving(AutoApproveCase):
@@ -142,12 +180,12 @@ class TestInterleaving(AutoApproveCase):
         real = promoter._auto_approve
         state = {"injected": False}
 
-        def second_writer_first(archive: Path, paths: Any) -> tuple[list[str], list[str]]:
+        def second_writer_first(archive: Path, paths: Any, *basis: Any) -> tuple[list[str], list[str]]:
             if not state["injected"]:
                 state["injected"] = True
                 # Another writer lands between the archive and the auto-approval (the lock is free).
                 self.update("decisions/b.md", page_text("b", body="Changed by dave."), by="dave")
-            return real(archive, paths)
+            return real(archive, paths, *basis)
 
         with patch.object(promoter, "_auto_approve", second_writer_first):
             result = api.promote(self.propose_pages("two", "a", "b"), self.paths, by="carol")

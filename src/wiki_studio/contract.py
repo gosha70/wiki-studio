@@ -246,6 +246,31 @@ def parse_manifest(data: bytes, where: str) -> Manifest:
     )
 
 
+_O_DIRECTORY = getattr(os, "O_DIRECTORY", 0)
+_FD_READS = os.open in os.supports_dir_fd
+
+
+def _open_contained(wiki_dir: Path, rel: str) -> int:
+    """Open ``<wiki>/<rel>`` component by component from the wiki directory itself, never following a link.
+
+    The configured wiki spelling may be a symlink alias (Release A, FR-002);
+    it is resolved once to the real directory, which is opened with
+    ``O_NOFOLLOW``, and every component below it is opened relative to the
+    previous descriptor with ``O_NOFOLLOW``, so a swap to a symlink after the
+    containment check raises ``ELOOP`` instead of being followed.
+    """
+    fd = os.open(wiki_dir.resolve(), os.O_RDONLY | _O_DIRECTORY | _O_NOFOLLOW)
+    try:
+        parts = rel.split("/")
+        for part in parts[:-1]:
+            nxt = os.open(part, os.O_RDONLY | _O_DIRECTORY | _O_NOFOLLOW, dir_fd=fd)
+            os.close(fd)
+            fd = nxt
+        return os.open(parts[-1], os.O_RDONLY | _O_NOFOLLOW, dir_fd=fd)
+    finally:
+        os.close(fd)
+
+
 def _read_contained(rel: str, wiki_dir: Path, what: str, *, regular_only: bool) -> bytes | None:
     """Read ``<wiki>/<rel>`` through the wiki boundary with ``O_NOFOLLOW``; None when it does not exist.
 
@@ -261,7 +286,7 @@ def _read_contained(rel: str, wiki_dir: Path, what: str, *, regular_only: bool) 
             f"{what} {shown} is outside the wiki boundary ({exc}); refusing to read it"
         ) from exc
     try:
-        fd = os.open(target, os.O_RDONLY | _O_NOFOLLOW)
+        fd = _open_contained(wiki_dir, rel) if _FD_READS else os.open(target, os.O_RDONLY | _O_NOFOLLOW)
     except (FileNotFoundError, NotADirectoryError):
         return None
     except OSError as exc:

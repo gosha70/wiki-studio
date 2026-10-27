@@ -176,19 +176,27 @@ def _page_findings(paths: WikiPaths, pages: list[str]) -> list[Finding]:
 def findings(paths: WikiPaths, *, pages: list[str] | None = None) -> FindingsResult:
     """Collect the findings; reads only, takes no lock and no backend (FR-037).
 
-    ``pages=None`` covers the whole wiki; an explicit list scopes every kind
-    to those wiki-relative pages (the graph-based health checks still read
-    the whole wiki to count edges).
+    ``pages=None`` covers the default review set (every content page; the
+    root ``index.md`` and ``log.md`` are excluded); an explicit list scopes
+    every kind to those wiki-relative pages. Either way a finding reports
+    only its pages inside the scope, and ``pages_checked`` counts the scope.
+    The graph-based health checks still read the whole wiki to count edges.
     """
     states = review_states(paths, default_review_pages(paths) if pages is None else list(pages))
     canonical = [state.path for state in states]
     health = lint_health(paths, backend=None)
-    in_scope = None if pages is None else set(canonical)
-    found: list[Finding] = [
-        Finding(f.kind, f.severity, tuple(f.pages), f.description)
-        for f in health.findings
-        if f.kind in FINDING_KINDS and (in_scope is None or in_scope.intersection(f.pages))
-    ]
+    # One scope for every kind and for the denominator: the requested pages, or
+    # the default review set (every content page, root index.md and log.md
+    # excluded). A multi-page health finding is kept when it touches the scope
+    # and reports only its in-scope pages.
+    in_scope = set(canonical)
+    found: list[Finding] = []
+    for f in health.findings:
+        if f.kind not in FINDING_KINDS:
+            continue
+        scoped = tuple(page for page in f.pages if page in in_scope)
+        if scoped:
+            found.append(Finding(f.kind, f.severity, scoped, f.description))
     found.extend(_review_findings(states))
     found.extend(_page_findings(paths, canonical))
     counts = dict.fromkeys(FINDING_KINDS, 0)
@@ -197,6 +205,6 @@ def findings(paths: WikiPaths, *, pages: list[str] | None = None) -> FindingsRes
     return FindingsResult(
         findings_version=FINDINGS_VERSION,
         counts=MappingProxyType(counts),
-        pages_checked=health.pages_checked if pages is None else len(canonical),
+        pages_checked=len(canonical),
         findings=tuple(found),
     )

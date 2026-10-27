@@ -145,6 +145,21 @@ Limitations.
   frontmatter `sources` is not a list of mappings is reported as
   `fact_check_error: sources not compared (…)` while its body facts are
   still compared, instead of silently dropping its citations.
+- Found by the code review of the 0.7.0 build (PR #47) and fixed before
+  release: auto-approval reread the archived `plan.json` and `receipt.json`
+  after the promotion lock was released, so an edited archive could approve
+  and attribute an unrelated page; it now uses the plan and receipt the
+  promotion validated under its lock. The approval-record scan and the
+  manifest and schema-override reads now walk descriptor-relative with
+  `O_NOFOLLOW` from the real wiki directory, so a directory swapped for a
+  symlink after the containment check is refused, not followed. The health
+  checks and `findings` no longer read a symlinked page. An explicit
+  `approve` takes provenance only from a receipt written for the same wiki
+  (device and inode) whose archive still matches it. A batch approval that
+  fails after its first record is always the partial-publication error
+  (exit 6) naming both sets. `findings` reports only in-scope pages, and
+  `pages_checked` counts the scope (the default review set without the root
+  `index.md` and `log.md`).
 
 ### Upgrade notes
 

@@ -392,12 +392,64 @@ class RecordScan:
         return [*(f"{rel}: symlink in the approval tree, skipped" for rel in self.symlinks), *self.skipped]
 
 
+_O_DIRECTORY = getattr(os, "O_DIRECTORY", 0)
+# Descriptor-relative traversal (POSIX). Without it (Windows) the scan falls
+# back to lstat-checked paths, the documented weaker binding.
+_FD_SCAN = os.open in os.supports_dir_fd and os.stat in os.supports_dir_fd and os.listdir in os.supports_fd
+
+
+class _SymlinkError(Exception):
+    """A component of the approval tree is (or became) a symlink; it is skipped, never followed."""
+
+
+def _fd_kind(dir_fd: int, name: str) -> str:
+    try:
+        mode = os.stat(name, dir_fd=dir_fd, follow_symlinks=False).st_mode
+    except (FileNotFoundError, NotADirectoryError):
+        return "missing"
+    if stat.S_ISLNK(mode):
+        return "symlink"
+    if stat.S_ISDIR(mode):
+        return "dir"
+    return "file" if stat.S_ISREG(mode) else "other"
+
+
+def _open_dir_at(dir_fd: int | None, name: str | Path) -> int:
+    """Open a directory relative to ``dir_fd`` with ``O_NOFOLLOW``; ``_SymlinkError`` for a link, else ``OSError``."""
+    try:
+        if dir_fd is None:
+            return os.open(name, os.O_RDONLY | _O_DIRECTORY | _O_NOFOLLOW)
+        return os.open(name, os.O_RDONLY | _O_DIRECTORY | _O_NOFOLLOW, dir_fd=dir_fd)
+    except OSError as exc:
+        if exc.errno in (errno.ELOOP, errno.ENOTDIR, errno.EMLINK):
+            raise _SymlinkError(str(name)) from exc
+        raise
+
+
+def _read_at(dir_fd: int, name: str) -> bytes:
+    """Read a regular file relative to ``dir_fd`` with ``O_NOFOLLOW``; ``OSError`` for a link or a non-regular entry."""
+    fd = os.open(name, os.O_RDONLY | _O_NOFOLLOW, dir_fd=dir_fd)
+    try:
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            raise OSError(errno.EINVAL, "not a regular file", name)
+        with os.fdopen(fd, "rb") as handle:
+            fd = -1
+            return handle.read()
+    finally:
+        if fd >= 0:
+            os.close(fd)
+
+
 def scan_key(paths: WikiPaths, wiki_id: str | None, key: str, *, sha256: str | None = None) -> RecordScan:
     """Every record filed under one page key (only ``sha256``'s revision when given), verified, never following a link.
 
     A record that fails verification is skipped and reported, so an
     enumeration never attributes another page's history to this one; a
-    symlink anywhere on the way is skipped and reported in ``symlinks``.
+    symlink anywhere on the way is skipped and reported in ``symlinks``. On
+    POSIX every component, from the wiki directory itself down to the record,
+    is opened relative to its parent's descriptor with ``O_NOFOLLOW`` and
+    listed through that descriptor (FR-025), so a directory swapped for a
+    symlink after any check is refused, never followed.
     """
     scan = RecordScan()
     namespace, name = key_location(key)
@@ -409,17 +461,47 @@ def scan_key(paths: WikiPaths, wiki_id: str | None, key: str, *, sha256: str | N
             scan.symlinks.append(base_rel)
             return scan
         raise ContractViolationError(f"{base_rel} is outside the wiki boundary ({exc})") from exc
-    base = paths.wiki_dir / base_rel
-    if _kind(base) != "dir":
+    if not _FD_SCAN:
+        _scan_key_by_path(scan, paths.wiki_dir, wiki_id, key, base_rel, sha256)
         return scan
-    revisions = [sha256] if sha256 is not None else sorted(os.listdir(base))
-    for revision in revisions:
-        _scan_revision(scan, paths.wiki_dir, wiki_id, key, f"{base_rel}/{revision}", revision)
+    fds: list[int] = []
+    try:
+        try:
+            # The configured spelling may be an alias (FR-002): resolved once, then never followed below.
+            fds.append(_open_dir_at(None, paths.wiki_dir.resolve()))
+        except _SymlinkError:
+            scan.symlinks.append(".")
+            return scan
+        except FileNotFoundError:
+            return scan
+        walked = ""
+        for part in base_rel.split("/"):
+            walked = f"{walked}/{part}" if walked else part
+            kind = _fd_kind(fds[-1], part)
+            if kind == "missing":
+                return scan
+            if kind == "symlink":
+                scan.symlinks.append(walked)
+                return scan
+            if kind != "dir":
+                return scan
+            try:
+                fds.append(_open_dir_at(fds[-1], part))
+            except _SymlinkError:
+                scan.symlinks.append(walked)
+                return scan
+        base_fd = fds[-1]
+        revisions = [sha256] if sha256 is not None else sorted(os.listdir(base_fd))
+        for revision in revisions:
+            _scan_revision_fd(scan, base_fd, wiki_id, key, f"{base_rel}/{revision}", revision)
+    finally:
+        for fd in reversed(fds):
+            os.close(fd)
     return scan
 
 
-def _scan_revision(scan: RecordScan, wiki_dir: Path, wiki_id: str | None, key: str, rev_rel: str, rev: str) -> None:
-    kind = _kind(wiki_dir / rev_rel)
+def _scan_revision_fd(scan: RecordScan, base_fd: int, wiki_id: str | None, key: str, rev_rel: str, rev: str) -> None:
+    kind = _fd_kind(base_fd, rev)
     if kind == "symlink":
         scan.symlinks.append(rev_rel)
         return
@@ -428,22 +510,39 @@ def _scan_revision(scan: RecordScan, wiki_dir: Path, wiki_id: str | None, key: s
     if kind != "dir" or not is_sha256_hex(rev):
         scan.skipped.append(f"{rev_rel}: not a revision directory (64 lowercase hex), skipped")
         return
-    for policy_hash in sorted(os.listdir(wiki_dir / rev_rel)):
-        policy_rel = f"{rev_rel}/{policy_hash}"
-        kind = _kind(wiki_dir / policy_rel)
-        if kind == "symlink":
-            scan.symlinks.append(policy_rel)
-            continue
-        if kind != "dir" or not is_sha256_hex(policy_hash):
-            scan.skipped.append(f"{policy_rel}: not a policy directory (64 lowercase hex), skipped")
-            continue
-        for file_name in sorted(os.listdir(wiki_dir / policy_rel)):
-            _scan_record(scan, wiki_dir, wiki_id, key, rev, policy_hash, f"{policy_rel}/{file_name}", file_name)
+    try:
+        rev_fd = _open_dir_at(base_fd, rev)
+    except _SymlinkError:
+        scan.symlinks.append(rev_rel)
+        return
+    try:
+        for policy_hash in sorted(os.listdir(rev_fd)):
+            policy_rel = f"{rev_rel}/{policy_hash}"
+            kind = _fd_kind(rev_fd, policy_hash)
+            if kind == "symlink":
+                scan.symlinks.append(policy_rel)
+                continue
+            if kind != "dir" or not is_sha256_hex(policy_hash):
+                scan.skipped.append(f"{policy_rel}: not a policy directory (64 lowercase hex), skipped")
+                continue
+            try:
+                policy_fd = _open_dir_at(rev_fd, policy_hash)
+            except _SymlinkError:
+                scan.symlinks.append(policy_rel)
+                continue
+            try:
+                for file_name in sorted(os.listdir(policy_fd)):
+                    rel = f"{policy_rel}/{file_name}"
+                    _scan_record_fd(scan, policy_fd, wiki_id, key, rev, policy_hash, rel, file_name)
+            finally:
+                os.close(policy_fd)
+    finally:
+        os.close(rev_fd)
 
 
-def _scan_record(
+def _scan_record_fd(
     scan: RecordScan,
-    wiki_dir: Path,
+    policy_fd: int,
     wiki_id: str | None,
     key: str,
     rev: str,
@@ -451,7 +550,7 @@ def _scan_record(
     rel: str,
     file_name: str,
 ) -> None:
-    kind = _kind(wiki_dir / rel)
+    kind = _fd_kind(policy_fd, file_name)
     if kind == "symlink":
         scan.symlinks.append(rel)
         return
@@ -460,10 +559,19 @@ def _scan_record(
         scan.skipped.append(f"{rel}: not an approval record (<decision>.json, a regular file), skipped")
         return
     try:
-        data = _read_nofollow(wiki_dir / rel)
+        data = _read_at(policy_fd, file_name)
     except OSError as exc:
+        if exc.errno == errno.ELOOP:
+            scan.symlinks.append(rel)
+            return
         scan.skipped.append(f"{rel}: approval record unreadable ({exc}), skipped")
         return
+    _accept_record(scan, data, wiki_id, key, rev, policy_hash, rel, decision)
+
+
+def _accept_record(
+    scan: RecordScan, data: bytes, wiki_id: str | None, key: str, rev: str, policy_hash: str, rel: str, decision: str
+) -> None:
     obj, problem = record_problem(
         data, wiki_id=wiki_id, page_key=key, sha256=rev, policy_hash=policy_hash, decision=decision
     )
@@ -481,6 +589,52 @@ def _scan_record(
             data=obj,
         )
     )
+
+
+def _scan_key_by_path(
+    scan: RecordScan, wiki_dir: Path, wiki_id: str | None, key: str, base_rel: str, sha256: str | None
+) -> None:
+    """The path-based scan where ``dir_fd`` is unsupported: each component ``lstat``-checked (weaker binding)."""
+    base = wiki_dir / base_rel
+    if _kind(base) != "dir":
+        return
+    revisions = [sha256] if sha256 is not None else sorted(os.listdir(base))
+    for rev in revisions:
+        rev_rel = f"{base_rel}/{rev}"
+        kind = _kind(wiki_dir / rev_rel)
+        if kind == "symlink":
+            scan.symlinks.append(rev_rel)
+            continue
+        if kind == "missing":
+            continue
+        if kind != "dir" or not is_sha256_hex(rev):
+            scan.skipped.append(f"{rev_rel}: not a revision directory (64 lowercase hex), skipped")
+            continue
+        for policy_hash in sorted(os.listdir(wiki_dir / rev_rel)):
+            policy_rel = f"{rev_rel}/{policy_hash}"
+            kind = _kind(wiki_dir / policy_rel)
+            if kind == "symlink":
+                scan.symlinks.append(policy_rel)
+                continue
+            if kind != "dir" or not is_sha256_hex(policy_hash):
+                scan.skipped.append(f"{policy_rel}: not a policy directory (64 lowercase hex), skipped")
+                continue
+            for file_name in sorted(os.listdir(wiki_dir / policy_rel)):
+                rel = f"{policy_rel}/{file_name}"
+                kind = _kind(wiki_dir / rel)
+                if kind == "symlink":
+                    scan.symlinks.append(rel)
+                    continue
+                decision = file_name[: -len(RECORD_SUFFIX)] if file_name.endswith(RECORD_SUFFIX) else ""
+                if kind != "file" or decision not in DECISIONS:
+                    scan.skipped.append(f"{rel}: not an approval record (<decision>.json, a regular file), skipped")
+                    continue
+                try:
+                    data = _read_nofollow(wiki_dir / rel)
+                except OSError as exc:
+                    scan.skipped.append(f"{rel}: approval record unreadable ({exc}), skipped")
+                    continue
+                _accept_record(scan, data, wiki_id, key, rev, policy_hash, rel, decision)
 
 
 def scan_page(paths: WikiPaths, wiki_id: str | None, rel: str, text: str, *, sha256: str | None = None) -> RecordScan:
