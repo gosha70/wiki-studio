@@ -508,7 +508,8 @@ class ManifestInfo:
 class DiscoveryInfo:
     """``info``'s ``discovery`` (0.8.0, FR-010): FTS5 in this Python's SQLite, the default ranker and its hash.
 
-    ``cache`` is the search cache's path and state; None until the cache ships (US2).
+    ``cache`` is the search cache's ``{path, state, reason}`` with ``state`` one of
+    ``present``, ``missing`` or ``unusable`` (FR-018); None when no wiki was described.
     """
 
     fts5: bool

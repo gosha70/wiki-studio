@@ -24,6 +24,21 @@ uses [Semantic Versioning](https://semver.org/).
   `bytes`; `find --json` prints them. The query log records `ranker` and
   `bytes_loaded`. `info` gains a `discovery` key and the capabilities
   `ranked-discovery` and `context-budget`. See `docs/knowledge-contract.md`.
+- The rebuildable search cache (0.8.0, US2). The `fts5` ranker keeps its
+  FTS5 table in `<wiki-parent>/.<wiki-dir-name>.wiki-studio.search.sqlite`,
+  beside the lock file and never inside the wiki, overridable with
+  `--search-cache` (a new common flag) or `WIKI_STUDIO_SEARCH_CACHE`; a path
+  inside the wiki is refused (exit 1). Every call rereads and hashes the
+  eligible pages and diffs them against the cache's content manifest in one
+  transaction, so the cached ranking equals a fresh one after any edit,
+  checkout, rename or delete. A cache built for another wiki, format or
+  ranker configuration is rebuilt; a corrupt one is removed and rebuilt; one
+  that cannot be used safely (a symlink, an unwritable or read-only
+  directory, a lock held past five seconds) makes that call rank in memory
+  with one warning, and `find` and `query` still exit 0. The file is created
+  owner-only (`0o600`). `WikiPaths` gains `search_cache` and
+  `search_cache_file()`; `info.discovery.cache` reports
+  `{path, state: present | missing | unusable, reason}`.
 
 ### Changed
 
@@ -39,6 +54,10 @@ uses [Semantic Versioning](https://semver.org/).
   until the page is fixed. The error names the page. Remedy: re-encode the
   page as UTF-8, or remove it and its index entry. Run `wiki-studio lint`
   before upgrading a wiki's tooling to see whether any page is affected.
+- Where the wiki lives in a git checkout, ignore the lock and the search
+  cache with one `.gitignore` pattern, `.<wiki-dir-name>.wiki-studio.*`
+  (`.wiki.wiki-studio.*` for the default `knowledge/wiki`). To reset the
+  search cache, delete the file; the next `fts5` call rebuilds it.
 
 ## [0.7.0] — 2026-10-27
 

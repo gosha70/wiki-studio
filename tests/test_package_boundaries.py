@@ -10,6 +10,7 @@ layout byte-for-byte while every location is overridable.
 
 from __future__ import annotations
 
+import ast
 import os
 import tempfile
 import unittest
@@ -18,7 +19,7 @@ from unittest.mock import patch
 
 from tests.conftest import PACKAGE_ROOT, make_repo_layout, run_cli
 from tests.test_cli_contract import _proposals_dir
-from wiki_studio.paths import ENV_WIKI_DIR
+from wiki_studio.paths import ENV_WIKI_DIR, SEARCH_CACHE_SUFFIX
 
 FORBIDDEN_STRINGS = ("code-copilot-team", "shared/", "specs/", "doc_internal", "knowledge/wiki")
 ALLOWED_FILES = {"paths.py", "cli.py"}
@@ -57,6 +58,50 @@ class TestNoForeignLayoutStrings(unittest.TestCase):
             source = (PACKAGE_ROOT / module).read_text(encoding="utf-8")
             self.assertNotIn("subprocess", source, f"{module} must not shell out")
             self.assertNotIn("lint-wiki", source)
+
+
+class TestSearchCacheSingleWriter(unittest.TestCase):
+    """0.8.0 (FR-012): ``search_index.py`` is the only module that opens the search cache or any SQLite file."""
+
+    CACHE_MODULE = "search_index.py"
+    SUFFIX_DEFINED_IN = "paths.py"
+
+    def _modules(self) -> list[tuple[str, ast.Module, str]]:
+        return [
+            (py.relative_to(PACKAGE_ROOT).as_posix(), ast.parse(source), source)
+            for py in sorted(PACKAGE_ROOT.rglob("*.py"))
+            for source in (py.read_text(encoding="utf-8"),)
+        ]
+
+    def test_only_search_index_calls_sqlite3_connect(self) -> None:
+        offenders: list[str] = []
+        for rel, tree, _source in self._modules():
+            for node in ast.walk(tree):
+                connects = (
+                    isinstance(node, ast.Attribute)
+                    and node.attr == "connect"
+                    and isinstance(node.value, ast.Name)
+                    and node.value.id == "sqlite3"
+                )
+                imports_connect = (
+                    isinstance(node, ast.ImportFrom)
+                    and node.module == "sqlite3"
+                    and any(alias.name in ("connect", "*") for alias in node.names)
+                )
+                if (connects or imports_connect) and rel != self.CACHE_MODULE:
+                    offenders.append(f"{rel}:{getattr(node, 'lineno', '?')}")
+        self.assertEqual(offenders, [], "sqlite3.connect outside search_index.py")
+
+    def test_only_search_index_names_the_cache_suffix(self) -> None:
+        offenders: list[str] = []
+        for rel, tree, source in self._modules():
+            names = {n.id for n in ast.walk(tree) if isinstance(n, ast.Name)}
+            names |= {a.name for n in ast.walk(tree) if isinstance(n, ast.ImportFrom) for a in n.names}
+            if "SEARCH_CACHE_SUFFIX" in names and rel not in (self.CACHE_MODULE, self.SUFFIX_DEFINED_IN):
+                offenders.append(f"{rel}: SEARCH_CACHE_SUFFIX")
+            if SEARCH_CACHE_SUFFIX in source and rel != self.SUFFIX_DEFINED_IN:
+                offenders.append(f"{rel}: {SEARCH_CACHE_SUFFIX!r} spelled out")
+        self.assertEqual(offenders, [])
 
 
 class TestLayoutContract(unittest.TestCase):

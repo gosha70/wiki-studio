@@ -56,6 +56,7 @@ from .paths import (
     ENV_LOCK_TIMEOUT,
     ENV_PROPOSALS_DIR,
     ENV_ROOT,
+    ENV_SEARCH_CACHE,
     ENV_SOURCE_ROOTS,
     ENV_WIKI_DIR,
     MANIFEST_NAME,
@@ -136,6 +137,14 @@ def _add_path_options(parser: argparse.ArgumentParser, *, suppress_defaults: boo
         help="Seconds to wait for the wiki lock that serialises wiki-studio writers on this machine "
         "(promote, propose, the ingest-log append, audit-flush); on expiry exit 10 with reason lock_timeout. "
         f"Default: {ENV_LOCK_TIMEOUT}, else {DEFAULT_LOCK_TIMEOUT:g}.",
+    )
+    parser.add_argument(
+        "--search-cache",
+        type=Path,
+        default=default,
+        metavar="PATH",
+        help="The fts5 ranker's rebuildable search cache; must lie outside the wiki. Deleting it is a safe reset. "
+        f"Default: {ENV_SEARCH_CACHE}, else a file beside the wiki's lock file (see `info`).",
     )
 
 
@@ -530,6 +539,7 @@ def _paths_from_args(args: argparse.Namespace) -> WikiPaths:
         proposals_dir=getattr(args, "proposals_dir", None),
         lock_timeout=getattr(args, "lock_timeout", None),
         source_roots=getattr(args, "source_root", None),
+        search_cache=getattr(args, "search_cache", None),
     )
 
 
@@ -673,17 +683,24 @@ def _do_query(args: argparse.Namespace) -> int:
         probe = discovery.fts5_available()
         if not probe.available:
             _fallback_notice("query", probe.reason)
-    result = api.query(
-        args.question,
-        _paths_from_args(args),
-        backend=args.backend,
-        file_back=args.file_back,
-        max_pages=args.max_pages,
-        output_dir=args.output_dir,
-        redact_output=not args.debug_unsafe_output,
-        max_bytes=args.max_bytes,
-        ranker=ranker,
-    )
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always", discovery.DiscoveryWarning)
+        result = api.query(
+            args.question,
+            _paths_from_args(args),
+            backend=args.backend,
+            file_back=args.file_back,
+            max_pages=args.max_pages,
+            output_dir=args.output_dir,
+            redact_output=not args.debug_unsafe_output,
+            max_bytes=args.max_bytes,
+            ranker=ranker,
+        )
+    for warning in caught:
+        if issubclass(warning.category, discovery.DiscoveryWarning):
+            print(f"warning: {warning.message}", file=sys.stderr)
+        else:
+            warnings.showwarning(warning.message, warning.category, warning.filename, warning.lineno)
     answer = result.answer
     if answer.answer:
         print(answer.answer)
@@ -854,6 +871,10 @@ def _do_info(args: argparse.Namespace) -> int:
         print(f"discovery: fts5 {fts5}; SQLite {found.sqlite_version}")
         print(f"default-ranker: {found.default_ranker}  ({found.default_ranker_source})")
         print(f"ranker-config-hash: {found.ranker_config_hash}")
+        cache = found.cache
+        if cache is not None:
+            note = f"; {cache['reason']}" if cache.get("reason") else ""
+            print(f"search-cache: {cache['path']}  ({cache['state']}{note})")
     manifest = contract.manifest
     if manifest.state == MANIFEST_PRESENT:
         policy = ", ".join(f"{key}={str(value).lower()}" for key, value in (manifest.policy or {}).items())
@@ -996,7 +1017,7 @@ _VERBS = (
 )
 
 # Global options that take a value; their value is not a positional for the legacy shim.
-_GLOBAL_VALUE_OPTIONS = ("--root", "--wiki-dir", "--proposals-dir", "--source-root", "--lock-timeout")
+_GLOBAL_VALUE_OPTIONS = ("--root", "--wiki-dir", "--proposals-dir", "--source-root", "--lock-timeout", "--search-cache")
 
 
 def _inject_legacy_v1_prefix(argv: list[str]) -> list[str]:

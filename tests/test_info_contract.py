@@ -149,7 +149,11 @@ class TestInfoJson(ManifestCase):
                 "default_ranker": discovery.DEFAULT_RANKER,
                 "default_ranker_source": "default",
                 "ranker_config_hash": discovery.ranker_config_hash(),
-                "cache": None,
+                "cache": {
+                    "path": str(self.paths.search_cache_file()),
+                    "state": "missing",
+                    "reason": "created on the first fts5 call",
+                },
             },
         )
         with mock.patch.dict(os.environ, {discovery.ENV_RANKER: "fts5"}):

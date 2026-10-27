@@ -41,10 +41,34 @@ code-copilot-team layout under the git toplevel of the current directory:
 | query log | `<root>/doc_internal/wiki-query-log.jsonl` | | |
 | ingest audit log | `<wiki-dir>/.audit/ingest-log.md` | | |
 | schema override | `<wiki-dir>/schema/` (used when present) | | |
+| wiki lock | `<wiki-parent>/.<wiki-dir-name>.wiki-studio.lock` | | |
+| search cache (the `fts5` ranker's index; must lie outside the wiki) | `<wiki-parent>/.<wiki-dir-name>.wiki-studio.search.sqlite` | `--search-cache` | `WIKI_STUDIO_SEARCH_CACHE` |
 
 Flags beat variables, variables beat defaults. The three flags are accepted
 before or after the verb. Relative flag and variable values are taken from
-the current directory.
+the current directory. A `--search-cache` or `WIKI_STUDIO_SEARCH_CACHE` path
+inside the wiki directory is refused (exit 1).
+
+The lock and the search cache sit beside the wiki directory, never inside it.
+Where the wiki lives in a git checkout, one `.gitignore` pattern covers both:
+
+```gitignore
+.<wiki-dir-name>.wiki-studio.*
+```
+
+(`.wiki.wiki-studio.*` for the default `knowledge/wiki`.) The search cache is
+derived data: `find` and `query` with `--ranker fts5` refresh it from the
+pages on every call (each eligible page is read and hashed, no timestamp
+shortcut), rebuild it when it was built for another wiki, format or ranker
+configuration, and remove and rebuild it when it is corrupt. When it cannot
+be used safely (a symlink at the path or its directory, a directory that is
+not writable, a read-only file system, another process holding it past five
+seconds) that call ranks with an in-memory index, prints one warning and
+still exits 0. The cache only ranks; the text a prompt carries is always read
+from the wiki in that call. It is created readable by its owner only, because
+it holds a copy of every eligible page's text. **To reset it, delete the
+file**; the next `fts5` call rebuilds it. `info` reports its path and state
+(`present`, `missing` or `unusable`, with a reason).
 
 ## Verbs
 
@@ -118,8 +142,8 @@ Promote writes a `receipt.json` beside the proposal (moved with it into
 finishes an interrupted archive step and never re-applies an edit.
 
 The wiki lock is an OS advisory lock on
-`<wiki-parent>/.<wiki-dir-name>.wiki-studio.lock`, outside the wiki (add it
-to `.gitignore`), keyed to the resolved wiki directory and taken by
+`<wiki-parent>/.<wiki-dir-name>.wiki-studio.lock`, outside the wiki (ignore
+it with the `.gitignore` pattern in Layout), keyed to the resolved wiki directory and taken by
 `promote`, `propose --promote`, proposal-directory creation, the ingest-log
 append and `audit-flush`. Its scope is one machine and one filesystem: it
 is not distributed, it does not protect against direct edits of wiki files
@@ -405,6 +429,7 @@ redacted fingerprint of it unless `--debug-unsafe-output` is given.
 | `WIKI_STUDIO_PROPOSALS_DIR` | proposals directory |
 | `WIKI_STUDIO_SOURCE_ROOTS` | `os.pathsep`-separated directories outside the root that local links in pages may reference (see Layout) |
 | `WIKI_STUDIO_RANKER` | the ranker `find` and `query` use when `--ranker` is not given: `fts5` or `index-first` (default `index-first`) |
+| `WIKI_STUDIO_SEARCH_CACHE` | where the `fts5` ranker keeps its search cache when `--search-cache` is not given (default beside the lock file; never inside the wiki; see Layout) |
 | `WIKI_STUDIO_ACTOR` | who proposes or promotes when `--by` is not given, recorded with source `env` (attribution, not authentication) |
 | `WIKI_STUDIO_BACKEND` | default backend name |
 | `WIKI_STUDIO_ENABLE_PI` | `1` adds `pi` to the auto-detect order |

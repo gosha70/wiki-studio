@@ -38,6 +38,8 @@ ENV_LOCK_TIMEOUT = "WIKI_STUDIO_LOCK_TIMEOUT"
 ENV_SOURCE_ROOTS = "WIKI_STUDIO_SOURCE_ROOTS"
 # Who proposes, promotes or approves when no ``--by`` is given (attribution, never authentication).
 ENV_ACTOR = "WIKI_STUDIO_ACTOR"
+# Where the ``fts5`` ranker keeps its rebuildable search cache (``--search-cache``; 0.8.0, FR-012).
+ENV_SEARCH_CACHE = "WIKI_STUDIO_SEARCH_CACHE"
 
 # Where an actor's name came from (``Actor.source``). The OS user name is never one of them.
 ACTOR_SOURCE_FLAG = "flag"
@@ -61,6 +63,9 @@ DEFAULT_LOCK_TIMEOUT = 30.0
 DEFAULT_WIKI_DIR = "knowledge/wiki"
 DEFAULT_PROPOSALS_DIR = "doc_internal/proposals"
 DEFAULT_QUERY_LOG = "doc_internal/wiki-query-log.jsonl"
+
+# The search cache beside the wiki, named as the lock file is (``<parent>/.<wiki-dir-name><suffix>``).
+SEARCH_CACHE_SUFFIX = ".wiki-studio.search.sqlite"
 
 # Fixed names inside the wiki directory.
 AUDIT_DIR_NAME = ".audit"
@@ -115,6 +120,30 @@ def _absolute(value: str | os.PathLike[str], cwd: Path) -> Path:
 def is_absolute_path(text: str) -> bool:
     """True for a path that is absolute on this platform, as POSIX, or as a Windows drive or UNC path."""
     return Path(text).is_absolute() or posixpath.isabs(text) or bool(_WINDOWS_ABSOLUTE_RE.match(text))
+
+
+def sidecar_path_for(wiki_dir: Path, suffix: str) -> Path:
+    """``<resolved-wiki-parent>/.<wiki-dir-name><suffix>``: a file beside the wiki, keyed to its resolved path."""
+    resolved = Path(wiki_dir).resolve()
+    return resolved.parent / f".{resolved.name}{suffix}"
+
+
+def search_cache_path_for(wiki_dir: Path) -> Path:
+    """The derived search cache for ``wiki_dir``, beside its lock file (FR-012)."""
+    return sidecar_path_for(wiki_dir, SEARCH_CACHE_SUFFIX)
+
+
+def path_inside_dir(path: Path, directory: Path) -> bool:
+    """True when ``path`` (its parent resolved, its last component not followed) lies in or at ``directory``."""
+    absolute = Path(path).absolute()
+    location = absolute.parent.resolve() / absolute.name
+    real_dir = Path(directory).resolve()
+    return location == real_dir or location.is_relative_to(real_dir)
+
+
+def _refuse_cache_inside_wiki(search_cache: Path, wiki_dir: Path) -> None:
+    if path_inside_dir(search_cache, wiki_dir):
+        raise ValueError(f"search cache {search_cache} is inside the wiki directory {wiki_dir}; it must lie outside it")
 
 
 class ContainmentError(ValueError):
@@ -230,6 +259,10 @@ class WikiPaths:
         local link (``--source-root``, ``WIKI_STUDIO_SOURCE_ROOTS``); empty by
         default. A local link target must resolve inside the root or one of
         these (the source boundary of FR-012).
+    search_cache : Path | None
+        An explicit location for the ``fts5`` search cache (``--search-cache``,
+        ``WIKI_STUDIO_SEARCH_CACHE``); None derives it beside the lock file
+        (:meth:`search_cache_file`). Never inside the wiki.
     """
 
     root: Path
@@ -240,6 +273,7 @@ class WikiPaths:
     schema_dir: Path
     lock_timeout: float = DEFAULT_LOCK_TIMEOUT
     source_roots: tuple[Path, ...] = ()
+    search_cache: Path | None = None
 
     @classmethod
     def for_root(
@@ -250,15 +284,20 @@ class WikiPaths:
         proposals_dir: Path | str | None = None,
         lock_timeout: float | None = None,
         source_roots: Sequence[Path | str] | None = None,
+        search_cache: Path | str | None = None,
     ) -> WikiPaths:
         """Build the layout under ``root`` with the defaults, optionally overriding the two directories.
 
         Relative inputs are made absolute against the current working directory (symlinks are
-        not resolved), so a layout never depends on a later working directory.
+        not resolved), so a layout never depends on a later working directory. A
+        ``search_cache`` inside the wiki directory raises ``ValueError``.
         """
         root_path = Path(root).absolute()
         wiki = Path(wiki_dir).absolute() if wiki_dir is not None else root_path / DEFAULT_WIKI_DIR
         proposals = Path(proposals_dir).absolute() if proposals_dir is not None else root_path / DEFAULT_PROPOSALS_DIR
+        cache = Path(search_cache).absolute() if search_cache is not None else None
+        if cache is not None:
+            _refuse_cache_inside_wiki(cache, wiki)
         return cls(
             root=root_path,
             wiki_dir=wiki,
@@ -268,6 +307,7 @@ class WikiPaths:
             schema_dir=wiki / SCHEMA_DIR_NAME,
             lock_timeout=DEFAULT_LOCK_TIMEOUT if lock_timeout is None else float(lock_timeout),
             source_roots=tuple(Path(p).absolute() for p in (source_roots or ())),
+            search_cache=cache,
         )
 
     @classmethod
@@ -279,6 +319,7 @@ class WikiPaths:
         proposals_dir: str | os.PathLike[str] | None = None,
         lock_timeout: float | None = None,
         source_roots: Sequence[str | os.PathLike[str]] | None = None,
+        search_cache: str | os.PathLike[str] | None = None,
         env: Mapping[str, str] | None = None,
         cwd: Path | None = None,
     ) -> WikiPaths:
@@ -288,7 +329,9 @@ class WikiPaths:
         to ``cwd``; defaults are relative to the resolved root. A lock timeout
         that is not a non-negative number raises ``ValueError``. ``source_roots``
         (the repeatable ``--source-root``) replaces the ``os.pathsep``-separated
-        list in ``WIKI_STUDIO_SOURCE_ROOTS``; both default to none.
+        list in ``WIKI_STUDIO_SOURCE_ROOTS``; both default to none. A search
+        cache (``--search-cache``, ``WIKI_STUDIO_SEARCH_CACHE``) inside the wiki
+        directory raises ``ValueError``.
         """
         environ: Mapping[str, str] = os.environ if env is None else env
         base = Path.cwd() if cwd is None else Path(cwd)
@@ -307,6 +350,9 @@ class WikiPaths:
         )
         roots = tuple(_absolute(value, base) for value in roots_value if value)
 
+        cache_value = search_cache or environ.get(ENV_SEARCH_CACHE)
+        cache_path = _absolute(cache_value, base) if cache_value else None
+
         timeout = lock_timeout
         if timeout is None:
             timeout_value = environ.get(ENV_LOCK_TIMEOUT)
@@ -319,7 +365,12 @@ class WikiPaths:
             raise ValueError(f"lock timeout must be a non-negative number of seconds, got {timeout!r}")
 
         return cls.for_root(
-            root_path, wiki_dir=wiki_path, proposals_dir=proposals_path, lock_timeout=timeout, source_roots=roots
+            root_path,
+            wiki_dir=wiki_path,
+            proposals_dir=proposals_path,
+            lock_timeout=timeout,
+            source_roots=roots,
+            search_cache=cache_path,
         )
 
     def with_wiki_dir(self, wiki_dir: Path) -> WikiPaths:
@@ -334,6 +385,10 @@ class WikiPaths:
             audit_log=wiki_dir / AUDIT_DIR_NAME / AUDIT_LOG_NAME,
             schema_dir=wiki_dir / SCHEMA_DIR_NAME,
         )
+
+    def search_cache_file(self) -> Path:
+        """The search cache: the explicit ``search_cache``, else the derived file beside the lock (FR-012)."""
+        return self.search_cache if self.search_cache is not None else search_cache_path_for(self.wiki_dir)
 
     @property
     def applied_dir(self) -> Path:

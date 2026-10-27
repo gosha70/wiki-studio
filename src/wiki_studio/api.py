@@ -938,7 +938,7 @@ def info(paths: WikiPaths) -> InfoResult:
     (exit 4) for a malformed or newer manifest and a symlinked override, and
     ``ValueError`` when ``WIKI_STUDIO_RANKER`` names no ranker.
     """
-    return replace(describe(paths), discovery=describe_discovery())
+    return replace(describe(paths), discovery=describe_discovery(paths))
 
 
 # ── propose from a directory of agent-written files ───────────

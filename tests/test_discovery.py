@@ -20,7 +20,7 @@ from pathlib import Path
 from unittest import mock
 
 from tests.conftest import FIXTURES_DIR, run_cli
-from wiki_studio import api, discovery
+from wiki_studio import api, discovery, search_index
 from wiki_studio.discovery import (
     DEFAULT_MAX_CONTEXT_BYTES,
     DEFAULT_RANKER_CONFIG,
@@ -172,7 +172,9 @@ class TestProbe(unittest.TestCase):
     def test_an_operational_error_is_unavailable_with_its_reason(self) -> None:
         discovery.fts5_available.cache_clear()
         self.addCleanup(discovery.fts5_available.cache_clear)
-        with mock.patch.object(discovery, "create_table", side_effect=sqlite3.OperationalError("no such module: fts5")):
+        with mock.patch.object(
+            search_index, "create_table", side_effect=sqlite3.OperationalError("no such module: fts5")
+        ):
             probe = discovery.fts5_available()
         self.assertFalse(probe.available)
         self.assertEqual(probe.reason, "no such module: fts5")

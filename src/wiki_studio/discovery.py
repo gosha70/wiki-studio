@@ -14,7 +14,9 @@ falls back to ``index-first`` and says why; it never fails.
 
 Each eligible page is read once per call, as bytes: that read is hashed, and
 its decoded text is what the prompt carries and what citations are checked
-against.
+against. The ``fts5`` ranker keeps its table in a rebuildable cache beside the
+wiki's lock file (:mod:`wiki_studio.search_index`), refreshed from those hashes
+on every call; the cache only ranks and never supplies text.
 """
 
 from __future__ import annotations
@@ -26,13 +28,15 @@ import os
 import posixpath
 import sqlite3
 import stat
+import warnings
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from .contract import DiscoveryInfo
+from .contract import DiscoveryInfo, read_manifest
+from .errors import ContractViolationError
 from .querier import DEFAULT_MAX_QUERY_PAGES, _extract_index_links, _select_query_candidates
 from .review import superseded_by
-from .search_index import IN_MEMORY_DATABASE, build_document, build_in_memory, create_table
+from .search_index import CacheIdentity, IndexedPage, build_document, describe_cache, probe_fts5, rank_cached
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -73,6 +77,10 @@ INDEX_NAME = "index.md"
 LOG_NAME = "log.md"
 # index.md and log.md are read as navigation and history, never ranked as pages.
 _NEVER_CANDIDATES = frozenset({INDEX_NAME, LOG_NAME})
+
+
+class DiscoveryWarning(UserWarning):
+    """A selection warning ``query`` passes on (the index over the budget, a search cache that could not be used)."""
 
 
 @dataclass(frozen=True)
@@ -140,20 +148,35 @@ class Fts5Probe:
 @functools.cache
 def fts5_available() -> Fts5Probe:
     """Create an FTS5 table with the tokenizer in a ``:memory:`` database, once per process."""
-    connection = sqlite3.connect(IN_MEMORY_DATABASE)
+    reason = probe_fts5(FTS5_TOKENIZER)
+    return Fts5Probe(available=reason is None, sqlite_version=sqlite3.sqlite_version, reason=reason)
+
+
+def _wiki_id(paths: WikiPaths) -> str:
+    """The manifest's ``wiki_id``, or the empty string for a legacy wiki or one whose manifest does not parse."""
     try:
-        create_table(connection, FTS5_TOKENIZER)
-    except sqlite3.OperationalError as exc:
-        return Fts5Probe(available=False, sqlite_version=sqlite3.sqlite_version, reason=str(exc))
-    finally:
-        connection.close()
-    return Fts5Probe(available=True, sqlite_version=sqlite3.sqlite_version)
+        manifest = read_manifest(paths)
+    except ContractViolationError:
+        return ""
+    return "" if manifest is None else manifest.wiki_id
 
 
-def describe_discovery(*, env: Mapping[str, str] | None = None) -> DiscoveryInfo:
+def cache_identity(paths: WikiPaths, config: RankerConfig = DEFAULT_RANKER_CONFIG) -> CacheIdentity:
+    """What the search cache for ``paths`` under ``config`` must have been built for (FR-013)."""
+    return CacheIdentity(
+        wiki_path=str(paths.wiki_dir.resolve()),
+        wiki_id=_wiki_id(paths),
+        ranker_config_hash=ranker_config_hash(config),
+        tokenizer=config.tokenizer,
+    )
+
+
+def describe_discovery(paths: WikiPaths | None = None, *, env: Mapping[str, str] | None = None) -> DiscoveryInfo:
     """``info``'s ``discovery`` (FR-010): the probe, the default ranker and its source, the live configuration hash.
 
-    Raises ``ValueError`` when ``WIKI_STUDIO_RANKER`` names no ranker.
+    With ``paths``, ``cache`` is the search cache's path and state (FR-018),
+    judged without writing anything. Raises ``ValueError`` when
+    ``WIKI_STUDIO_RANKER`` names no ranker.
     """
     probe = fts5_available()
     ranker, source = resolve_ranker(None, env=env)
@@ -164,6 +187,9 @@ def describe_discovery(*, env: Mapping[str, str] | None = None) -> DiscoveryInfo
         default_ranker=ranker,
         default_ranker_source=source,
         ranker_config_hash=ranker_config_hash(),
+        cache=None
+        if paths is None
+        else describe_cache(paths.search_cache_file(), paths.wiki_dir, cache_identity(paths)).as_dict(),
     )
 
 
@@ -259,11 +285,21 @@ def _validate_max_bytes(max_bytes: int) -> None:
         raise ValueError(f"max_bytes must be a positive integer, got {max_bytes!r}")
 
 
-def _rank_fts5(question: str, eligible: dict[str, LoadedPage], config: RankerConfig) -> list[str]:
-    order = list(eligible)
-    documents = (build_document(rel, eligible[rel].text) for rel in order)
-    with build_in_memory(documents, tokenizer=config.tokenizer) as index:
-        return index.rank(question, order=order, weights=config.weights, min_match_tokens=config.min_match_tokens)
+def _rank_fts5(
+    paths: WikiPaths, question: str, eligible: dict[str, LoadedPage], config: RankerConfig
+) -> tuple[list[str], str | None]:
+    """Rank through the on-disk cache, refreshed from this call's reads; the warning when it fell back to memory."""
+    pages = [IndexedPage(build_document(rel, page.text), page.sha256, page.bytes) for rel, page in eligible.items()]
+    outcome = rank_cached(
+        paths.search_cache_file(),
+        paths.wiki_dir,
+        cache_identity(paths, config),
+        pages,
+        question,
+        weights=config.weights,
+        min_match_tokens=config.min_match_tokens,
+    )
+    return outcome.ranked, outcome.warning
 
 
 def _rank_index_first(
@@ -288,7 +324,9 @@ def select(
     An empty ``index_md`` means the wiki has no readable ``index.md``; the
     caller decides what that means on its surface. Raises ``ValueError`` for
     an unknown ranker or a ``max_bytes`` that is not a positive integer.
-    Writes nothing.
+    Writes nothing into the wiki; the ``fts5`` ranker refreshes its search
+    cache beside it. Raises ``ContractViolationError`` when ``paths`` names a
+    search cache inside the wiki.
     """
     _validate_max_bytes(max_bytes)
     if ranker not in RANKERS:
@@ -319,19 +357,19 @@ def select(
         else:
             ineligible.append(read)
 
+    notes: list[str] = []
     if ranker == RANKER_FTS5:
-        ranked = _rank_fts5(question, eligible, config)
+        ranked, cache_warning = _rank_fts5(paths, question, eligible, config)
+        if cache_warning is not None:
+            notes.append(cache_warning)
     else:
         ranked = _rank_index_first(paths, question, len(links), eligible)
 
-    warnings: list[str] = []
     selected: list[LoadedPage] = []
     omitted: list[OmittedPage] = []
     loaded = index_bytes
     if index_bytes > max_bytes:
-        warnings.append(
-            f"{INDEX_NAME} alone is {index_bytes} bytes, over the {max_bytes}-byte budget; no page was loaded"
-        )
+        notes.append(f"{INDEX_NAME} alone is {index_bytes} bytes, over the {max_bytes}-byte budget; no page was loaded")
     else:
         for rel in ranked:
             if len(selected) >= max_pages:
@@ -352,5 +390,11 @@ def select(
         omitted=tuple(omitted),
         ineligible=tuple(ineligible),
         ranker_config_hash=config_hash,
-        warnings=tuple(warnings),
+        warnings=tuple(notes),
     )
+
+
+def warn_selection(selection: Selection) -> None:
+    """Pass a selection's warnings on as :class:`DiscoveryWarning` (``query`` has no result field for them)."""
+    for message in selection.warnings:
+        warnings.warn(message, DiscoveryWarning, stacklevel=2)

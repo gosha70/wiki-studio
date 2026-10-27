@@ -342,7 +342,7 @@ class DefaultQuerier:
 
     def query(self, question: str) -> QueryAnswer:
         # discovery imports this module (it wraps _select_query_candidates), so it is imported here.
-        from .discovery import DEFAULT_MAX_CONTEXT_BYTES, resolve_ranker, select
+        from .discovery import DEFAULT_MAX_CONTEXT_BYTES, resolve_ranker, select, warn_selection
 
         ranker, _source = resolve_ranker(self.ranker)
         selection = select(
@@ -352,6 +352,7 @@ class DefaultQuerier:
             max_bytes=DEFAULT_MAX_CONTEXT_BYTES if self.max_bytes is None else self.max_bytes,
             ranker=ranker,
         )
+        warn_selection(selection)
         index_md, pages_loaded, pages_content = selection.index_md, selection.pages_loaded, selection.pages_content
         if not index_md:
             raise SourceMissingError(

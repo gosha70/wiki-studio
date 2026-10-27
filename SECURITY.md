@@ -58,6 +58,23 @@ advisory unless you ask otherwise.
   filesystems are out of scope.
 - `promote` is the only code path that writes into the wiki, and
   `audit-flush` is the only one that runs `git commit`.
+- The `fts5` ranker's search cache (from 0.8.0) holds a full copy of the
+  text of every eligible page in an SQLite file beside the wiki,
+  `<wiki-parent>/.<wiki-dir-name>.wiki-studio.search.sqlite` by default. A
+  path inside the wiki is refused. The file is created with
+  `O_CREAT | O_EXCL | O_NOFOLLOW` and mode `0o600`, so the copy is readable
+  by its owner only (on Windows the directory's default ACL applies); a
+  wider directory still exposes the file's existence and size. The cache
+  only ranks: the text a prompt carries and citations are checked against is
+  read from the wiki in that call, never from the cache. SQLite opens paths
+  itself and follows symlinks, so wiki-studio checks the path and its
+  directory with `lstat` before every open and ranks in memory, without
+  opening, reading or removing anything, when either is a symlink; a corrupt
+  cache is removed only when it is a regular file. The remaining
+  check-then-open window lies outside the wiki boundary and touches only
+  derived data: a process that can swap the cache path for a symlink in that
+  window can already write the directory beside the wiki. `info` opens the
+  cache read-only, if at all.
 - `--by NAME` and `WIKI_STUDIO_ACTOR` are attribution, not authentication.
   The name recorded as `plan.json`'s `proposer` and the receipt's `actor`
   is whatever the caller supplied; nothing verifies it, and the OS user

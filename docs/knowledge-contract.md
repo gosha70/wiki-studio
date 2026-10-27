@@ -171,8 +171,25 @@ ranker is `fts5`, selection uses `index-first`, the result carries
 stderr and the exit code stays 0. A host that needs ranked discovery checks
 `info.discovery.fts5`.
 
-`default_ranker_source` is `env` or `default`. `cache` is `null` until the
-search cache ships.
+`default_ranker_source` is `env` or `default`.
+
+**Cache.** The `fts5` ranker keeps its FTS5 table in a rebuildable SQLite
+file beside the wiki's lock file,
+`<wiki-parent>/.<wiki-dir-name>.wiki-studio.search.sqlite` (or
+`--search-cache` / `WIKI_STUDIO_SEARCH_CACHE`; a path inside the wiki is
+refused with exit 1, or exit 4 for a `WikiPaths` built directly with one).
+It holds a `manifest` (path, sha256, bytes), the FTS5 `pages` table and a
+`meta` table (`cache_format`, `ranker_config_hash`, `wiki_path`, `wiki_id`,
+`sqlite_version`, `package_version`); `PRAGMA user_version` is the cache
+format, 1. Every `fts5` call refreshes it in one transaction from the hashes
+of this call's reads and ranks over the current paths only, so the cached
+ranking always equals a fresh in-memory one. A mismatched `meta` or format
+is rebuilt; a corrupt file is removed and rebuilt; a cache that cannot be
+used safely makes that call rank in memory with one entry in `warnings`.
+Cache state never changes the exit code, and the cache never supplies text
+to a prompt. `cache` in `info.discovery` is `{path, state, reason}` with
+`state` one of `present`, `missing` or `unusable`; `reason` is `null` for a
+current cache. `info` opens the file read-only, if at all.
 
 ## The policy and its hash
 
