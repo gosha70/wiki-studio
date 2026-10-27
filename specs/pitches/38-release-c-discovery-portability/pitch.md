@@ -4,7 +4,7 @@ title: "Release C, discovery and portability: FTS5 ranking behind the index-firs
 appetite: 6w
 bet_status: shaped
 cycle: ""
-circuit_breaker: "Core is the discovery half, S1, S2 and S3: standard library only, measured, and it ships alone if the cycle runs out. End of week 2: if S1 and S2 are not downhill, stop S4 and S5 and shelve the adapter to a follow-up issue. Tuning starts only after the held-out set (ingested wiki, its manifest, questions and gold) is frozen. End of week 3: if it is not frozen, FTS5 ships untuned as an opt-in ranker and index-first stays the default. A held-out ingest that promotes few documents is a finding, not a reason to retry; if fewer than 15 held-out questions end with a gold page, FTS5 also stays opt-in. End of week 4: if S4 is not downhill, shelve S4 and S5; 0.8.0 ships discovery alone, no dependency is added, and Release C stays open. End of week 5: if no host run has passed S5, ship the extra as a preview on the protocol-level suite and keep Release C open. Never add a core dependency, change an exit code, write the cache into the wiki, edit a frozen run, retry or hand-edit the held-out ingest, tune on the held-out set, or put approve or a model-spawning verb on the default MCP surface to stay on schedule."
+circuit_breaker: "Core is the discovery half, S1, S2 and S3: standard library only, measured, and it ships alone if the cycle runs out. End of week 2: if S1 and S2 are not downhill, stop S4 and S5 and shelve the adapter to a follow-up issue. Tuning starts only after the held-out set (ingested wiki, its manifest, questions and gold) is frozen. End of week 3: if it is not frozen, FTS5 ships untuned as an opt-in ranker and index-first stays the default. A held-out ingest that promotes few documents is a finding, not a reason to retry; if fewer than 15 held-out questions end with a gold page, or the frozen held-out wiki has fewer than ten eligible pages, FTS5 also stays opt-in. End of week 4: if S4 is not downhill, shelve S4 and S5; 0.8.0 ships discovery alone, no dependency is added, and Release C stays open. End of week 5: if no host run has passed S5, ship the extra as a preview on the protocol-level suite and keep Release C open. Never add a core dependency, change an exit code, write the cache into the wiki, edit a frozen run, retry or hand-edit the held-out ingest, tune on the held-out set, or put approve or a model-spawning verb on the default MCP surface to stay on schedule."
 shaped_by: "pitch-shaper (Claude Code) for gosha70"
 shaped_date: 2026-10-26
 ---
@@ -60,15 +60,19 @@ These facts drive the scopes and rabbit holes.
    imports `_select_query_candidates` and `DEFAULT_MAX_QUERY_PAGES`
    (`run.py:25`). `tests/test_navigation_eval.py` asserts runs 1 and 2
    against their committed `results.json` on every CI run. A change to that
-   function that moves any number fails CI. The index-first selector must
-   therefore stay as it is. It becomes the named fallback ranker.
+   function that moves any number fails CI. The body of
+   `_select_query_candidates` is therefore not edited. It becomes the
+   named fallback ranker. The one change near it is in a helper it calls
+   (finding 4), and it leaves every frozen number unchanged.
 3. **The stop list is frozen too.** `test_stop_list_is_the_queriers`
    requires `wiki_state._STOPWORDS` to equal `eval/navigation/stopwords.txt`.
    If tuning wants another stop list, that list is a separate constant.
 4. **A non-UTF-8 linked page breaks selection.** `_read_text_or_empty`
    (`wiki_state.py:147-152`) catches `OSError` only, and
-   `UnicodeDecodeError` is a `ValueError`. The new eligibility rule must
-   say what happens to such a page.
+   `UnicodeDecodeError` is a `ValueError`. The fix goes into that helper:
+   it catches `UnicodeDecodeError` as it catches `OSError` and returns
+   the empty string, so the selector's body is untouched. No frozen
+   fixture has a non-UTF-8 page, so no frozen number moves.
 5. **The single-writer scans are syntactic.** `tests/test_e2e.py:1054-1092`
    and `tests/test_audit.py:466-508` flag a write call on a line that
    mentions `wiki_dir`. A `sqlite3.connect(...)` under the wiki would pass
@@ -258,8 +262,10 @@ S4.
   wiki, no symlink on the way), is a regular file, is valid UTF-8, and
   does not carry `superseded_by` (D7). `index.md` and `log.md` are never
   candidates. A non-UTF-8 page (finding 4) is ineligible and counted in
-  the result. In the index-first path it is skipped rather than raised.
-  The frozen numbers do not move, and `test_navigation_eval` proves it.
+  the result. In the index-first path it reads as empty, through the
+  helper fix in finding 4, rather than raising. The selector's body is
+  not edited, the frozen numbers do not move, and `test_navigation_eval`
+  proves it.
 - **Documents.** The columns are path (the slug and path segments as
   words), title (frontmatter), headings and body (frontmatter removed).
 - **Query.** The question goes through the querier's tokenizer and the
@@ -285,10 +291,13 @@ S4.
   and the citation check still use the text read in this call (FR-014
   unchanged).
 - **CLI.** `find` and `query` gain `--ranker {fts5,index-first}` and
-  `--max-bytes N`. `find --json` gains the new keys. When FTS5 is missing,
+  `--max-bytes N`. The default ranker comes from `WIKI_STUDIO_RANKER`
+  when set, else the shipped default (D5); the flag overrides both, as
+  every other setting does. `find --json` gains the new keys. When FTS5 is missing,
   one notice goes to stderr. The exit code stays 0 (D4).
 - **Contract.** `info` gains a `discovery` key: `fts5` (bool),
-  `sqlite_version`, `default_ranker`, `cache` (path and state, from S2).
+  `sqlite_version`, `default_ranker` and where it came from (`flag`,
+  `env` or `default`), `cache` (path and state, from S2).
   New capabilities, each with a resolver: `ranked-discovery`
   (`api.find`'s `ranker` keyword) and `context-budget` (`max_bytes`).
   Both go into `docs/knowledge-contract.md`.
@@ -347,6 +356,11 @@ S4.
     ranking equals a fresh in-memory ranking.
   - A behaviour test that the wiki tree is byte-identical before and
     after every case (finding 5).
+- **Measured, not assumed.** S3's latency block reports the cached path
+  beside a fresh in-memory build with no cache, so the cache's value is
+  a number. S2 stays whatever that number says, because the roadmap
+  requires cache recovery tests; a cache that does not pay on small
+  wikis is reported as such.
 
 ### S3: Discovery evidence, ~10-14h
 
@@ -360,7 +374,11 @@ S4.
   with each ranker. For each question it reports both rankers: selection,
   hit at 1, hit at 5, distractor outranks gold, bytes and words loaded,
   omitted pages, and the grep negative control. It also reports:
-  - **counts**;
+  - **counts**, and beside every hit rate the number of eligible pages
+    in that wiki and the random baseline for that set (`run.py` already
+    computes it per question; the new runner reports it too). With a
+    five-page cap over a small wiki, hit at 5 mostly measures the cap,
+    and these two numbers say so;
   - **unanswerable-query behaviour**: the empty-selection rate, mean
     pages and mean bytes loaded for the `absent` questions;
   - **ingestion coverage**: inherited from run 2 for the development
@@ -368,8 +386,12 @@ S4.
     held-out wiki it is measured: documents promoted out of those
     ingested, and answerable questions whose answer landed in some page;
   - **context size**: bytes and words;
-  - **latency**: cold and warm `find`, median and p95 over five
-    repetitions, with the machine, Python and SQLite versions;
+  - **latency**: cold and warm `find` through the on-disk cache, and
+    `find` with a fresh in-memory index and no cache, median and p95 over
+    five repetitions, with the machine, Python and SQLite versions. The
+    cache's benefit is then a number: D2 rereads and hashes every page on
+    every call, so the cache saves only the FTS5 build, and on a small
+    wiki that may be less than opening SQLite;
   - **parameters**: the ranker configuration hash, `max_pages`,
     `max_bytes`, the tokenizer and the SQLite version.
 
@@ -417,10 +439,13 @@ S4.
      frozen. No tuning afterwards. Any later run is a new, labelled
      post-hoc version.
 - **Default decision (D5).** The held-out results decide the default
-  ranker, subject to D8b's floor. The numbers go into the README Evidence
-  section beside runs 1 and 2, and into the CHANGELOG: counts, ingestion
-  coverage, discordant pairs, absent behaviour, bytes and latency. The
-  caveats are stated: small sets, questions written by the author's
+  ranker, subject to D8b's and D8c's floors. The numbers go into the
+  README Evidence section beside runs 1 and 2, and into the CHANGELOG:
+  counts, eligible pages, random baselines, ingestion coverage,
+  discordant pairs, absent behaviour, bytes and latency. The CHANGELOG
+  says which basis the default rests on: the held-out measurement, or,
+  when a floor holds, that FTS5 stays opt-in for want of evidence rather
+  than from a measured loss. The caveats are stated: small sets, questions written by the author's
   tooling, and an ingest by one model in one attempt. These are no claims
   of superiority over other products.
 
@@ -459,20 +484,25 @@ S4.
 - **Server.** `src/wiki_studio/mcp_adapter/` builds on `MCPServer` with
   the stdio transport only (D11). At launch it resolves `--root`,
   `--wiki-dir`, `--proposals-dir`, `--source-root`, `--lock-timeout`,
-  `--search-cache` and `--by`, and the matching `WIKI_STUDIO_*`
-  variables, once, through `WikiPaths.resolve`. No tool takes a root,
-  directory, backend, actor or escape-hatch argument, so an agent cannot
-  retarget the server. Client-advertised MCP roots never widen the
-  configured ones.
+  `--search-cache`, `--ranker` and `--by`, and the matching
+  `WIKI_STUDIO_*` variables, once, through `WikiPaths.resolve`. No tool
+  takes a root, directory, backend, actor or escape-hatch argument, so
+  an agent cannot retarget the server. Client-advertised MCP roots never
+  widen the configured ones. A repeatable `--disable-tool NAME` removes
+  a tool from the surface; it can only remove, never add (D12). A host
+  that wants promotion to stay human starts the server with
+  `--disable-tool promote` (propose-only mode, documented by that name),
+  and the agent's proposals wait in the proposals directory for a person
+  to `promote` and `approve`.
 - **Tools** (the whole surface in 0.8.0, D12). Each tool is one `api`
   call, and all are synchronous, so they run in the SDK's worker thread
   (finding 15).
 
   | Tool | API call | Notes |
   |---|---|---|
-  | `find` | `api.find` | question, optional `max_pages` (at most 5) and `max_bytes`; returns ranker, pages with sha256 and bytes |
+  | `find` | `api.find` | question, optional `max_pages` (at most 5), `max_bytes` and `ranker` (per-call override of the launch default); returns ranker, pages with sha256 and bytes |
   | `read_page` | `api.read_page` | text and sha256; exit-7 and exit-4 errors as in the CLI |
-  | `propose` | `api.propose` | edits `{path, action, content, base_sha256?}`, optional `name` (default `mcp-<utc>-<hex>`), rationale; returns the name and warnings (a `DriftWarning` is captured, not printed) |
+  | `propose` | `api.propose` | edits `{path, action, content, base_sha256?}`, optional `name` (default `mcp-<utc>-<hex>`), rationale; calls `api.propose` with `assign_page_ids=True`, so every create gets a `page_id` as the CLI's `propose --from` does (D20); returns the name and warnings (a `DriftWarning` is captured, not printed) |
   | `promote` | `api.promote` | a proposal **name** resolved under the proposals directory by `propose`'s name rule, and `dry_run`; never `allow_out_of_repo`, `allow_unguarded_updates` or a caller-chosen `entry_point`; the receipt records `entry_point: "mcp"` (an additive value, documented in `docs/patch-set-format.md`); on a wiki with `auto_approve_on_promote` the result carries `approved_paths` and the auto-approval warning (D14) |
   | `lint` | `api.lint` | structural plus audit; `health` and `prose` booleans; never a backend, so the contradiction check cannot run |
   | `info` | `api.info` | plus an `adapter` block: adapter version, SDK version, the negotiated protocol version, the tool list |
@@ -480,7 +510,8 @@ S4.
   | `review_state` | `api.review_state` | read-only, model-free |
 
   Not exposed, with no flag to add them in 0.8.0: `approve`, `ingest`,
-  `query`, `audit-flush`, `init`.
+  `query`, `audit-flush`, `init`. `--disable-tool` can narrow this
+  surface further; nothing widens it.
 - **Actor (D13).** Fixed at launch by `--by` or `WIKI_STUDIO_ACTOR`.
   Tools take no `by`, so an agent cannot record a person's name as the
   proposer or promoter.
@@ -516,12 +547,15 @@ S4.
   fixtures" of the launch sequence. Cases:
   1. The server negotiates each tested version, or refuses one cleanly.
   2. `tools/list` is exactly the eight tools. No tool has a root,
-     directory, backend, actor or escape-hatch argument.
+     directory, backend, actor or escape-hatch argument. Started with
+     `--disable-tool promote`, the list lacks `promote`, a `promote` call
+     is an unknown-tool error, and the other seven work unchanged.
   3. `find` returns at most five index-linked pages within the budget
      and names its ranker.
   4. `read_page`'s sha256 equals the sha256 of the file's bytes. An
      absolute path, `../` or a symlink is an exit-7 error.
   5. `propose` writes a proposal and leaves the wiki byte-identical.
+     Its create carries a `page_id` of the documented form.
   6. `promote` of that name lands it, with a `committed` receipt and the
      archive.
   7. An `update` carrying `read_page`'s sha256 lands. The same update
@@ -577,7 +611,8 @@ D5, D8, D9, D14 and D16 change the build or the evidence materially. They
 were put to the owner, who decided them on 2026-10-26: D5 and D16
 confirmed, D8 and D14 overruled, and D9 kept as the owner's default. D8a
 and D8b are sub-decisions that carry out D8; the owner approved D8b and
-approved D8a with a correction (README files only) on 2026-10-27. The rest are the pitch's proposals.
+approved D8a with a correction (README files only) on 2026-10-27, and
+decided D8c on 2026-10-27 after the pitch review. The rest are the pitch's proposals.
 They follow from the repository's rules and can be overruled at the spec
 review.
 
@@ -601,9 +636,15 @@ review.
   `info.discovery.fts5`.
 - **D5 (owner decision, 2026-10-26: confirmed). FTS5 becomes the default
   ranker only if, on the held-out set, it is no worse than index-first at
-  hit at 1 and at hit at 5.** Otherwise it ships opt-in
-  (`--ranker fts5`), and the CHANGELOG says why. *Reason:* it ties the
-  user-visible change to a result that tuning could not see.
+  hit at 1 and at hit at 5,** and D8b's and D8c's floors hold. Otherwise
+  it ships opt-in (`--ranker fts5`, `WIKI_STUDIO_RANKER=fts5`, or the
+  server's `--ranker`), and the CHANGELOG says which basis the default
+  rests on. *Reason:* it ties the user-visible change to a result that
+  tuning could not see. Other tools pick a default by reasoning or by
+  reputation, and the field prefers bm25 to plain word overlap, so a
+  regression is unlikely in principle; the roadmap still asks for
+  retrieval "measured, not asserted", and a one-setting switch lets a
+  host follow the field's view without waiting.
 - **D6. The budget is in UTF-8 bytes,** over `index.md` plus the selected
   pages, whole pages only, default 65,536. *Reason:* bytes are
   deterministic and model-agnostic with the standard library, while
@@ -663,6 +704,18 @@ review.
   would be a new, labelled run. *Reason:* a one-attempt ingest can
   promote few documents. Run 1 promoted one of ten. A comparison over a
   handful of questions would pass D5 trivially.
+- **D8c (owner decision, 2026-10-27). A page floor for D5.** If the
+  frozen held-out wiki has fewer than ten eligible pages, the held-out
+  result is reported as measured, with its eligible page count and
+  random baseline, but does not change the default, so FTS5 ships
+  opt-in. *Reason:* run 2's ingest produced nine content pages, and
+  eight README files of similar size will likely produce about as many.
+  With a five-page cap over about nine candidates, every ranker loads
+  more than half the wiki, hit at 5 mostly measures the cap, and a tie
+  is likely; D5 would then pass on a tie that says almost nothing. D8b
+  counts questions, not pages, so it does not catch this. The risk is
+  accepted: FTS5 may ship opt-in only because the corpus was small, and
+  the CHANGELOG says so.
 - **D9 (owner's default, 2026-10-26: kept as proposed).** A separate
   agent session that sees only the held-out corpus, not the ranker code
   or the development results, writes the questions. The owner reviews
@@ -684,7 +737,11 @@ review.
   spawn a model or reach outside the proposal flow. The one way an
   agent's call leads to an approval is the wiki's own
   `auto_approve_on_promote` policy (D14). A host that wants more calls
-  the `api` itself.
+  the `api` itself. A host that wants less starts the server with
+  `--disable-tool NAME`, which only removes tools: the problem statement
+  names distinct proposal and promotion as part of the boundary hosts
+  need, and propose-only mode (`--disable-tool promote`) keeps promotion
+  human without a second code path.
 - **D13. The actor is fixed at launch;** tools take no `by`.
 - **D14 (owner decision, 2026-10-26: overruled the proposed refusal).
   MCP `promote` honours the wiki's `auto_approve_on_promote` policy and
@@ -710,6 +767,13 @@ review.
   capability. It reports itself through its own `info` tool, because the
   core build cannot tell whether the extra is installed where a host
   runs.
+
+- **D20. The MCP `propose` tool assigns `page_id` to creates**
+  (`assign_page_ids=True`), as the CLI's `propose --from` and `ingest`
+  do. *Reason:* `api.propose` defaults to no, so that memkernel's creates
+  land byte for byte until memkernel opts in (ADR-0002); an MCP agent
+  has no such bytes-for-bytes contract, and a page without an id is a
+  `no-page-id` finding the agent would then see in `findings`.
 
 ## Rabbit holes
 
@@ -809,8 +873,9 @@ shelved to a follow-up. The triggers, in order:
    untuned as an opt-in ranker, index-first stays the default, and the
    development results ship labelled "development set only". A held-out
    ingest that promotes few documents is a finding, not a reason to
-   retry. If fewer than 15 held-out questions end with a gold page, the
-   held-out result is reported and FTS5 stays opt-in (D8b).
+   retry. If fewer than 15 held-out questions end with a gold page
+   (D8b), or the frozen held-out wiki has fewer than ten eligible pages
+   (D8c), the held-out result is reported and FTS5 stays opt-in.
 3. **End of week 4.** If S4 is not downhill (the adapter passing S5's
    protocol cases through the SDK client, with the standard-library proof
    green), shelve S4 and S5. 0.8.0 ships discovery alone, no dependency is
@@ -837,3 +902,4 @@ chooses a fix session, a cut from the list above, or a hold.
 | 2026-10-26 | shaping → shaped | 5 scopes, 6w, one release (0.8.0, owner decision: all of Release C). Core S1-S3 (discovery); S4-S5 (adapter) shelve first. 19 proposed decisions; D5, D8, D9, D14 and D16 to confirm before the bet. New cycle when bet; cycle 02 (Release B) stays building until memkernel #48. |
 | 2026-10-26 | shaped (revised) | Owner decisions on the five open items: D5 and D16 confirmed; D8 overruled (the held-out set is a fresh corpus ingested as in run 2 under a frozen protocol, with ingestion coverage reported; proposed sources mapatlas docs at 7c3a8de (D8a) and a 15-gold-question floor for D5 (D8b), both to confirm); D9 kept as the owner's default (questions written from the held-out source documents before the ingest); D14 overruled (MCP promote honours `auto_approve_on_promote` and warns, no `--allow-auto-approve`). S3 now 10-14h; total 36-48h; appetite stays 6w. bet_status unchanged. |
 | 2026-10-27 | shaped (revised) | D8b approved. D8a approved with a correction: the held-out sources are the eight user-facing README files of mapatlas at 7c3a8de609fb8e2173a74a884afdc4029ff18ca5 (30,554 bytes); `experiment/rubric.md` and `experiment/results.md` removed. bet_status unchanged. |
+| 2026-10-27 | shaped (revised) | PR #50 review. Owner decision D8c: a ten-eligible-page floor for D5, with the random baseline and eligible page count reported beside every hit rate; `WIKI_STUDIO_RANKER` and a server `--ranker` flag set the default ranker; the CHANGELOG states the basis of the default. Fixes: the cache is measured against an in-memory build in S3's latency block; `--disable-tool NAME` (propose-only mode) can remove MCP tools but never add them, with a conformance case; MCP `propose` assigns `page_id` (D20); the non-UTF-8 fix lives in `_read_text_or_empty`, not in the selector. bet_status unchanged. |
