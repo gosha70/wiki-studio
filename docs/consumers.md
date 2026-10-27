@@ -154,6 +154,38 @@ writes on failure. A bridge therefore needs no rollback of its own:
   `.<wiki-dir-name>.wiki-studio.lock` beside the wiki directory; add it to
   `.gitignore` where the wiki lives in a git checkout.
 
+#### Since wiki-studio 0.7.0: approval records and review state
+
+- **Call `api.init` once per wiki.** It writes the root manifest
+  `<wiki>/.wiki-studio.json`. Without a manifest every page reads
+  `unapproved` (reason `manifest_missing`) and `approve` refuses (exit 4).
+  On an older wiki `init` adds the manifest and nothing else.
+- **Import approved revisions only.** `api.review_state(paths, pages=...)`
+  returns one `ReviewState` per page; its `state` is `approved`, `stale`
+  (a record exists, but not for the live bytes), `policy-changed` (records
+  for the live bytes exist, but none satisfies the current policy),
+  `unapproved` (no manifest, a draft, or no record) or `superseded` (the
+  page carries `superseded_by`, whatever its records say). Frontmatter
+  never makes a page approved: `status: stable` alone is `unapproved`.
+- **Import only the approved bytes.** `review_state` is read without the
+  lock, so the page can change after the call. For a page that reads
+  `approved`, read it with `api.read_page`, and import it only if the
+  sha256 of the bytes you read equals the state's `approved_sha256`. If it
+  differs, skip the page until the next run.
+- **`corrects` is memkernel's key, and its syntax is not final.**
+  wiki-studio keeps it byte for byte through `propose` and `promote` and
+  does not interpret it. The comma-separated single line is the starting
+  proposal; the syntax becomes final when memkernel defines its reference
+  grammar and ADR-0002 records it.
+- **Page ids are opt-in for the bridge.** `api.propose` adds a `page_id` to
+  creates only with `assign_page_ids=True`; by default (`False`) it writes
+  the caller's bytes unchanged.
+
+Details: [`knowledge-contract.md`](knowledge-contract.md) and
+[`adr/0002-page-identity-and-review-keys.md`](adr/0002-page-identity-and-review-keys.md).
+The loop cases in `tests/integration/test_release_b_loop.py` (CI job
+`memkernel-loop`) check a bridge against these rules.
+
 The contract tests in `tests/test_bridge_contract.py` replay the bridge's
 calls against wiki-studio, and `tests/test_snapshot_hazard.py` reproduces
 the outer-rollback hazard with a copy of the bridge's snapshot. The

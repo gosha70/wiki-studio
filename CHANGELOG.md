@@ -134,6 +134,8 @@ Limitations.
 - The packaged page schema is version 2 (ADR-0002): a new manifest declares
   `schema.version` 2, and a manifest declaring version 1 is still accepted.
   `propose --from` and `ingest` creates now carry a `page_id` line.
+- The README banner is pinned to the immutable commit that added it, so it
+  renders before the release tag exists and never changes under a release.
 
 ### Fixed
 

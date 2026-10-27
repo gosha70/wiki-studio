@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/gosha70/wiki-studio/v0.7.0/docs/assets/wiki-studio-banner.png" alt="Wiki-Studio — Turn information into living knowledge." width="760">
+  <img src="https://raw.githubusercontent.com/gosha70/wiki-studio/54bd46592032d86326366568ca2ca34b34228d55/docs/assets/wiki-studio-banner.png" alt="Wiki-Studio — Turn information into living knowledge." width="760">
 </p>
 <p align="center">
   <a href="https://memkernel.dev/wiki-studio/">memkernel.dev/wiki-studio</a> ·
@@ -237,7 +237,11 @@ Prints the resolved layout before anything runs: `layout: default` or
 from (`flag`, `env WIKI_STUDIO_…` or `default`) and whether they exist, the
 query and audit logs, and which schema copy applies (`packaged`, or
 `project` for a copy at `<wiki-dir>/schema/`). Overriding the root also
-counts as custom. Read-only, exit 0. `--version` stays a single line.
+counts as custom. Then the knowledge contract: package version, schema
+contract and fingerprints (with drift), format versions, capabilities and the
+root manifest (`governed`, `managed` or `legacy`); the keys are in
+`docs/knowledge-contract.md`. Read-only, exit 0 (4 for a malformed or newer
+manifest). `--version` stays a single line.
 
 | Flag | Effect |
 |---|---|
@@ -254,8 +258,16 @@ a wiki directory named like a page directory (`concepts`) still works.
 ### `wiki-studio init`
 
 Creates the wiki directory with a minimal `index.md` and `log.md` when they
-are absent (`promote` needs both). Never overwrites; a second run is a no-op.
-`--title` names a new index and log.
+are absent (`promote` needs both), and the root manifest
+`<wiki>/.wiki-studio.json`: the wiki's id, the schema contract and
+fingerprint, and the review policy (`approve` needs it). Never overwrites; a
+wiki made before 0.7.0 gains the manifest and nothing else changes; a second
+run is a no-op. Details in `docs/knowledge-contract.md`.
+
+| Flag | Effect |
+|---|---|
+| `--title TEXT` | names a new index and log |
+| `--update-schema` | acknowledge changed project schema overrides: rewrites only the manifest's `schema_fingerprint`, under the wiki lock |
 
 ### `wiki-studio propose --from <dir>`
 
@@ -325,9 +337,9 @@ arm for memkernel's lifecycle suite built on them (issue #10).
 | 1 | `ingest --check` rejected; fatal lint findings; a rejected flag combination |
 | 2 | backend not found (unknown name, CLI not on PATH, nothing to auto-detect); usage error |
 | 3 | backend invocation failed (non-zero exit, timeout) |
-| 4 | contract violation: the backend's response failed shape or semantic validation; a page `read` that is not UTF-8 |
+| 4 | contract violation: the backend's response failed shape or semantic validation; a page `read` that is not UTF-8; a malformed, newer or unknown-schema manifest; schema drift on a governed wiki; `approve` on a wiki without a manifest |
 | 5 | source file, page or proposal directory missing |
-| 6 | output write failure |
+| 6 | output write failure; `approve` published some records and then failed (the error names the pages published and not) |
 | 7 | source or proposal path outside the root (`--allow-out-of-repo` overrides); a `read` path outside the wiki |
 | 8 | verb not implemented |
 | 9 | promote: staged tree failed validation, or a revision precondition failed (stale or unguarded `update`, `create` of a page that now exists); the wiki is unchanged. approve: the batch was refused; nothing was written |

@@ -43,7 +43,7 @@ evidence; and "atomic" meaning exception rollback. Those break promises the
 README makes, so they come before any feature or promotion push. Retrieval
 and distribution follow, measured, not asserted.
 
-## Release A: safe changes (0.6.0) — specified, PR #37
+## Release A: safe changes (0.6.0) — shipped 2026-10-24
 
 Owner: Wiki Studio. Spec: `specs/wiki-studio-0-6-0/`. Exit evidence: every
 reproduced defect is a passing regression test through both entry points.
@@ -66,6 +66,9 @@ reproduced defect is a passing regression test through both entry points.
 - Fallback: a contract-compatible 0.5.1 subset if 0.6.0 slips.
 
 ## Release B: governed curation (joint with memkernel)
+
+Status: Wiki Studio's half shipped in 0.7.0 (2026-10-27); open until
+memkernel #48 lands and the `memkernel-loop` CI job passes.
 
 Depends on A. Exit evidence: one complete correction loop (retain, export,
 review, import, correct, next-session recall) passes on clean installs with
