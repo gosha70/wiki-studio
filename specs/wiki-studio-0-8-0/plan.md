@@ -3,7 +3,7 @@ spec_mode: full
 feature_id: wiki-studio-0-8-0
 risk_category: feature
 justification: "Adds a second ranker (FTS5 with bm25) behind the index-first workflow with a byte budget, a rebuildable SQLite cache beside the lock file with recovery rules, a preregistered held-out measurement that decides the default ranker, a structural rule that is an upgrade break (every page must be valid UTF-8), the first optional dependency (the official MCP SDK behind an extra) with an eight-tool agent surface, a conformance suite and a recorded host run; a full spec pins each behaviour, the preregistration order, the floors, the tool contract, the cache recovery rules and the cut order before an unattended build."
-status: draft
+status: approved
 date: 2026-10-27
 collaboration_mode: single
 origin:
