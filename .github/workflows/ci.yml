@@ -88,19 +88,19 @@ jobs:
     # in a fresh virtual environment, and tests/integration/ driving the real
     # WikiExporter and WikiImporter against the installed wiki-studio. Separate
     # from the coverage job; memkernel is never a dependency of the package or
-    # of the default dev group. Non-blocking (continue-on-error) until the job
-    # is green on main, then the flag goes. The four Release B loop cases run in
-    # the separate `memkernel-loop` job below.
+    # of the default dev group. Blocking since its first green run on main
+    # (6d7f886, run 40430238344, recorded in docs/compatibility.md). The four
+    # Release B loop cases run in the separate, non-blocking `memkernel-loop`
+    # job below.
     name: memkernel integration (compat)
     runs-on: ubuntu-latest
-    continue-on-error: true
     timeout-minutes: 30
     env:
       # The memkernel revision the harness is tested against: a git ref of
       # gosha70/memkernel (main at the merge of release/0.5.0rc1, 2026-10-26).
       # Also listed in docs/compatibility.md.
-      MEMKERNEL_REF: 641a508a2289b2d20775e6d149a0bb47678d1621
-      MEMKERNEL_REPO: https://github.com/gosha70/memkernel.git
+      MK_GIT_REF: 641a508a2289b2d20775e6d149a0bb47678d1621
+      MK_GIT_REPO: https://github.com/gosha70/memkernel.git
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -113,7 +113,7 @@ jobs:
         run: |
           python -m venv /tmp/compat
           /tmp/compat/bin/pip install --quiet --upgrade pip
-          /tmp/compat/bin/pip install --quiet dist/*.whl pytest "memkernel @ git+${MEMKERNEL_REPO}@${MEMKERNEL_REF}"
+          /tmp/compat/bin/pip install --quiet dist/*.whl pytest "memkernel @ git+${MK_GIT_REPO}@${MK_GIT_REF}"
           /tmp/compat/bin/pip check
           /tmp/compat/bin/python -c "import memkernel.wiki.sync, wiki_studio.api; print(wiki_studio.api.__file__)"
       - name: Run the clean-install harness against the installed packages
@@ -133,8 +133,8 @@ jobs:
     continue-on-error: true
     timeout-minutes: 30
     env:
-      MEMKERNEL_REF: 641a508a2289b2d20775e6d149a0bb47678d1621
-      MEMKERNEL_REPO: https://github.com/gosha70/memkernel.git
+      MK_GIT_REF: 641a508a2289b2d20775e6d149a0bb47678d1621
+      MK_GIT_REPO: https://github.com/gosha70/memkernel.git
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -147,7 +147,7 @@ jobs:
         run: |
           python -m venv /tmp/loop
           /tmp/loop/bin/pip install --quiet --upgrade pip
-          /tmp/loop/bin/pip install --quiet dist/*.whl pytest "memkernel @ git+${MEMKERNEL_REPO}@${MEMKERNEL_REF}"
+          /tmp/loop/bin/pip install --quiet dist/*.whl pytest "memkernel @ git+${MK_GIT_REPO}@${MK_GIT_REF}"
           /tmp/loop/bin/pip check
           /tmp/loop/bin/python -c "import memkernel.wiki.sync, wiki_studio.api; print(wiki_studio.api.__file__)"
       - name: Run the Release B loop cases against the installed packages

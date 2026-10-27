@@ -6,7 +6,7 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.7.0] — 2026-10-26
+## [0.7.0] — 2026-10-27
 
 Governed curation, wiki-studio's half of Release B in `docs/roadmap.md`
 (issue #38). It proves the bridge path that memkernel's exporter uses. It
@@ -205,9 +205,11 @@ Limitations.
   correction loop (`tests/integration/test_release_b_loop.py`) passes on
   clean installs with memkernel's counterpart, memkernel #48. That
   counterpart was not merged into the memkernel revision this release is
-  tested against, so the `memkernel-compat` and `memkernel-loop` CI jobs stay
-  non-blocking (`continue-on-error`), `release.yml` does not run them, and
-  `memkernel-loop` is expected to fail. No combined safety claim is made.
+  tested against. `memkernel-compat` (the bridge's creates and appends
+  against that pinned memkernel) is green on main and blocking, recorded in
+  `docs/compatibility.md`; `memkernel-loop` stays non-blocking
+  (`continue-on-error`) and is expected to fail; `release.yml` runs neither.
+  No combined safety claim is made.
 - No scope was cut by the circuit breaker. `page_id`, `superseded_by` with
   its chain and cycle checks, and `findings` all ship.
 - Approval records follow 0.6.0's guarantee: validated, serialised and
