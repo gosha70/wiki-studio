@@ -1,0 +1,37 @@
+{
+  "pitch_id": "38-release-c-discovery-portability",
+  "cycle": "03",
+  "updated_at": "2026-10-27T14:39:05Z",
+  "scopes": [
+    {
+      "id": "S1",
+      "name": "Ranked discovery with a context budget, ~6-8h",
+      "status": "uphill",
+      "last_updated": "2026-10-27T14:39:05Z"
+    },
+    {
+      "id": "S2",
+      "name": "The rebuildable cache, ~6-8h",
+      "status": "uphill",
+      "last_updated": "2026-10-27T14:39:05Z"
+    },
+    {
+      "id": "S3",
+      "name": "Discovery evidence, ~10-14h",
+      "status": "uphill",
+      "last_updated": "2026-10-27T14:39:05Z"
+    },
+    {
+      "id": "S4",
+      "name": "The MCP adapter as an extra, ~8-10h",
+      "status": "uphill",
+      "last_updated": "2026-10-27T14:39:05Z"
+    },
+    {
+      "id": "S5",
+      "name": "Conformance suite and a host run, ~6-8h",
+      "status": "uphill",
+      "last_updated": "2026-10-27T14:39:05Z"
+    }
+  ]
+}

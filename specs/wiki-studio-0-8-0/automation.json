@@ -1,0 +1,65 @@
+{
+  "schema_version": 2,
+  "profile": "pr",
+  "branch": {
+    "name": "feature/wiki-studio-0-8-0",
+    "base": "main",
+    "remote": "origin"
+  },
+  "phases": {
+    "source": "tasks.md",
+    "milestone_every": 7,
+    "max_phases": 5
+  },
+  "build": {
+    "max_turns": 120,
+    "permission_mode": "acceptEdits",
+    "max_fix_sessions_per_phase": 2
+  },
+  "test": {
+    "command": "poetry run ruff check src/ tests/ eval/ && poetry run ruff format --check src/ tests/ eval/ && poetry run mypy src/ && poetry run pytest -q -p no:cacheprovider --cov=wiki_studio --cov-fail-under=92",
+    "timeout_sec": 900
+  },
+  "review": {
+    "reviewers": [
+      {
+        "provider": "deepseek",
+        "specialization": "correctness",
+        "scope": "both",
+        "gating": true
+      }
+    ],
+    "max_rounds": 3,
+    "round_timeout_sec": 900,
+    "loop_timeout_sec": 2700
+  },
+  "caps": {
+    "wall_clock_sec": 43200,
+    "cost_usd": 150
+  },
+  "unattended": {
+    "on_review_breaker": "terminate",
+    "on_stale_finding": "terminate",
+    "on_origin_gate": "terminate",
+    "budget": {
+      "meter_all_invocations": true,
+      "estimate_unmetered": true,
+      "estimate_usd_per_invocation": 2.0
+    }
+  },
+  "notify": {
+    "command": ""
+  },
+  "pr": {
+    "closes": [
+      51
+    ],
+    "title": "feat: wiki-studio 0.8.0 — discovery and portability (Release C): FTS5 ranking with a context budget, rebuildable cache, held-out evidence, MCP adapter extra, conformance suite"
+  },
+  "merge": {
+    "enabled": false,
+    "require_green_ci": true,
+    "require_branch_protection": true,
+    "method": "merge"
+  }
+}
