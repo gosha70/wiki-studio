@@ -283,9 +283,21 @@ S4.
   proves it. Because that helper also serves the health checks, the
   prose lint and ingest's wiki state (finding 4), the structural lint
   gains one rule: a page that is not valid UTF-8 is a violation that
-  names the path. It is fatal like every structural violation, so
-  `promote` refuses a patch set that introduces one, and `lint` reports
-  an existing one once instead of every reader going quiet.
+  names the path. It is fatal like every structural violation, and
+  `promote` lints the whole staged wiki, not only the pages a patch set
+  touches. So a non-UTF-8 page anywhere in the wiki makes `lint` fail
+  and makes `promote` refuse every patch set, related or not, until the
+  page is fixed; the error names the page. Today such a wiki promotes,
+  because the structural lint reads with replacement characters, so
+  this is an upgrade break for a wiki that already holds one.
+- **Upgrade note (for the 0.8.0 CHANGELOG).** "0.8.0 adds a structural
+  rule: every wiki page must be valid UTF-8. A wiki that holds a page
+  that is not will fail `lint` and refuse every `promote` until the page
+  is fixed. The error names the page. Remedy: re-encode the page as
+  UTF-8, or remove it and its index entry. Run `wiki-studio lint` before
+  upgrading a wiki's tooling to see whether any page is affected." The
+  rule stays fatal: 0.6.0 handled its new link rule the same way, and
+  the fix is quick.
 - **Documents.** The columns are path (the slug and path segments as
   words), title (frontmatter), headings and body (frontmatter removed).
 - **Query.** The question goes through the querier's tokenizer and the
@@ -328,7 +340,10 @@ S4.
   oversized-page fixture covers skip-and-continue and an index over
   budget. A non-UTF-8 page fixture: `find` with either ranker skips it
   and counts it, `lint` reports the one violation with its path, and
-  `lint --health` and `lint --prose` complete without raising. The cap and tie order hold. A link to a symlinked page or to
+  `lint --health` and `lint --prose` complete without raising. An
+  existing non-UTF-8 page blocks an unrelated promote (a patch set that
+  only appends to `log.md`) with an error naming the page, and the same
+  promote succeeds once the page is re-encoded. The cap and tie order hold. A link to a symlinked page or to
   `../` is never a candidate. `find` leaves the wiki tree byte-identical.
 
 ### S2: The rebuildable cache, ~6-8h
@@ -926,3 +941,4 @@ chooses a fix session, a cut from the list above, or a hold.
 | 2026-10-27 | shaped (revised) | D8b approved. D8a approved with a correction: the held-out sources are the eight user-facing README files of mapatlas at 7c3a8de609fb8e2173a74a884afdc4029ff18ca5 (30,554 bytes); `experiment/rubric.md` and `experiment/results.md` removed. bet_status unchanged. |
 | 2026-10-27 | shaped (revised) | PR #50 review. Owner decision D8c: a ten-eligible-page floor for D5, with the random baseline and eligible page count reported beside every hit rate; `WIKI_STUDIO_RANKER` and a server `--ranker` flag set the default ranker; the CHANGELOG states the basis of the default. Fixes: the cache is measured against an in-memory build in S3's latency block; `--disable-tool NAME` (propose-only mode) can remove MCP tools but never add them, with a conformance case; MCP `propose` assigns `page_id` (D20); the non-UTF-8 fix lives in `_read_text_or_empty`, not in the selector. bet_status unchanged. |
 | 2026-10-27 | shaped (revised) | PR #50 review, second pass. Finding 4 lists the four callers of `_read_text_or_empty` and what each does after the change; a non-UTF-8 page becomes a structural-lint violation so it is reported once instead of reading as empty everywhere (S1). bet_status unchanged. |
+| 2026-10-27 | shaped (revised) | PR #50 review, third pass. `promote` lints the whole staged wiki, so an existing non-UTF-8 page refuses every promote: S1 says so, carries the 0.8.0 upgrade note with the remedy, and adds the blocked-then-fixed promote test. bet_status unchanged. |
