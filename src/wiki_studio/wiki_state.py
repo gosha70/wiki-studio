@@ -145,10 +145,14 @@ def _tokenise(text: str) -> set[str]:
 
 
 def _read_text_or_empty(path: Path) -> str:
-    """Return the file contents, or '' if the file is missing/unreadable."""
+    """Return the file contents, or '' if the file is missing, unreadable or not valid UTF-8.
+
+    A non-UTF-8 page reads as empty here, so no caller selects, checks or crashes on it;
+    the structural linter reports it (0.8.0, FR-003).
+    """
     try:
         return path.read_text(encoding="utf-8")
-    except (FileNotFoundError, OSError):
+    except (OSError, UnicodeDecodeError):
         return ""
 
 

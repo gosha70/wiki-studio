@@ -103,6 +103,8 @@ CAPABILITY_ATTRIBUTION = "attribution"
 CAPABILITY_APPROVAL_RECORD = "approval-record"
 CAPABILITY_SUPERSEDED_BY = "superseded-by"
 CAPABILITY_FINDINGS = "findings"
+CAPABILITY_RANKED_DISCOVERY = "ranked-discovery"
+CAPABILITY_CONTEXT_BUDGET = "context-budget"
 CAPABILITIES: tuple[str, ...] = (
     CAPABILITY_WIKI_LOCK,
     CAPABILITY_RECEIPTS,
@@ -113,6 +115,8 @@ CAPABILITIES: tuple[str, ...] = (
     CAPABILITY_APPROVAL_RECORD,
     CAPABILITY_SUPERSEDED_BY,
     CAPABILITY_FINDINGS,
+    CAPABILITY_RANKED_DISCOVERY,
+    CAPABILITY_CONTEXT_BUDGET,
 )
 
 UPDATE_SCHEMA_COMMAND = "wiki-studio init --update-schema"
@@ -501,6 +505,33 @@ class ManifestInfo:
 
 
 @dataclass(frozen=True)
+class DiscoveryInfo:
+    """``info``'s ``discovery`` (0.8.0, FR-010): FTS5 in this Python's SQLite, the default ranker and its hash.
+
+    ``cache`` is the search cache's path and state; None until the cache ships (US2).
+    """
+
+    fts5: bool
+    sqlite_version: str
+    fts5_reason: str | None
+    default_ranker: str
+    default_ranker_source: str
+    ranker_config_hash: str
+    cache: Mapping[str, Any] | None = None
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "fts5": self.fts5,
+            "sqlite_version": self.sqlite_version,
+            "fts5_reason": self.fts5_reason,
+            "default_ranker": self.default_ranker,
+            "default_ranker_source": self.default_ranker_source,
+            "ranker_config_hash": self.ranker_config_hash,
+            "cache": None if self.cache is None else dict(self.cache),
+        }
+
+
+@dataclass(frozen=True)
 class InfoResult:
     """What ``api.info`` reports about the shipped build and this wiki's contract (FR-010).
 
@@ -514,16 +545,20 @@ class InfoResult:
     capabilities: tuple[str, ...]
     manifest: ManifestInfo
     warnings: tuple[str, ...] = ()
+    discovery: DiscoveryInfo | None = None
 
     def as_dict(self) -> dict[str, Any]:
-        """The keys ``info --json`` adds to the 0.6.0 layout keys."""
-        return {
+        """The keys ``info --json`` adds to the 0.6.0 layout keys (``discovery`` from 0.8.0, when described)."""
+        data: dict[str, Any] = {
             "package_version": self.package_version,
             "schema_contract": self.schema_contract.as_dict(),
             "formats": dict(self.formats),
             "capabilities": list(self.capabilities),
             "manifest": self.manifest.as_dict(),
         }
+        if self.discovery is not None:
+            data["discovery"] = self.discovery.as_dict()
+        return data
 
 
 def describe(paths: WikiPaths) -> InfoResult:

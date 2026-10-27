@@ -33,10 +33,11 @@ import warnings
 from dataclasses import replace
 from pathlib import Path
 
-from . import __version__, api
+from . import __version__, api, discovery
 from .audit_flush import describe_flush
 from .backends import ENV_BACKEND, ENV_BACKEND_DEPRECATED
 from .contract import MANIFEST_PRESENT
+from .discovery import DEFAULT_MAX_CONTEXT_BYTES, ENV_RANKER, RANKER_FTS5, RANKERS, resolve_ranker
 from .errors import (
     BackendInvocationError,
     ContractViolationError,
@@ -136,6 +137,31 @@ def _add_path_options(parser: argparse.ArgumentParser, *, suppress_defaults: boo
         "(promote, propose, the ingest-log append, audit-flush); on expiry exit 10 with reason lock_timeout. "
         f"Default: {ENV_LOCK_TIMEOUT}, else {DEFAULT_LOCK_TIMEOUT:g}.",
     )
+
+
+def _add_discovery_flags(parser: argparse.ArgumentParser) -> None:
+    """``--ranker`` and ``--max-bytes``, shared by ``find`` and ``query`` (0.8.0, FR-009)."""
+    parser.add_argument(
+        "--ranker",
+        metavar="{" + ",".join(RANKERS) + "}",
+        default=None,
+        help=f"How pages are ranked: fts5 (bm25 over title, headings and body) or index-first (word overlap). "
+        f"Overrides {ENV_RANKER}; default index-first. Without FTS5 in this Python's SQLite, fts5 falls back "
+        "to index-first with a notice on stderr.",
+    )
+    parser.add_argument(
+        "--max-bytes",
+        type=int,
+        default=DEFAULT_MAX_CONTEXT_BYTES,
+        metavar="N",
+        help=f"Byte budget for index.md plus the selected pages (default {DEFAULT_MAX_CONTEXT_BYTES}); a page "
+        "that does not fit is skipped and the next one tried.",
+    )
+
+
+def _fallback_notice(verb: str, reason: str | None) -> None:
+    """The one stderr notice when ``fts5`` was asked for and this Python's SQLite has no FTS5 (FR-009)."""
+    print(f"{verb}: FTS5 is not available in this Python's SQLite ({reason}); using index-first", file=sys.stderr)
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:
@@ -325,6 +351,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         default=None,
         help="When --file-back: override the proposals directory.",
     )
+    _add_discovery_flags(p_query)
 
     # ── lint ───────────────────────────────────────────────────
     p_lint = sub.add_parser(
@@ -484,12 +511,13 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     p_find = sub.add_parser(
         "find",
         parents=[common],
-        help="Print the pages query would load for a question (index.md first, then index-linked pages "
-        "ranked by word overlap), without calling a model and without writing the query log.",
+        help="Print the pages query would load for a question (index.md first, then eligible index-linked "
+        "pages ranked by --ranker within --max-bytes), without calling a model and without writing the query log.",
     )
     p_find.add_argument("question", help="The question, in plain words.")
     p_find.add_argument("--max-pages", type=int, default=api.DEFAULT_MAX_QUERY_PAGES, help="At most this many pages.")
     p_find.add_argument("--json", action="store_true", help="Print the result as one JSON object.")
+    _add_discovery_flags(p_find)
 
     return parser
 
@@ -640,6 +668,11 @@ def _do_read(args: argparse.Namespace) -> int:
 
 def _do_query(args: argparse.Namespace) -> int:
     """Phase 3: index-first query against the wiki."""
+    ranker, _source = resolve_ranker(args.ranker)
+    if ranker == RANKER_FTS5:
+        probe = discovery.fts5_available()
+        if not probe.available:
+            _fallback_notice("query", probe.reason)
     result = api.query(
         args.question,
         _paths_from_args(args),
@@ -648,6 +681,8 @@ def _do_query(args: argparse.Namespace) -> int:
         max_pages=args.max_pages,
         output_dir=args.output_dir,
         redact_output=not args.debug_unsafe_output,
+        max_bytes=args.max_bytes,
+        ranker=ranker,
     )
     answer = result.answer
     if answer.answer:
@@ -813,6 +848,12 @@ def _do_info(args: argparse.Namespace) -> int:
     print(f"declared-fingerprint: {sc.declared_fingerprint or '(none)'}  (drift: {'yes' if sc.drift else 'no'})")
     print("formats: " + ", ".join(f"{name} {version}" for name, version in contract.formats.items()))
     print("capabilities: " + ", ".join(contract.capabilities))
+    found = contract.discovery
+    if found is not None:
+        fts5 = "yes" if found.fts5 else f"no ({found.fts5_reason})"
+        print(f"discovery: fts5 {fts5}; SQLite {found.sqlite_version}")
+        print(f"default-ranker: {found.default_ranker}  ({found.default_ranker_source})")
+        print(f"ranker-config-hash: {found.ranker_config_hash}")
     manifest = contract.manifest
     if manifest.state == MANIFEST_PRESENT:
         policy = ", ".join(f"{key}={str(value).lower()}" for key, value in (manifest.policy or {}).items())
@@ -895,20 +936,47 @@ def _do_propose(args: argparse.Namespace) -> int:
 def _do_find(args: argparse.Namespace) -> int:
     """Model-free page selection: what query would read."""
     paths = _paths_from_args(args)
-    result = api.find(args.question, paths, max_pages=args.max_pages)
+    ranker, _source = resolve_ranker(args.ranker)
+    result = api.find(args.question, paths, max_pages=args.max_pages, max_bytes=args.max_bytes, ranker=ranker)
+    if result.fallback_reason is not None:
+        _fallback_notice("find", result.fallback_reason)
+    for warning in result.warnings:
+        print(f"warning: {warning}", file=sys.stderr)
     if args.json:
         payload = {
             "question": result.question,
             "index": paths.relative_to_root(result.index),
-            "pages": [{"path": p.path, "file": paths.relative_to_root(p.file), "title": p.title} for p in result.pages],
+            "pages": [
+                {
+                    "path": p.path,
+                    "file": paths.relative_to_root(p.file),
+                    "title": p.title,
+                    "sha256": p.sha256,
+                    "bytes": p.bytes,
+                }
+                for p in result.pages
+            ],
+            "ranker": result.ranker,
+            "fallback_reason": result.fallback_reason,
+            "bytes_loaded": result.bytes_loaded,
+            "max_bytes": result.max_bytes,
+            "ranker_config_hash": result.ranker_config_hash,
+            "omitted": [{"path": o.path, "bytes": o.bytes} for o in result.omitted],
+            "ineligible": [{"path": i.path, "reason": i.reason} for i in result.ineligible],
+            "warnings": list(result.warnings),
         }
         print(json.dumps(payload, indent=2))
         return 0
+    print(f"ranker: {result.ranker}  ({result.bytes_loaded} of {result.max_bytes} bytes loaded)")
     print(f"{paths.relative_to_root(result.index)}  (always read first)")
     for page in result.pages:
-        print(f"{paths.relative_to_root(page.file)}  {page.title}")
+        print(f"{paths.relative_to_root(page.file)}  {page.title}  ({page.bytes} bytes)")
     if not result.pages:
         print("no index-linked page shares a word with the question; read the index.")
+    for omitted in result.omitted:
+        print(f"omitted (over the byte budget): {omitted.path}  ({omitted.bytes} bytes)")
+    for ineligible in result.ineligible:
+        print(f"ineligible: {ineligible.path}  ({ineligible.reason})")
     return 0
 
 

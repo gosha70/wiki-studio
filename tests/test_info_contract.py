@@ -7,9 +7,12 @@ from __future__ import annotations
 import dataclasses
 import inspect
 import json
+import os
+import sqlite3
+from unittest import mock
 
 from tests.test_manifest import EMPTY_SHA256, ManifestCase, decision_edit
-from wiki_studio import __version__, api, lint, paths, promoter, schema, wikilock
+from wiki_studio import __version__, api, discovery, lint, paths, promoter, schema, wikilock
 from wiki_studio.cli import _VERBS
 from wiki_studio.contract import CAPABILITIES, FORMATS, MANIFEST_INSTRUCTION
 from wiki_studio.proposal import PageEdit
@@ -70,6 +73,8 @@ class TestApiInfo(ManifestCase):
                 "approval-record",
                 "superseded-by",
                 "findings",
+                "ranked-discovery",
+                "context-budget",
             ),
         )
         self.assertEqual(
@@ -129,6 +134,31 @@ class TestInfoJson(ManifestCase):
         self.assertEqual(data["capabilities"], list(CAPABILITIES))
         self.assertEqual(data["formats"], dict(FORMATS))
 
+    def test_discovery_key(self) -> None:
+        """0.8.0 (FR-010, FR-011): ``discovery`` beside every 0.7.0 key; the ranker's source is env or default."""
+        api.init(self.paths)
+        with mock.patch.dict(os.environ, {discovery.ENV_RANKER: ""}):
+            data = json.loads(self.cli("info", "--json").stdout)
+        probe = discovery.fts5_available()
+        self.assertEqual(
+            data["discovery"],
+            {
+                "fts5": probe.available,
+                "sqlite_version": sqlite3.sqlite_version,
+                "fts5_reason": probe.reason,
+                "default_ranker": discovery.DEFAULT_RANKER,
+                "default_ranker_source": "default",
+                "ranker_config_hash": discovery.ranker_config_hash(),
+                "cache": None,
+            },
+        )
+        with mock.patch.dict(os.environ, {discovery.ENV_RANKER: "fts5"}):
+            info = api.info(self.paths)
+            text = self.cli("info")
+        assert info.discovery is not None
+        self.assertEqual((info.discovery.default_ranker, info.discovery.default_ranker_source), ("fts5", "env"))
+        self.assertIn("default-ranker: fts5  (env)", text.stdout)
+
     def test_the_old_schema_key_keeps_its_meaning(self) -> None:
         api.init(self.paths)
         (self.wiki / "schema").mkdir()
@@ -166,6 +196,8 @@ class TestAdvertisedContract(ManifestCase):
         edit_fields = {f.name for f in dataclasses.fields(PageEdit)}
         propose_params = inspect.signature(api.propose).parameters
         promote_params = inspect.signature(api.promote).parameters
+        find_params = inspect.signature(api.find).parameters
+        query_params = inspect.signature(api.query).parameters
         resolvers = {
             "wiki-lock": lambda: callable(wikilock.WikiLock) and "lock_file" in data,
             "receipts": lambda: bool(promoter.RECEIPT_FILE_NAME) and "receipt" in data["formats"],
@@ -183,6 +215,8 @@ class TestAdvertisedContract(ManifestCase):
                 bool(schema.SUPERSEDED_BY_KEY) and callable(lint.lint_wiki) and callable(api.review_state)
             ),
             "findings": lambda: "findings" in _VERBS and callable(api.findings) and "findings" in data["formats"],
+            "ranked-discovery": lambda: "ranker" in find_params and callable(discovery.fts5_available),
+            "context-budget": lambda: "max_bytes" in find_params and "max_bytes" in query_params,
         }
         for capability in CAPABILITIES:
             with self.subTest(capability):

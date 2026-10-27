@@ -284,6 +284,27 @@ class TestCliQuery(_LayoutCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("pages loaded: 1", result.stderr)
 
+    def test_query_ranker_and_max_bytes_flags(self) -> None:
+        """0.8.0 (FR-009): both flags are accepted; an unknown ranker or a non-positive budget exits 1."""
+        result = self.run_cli("query", "origin alignment", "--backend", "test", "--ranker", "index-first")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        result = self.run_cli("query", "origin alignment", "--backend", "test", "--max-bytes", "1")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("pages loaded: 0", result.stderr)
+        self.assertEqual(self.run_cli("query", "x", "--backend", "test", "--ranker", "nope").returncode, 1)
+        self.assertEqual(self.run_cli("query", "x", "--backend", "test", "--max-bytes", "0").returncode, 1)
+
+    def test_find_json_keeps_the_0_7_0_keys_and_adds_the_0_8_0_keys(self) -> None:
+        result = self.run_cli("find", "origin alignment", "--json")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        data = json.loads(result.stdout)
+        for key in ("question", "index", "pages", "ranker", "fallback_reason", "bytes_loaded", "max_bytes"):
+            self.assertIn(key, data)
+        for key in ("ranker_config_hash", "omitted", "ineligible", "warnings"):
+            self.assertIn(key, data)
+        for page in data["pages"]:
+            self.assertTrue({"path", "file", "title", "sha256", "bytes"} <= set(page))
+
     def test_query_file_back_writes_patch_set(self) -> None:
         with tempfile.TemporaryDirectory() as out:
             result = self.run_cli(

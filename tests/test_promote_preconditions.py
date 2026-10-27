@@ -498,10 +498,14 @@ class TestReadVerb(_Case):
         self.assertEqual(result.stdout, "")
         self.assertIn("not valid UTF-8", result.stderr)
 
-    def test_find_lists_pages_without_hashing(self) -> None:
+    def test_find_reports_the_sha256_of_the_bytes_it_read(self) -> None:
+        # 0.6.0 pinned that find did not hash; 0.8.0 (FR-008, FR-009) hashes the one read of each page.
         result = self.cli("find", "retry", "--json")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertNotIn("sha256", result.stdout)
+        data = self.page.read_bytes()
+        (page,) = json.loads(result.stdout)["pages"]
+        self.assertEqual(page["sha256"], hashlib.sha256(data).hexdigest())
+        self.assertEqual(page["bytes"], len(data))
 
 
 if __name__ == "__main__":

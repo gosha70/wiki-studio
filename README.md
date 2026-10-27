@@ -143,14 +143,16 @@ procedure is read, draft, record: read the page with `read --json`, write
 the new version from that content, and record the printed `sha256` as the
 edit's base revision, in `.base.json` beside a `propose --from` draft or as
 `PageEdit.base_sha256` for `api.propose`. `promote` then applies the
-replacement only while the live page still has that hash. `find` lists
-pages and does not hash them; `info` stays configuration.
+replacement only while the live page still has that hash. `find` reports
+the sha256 and byte count of each page it read (0.8.0); `info` stays
+configuration.
 
 ### `wiki-studio query "<question>"`
 
-Reads `index.md` first, loads the most relevant linked pages, asks the
-backend, and prints the answer; citations and the pages loaded go to
-stderr and the pages-loaded set is appended to the query log.
+Reads `index.md` first, loads the most relevant linked pages (selected as
+`find` selects them, see below), asks the backend, and prints the answer;
+citations and the pages loaded go to stderr and the pages-loaded set, the
+ranker and the bytes loaded are appended to the query log.
 
 Every citation in the reply is checked against the text that was in the
 prompt: the cited page must be `index.md` or one of the pages loaded, and
@@ -166,6 +168,8 @@ the fragment logically supports the answer.
 |---|---|
 | `--backend NAME` | as for ingest |
 | `--max-pages N` | cap on pages loaded into the prompt (default 5) |
+| `--ranker {fts5,index-first}` | how pages are ranked, as for `find` |
+| `--max-bytes N` | byte budget for `index.md` plus the pages, as for `find` |
 | `--file-back` | also ingest the question + answer as a source and write a patch-set the curator can promote; an `update` gets the fact warnings described under `ingest` |
 | `--output-dir DIR` | with `--file-back`, where to write that patch-set |
 | `--debug-unsafe-output` | as for ingest |
@@ -175,8 +179,11 @@ the fragment logically supports the answer.
 Structural lint of every page: frontmatter present and well formed with
 the required keys; `page_type` known; `slug` equals the file name and is
 unique; the page lives in its type's directory; intra-wiki links resolve;
-every page except `index.md` and `log.md` is reachable from `index.md`.
-The audit tree under `.audit/` is always checked against
+every page except `index.md` and `log.md` is reachable from `index.md`;
+every page (`index.md` and `log.md` included) is valid UTF-8. A page that is
+not is one violation, `<path>: not valid UTF-8 (<reason> at byte <n>)`, and
+its other checks are skipped; like every structural violation it fails
+`lint` and refuses every `promote` until the page is fixed (0.8.0). The audit tree under `.audit/` is always checked against
 `schema/audit-rules.md` as well.
 
 | Flag | Effect |
@@ -239,7 +246,9 @@ query and audit logs, and which schema copy applies (`packaged`, or
 `project` for a copy at `<wiki-dir>/schema/`). Overriding the root also
 counts as custom. Then the knowledge contract: package version, schema
 contract and fingerprints (with drift), format versions, capabilities and the
-root manifest (`governed`, `managed` or `legacy`); the keys are in
+root manifest (`governed`, `managed` or `legacy`), and discovery (whether
+this Python's SQLite has FTS5, the default ranker and where it came from, the
+ranker configuration hash); the keys are in
 `docs/knowledge-contract.md`. Read-only, exit 0 (4 for a malformed or newer
 manifest). `--version` stays a single line.
 
@@ -321,9 +330,32 @@ traceability, not tamper-proof evidence.
 ### `wiki-studio find "<question>"`
 
 Prints what `query` would put in front of a model, without calling one:
-`index.md` first, then up to five index-linked pages ranked by the words they
-share with the question, each with its title. Writes no query log. `--json`
-for a JSON object, `--max-pages N` for a different limit.
+`index.md` first, then up to five eligible index-linked pages within a byte
+budget, each with its title and size. Writes nothing (no query log, no file in
+the wiki). A page is eligible when `index.md` links it inside the wiki (no
+symlink, no `../`), it is a regular file, it is valid UTF-8 and it carries no
+`superseded_by`; `index.md` and `log.md` are never candidates.
+
+Two rankers order the eligible pages. `index-first` (the default) counts the
+question's words in each page's slug, path and first 400 characters, as
+0.7.0 did. `fts5` ranks by bm25 over SQLite FTS5 (path words, title, headings
+and body, weighted 4, 4, 2, 1); ties go to the page listed first in
+`index.md`. If this Python's SQLite has no FTS5, `fts5` falls back to
+`index-first`, prints one notice to stderr
+(`find: FTS5 is not available in this Python's SQLite (<reason>); using
+index-first`) and still exits 0; `info` reports whether FTS5 is available.
+
+The budget counts the UTF-8 bytes of `index.md` plus the selected pages. A
+page that does not fit is skipped, listed as omitted, and the next page is
+tried; pages are never truncated. If `index.md` alone is over budget, no
+page is loaded and a warning goes to stderr.
+
+| Flag | Effect |
+|---|---|
+| `--ranker {fts5,index-first}` | the ranker; overrides `WIKI_STUDIO_RANKER`, which overrides the default `index-first`; an unknown name exits 1 |
+| `--max-bytes N` | the byte budget (default 65536); not a positive integer: exit 1 |
+| `--max-pages N` | at most this many pages (default 5) |
+| `--json` | one JSON object: `question`, `index`, `pages` (`path`, `file`, `title`, `sha256`, `bytes`), `ranker`, `fallback_reason`, `bytes_loaded`, `max_bytes`, `ranker_config_hash`, `omitted` (`path`, `bytes`), `ineligible` (`path`, `reason`: `missing`, `not-regular-file`, `not-utf8` or `superseded`), `warnings` |
 
 `init`, `propose --from`, `find` and `read` are what an agent needs to use
 the wiki from a shell with no model backend; `docs/agent-arm/` holds a ready
@@ -372,6 +404,7 @@ redacted fingerprint of it unless `--debug-unsafe-output` is given.
 | `WIKI_STUDIO_WIKI_DIR` | wiki directory |
 | `WIKI_STUDIO_PROPOSALS_DIR` | proposals directory |
 | `WIKI_STUDIO_SOURCE_ROOTS` | `os.pathsep`-separated directories outside the root that local links in pages may reference (see Layout) |
+| `WIKI_STUDIO_RANKER` | the ranker `find` and `query` use when `--ranker` is not given: `fts5` or `index-first` (default `index-first`) |
 | `WIKI_STUDIO_ACTOR` | who proposes or promotes when `--by` is not given, recorded with source `env` (attribution, not authentication) |
 | `WIKI_STUDIO_BACKEND` | default backend name |
 | `WIKI_STUDIO_ENABLE_PI` | `1` adds `pi` to the auto-detect order |

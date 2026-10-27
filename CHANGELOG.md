@@ -6,6 +6,40 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Ranked discovery with a context budget (0.8.0, US1). `find` and `query`
+  gain `--ranker {fts5,index-first}` (or `WIKI_STUDIO_RANKER`) and
+  `--max-bytes N`. `fts5` ranks the eligible index-linked pages by bm25 over
+  SQLite FTS5 (path words, title, headings, body), ties by index order;
+  `index-first` is the 0.7.0 selector and stays the default. Without FTS5 in
+  the runtime's SQLite, `fts5` falls back to `index-first` with one stderr
+  notice and exit 0. A byte budget (default 65,536) over `index.md` plus the
+  pages skips a page that does not fit and tries the next. Superseded,
+  missing, non-regular and non-UTF-8 pages are never selected and are
+  reported as `ineligible`. `api.find` and `api.query` gain `max_bytes`,
+  `ranker` (and `api.find` `ranker_config`); `FindResult` gains `ranker`,
+  `fallback_reason`, `bytes_loaded`, `max_bytes`, `omitted`, `ineligible`,
+  `ranker_config_hash` and `warnings`; `FoundPage` gains `sha256` and
+  `bytes`; `find --json` prints them. The query log records `ranker` and
+  `bytes_loaded`. `info` gains a `discovery` key and the capabilities
+  `ranked-discovery` and `context-budget`. See `docs/knowledge-contract.md`.
+
+### Changed
+
+- A wiki page that is not valid UTF-8 is a structural lint violation (0.8.0,
+  FR-003), reported once as `<path>: not valid UTF-8 (<reason> at byte <n>)`.
+  Before, such a page read as empty in `find`, `query` and the health and
+  prose checks and could crash `lint --health`.
+
+### Upgrade notes
+
+- 0.8.0 adds a structural rule: every wiki page must be valid UTF-8. A wiki
+  that holds a page that is not will fail `lint` and refuse every `promote`
+  until the page is fixed. The error names the page. Remedy: re-encode the
+  page as UTF-8, or remove it and its index entry. Run `wiki-studio lint`
+  before upgrading a wiki's tooling to see whether any page is affected.
+
 ## [0.7.0] — 2026-10-27
 
 Governed curation, wiki-studio's half of Release B in `docs/roadmap.md`
