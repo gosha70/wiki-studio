@@ -176,35 +176,35 @@ S4 share no code, but the phases run in order because the driver runs one
 phase at a time. If S4 is cut (circuit breaker step 3), US4 and US5 keep
 only FR-047 and FR-048.
 
-## Owner-run steps outside the automation
+## Owner-run steps: the evidence PR
 
 Two runs need the owner's account and a model, so the build never performs
-them (FR-048; proposed, owner to confirm at spec review):
+them (FR-048; owner decision on the PR #52 review, 2026-10-27). The build
+PR merges once its review passes: that is safe, because `main` then ships
+`DEFAULT_RANKER = index-first`, the CHANGELOG says the basis is pending, and
+nothing depends on the evidence. The owner then does both runs in one
+separate evidence PR on `evidence/wiki-studio-0-8-0`, reviewed on its own
+and merged before the v0.8.0 tag, so code review and evidence review stay
+apart and the build PR does not sit open for weeks:
 
-1. **The held-out set** (after US3 has shipped the tooling; the questions
-   may be written earlier from `heldout/corpus/` once US3's task 29 has
-   copied it, or by a separate session over the mapatlas files directly):
-   questions by a separate agent session (FR-023) → `heldout_protocol.py
-   pin` and the probe (FR-024) → `ingest` once (FR-025) → `freeze-wiki`
-   (FR-026) → gold, owner review, `freeze` (FR-027) → `python -m
-   eval.navigation.discovery tune` on the development set (FR-021) →
-   `run3/ranker-config.json` committed → `discovery run --fixture
-   eval/navigation/heldout` once (FR-028) → `discovery decide` (FR-029) →
-   the default flip (or not), the CHANGELOG basis, the README numbers and
-   the sha256 pins, each an owner commit on the feature branch before the
-   tag. Until then the build ships `DEFAULT_RANKER = index-first` and the
-   CHANGELOG says the basis is pending.
-2. **The host run** (after US4 and US5): `claude -p` at a pinned version
-   against the fixture with `--trace`, `check-host-run`, the recorded run
-   directory and the compatibility row (FR-045, FR-046), an owner commit on
-   the feature branch. If it has not passed at release time, the extra ships
-   as a preview (FR-048, step 4).
+1. **The held-out set:** questions by a separate agent session (FR-023) →
+   `heldout_protocol.py pin` and the probe (FR-024) → `ingest` once
+   (FR-025) → `freeze-wiki` (FR-026) → gold, owner review, `freeze`
+   (FR-027) → `python -m eval.navigation.discovery tune` on the development
+   set, which first checks that `run3/results-untuned.json` reproduces under
+   `run3/ranker-config-untuned.json` (FR-021) → `run3/ranker-config.json`
+   committed and `DEFAULT_RANKER_CONFIG` updated → `discovery run --fixture
+   eval/navigation/heldout` once (FR-028) → `discovery decide` (FR-029) → the
+   default flip (or not), the CHANGELOG basis, the README numbers and the
+   sha256 pins.
+2. **The host run:** `claude -p` at a pinned version against the fixture
+   with `--trace`, `check-host-run`, the recorded run directory and the
+   compatibility row (FR-045, FR-046). If it has not passed at release time,
+   the extra ships as a preview (FR-048, step 4).
 
-The alternative is a milestone pause after US3 (`milestone_every: 3`), so
-the owner performs step 1 before US4 starts and the build itself tunes,
-runs the held-out set and decides the default in US5. It costs a resume and
-holds the adapter until the ingest is done; the owner chooses at spec
-review. `automation.json` is written for the no-pause design.
+The unattended run has no milestone pause (`automation.json` keeps
+`milestone_every: 7`); a pause after US3 was considered and rejected because
+it would hold the adapter until the ingest is done, for no gain.
 
 ## Unattended run
 
@@ -258,7 +258,7 @@ before the build.
 ## Risks
 
 - **The owner's schedule.** The held-out ingest and the host run are
-  outside the automation. Mitigation: FR-048's week-3 and week-5 rules (FTS5
+  outside the automation, in the evidence PR. Mitigation: FR-048's week-3 and week-5 rules (FTS5
   opt-in untuned; the extra as a preview), the tools' refusal to run out of
   order, and the CHANGELOG stating the basis of the default either way.
 - **A thin held-out result.** A one-attempt ingest may promote few of eight
@@ -272,10 +272,20 @@ before the build.
 - **The check-then-open window on the cache path.** SQLite follows
   symlinks; `lstat` precedes every open and the window touches only derived
   data outside the wiki; `SECURITY.md` says so (FR-015).
+- **The cache is a copy of the wiki's text.** The FTS5 table holds every
+  eligible page's text in a file beside the wiki. Mitigation: the file is
+  created owner-only (FR-015), lives outside the wiki and the repository's
+  tracked tree (`.gitignore`), and `SECURITY.md` says what it holds.
+- **Tuned constants versus frozen results.** Once the live default changes,
+  a results file re-run under live code no longer matches. Mitigation: every
+  results file records its configuration and reproduces under it in memory
+  (FR-020); the untuned configuration stays committed (FR-021).
 - **SDK churn.** Four 2.x minors in ten weeks. Mitigation: the pin below 3,
   `mcp-min` and `mcp-latest`, one `api` call per tool, stdio only, no
-  hand-written JSON-RPC; a break in `mcp-latest` is a CI failure to fix,
-  never a reason to widen the pin.
+  hand-written JSON-RPC; a new SDK release that breaks `mcp-latest` is answered by a fix PR that
+  lowers the ceiling to the last known-good minor, with an issue for the
+  adaptation (FR-044); the pin is never widened and the job never becomes
+  non-blocking.
 - **Review depth.** Two independent halves and a new dependency; 0.7.0's
   build review found six defects. Mitigation: the four reviewer-first areas
   (preregistration order, floors and baselines, the tool contract, cache
