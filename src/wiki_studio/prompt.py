@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import json
 import re
-from importlib import resources
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -15,6 +14,7 @@ if TYPE_CHECKING:
     from .paths import WikiPaths
 
 from . import yaml_lite
+from .contract import load_schema
 from .errors import ContractViolationError
 from .schema import PROMOTABLE_PAGE_TYPES
 
@@ -22,15 +22,8 @@ from .schema import PROMOTABLE_PAGE_TYPES
 # Schema paths (read at runtime, never embedded in source)
 # ---------------------------------------------------------------------------
 
-_SCHEMA_NAMES = ("ingest-rules", "page-types", "citation-rules")
-
 # Kebab-case: only lowercase letters, digits, hyphens; no leading/trailing hyphen.
 _KEBAB_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
-
-
-def _read_packaged_schema(name: str) -> str:
-    """Read one schema document shipped as package data under ``wiki_studio/schema/``."""
-    return resources.files(__package__).joinpath("schema", f"{name}.md").read_text(encoding="utf-8")
 
 
 def load_schema_files(paths: WikiPaths) -> dict[str, str]:
@@ -38,12 +31,12 @@ def load_schema_files(paths: WikiPaths) -> dict[str, str]:
 
     A document present under the project's own ``<wiki>/schema/`` wins; any
     document missing there comes from the copy packaged with wiki_studio.
+    The documents are read by the one contained loader
+    (:func:`wiki_studio.contract.load_schema`), so the bytes a prompt shows
+    are the bytes the schema fingerprint hashes; a symlinked override or
+    schema directory is refused (``ContractViolationError``, exit 4).
     """
-    result: dict[str, str] = {}
-    for name in _SCHEMA_NAMES:
-        local = paths.schema_dir / f"{name}.md"
-        result[name] = local.read_text(encoding="utf-8") if local.is_file() else _read_packaged_schema(name)
-    return result
+    return dict(load_schema(paths).texts)
 
 
 # ---------------------------------------------------------------------------

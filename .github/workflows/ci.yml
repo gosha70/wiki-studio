@@ -83,6 +83,77 @@ jobs:
         # toolchain resolved in poetry.lock.
         run: poetry run pip-audit --skip-editable
 
+  memkernel-compat:
+    # The clean-install harness (0.7.0 FR-004): the wheel and a pinned memkernel
+    # in a fresh virtual environment, and tests/integration/ driving the real
+    # WikiExporter and WikiImporter against the installed wiki-studio. Separate
+    # from the coverage job; memkernel is never a dependency of the package or
+    # of the default dev group. Non-blocking (continue-on-error) until the job
+    # is green on main, then the flag goes. The four Release B loop cases run in
+    # the separate `memkernel-loop` job below.
+    name: memkernel integration (compat)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 30
+    env:
+      # The memkernel revision the harness is tested against: a git ref of
+      # gosha70/memkernel (main at the merge of release/0.5.0rc1, 2026-10-26).
+      # Also listed in docs/compatibility.md.
+      MEMKERNEL_REF: 641a508a2289b2d20775e6d149a0bb47678d1621
+      MEMKERNEL_REPO: https://github.com/gosha70/memkernel.git
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - uses: snok/install-poetry@v1
+      - name: Build the wheel
+        run: poetry build
+      - name: Install the wheel, pytest and the pinned memkernel into a fresh virtual environment
+        run: |
+          python -m venv /tmp/compat
+          /tmp/compat/bin/pip install --quiet --upgrade pip
+          /tmp/compat/bin/pip install --quiet dist/*.whl pytest "memkernel @ git+${MEMKERNEL_REPO}@${MEMKERNEL_REF}"
+          /tmp/compat/bin/pip check
+          /tmp/compat/bin/python -c "import memkernel.wiki.sync, wiki_studio.api; print(wiki_studio.api.__file__)"
+      - name: Run the clean-install harness against the installed packages
+        # The import check above guarantees the suite is not skipped here.
+        run: /tmp/compat/bin/python -m pytest -q -p no:cacheprovider -rs tests/integration/test_memkernel_clean_install.py
+
+  memkernel-loop:
+    # The four Release B loop cases end to end (0.7.0 FR-004, FR-032): retain,
+    # export, review through api.approve, import, correct, next-session recall,
+    # plus the retry property, against the same pinned memkernel. EXPECTED TO
+    # FAIL until memkernel's counterpart (memkernel #48: snapshot removal and an
+    # importer that reads review_state) is merged; non-blocking until then, and
+    # blocking for the 0.7.0 tag only after that merge (FR-039). The cases are
+    # never skipped or marked as expected failures here.
+    name: memkernel Release B loop (expected to fail until memkernel #48)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 30
+    env:
+      MEMKERNEL_REF: 641a508a2289b2d20775e6d149a0bb47678d1621
+      MEMKERNEL_REPO: https://github.com/gosha70/memkernel.git
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - uses: snok/install-poetry@v1
+      - name: Build the wheel
+        run: poetry build
+      - name: Install the wheel, pytest and the pinned memkernel into a fresh virtual environment
+        run: |
+          python -m venv /tmp/loop
+          /tmp/loop/bin/pip install --quiet --upgrade pip
+          /tmp/loop/bin/pip install --quiet dist/*.whl pytest "memkernel @ git+${MEMKERNEL_REPO}@${MEMKERNEL_REF}"
+          /tmp/loop/bin/pip check
+          /tmp/loop/bin/python -c "import memkernel.wiki.sync, wiki_studio.api; print(wiki_studio.api.__file__)"
+      - name: Run the Release B loop cases against the installed packages
+        # The import check above guarantees the suite is not skipped here.
+        run: /tmp/loop/bin/python -m pytest -q -p no:cacheprovider -rs tests/integration/test_release_b_loop.py
+
   build-check:
     name: Build Check
     runs-on: ubuntu-latest

@@ -26,7 +26,20 @@ from wiki_studio.errors import (
     SourceMissingError,
 )
 
-_VERBS = ("ingest", "promote", "query", "lint", "audit-flush", "info", "init", "propose", "find", "read")
+_VERBS = (
+    "ingest",
+    "promote",
+    "approve",
+    "query",
+    "lint",
+    "findings",
+    "audit-flush",
+    "info",
+    "init",
+    "propose",
+    "find",
+    "read",
+)
 
 _PAGE = (
     "---\npage_type: {page_type}\nslug: {slug}\ntitle: {title}\nstatus: stable\n"
@@ -132,7 +145,7 @@ class TestCliHelp(_LayoutCase):
         result = self.run_cli("--version")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), __version__)
-        self.assertEqual(__version__, "0.6.0")
+        self.assertEqual(__version__, "0.7.0")
 
     def test_each_verb_help_exits_zero(self) -> None:
         for verb in _VERBS:
@@ -356,6 +369,49 @@ class TestCliAuditFlush(_LayoutCase):
         result = self.run_cli("audit-flush", "--dry-run")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("1 pending", result.stdout + result.stderr)
+
+
+class TestCliKnowledgeContract(_LayoutCase):
+    """0.7.0 (US2): ``init`` writes the manifest, ``info`` reports it, and a changed override is drift."""
+
+    def _manifest(self) -> Path:
+        return self.root / "knowledge" / "wiki" / ".wiki-studio.json"
+
+    def test_init_help_names_update_schema(self) -> None:
+        self.assertIn("--update-schema", self.run_cli("init", "--help").stdout)
+
+    def test_init_then_info_on_a_wiki_with_a_project_schema_copy(self) -> None:
+        result = self.run_cli("init")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("manifest: created", result.stdout)
+        data = json.loads(self.run_cli("info", "--json").stdout)
+        self.assertEqual((data["manifest"]["state"], data["manifest"]["mode"]), ("present", "managed"))
+        self.assertEqual(data["schema_contract"]["source"], "project")
+        self.assertFalse(data["schema_contract"]["drift"])
+        ingested = self.run_cli("ingest", str(self.sample), "--backend", "test")
+        self.assertEqual(ingested.returncode, 0, ingested.stderr)
+
+    def test_a_changed_override_warns_on_promote_until_update_schema(self) -> None:
+        self.run_cli("init")
+        written = Path(self.run_cli("ingest", str(self.sample), "--backend", "test").stdout.strip())
+        with (self.root / "knowledge" / "wiki" / "schema" / "citation-rules.md").open("a", encoding="utf-8") as fh:
+            fh.write("\nOne more rule.\n")
+        dry = self.run_cli("promote", "--dry-run", str(written))
+        self.assertEqual(dry.returncode, 0, dry.stderr)
+        self.assertIn("warning: schema drift", dry.stderr)
+        self.assertIn("manifest: updated", self.run_cli("init", "--update-schema").stdout)
+        self.assertNotIn("schema drift", self.run_cli("promote", "--dry-run", str(written)).stderr)
+
+    def test_a_newer_manifest_is_exit_4_naming_both_versions(self) -> None:
+        self.run_cli("init")
+        data = json.loads(self._manifest().read_text(encoding="utf-8"))
+        data["manifest_version"] = 99
+        self._manifest().write_text(json.dumps(data), encoding="utf-8")
+        for argv in (("init",), ("info", "--json"), ("promote", "--dry-run", str(_proposals_dir(self.root)))):
+            result = self.run_cli(*argv)
+            self.assertEqual(result.returncode, 4, argv)
+            self.assertIn("manifest_version 99", result.stderr)
+            self.assertIn("manifest_version 1", result.stderr)
 
 
 if __name__ == "__main__":

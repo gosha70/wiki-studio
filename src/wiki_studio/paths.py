@@ -36,6 +36,14 @@ ENV_PROPOSALS_DIR = "WIKI_STUDIO_PROPOSALS_DIR"
 ENV_LOCK_TIMEOUT = "WIKI_STUDIO_LOCK_TIMEOUT"
 # ``os.pathsep``-separated directories outside the root that page links may reference (``--source-root``).
 ENV_SOURCE_ROOTS = "WIKI_STUDIO_SOURCE_ROOTS"
+# Who proposes, promotes or approves when no ``--by`` is given (attribution, never authentication).
+ENV_ACTOR = "WIKI_STUDIO_ACTOR"
+
+# Where an actor's name came from (``Actor.source``). The OS user name is never one of them.
+ACTOR_SOURCE_FLAG = "flag"
+ACTOR_SOURCE_ENV = "env"
+ACTOR_SOURCE_NONE = "none"
+ACTOR_SOURCES: frozenset[str] = frozenset({ACTOR_SOURCE_FLAG, ACTOR_SOURCE_ENV, ACTOR_SOURCE_NONE})
 
 # Why ``contain`` refused a candidate (``ContainmentError.reason``).
 CONTAIN_ABSOLUTE = "absolute"
@@ -59,6 +67,8 @@ AUDIT_DIR_NAME = ".audit"
 AUDIT_LOG_NAME = "ingest-log.md"
 SCHEMA_DIR_NAME = "schema"
 APPLIED_DIR_NAME = ".applied"
+# The root manifest: the wiki's identity, schema contract and policy (written only by ``init``).
+MANIFEST_NAME = ".wiki-studio.json"
 
 
 def looks_wiki_relative(path: str) -> bool:
@@ -160,6 +170,37 @@ def contain(candidate: str | os.PathLike[str], boundary: Path, *, base: Path | N
     if current != boundary_real and not current.is_relative_to(boundary_real):
         raise ContainmentError(text, boundary, CONTAIN_OUTSIDE, f"{text}: resolves to {current}, outside {boundary}")
     return current
+
+
+@dataclass(frozen=True)
+class Actor:
+    """Who proposed, promoted or approved: a ``name`` (None when unknown) and where it came from (FR-017).
+
+    Attribution, not authentication: the name is whatever the caller passed
+    or the environment held; the host supplies authority.
+    """
+
+    name: str | None
+    source: str
+
+    def as_dict(self) -> dict[str, str | None]:
+        """``{"name", "source"}`` as ``plan.json`` and the receipt record it."""
+        return {"name": self.name, "source": self.source}
+
+
+def resolve_actor(by: str | None = None, *, env: Mapping[str, str] | None = None) -> Actor:
+    """The one actor rule: a non-empty ``by`` (``--by``) is ``flag``, else a non-empty ``WIKI_STUDIO_ACTOR`` is ``env``.
+
+    Otherwise ``{name: None, source: "none"}``. The OS user name is never
+    captured.
+    """
+    if by is not None and by.strip():
+        return Actor(by, ACTOR_SOURCE_FLAG)
+    environ: Mapping[str, str] = os.environ if env is None else env
+    value = environ.get(ENV_ACTOR, "")
+    if value.strip():
+        return Actor(value, ACTOR_SOURCE_ENV)
+    return Actor(None, ACTOR_SOURCE_NONE)
 
 
 @dataclass(frozen=True)

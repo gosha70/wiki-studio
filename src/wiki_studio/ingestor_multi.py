@@ -39,6 +39,7 @@ from .proposal import (
     IngestRequest,
     PageEdit,
     WikiPatchSet,
+    assign_page_ids,
     validate_page_edit_semantics,
     validate_patch_set,
 )
@@ -150,7 +151,8 @@ class DefaultMultiIngestor:
             )
 
         patch = WikiPatchSet(
-            edits=edits,
+            # Every page an ingest creates carries a fresh page_id (FR-014), in the preview and so in the commit.
+            edits=assign_page_ids(edits),
             source_path=str(source_path),
             backend=request.backend_name,
             rationale=str(validated.get("rationale", "")),
@@ -304,13 +306,16 @@ def _write_patch_set_files(patch: WikiPatchSet, output_dir: Path, wiki_dir: Path
                 if warnings:
                     entry["fact_warnings"] = warnings
         plan_edits.append(entry)
-    plan = {
+    plan: dict[str, object] = {
         "version": 1,
         "source_path": patch.source_path,
         "backend": patch.backend,
         "rationale": patch.rationale,
         "edits": plan_edits,
     }
+    if patch.proposer is not None:
+        # Optional since 0.7.0: who proposed it, as attribution (never authentication).
+        plan["proposer"] = patch.proposer.as_dict()
     (output_dir / "plan.json").write_text(
         json.dumps(plan, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",

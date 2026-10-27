@@ -20,15 +20,25 @@
 from __future__ import annotations
 
 import datetime
+import posixpath
 import re
-from dataclasses import dataclass
+import uuid
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
-from .schema import PAGE_TYPE_DIRS, PROMOTABLE_PAGE_TYPES
+from .paths import SCHEMA_DIR_NAME
+from .schema import (
+    PAGE_ID_KEY,
+    PAGE_ID_PATTERN,
+    PAGE_ID_PREFIX,
+    PAGE_TYPE_DIRS,
+    PROMOTABLE_PAGE_TYPES,
+    RESERVED_APPROVAL_KEYS,
+)
 
 if TYPE_CHECKING:
-    from .paths import WikiPaths
+    from .paths import Actor, WikiPaths
 
 # The only form a sha256 takes anywhere in the package: 64 lowercase hex digits.
 _SHA256_HEX_RE = re.compile(r"[0-9a-f]{64}")
@@ -238,12 +248,57 @@ class WikiPatchSet:
     rationale : str
         One-paragraph patch-set-level rationale: why this source
         touches these pages, in the curator's terms.
+    proposer : Actor | None
+        Who proposed it (``--by`` or ``WIKI_STUDIO_ACTOR``), written to
+        ``plan.json`` as ``proposer`` when set; attribution, not
+        authentication. Added in 0.7.0 with a default.
     """
 
     edits: list[PageEdit]
     source_path: str
     backend: str
     rationale: str
+    proposer: Actor | None = None
+
+
+_PAGE_ID_RE = re.compile(PAGE_ID_PATTERN)
+_FM_CLOSE_RE = re.compile(r"^---\s*$")
+
+
+def is_page_id(value: object) -> bool:
+    """True for a well-formed ``page_id``: ``pg-`` and 32 lowercase hex digits."""
+    return isinstance(value, str) and _PAGE_ID_RE.fullmatch(value) is not None
+
+
+def new_page_id() -> str:
+    """A fresh ``page_id``: ``pg-`` + ``uuid4().hex``."""
+    return PAGE_ID_PREFIX + uuid.uuid4().hex
+
+
+def with_page_id(content: str) -> str:
+    """``content`` with ``page_id: <fresh id>`` as the last frontmatter line, before the closing ``---`` (FR-014).
+
+    Returned unchanged when it already has a ``page_id`` line (a caller's id
+    is never rewritten) or has no complete frontmatter (validation reports
+    that). The new line takes the opening marker's line ending.
+    """
+    lines = content.splitlines(keepends=True)
+    if not lines or lines[0].rstrip("\r\n") != "---":
+        return content
+    for i in range(1, len(lines)):
+        line = lines[i].rstrip("\r\n")
+        if line.startswith(f"{PAGE_ID_KEY}:"):
+            return content
+        if _FM_CLOSE_RE.match(line):
+            newline = lines[0][3:] or "\n"
+            lines.insert(i, f"{PAGE_ID_KEY}: {new_page_id()}{newline}")
+            return "".join(lines)
+    return content
+
+
+def assign_page_ids(edits: list[PageEdit]) -> list[PageEdit]:
+    """``edits`` with a fresh ``page_id`` on every ``create`` that has none; every other edit unchanged."""
+    return [replace(e, new_content=with_page_id(e.new_content)) if e.action == "create" else e for e in edits]
 
 
 def validate_page_edit_semantics(
@@ -371,6 +426,61 @@ def validate_page_edit_semantics(
             )
 
     return errors
+
+
+def _frontmatter_keys(content: str) -> list[str]:
+    """The column-0 keys of ``content``'s frontmatter block, in order (empty without one)."""
+    lines = content.splitlines()
+    if not lines or lines[0].rstrip() != "---":
+        return []
+    keys: list[str] = []
+    for line in lines[1:]:
+        if _FM_CLOSE_RE.match(line):
+            break
+        if line[:1] not in ("", " ", "\t", "-", "#") and ":" in line:
+            keys.append(line.split(":", 1)[0].strip())
+    return keys
+
+
+def reserved_edit_problems(edits: list[PageEdit]) -> list[str]:
+    """Edits a patch-set may never make, whatever the wiki (FR-028, FR-029); empty when there are none.
+
+    A normalised path (``posixpath.normpath``) with a dot-prefixed component
+    (the root manifest, ``.audit/``, approval records) or under ``schema/``
+    (the project schema overrides) is the gate's own state, not knowledge; a
+    raw ``./index.md`` normalises to ``index.md`` and passes. A ``create`` or
+    ``update`` whose frontmatter carries a key reserved for the approval
+    record (``approved``, ``approved_by``, ``approval``, ``review_state``)
+    would let a page declare itself approved. Run after the escape checks of
+    :func:`validate_patch_set`, which keep their own exit codes.
+    """
+    problems: list[str] = []
+    for edit in edits:
+        parts = posixpath.normpath(edit.path).split("/")
+        if any(part.startswith(".") for part in parts) or parts[0] == SCHEMA_DIR_NAME:
+            problems.append(
+                f"{edit.path}: reserved path (a dot-prefixed component or under {SCHEMA_DIR_NAME}/ is the gate's "
+                "own state: the manifest, the audit trail, approval records, schema overrides); a patch-set "
+                "cannot edit it"
+            )
+            continue
+        if edit.action in ("create", "update"):
+            reserved = [key for key in _frontmatter_keys(edit.new_content) if key in RESERVED_APPROVAL_KEYS]
+            for key in reserved:
+                problems.append(
+                    f"{edit.path}: frontmatter key '{key}' is reserved for the gate's approval record; approval "
+                    "is recorded only by `wiki-studio approve` (or auto-approval on promote), never by the page"
+                )
+    return problems
+
+
+def check_reserved_edits(edits: list[PageEdit]) -> None:
+    """Raise ``ContractViolationError`` (exit 4) naming every :func:`reserved_edit_problems` entry."""
+    problems = reserved_edit_problems(edits)
+    if problems:
+        from .errors import ContractViolationError
+
+        raise ContractViolationError("patch-set makes a reserved edit:\n  - " + "\n  - ".join(problems))
 
 
 def validate_patch_set(patch: WikiPatchSet) -> list[str]:

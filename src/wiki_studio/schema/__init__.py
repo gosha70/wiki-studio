@@ -89,6 +89,28 @@ SOURCELESS_PAGE_TYPES: frozenset[str] = frozenset(
     name for name, spec in PAGE_TYPES.items() if not spec.sources_required
 )
 
+# The identity of these rules in a wiki's root manifest. Only a decision record
+# (docs/adr/) bumps the version; version 1 is the 0.6.0 page schema, version 2
+# adds the optional keys of docs/adr/0002-page-identity-and-review-keys.md.
+SCHEMA_ID = "wiki-studio/page-schema"
+SCHEMA_VERSION = 2
+
+# The optional page identity (ADR-0002): ``page_id: pg-<32 lowercase hex>``, one single-line scalar.
+PAGE_ID_KEY = "page_id"
+PAGE_ID_PREFIX = "pg-"
+PAGE_ID_PATTERN = r"^pg-[0-9a-f]{32}$"
+
+# The optional replacement marker (ADR-0002): ``superseded_by: <wiki-relative path>`` on the replaced page.
+SUPERSEDED_BY_KEY = "superseded_by"
+
+# Frontmatter keys reserved for the gate's approval record (ADR-0002): a create or
+# update carrying one is refused, so a page can never declare itself approved.
+RESERVED_APPROVAL_KEYS: tuple[str, ...] = ("approved", "approved_by", "approval", "review_state")
+
+# The schema documents the prompts load; a project copy of any of them under
+# ``<wiki>/schema/`` overrides the packaged one and enters the schema fingerprint.
+PROMPT_SCHEMA_DOCUMENTS: tuple[str, ...] = ("ingest-rules", "page-types", "citation-rules")
+
 # Frontmatter keys every page must carry.
 REQUIRED_KEYS: tuple[str, ...] = ("page_type", "slug", "title", "status", "last_reviewed")
 

@@ -29,14 +29,18 @@ import json
 import os
 import re
 import sys
+import warnings
+from dataclasses import replace
 from pathlib import Path
 
 from . import __version__, api
 from .audit_flush import describe_flush
 from .backends import ENV_BACKEND, ENV_BACKEND_DEPRECATED
+from .contract import MANIFEST_PRESENT
 from .errors import (
     BackendInvocationError,
     ContractViolationError,
+    DriftWarning,
     IngestError,
     PathOutsideRootError,
     PromoteApplyError,
@@ -47,11 +51,13 @@ from .paths import (
     DEFAULT_LOCK_TIMEOUT,
     DEFAULT_PROPOSALS_DIR,
     DEFAULT_WIKI_DIR,
+    ENV_ACTOR,
     ENV_LOCK_TIMEOUT,
     ENV_PROPOSALS_DIR,
     ENV_ROOT,
     ENV_SOURCE_ROOTS,
     ENV_WIKI_DIR,
+    MANIFEST_NAME,
     WikiPaths,
 )
 from .wikilock import lock_path_for
@@ -67,6 +73,11 @@ _ALLOW_UNGUARDED_HELP = (
     ".base.json manifest). Compatibility mode with incomplete conflict protection: a stale draft can "
     "overwrite a newer page, and the paths are recorded as unguarded_paths in the receipt. Without it "
     "such an update exits 9; the safe remedy is to regenerate the proposal from a fresh `wiki-studio read`."
+)
+_BY_HELP = (
+    "Who is acting, recorded as {record} with source flag. Without it the name comes from "
+    f"{ENV_ACTOR} (source env), else none is recorded (source none); the OS user is never used. "
+    "Attribution, not authentication: the host supplies authority."
 )
 
 # Message prefixes that distinguish the error classes on stderr (the exit
@@ -133,7 +144,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         prog="wiki-studio",
         description=(
             "Karpathy-pattern LLM Wiki maintainer. Verbs: "
-            "init|ingest|propose|promote|read|query|find|lint|audit-flush|info. "
+            "init|ingest|propose|promote|approve|read|query|find|lint|findings|audit-flush|info. "
             "``wiki-studio <verb> --help`` for per-verb help."
         ),
         epilog=(
@@ -142,7 +153,8 @@ def _build_arg_parser() -> argparse.ArgumentParser:
             "4 contract violation; 5 source missing; 6 output write failure; "
             "7 source out of repo, or a page path outside the wiki; 8 verb not yet implemented (Phase N stub); "
             "9 promote validation failed, including a revision precondition (stale or unguarded update, "
-            "create of an existing page); 10 promote apply failed (with a reason: lock_timeout, "
+            "create of an existing page), and approve refused (nothing written); "
+            "10 promote apply failed (with a reason: lock_timeout, "
             "uncertain_outcome, wiki_mismatch, wiki_identity_unavailable, payload_changed); "
             "11 audit-flush error (not a git work tree; append-only invariant "
             "violated; working log malformed; git commit failed)."
@@ -248,6 +260,30 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         "outside the repo is an avoidable security surface.",
     )
     p_promote.add_argument("--allow-unguarded-updates", action="store_true", help=_ALLOW_UNGUARDED_HELP)
+    p_promote.add_argument("--by", metavar="NAME", default=None, help=_BY_HELP.format(record="the receipt's actor"))
+
+    # ── approve ────────────────────────────────────────────────
+    p_approve = sub.add_parser(
+        "approve",
+        parents=[common],
+        help="Record that each page's live revision is approved under the wiki's policy: one immutable record "
+        "per decision under <wiki>/.audit/approvals/, written under the wiki lock. The whole batch is checked "
+        "first and refused (exit 9, nothing written) for a draft, a page carrying superseded_by, a structural-lint "
+        "violation, a --revision that is not the live one, or a missing approver when the policy requires one. "
+        "A page already approved at its live bytes is reported as existing. Needs a manifest (run init first). "
+        "Frontmatter never makes a page approved.",
+    )
+    p_approve.add_argument(
+        "pages", nargs="+", metavar="page", help="Wiki-relative page path(s): concepts/<slug>.md, ..."
+    )
+    p_approve.add_argument(
+        "--revision",
+        metavar="SHA",
+        default=None,
+        help="The sha256 of the revision you reviewed (from `wiki-studio read --json`); the approval is refused "
+        "when the live page differs. Only with exactly one page (exit 4 otherwise).",
+    )
+    p_approve.add_argument("--by", metavar="NAME", default=None, help=_BY_HELP.format(record="the record's approver"))
 
     # ── query ──────────────────────────────────────────────────
     p_query = sub.add_parser(
@@ -337,6 +373,25 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         "skipped (the other three checks run without a backend).",
     )
 
+    # ── findings ───────────────────────────────────────────────
+    p_findings = sub.add_parser(
+        "findings",
+        parents=[common],
+        help="Report what needs a curator's attention without calling a model: counts by kind, then each finding. "
+        "Kinds: stale-claim, weak-orphan, missing-cross-link, avoid-format (the health checks without a backend), "
+        "unapproved, approval-stale, approval-policy-changed (review state), superseded-still-indexed and "
+        "no-page-id. Read-only; takes no lock; exits 0 on a completed run whatever it finds "
+        "(lint --health --strict is the CI gate).",
+    )
+    p_findings.add_argument(
+        "--json",
+        action="store_true",
+        help="Print findings_version, counts, pages_checked and findings as one JSON object.",
+    )
+    p_findings.add_argument(
+        "--paths", nargs="+", default=None, metavar="PAGE", help="Scope every kind to these wiki-relative pages."
+    )
+
     # ── audit-flush ────────────────────────────────────────────
     p_audit_flush = sub.add_parser(
         "audit-flush",
@@ -357,7 +412,9 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         "info",
         parents=[common],
         help="Print the resolved layout (root, wiki dir, proposals dir, logs, schema copy) and where each "
-        "location came from: flag, WIKI_STUDIO_* variable or default. Read-only; exits 0.",
+        "location came from: flag, WIKI_STUDIO_* variable or default; then the knowledge contract: package "
+        "version, schema contract and fingerprints (drift), format versions, capabilities and the root "
+        "manifest. Read-only; exits 0 (4 for a malformed or newer manifest).",
     )
     p_info.add_argument("--json", action="store_true", help="Print the same facts as one JSON object.")
 
@@ -366,9 +423,17 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         "init",
         parents=[common],
         help="Create the wiki directory with a minimal index.md and log.md when they are absent "
-        "(promote needs both). Never overwrites; running it twice is a no-op. Exits 0.",
+        "(promote needs both) and the root manifest .wiki-studio.json (wiki_id, schema contract, schema "
+        "fingerprint, policy). Never overwrites; a wiki without a manifest gains one and nothing else changes; "
+        "running it twice is a no-op. Exits 0.",
     )
     p_init.add_argument("--title", default=api.DEFAULT_WIKI_TITLE, help="Title for a new index.md and log.md.")
+    p_init.add_argument(
+        "--update-schema",
+        action="store_true",
+        help="Acknowledge changed project schema overrides (<wiki>/schema/ingest-rules.md, page-types.md, "
+        "citation-rules.md): rewrite only the manifest's schema_fingerprint, atomically under the wiki lock.",
+    )
 
     # ── propose ────────────────────────────────────────────────
     p_propose = sub.add_parser(
@@ -391,6 +456,12 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     )
     p_propose.add_argument(
         "--allow-unguarded-updates", action="store_true", help="With --promote: " + _ALLOW_UNGUARDED_HELP
+    )
+    p_propose.add_argument(
+        "--by",
+        metavar="NAME",
+        default=None,
+        help=_BY_HELP.format(record="plan.json's proposer (and, with --promote, the receipt's actor)"),
     )
 
     # ── read ───────────────────────────────────────────────────
@@ -511,6 +582,7 @@ def _do_promote(args: argparse.Namespace) -> int:
         allow_out_of_repo=args.allow_out_of_repo,
         entry_point=api.PROMOTE_ENTRY_POINT_CLI,
         allow_unguarded_updates=args.allow_unguarded_updates,
+        by=args.by,
     )
     _print_promote_warnings(result)
     if result.dry_run:
@@ -527,6 +599,32 @@ def _do_promote(args: argparse.Namespace) -> int:
     print(f"applied {len(result.applied_paths)} edit(s) from {args.proposal_dir.name}; {_archived_note(result)}")
     for p in result.applied_paths:
         print(f"  + {paths.wiki_label}/{p}")
+    _print_approved(result, paths)
+    return 0
+
+
+def _print_approved(result: api.PromoteResult, paths: WikiPaths) -> None:
+    """The pages auto-approval approved (``auto_approve_on_promote``)."""
+    for p in result.approved_paths:
+        print(f"  approved {paths.wiki_label}/{p}")
+
+
+def _do_approve(args: argparse.Namespace) -> int:
+    """One approval record per page under the wiki lock; written by promoter.py only."""
+    if args.revision is not None and len(args.pages) != 1:
+        raise ContractViolationError(
+            f"--revision names the reviewed revision of exactly one page, but {len(args.pages)} pages were given; "
+            "approve them one at a time with --revision, or without it"
+        )
+    paths = _paths_from_args(args)
+    expected = {args.pages[0]: args.revision} if args.revision is not None else None
+    result = api.approve(args.pages, paths, by=args.by, expected=expected)
+    for warning in result.warnings:
+        print(f"warning: {warning}", file=sys.stderr)
+    for record in result.published:
+        print(f"approved: {paths.wiki_label}/{record}")
+    for record in result.existing:
+        print(f"already approved: {paths.wiki_label}/{record}")
     return 0
 
 
@@ -619,6 +717,19 @@ def _do_lint(args: argparse.Namespace) -> int:
     return 0 if result.passed else 1
 
 
+def _do_findings(args: argparse.Namespace) -> int:
+    """Model-free curation report: counts by kind, then each finding; exit 0 on a completed run."""
+    result = api.findings(_paths_from_args(args), pages=args.paths)
+    if args.json:
+        print(json.dumps(result.as_dict(), indent=2))
+        return 0
+    counts = ", ".join(f"{kind} {n}" for kind, n in result.counts.items() if n)
+    print(f"findings: {len(result.findings)} across {result.pages_checked} pages" + (f" ({counts})" if counts else ""))
+    for finding in result.findings:
+        print(f"  [{finding.kind} / {finding.severity}] {', '.join(finding.pages)}: {finding.description}")
+    return 0
+
+
 def _do_audit_flush(args: argparse.Namespace) -> int:
     """Commit pending ingest-log lines (or dry-run report them)."""
     result = api.audit_flush(_paths_from_args(args), dry_run=args.dry_run)
@@ -674,6 +785,11 @@ def _do_info(args: argparse.Namespace) -> int:
         "lock_timeout": paths.lock_timeout,
         "source_roots": [str(p) for p in paths.source_roots],
     }
+    # The 0.7.0 contract keys follow the 0.6.0 layout keys, which keep their names and meaning.
+    contract = api.info(paths)
+    info.update(contract.as_dict())
+    for warning in contract.warnings:
+        print(f"warning: {warning}", file=sys.stderr)
     if args.json:
         print(json.dumps(info, indent=2))
         return 0
@@ -690,17 +806,33 @@ def _do_info(args: argparse.Namespace) -> int:
     print(f"schema: {schema}" + (f" copy at {paths.schema_dir}" if schema == _SCHEMA_PROJECT else ""))
     print(f"lock-file: {lock_path_for(paths.wiki_dir)}  (timeout {paths.lock_timeout:g}s)")
     print("source-roots: " + (", ".join(str(p) for p in paths.source_roots) or "(none; links stay inside the root)"))
+    print(f"package-version: {contract.package_version}")
+    sc = contract.schema_contract
+    print(f"schema-contract: {sc.schema_id} version {sc.version} ({sc.source} rules)")
+    print(f"schema-fingerprint: {sc.fingerprint}")
+    print(f"declared-fingerprint: {sc.declared_fingerprint or '(none)'}  (drift: {'yes' if sc.drift else 'no'})")
+    print("formats: " + ", ".join(f"{name} {version}" for name, version in contract.formats.items()))
+    print("capabilities: " + ", ".join(contract.capabilities))
+    manifest = contract.manifest
+    if manifest.state == MANIFEST_PRESENT:
+        policy = ", ".join(f"{key}={str(value).lower()}" for key, value in (manifest.policy or {}).items())
+        print(f"manifest: present, mode {manifest.mode}, manifest_version {manifest.manifest_version}")
+        print(f"wiki-id: {manifest.wiki_id}")
+        print(f"policy: {policy}")
+    else:
+        print(f"manifest: missing, mode {manifest.mode}; {manifest.instruction}")
     return 0
 
 
 def _do_init(args: argparse.Namespace) -> int:
     """Create the scaffold the other verbs need; report what was created."""
     paths = _paths_from_args(args)
-    result = api.init(paths, title=args.title)
+    result = api.init(paths, title=args.title, update_schema=args.update_schema)
     if result.created:
         print(f"initialised {paths.wiki_dir}: created {', '.join(result.created)}")
     else:
         print(f"already initialised: {paths.wiki_dir} has index.md and log.md")
+    print(f"manifest: {result.manifest} ({paths.wiki_dir / MANIFEST_NAME})")
     return 0
 
 
@@ -722,7 +854,22 @@ def _do_propose(args: argparse.Namespace) -> int:
     paths = _paths_from_args(args)
     edits = api.edits_from_dir(args.source_dir, paths, rationale=args.rationale)
     name = args.name or _default_proposal_name(args.source_dir, paths.proposals_dir)
-    written = api.propose(edits, paths, name=name, source=str(args.source_dir), rationale=args.rationale, backend="cli")
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always", DriftWarning)
+        # Agent-written creates get a fresh page_id in the preview, so the commit carries the same bytes (FR-014).
+        written = api.propose(
+            edits,
+            paths,
+            name=name,
+            source=str(args.source_dir),
+            rationale=args.rationale,
+            backend="cli",
+            by=args.by,
+            assign_page_ids=True,
+        )
+    drift = [str(w.message) for w in caught if issubclass(w.category, DriftWarning)]
+    for message in drift:
+        print(f"warning: {message}", file=sys.stderr)
     print(str(written))
     for edit in edits:
         print(f"  {edit.action} {edit.path}")
@@ -736,9 +883,12 @@ def _do_propose(args: argparse.Namespace) -> int:
         allow_out_of_repo=args.allow_out_of_repo,
         entry_point=api.PROMOTE_ENTRY_POINT_CLI,
         allow_unguarded_updates=args.allow_unguarded_updates,
+        by=args.by,
     )
-    _print_promote_warnings(result)
+    # The drift warning was printed once already, by propose.
+    _print_promote_warnings(replace(result, warnings=[w for w in result.warnings if w not in drift]))
     print(f"applied {len(result.applied_paths)} edit(s); {_archived_note(result)}")
+    _print_approved(result, paths)
     return 0
 
 
@@ -762,7 +912,20 @@ def _do_find(args: argparse.Namespace) -> int:
     return 0
 
 
-_VERBS = ("ingest", "promote", "query", "lint", "audit-flush", "info", "init", "propose", "find", "read")
+_VERBS = (
+    "ingest",
+    "promote",
+    "approve",
+    "query",
+    "lint",
+    "findings",
+    "audit-flush",
+    "info",
+    "init",
+    "propose",
+    "find",
+    "read",
+)
 
 # Global options that take a value; their value is not a positional for the legacy shim.
 _GLOBAL_VALUE_OPTIONS = ("--root", "--wiki-dir", "--proposals-dir", "--source-root", "--lock-timeout")
@@ -833,8 +996,10 @@ def main(argv: list[str] | None = None) -> int:
     dispatch = {
         "ingest": _do_ingest,
         "promote": _do_promote,
+        "approve": _do_approve,
         "query": _do_query,
         "lint": _do_lint,
+        "findings": _do_findings,
         "audit-flush": _do_audit_flush,
         "info": _do_info,
         "init": _do_init,

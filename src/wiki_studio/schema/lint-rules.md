@@ -44,6 +44,13 @@ structure.
   equal the parent directory name (e.g., `glossary/index.md` →
   `slug: glossary`).
 - All `slug` values across the wiki must be unique.
+- The optional `page_id` (ADR-0002), when present, must match
+  `^pg-[0-9a-f]{32}$`, and no two pages may share one; every page in a
+  shared group is reported.
+- The optional `superseded_by` (ADR-0002), when present, is a
+  wiki-relative path. Once normalised it must name an existing page that
+  is not the page itself and is not superseded in turn (no chains, so no
+  cycles). An empty, absolute or escaping target is a violation.
 
 ### 4. Directory placement
 

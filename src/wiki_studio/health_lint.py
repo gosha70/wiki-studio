@@ -46,7 +46,7 @@ from . import yaml_lite
 from .errors import BackendInvocationError, ContractViolationError
 from .proposal import HealthFinding
 from .prose_lint import GLOSSARY_DIR, GLOSSARY_INDEX, contains_term, load_avoid_map, strip_index_avoid_lines
-from .wiki_state import _read_text_or_empty
+from .wiki_state import _inside_wiki, _read_text_or_empty
 
 if TYPE_CHECKING:
     from .ingestor import Backend
@@ -74,6 +74,10 @@ def _list_wiki_pages(wiki_dir: Path) -> list[Path]:
     for p in sorted(wiki_dir.rglob("*.md")):
         rel_parts = p.relative_to(wiki_dir).parts
         if rel_parts and rel_parts[0] in excluded:
+            continue
+        # The wiki boundary (FR-012): a symlinked page, or one under a symlinked
+        # directory, is never read, so no finding derives from bytes outside it.
+        if not _inside_wiki(p, wiki_dir):
             continue
         pages.append(p)
     return pages

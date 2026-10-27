@@ -97,7 +97,7 @@ class TestProposeOutput(_LayoutCase):
     def test_plan_json_has_the_documented_shape(self) -> None:
         written = api.propose(_edits(), self.paths, name=NAME, source="memkernel", rationale="why", backend="mk")
         plan = json.loads((written / "plan.json").read_text(encoding="utf-8"))
-        self.assertEqual(set(plan), {"version", "source_path", "backend", "rationale", "edits"})
+        self.assertEqual(set(plan), {"version", "source_path", "backend", "rationale", "edits", "proposer"})
         self.assertEqual(plan["version"], 1)
         self.assertEqual((plan["source_path"], plan["backend"], plan["rationale"]), ("memkernel", "mk", "why"))
         self.assertEqual(len(plan["edits"]), 3)

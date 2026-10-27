@@ -17,10 +17,26 @@
 from __future__ import annotations
 
 import json
+import os
 import re
+import stat
 from typing import TYPE_CHECKING
 
-from .paths import AUDIT_DIR_NAME
+from .contract import parse_manifest
+from .errors import ContractViolationError
+from .paths import AUDIT_DIR_NAME, MANIFEST_NAME
+from .proposal import is_page_id, is_sha256_hex
+from .review import (
+    APPROVALS_DIR_NAME,
+    DECISIONS,
+    NAMESPACE_ID,
+    NAMESPACES,
+    RECORD_SUFFIX,
+    RECORD_TMP_SUFFIX,
+    canonical_path,
+    path_digest,
+    record_problem,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -193,8 +209,8 @@ def validate_audit_dir(audit_dir: Path) -> list[str]:
 
     errors: list[str] = []
 
-    # Closed top-level set: only ingest-log.md (file) and proposals/
-    # (dir). .audit/ is exempt from structural lint, so a stray
+    # Closed top-level set: only ingest-log.md (file), proposals/ and
+    # approvals/ (dirs). .audit/ is exempt from structural lint, so a stray
     # .audit/notes.md must be caught here or it is invisible.
     for child in sorted(audit_dir.iterdir()):
         if child.name == "ingest-log.md":
@@ -203,8 +219,12 @@ def validate_audit_dir(audit_dir: Path) -> list[str]:
         elif child.name == "proposals":
             if not child.is_dir():
                 errors.append(f"{child}: proposals must be a directory")
+        elif child.name == APPROVALS_DIR_NAME:
+            errors.extend(_validate_approvals(child))
         else:
-            errors.append(f"{child}: unexpected entry under .audit/ (only ingest-log.md and proposals/ are permitted)")
+            errors.append(
+                f"{child}: unexpected entry under .audit/ (only ingest-log.md, proposals/ and approvals/ are permitted)"
+            )
 
     log = audit_dir / "ingest-log.md"
     if log.is_file():
@@ -219,3 +239,124 @@ def validate_audit_dir(audit_dir: Path) -> list[str]:
                 errors.append(f"{child}: .audit/proposals/ may only contain <date>-<slug>/ directories")
 
     return errors
+
+
+# ── .audit/approvals/ (0.7.0, FR-031) ─────────────────────────
+
+
+def _kind(path: Path) -> str:
+    """``symlink``, ``dir``, ``file`` or ``other``, by ``lstat``: the approval tree is never followed."""
+    mode = os.lstat(path).st_mode
+    if stat.S_ISLNK(mode):
+        return "symlink"
+    if stat.S_ISDIR(mode):
+        return "dir"
+    return "file" if stat.S_ISREG(mode) else "other"
+
+
+def _manifest_wiki_id(wiki_dir: Path) -> str | None:
+    """The ``wiki_id`` records are verified against; None when the manifest is absent, a symlink or unusable."""
+    manifest = wiki_dir / MANIFEST_NAME
+    if not manifest.is_file() or manifest.is_symlink():
+        return None
+    try:
+        return parse_manifest(manifest.read_bytes(), str(manifest)).wiki_id
+    except (OSError, ContractViolationError):
+        return None
+
+
+def _validate_approvals(approvals: Path) -> list[str]:
+    """The approval tree: ``id/<page_id>/`` and ``path/<digest>/``, then ``<sha256>/<policy_sha256>/<decision>.json``.
+
+    Every name is checked for its format, every record against its location
+    (FR-024), no symlink is followed anywhere, and a temporary file left by an
+    interrupted publication is reported for removal by hand.
+    """
+    if _kind(approvals) != "dir":
+        return [f"{approvals}: approvals must be a directory (not a symlink)"]
+    errors: list[str] = []
+    wiki_id = _manifest_wiki_id(approvals.parent.parent)
+    if wiki_id is None and any(approvals.iterdir()):
+        errors.append(f"{approvals}: approval records need the wiki's manifest (its wiki_id) to be verified")
+    for namespace in sorted(approvals.iterdir()):
+        kind = _kind(namespace)
+        if kind == "symlink":
+            errors.append(f"{namespace}: symlink in the approval tree")
+        elif kind != "dir" or namespace.name not in NAMESPACES:
+            errors.append(f"{namespace}: unexpected entry under approvals/ (only id/ and path/ are permitted)")
+        else:
+            for key_dir in sorted(namespace.iterdir()):
+                errors.extend(_validate_key_dir(key_dir, namespace.name, wiki_id))
+    return errors
+
+
+def _validate_key_dir(key_dir: Path, namespace: str, wiki_id: str | None) -> list[str]:
+    kind = _kind(key_dir)
+    if kind == "symlink":
+        return [f"{key_dir}: symlink in the approval tree"]
+    well_named = is_page_id(key_dir.name) if namespace == NAMESPACE_ID else is_sha256_hex(key_dir.name)
+    if kind != "dir" or not well_named:
+        expected = "a page_id (pg- and 32 lowercase hex)" if namespace == NAMESPACE_ID else "64 lowercase hex"
+        return [f"{key_dir}: {namespace}/ entries must be directories named {expected}"]
+    errors: list[str] = []
+    for revision in sorted(key_dir.iterdir()):
+        kind = _kind(revision)
+        if kind == "symlink":
+            errors.append(f"{revision}: symlink in the approval tree")
+            continue
+        if kind != "dir" or not is_sha256_hex(revision.name):
+            errors.append(f"{revision}: revision entries must be directories named 64 lowercase hex")
+            continue
+        for policy in sorted(revision.iterdir()):
+            kind = _kind(policy)
+            if kind == "symlink":
+                errors.append(f"{policy}: symlink in the approval tree")
+                continue
+            if kind != "dir" or not is_sha256_hex(policy.name):
+                errors.append(f"{policy}: policy entries must be directories named 64 lowercase hex")
+                continue
+            for record in sorted(policy.iterdir()):
+                errors.extend(_validate_record(record, namespace, key_dir.name, wiki_id))
+    return errors
+
+
+def _validate_record(record: Path, namespace: str, key_name: str, wiki_id: str | None) -> list[str]:
+    kind = _kind(record)
+    if kind == "symlink":
+        return [f"{record}: symlink in the approval tree"]
+    name = record.name
+    if name.startswith(".") and name.endswith(RECORD_TMP_SUFFIX):
+        return [f"{record}: stray temporary file from an interrupted publication; remove it by hand"]
+    decision = name[: -len(RECORD_SUFFIX)] if name.endswith(RECORD_SUFFIX) else ""
+    if kind != "file" or decision not in DECISIONS:
+        return [f"{record}: approval records must be regular files named <decision>.json ({sorted(DECISIONS)})"]
+    try:
+        data = record.read_bytes()
+    except OSError as exc:
+        return [f"{record}: unreadable ({exc})"]
+    page_key = key_name if namespace == NAMESPACE_ID else _path_key(data, key_name)
+    if page_key is None:
+        return [f"{record}: page_key is not a canonical path whose digest is its directory name"]
+    if wiki_id is None:
+        return []
+    revision, policy = record.parent.parent.name, record.parent.name
+    _obj, problem = record_problem(
+        data, wiki_id=wiki_id, page_key=page_key, sha256=revision, policy_hash=policy, decision=decision
+    )
+    return [] if problem is None else [f"{record}: invalid approval record: {problem}"]
+
+
+def _path_key(data: bytes, digest: str) -> str | None:
+    """The canonical path a ``path/<digest>/`` record names, when its ``page_key`` digests to ``digest``."""
+    try:
+        key = json.loads(data.decode("utf-8")).get("page_key")
+    except (UnicodeDecodeError, ValueError, AttributeError):
+        return None
+    if not isinstance(key, str):
+        return None
+    try:
+        if canonical_path(key) != key or path_digest(key) != digest:
+            return None
+    except ValueError:
+        return None
+    return key

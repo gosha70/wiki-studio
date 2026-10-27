@@ -6,6 +6,135 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-10-26
+
+Governed curation, wiki-studio's half of Release B in `docs/roadmap.md`
+(issue #38). It proves the bridge path that memkernel's exporter uses. It
+also publishes a versioned contract a host can check before it writes, names
+pages and actors, and records approval as a fact about one revision under one
+policy. Replacement becomes explicit, and `findings` reports curation debt
+without a model. Exit codes 0 and 2..11 are unchanged. The patch-set format
+gains optional keys only, the receipt stays version 1, and the `api` changes
+are additive with defaults. Release B is not closed by this release; see
+Limitations.
+
+### Added
+
+- Contract tests for memkernel's wiki bridge (0.7.0, US1): the bridge's
+  create, append-index and append-log calls through `api.propose` and
+  `api.promote`, a concurrency test with a CLI `promote`, a reproduction of
+  the outer-snapshot hazard, and clean-install CI jobs against a pinned
+  memkernel. `docs/consumers.md` describes the gate path without an outer
+  rollback. The memkernel limitation in 0.6.0's notes still stands.
+- The versioned knowledge contract (0.7.0, US2). `init` writes a root
+  manifest, `<wiki>/.wiki-studio.json`, by exclusive no-follow creation: a
+  `wiki_id`, the schema identity and version (`wiki-studio/page-schema`,
+  version 2), the fingerprint of the project schema overrides, a policy of
+  three booleans and `created_by`. It never overwrites; on a wiki made before
+  0.7.0 it adds the manifest and nothing else. `InitResult.manifest` reports
+  `created`, `existing` or `updated`.
+- `api.info(paths) -> InfoResult` and new `info` keys: `package_version`,
+  `schema_contract` (id, version, source, current and declared fingerprint,
+  drift), `formats`, `capabilities` and `manifest`. Every 0.6.0 `info --json`
+  key keeps its name and meaning.
+- Schema drift: a changed project override (`<wiki>/schema/ingest-rules.md`,
+  `page-types.md`, `citation-rules.md`) is refused by `propose` and `promote`
+  (exit 4) on a governed wiki and is a warning on a managed one: stderr,
+  `PromoteResult.warnings`, and a `DriftWarning` from `api.propose`.
+  `init --update-schema` (`api.init(..., update_schema=True)`) acknowledges
+  it. A package upgrade alone never causes drift. The recipe is in
+  `docs/knowledge-contract.md`.
+- `docs/compatibility.md`: the tested wiki-studio and memkernel pairs, their
+  evidence, the capabilities each side needs, and how to re-create a proposal
+  written before 0.6.0.
+- Page identity (0.7.0, US3). An optional frontmatter key
+  `page_id: pg-<32 hex>`. `propose --from` and multi-page `ingest` add a
+  fresh one to every page they create, before the preview is written, so the
+  preview and the committed page carry the same bytes. `api.propose` adds one
+  only with `assign_page_ids=True` and otherwise writes the caller's bytes
+  unchanged. A caller's `page_id` is never rewritten. The structural linter
+  reports a malformed or duplicated `page_id`.
+- Attribution (0.7.0, US3). `--by NAME` on `propose` and `promote`, `by=` on
+  `api.propose` and `api.promote`, and the `WIKI_STUDIO_ACTOR` variable.
+  `plan.json` gains an optional `proposer` and the receipt an optional
+  `actor`, each `{name, source}` with `source` `flag`, `env` or `none`. The
+  receipt version stays 1. The OS user name is never recorded. This is
+  attribution, not authentication. `WikiPatchSet` gains `proposer` with a
+  default.
+- ADR-0002 (`docs/adr/0002-page-identity-and-review-keys.md`) registers
+  `page_id`, `superseded_by` and memkernel's `corrects` (its syntax not yet
+  final) and reserves `approved`, `approved_by`, `approval` and
+  `review_state`. `info` advertises the capabilities `page-id` and
+  `attribution`.
+- Approval bound to the revision and the policy (0.7.0, US4).
+  `wiki-studio approve <page>... [--revision SHA] [--by NAME]` and
+  `api.approve(pages, paths, *, by=None, expected=None) -> ApproveResult`
+  record that a page's live bytes are approved under the manifest's policy:
+  one immutable file per decision under
+  `<wiki>/.audit/approvals/{id/<page_id>|path/<path-digest>}/<sha256>/<policy_sha256>/approved.json`,
+  written only by `promoter.py` under the wiki lock, published by an
+  exclusive link and never rewritten. The batch is checked first and refused
+  (exit 9, nothing written) for a draft, a page carrying `superseded_by`, a
+  structural-lint violation, a `--revision` that is not the live one, or a
+  missing approver when `approver_required` is set; a legacy wiki is refused
+  (exit 4) until `init` adds a manifest. An I/O failure part way is exit 6
+  naming what was published; a rerun is idempotent.
+- `api.review_state(paths, *, pages=None) -> list[ReviewState]`: `approved`,
+  `policy-changed`, `stale`, `unapproved` (with reason `manifest_missing`,
+  `draft` or `no_record`) or `superseded`, with the live and approved sha256
+  and the record path. It reads verified records only; frontmatter never
+  makes a page approved, and `status: stable` alone is `unapproved`.
+- `auto_approve_on_promote`: after a promotion has committed and archived, a
+  second lock acquisition approves each created or updated content page whose
+  live bytes still equal the receipt's post-commit hash, under the promoter's
+  actor; drafts and changed pages are skipped with a warning, and a failure
+  never fails the promotion. `PromoteResult.approved_paths` (default empty).
+- The `policy_sha256` (SHA-256 of `{"approver_required": <bool>}` as
+  canonical JSON), the record keys, verification and review states are
+  documented in `docs/knowledge-contract.md`. `info` advertises the
+  capability `approval-record` and the format `approval: 1`. The audit lint
+  validates `.audit/approvals/`.
+- Explicit replacement (0.7.0, US5). The structural linter checks
+  `superseded_by: <wiki-relative path>`: once normalised, the target must be
+  an existing page other than the page itself and not superseded in turn (no
+  chains, so no cycles); an empty, absolute or escaping target is a
+  violation, so a broken target after a hand rename fails lint and a
+  `promote` that would create one is refused (exit 9). `review_state` reports
+  a page carrying `superseded_by` `superseded` whatever its records say.
+  memkernel's `corrects` line is kept byte for byte and not interpreted. `info`
+  advertises the capability `superseded-by`.
+- Findings without a model call (0.7.0, US6). `wiki-studio findings [--json]
+  [--paths ...]` and `api.findings(paths, *, pages=None) -> FindingsResult`
+  report counts by kind, then each finding. The kinds are the health checks
+  that need no backend (`stale-claim`, `weak-orphan`, `missing-cross-link`,
+  `avoid-format`); `unapproved`, `approval-stale` and
+  `approval-policy-changed` from `review_state`; `superseded-still-indexed`
+  (`index.md` links a superseded page); and `no-page-id`. There is no backend
+  parameter, and a completed run exits 0 whatever it finds. The JSON
+  (`findings_version`, `counts`, `pages_checked`, `findings`) is documented
+  in `docs/knowledge-contract.md`. `info` advertises the capability
+  `findings` and the format `findings: 1`.
+
+### Changed
+
+- Reserved edits, on every wiki: `propose` and `promote` refuse (exit 4) an
+  edit whose normalised path has a dot-prefixed component or lies under
+  `schema/` (the manifest, the audit trail, approval records, schema
+  overrides), and a `create` or `update` whose frontmatter carries
+  `approved`, `approved_by`, `approval` or `review_state`. A raw
+  `./index.md` append still passes.
+
+- The schema documents are read by one contained loader: a symlinked project
+  schema override or schema directory is refused (exit 4) with its target
+  unread, on every wiki. `prompt.load_schema_files` keeps its name, signature
+  and return value.
+- `init`, `propose`, `promote` and `info` refuse a malformed manifest, one
+  whose `manifest_version` or `schema.version` is newer than this package, and
+  an unknown `schema.id` (exit 4). A wiki without a manifest works as in 0.6.0.
+- The packaged page schema is version 2 (ADR-0002): a new manifest declares
+  `schema.version` 2, and a manifest declaring version 1 is still accepted.
+  `propose --from` and `ingest` creates now carry a `page_id` line.
+
 ### Fixed
 
 - The fact check (`fact_warnings`, issue #33): a `path:line` reference or a
@@ -16,6 +145,75 @@ uses [Semantic Versioning](https://semver.org/).
   frontmatter `sources` is not a list of mappings is reported as
   `fact_check_error: sources not compared (…)` while its body facts are
   still compared, instead of silently dropping its citations.
+- Found by the code review of the 0.7.0 build (PR #47) and fixed before
+  release: auto-approval reread the archived `plan.json` and `receipt.json`
+  after the promotion lock was released, so an edited archive could approve
+  and attribute an unrelated page; it now uses the plan and receipt the
+  promotion validated under its lock. The approval-record scan and the
+  manifest and schema-override reads now walk descriptor-relative with
+  `O_NOFOLLOW` from the real wiki directory, so a directory swapped for a
+  symlink after the containment check is refused, not followed. The health
+  checks and `findings` no longer read a symlinked page. An explicit
+  `approve` takes provenance only from a receipt written for the same wiki
+  (device and inode) whose archive still matches it. A batch approval that
+  fails after its first record is always the partial-publication error
+  (exit 6) naming both sets. `findings` reports only in-scope pages, and
+  `pages_checked` counts the scope (the default review set without the root
+  `index.md` and `log.md`).
+
+### Upgrade notes
+
+- A wiki made before 0.7.0 has no manifest and is a legacy wiki. It works as
+  in 0.6.0 until `wiki-studio init` (or `api.init`) adds a manifest, which
+  touches nothing else. Three refusals apply to every wiki, legacy included:
+  a symlinked project schema override or schema directory, an edit whose
+  normalised path is reserved (a dot-prefixed component or `schema/`), and a
+  create or update whose frontmatter carries `approved`, `approved_by`,
+  `approval` or `review_state` (all exit 4).
+- A manifest is required to approve. `approve` on a legacy wiki exits 4
+  naming `init`, auto-approval is skipped, and `review_state` reports every
+  page `unapproved` with reason `manifest_missing`.
+- To turn a wiki governed, set `policy.approval_required` to `true` in
+  `<wiki>/.wiki-studio.json`. Schema drift is then refused (exit 4) instead
+  of warned about. Turning a managed wiki governed keeps every existing
+  approval `approved`, because the policy hash covers `approver_required`
+  only. Turning `approver_required` on makes approvals without a named
+  approver `policy-changed`.
+- `approved` means this revision was accepted under the approver rule. It
+  does not mean the page is valid against the latest schema:
+  `init --update-schema` leaves existing approvals as they were.
+- `api.propose` never assigns a `page_id` unless called with
+  `assign_page_ids=True`, so a library caller's bytes land unchanged.
+  `propose --from` and multi-page `ingest` assign one to each create.
+- A path-keyed approval is a fact about a path and its exact bytes. A page
+  recreated at a deleted page's path reads `stale` when its bytes differ and
+  `approved` when they are identical. A create that receives a fresh
+  `page_id` reads `unapproved`.
+- Add the lock file `.<wiki-dir-name>.wiki-studio.lock` (beside the wiki) to
+  `.gitignore` if 0.6.0 did not already prompt it.
+
+### Limitations
+
+- memkernel's wiki bridge takes a whole-wiki snapshot around its export and
+  restores it outside the wiki lock on failure. That restore can still
+  rewrite another writer's committed pages and delete its archived
+  `plan.json`; `tests/test_snapshot_hazard.py` reproduces it. Mixed-writer
+  safety across the memkernel stack is therefore not claimed. This item
+  stays until `docs/compatibility.md` lists a tested memkernel release
+  without the snapshot.
+- Release B is not declared closed. It closes only when the joint
+  correction loop (`tests/integration/test_release_b_loop.py`) passes on
+  clean installs with memkernel's counterpart, memkernel #48. That
+  counterpart was not merged into the memkernel revision this release is
+  tested against, so the `memkernel-compat` and `memkernel-loop` CI jobs stay
+  non-blocking (`continue-on-error`), `release.yml` does not run them, and
+  `memkernel-loop` is expected to fail. No combined safety claim is made.
+- No scope was cut by the circuit breaker. `page_id`, `superseded_by` with
+  its chain and cycle checks, and `findings` all ship.
+- Approval records follow 0.6.0's guarantee: validated, serialised and
+  rolled back on failure, but not crash-safe across files. `--by` and the
+  records are attribution and traceability, not authentication or
+  tamper-proof evidence.
 
 ## [0.6.0] — 2026-10-24
 
@@ -736,6 +934,7 @@ for 0.2 rather than changed in the extraction release:
   the value of a flag other than the three global options as a positional
   when deciding whether a verb is present; the documented shapes work.
 
-[Unreleased]: https://github.com/gosha70/wiki-studio/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/gosha70/wiki-studio/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/gosha70/wiki-studio/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/gosha70/wiki-studio/compare/v0.5.0...v0.6.0
 [0.1.0]: https://github.com/gosha70/wiki-studio/releases/tag/v0.1.0

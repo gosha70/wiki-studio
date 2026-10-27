@@ -1,6 +1,6 @@
 # Copyright (c) 2026 EGOGE
 # SPDX-License-Identifier: Apache-2.0
-"""wiki_studio.api — the library surface: ``ingest``, ``propose``, ``promote``, ``read_page``, ``query``, ``lint``.
+"""wiki_studio.api — the library surface: ``ingest``, ``propose``, ``promote``, ``approve``, ``read_page``, ``lint``...
 
 Each function takes a :class:`~wiki_studio.paths.WikiPaths`, returns a typed result
 and raises the exceptions in :mod:`wiki_studio.errors`. Nothing here prints; the
@@ -40,6 +40,7 @@ import posixpath
 import re
 import shutil
 import stat
+import warnings
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -49,22 +50,27 @@ from .audit_flush import FlushResult, flush_state
 from .audit_lint import validate_audit_tree
 from .backends import resolve_backend
 from .backends.copilot_cli import CopilotCliBackend
-from .errors import ContractViolationError, OutputWriteError, PathOutsideRootError, SourceMissingError
+from .contract import InfoResult, check_write_contract, describe
+from .errors import ContractViolationError, DriftWarning, OutputWriteError, PathOutsideRootError, SourceMissingError
+from .findings import Finding, FindingsResult
+from .findings import findings as _findings
 from .health_lint import lint_health
 from .ingestor import DefaultIngestor
 from .ingestor_multi import COLLISION_ERROR, COLLISION_SUFFIX, DefaultMultiIngestor, write_patch_set_dir
 from .lint import lint_wiki, list_pages
-from .paths import CONTAIN_SYMLINK, ContainmentError, contain, is_absolute_path
+from .paths import CONTAIN_SYMLINK, ContainmentError, contain, is_absolute_path, resolve_actor
 from .promoter import (
     DEFAULT_WIKI_TITLE,
     INDEX_NAME,
     LOG_NAME,
     PROMOTE_ENTRY_POINT_API,
     PROMOTE_ENTRY_POINT_CLI,
+    ApproveResult,
     InitResult,
     PromoteResult,
     init_wiki,
 )
+from .promoter import approve as _approve
 from .promoter import promote as _promote
 from .proposal import (
     IngestLogRecord,
@@ -74,13 +80,16 @@ from .proposal import (
     PageEdit,
     QueryAnswer,
     WikiPatchSet,
+    check_reserved_edits,
     is_sha256_hex,
     render_proposal_file,
     validate_page_edit_semantics,
     validate_patch_set,
 )
+from .proposal import assign_page_ids as _assign_page_ids
 from .prose_lint import run_prose_lint
 from .querier import DEFAULT_MAX_QUERY_PAGES, DefaultQuerier, _select_query_candidates
+from .review import ReviewState, review_states
 from .wiki_state import read_page_content
 from .wikilock import WikiLock
 
@@ -96,7 +105,10 @@ __all__ = [
     "PROMOTE_ENTRY_POINT_API",
     "PROMOTE_ENTRY_POINT_CLI",
     "PROPOSE_BACKEND",
+    "ApproveResult",
     "AuditFlushResult",
+    "Finding",
+    "FindingsResult",
     "FlushResult",
     "IngestLogRecord",
     "IngestProposal",
@@ -107,16 +119,21 @@ __all__ = [
     "PageEdit",
     "FindResult",
     "FoundPage",
+    "InfoResult",
     "InitResult",
     "PromoteResult",
     "QueryAnswer",
     "QueryResult",
     "ReadResult",
+    "ReviewState",
     "WikiPatchSet",
+    "approve",
     "audit_flush",
     "edits_from_dir",
     "find",
+    "findings",
     "backend_display_name",
+    "info",
     "ingest",
     "init",
     "lint",
@@ -125,6 +142,7 @@ __all__ = [
     "propose",
     "query",
     "read_page",
+    "review_state",
 ]
 
 # ``propose --from``: the optional manifest an agent writes beside its draft, mapping each wiki
@@ -553,6 +571,8 @@ def propose(
     source: str = "",
     rationale: str = "",
     backend: str = PROPOSE_BACKEND,
+    by: str | None = None,
+    assign_page_ids: bool = False,
 ) -> Path:
     """Write ``edits`` as a patch-set directory ``<proposals_dir>/<name>/`` for :func:`promote`.
 
@@ -573,16 +593,48 @@ def propose(
     written. Whatever the failure while writing, the directory (and a
     proposals directory this call created) is removed again. Returns the
     absolute directory path.
+
+    The wiki's knowledge contract is checked first: a malformed manifest, one
+    newer than this package, and schema drift on a governed wiki raise
+    ``ContractViolationError`` (exit 4); drift on a managed wiki is emitted at
+    once as a :class:`~wiki_studio.errors.DriftWarning` and the proposal is
+    still written.
+
+    ``by`` names who proposes; ``plan.json`` records it as ``proposer``
+    ``{name, source}``: ``flag`` for a non-empty ``by``, else ``env`` from
+    ``WIKI_STUDIO_ACTOR``, else ``none`` (attribution, not authentication;
+    the OS user name is never recorded). With ``assign_page_ids`` every
+    ``create`` whose content has no ``page_id`` gets a fresh
+    ``page_id: pg-<32 hex>`` as its last frontmatter line before the preview
+    is written; by default the caller's bytes are written unchanged, and a
+    caller-supplied ``page_id`` is never rewritten.
+
+    Every wiki, legacy included, refuses (``ContractViolationError``, exit 4)
+    an edit whose normalised path has a dot-prefixed component or lies under
+    ``schema/`` (the manifest, the audit trail and approval records, schema
+    overrides) and a ``create`` or ``update`` whose frontmatter carries a key
+    reserved for the approval record (``approved``, ``approved_by``,
+    ``approval``, ``review_state``).
     """
     if not _PROPOSAL_NAME_RE.fullmatch(name):
         raise ValueError(
             "name must be one path component of ASCII letters, digits, '.', '_' and '-' "
             f"not starting with '.', got {name!r}"
         )
-    patch = WikiPatchSet(edits=list(edits), source_path=source, backend=backend, rationale=rationale)
+    # The knowledge contract (FR-009, FR-011): refused on a newer or malformed
+    # manifest and on governed drift; managed drift is a DriftWarning, now.
+    for message in check_write_contract(paths):
+        warnings.warn(message, DriftWarning, stacklevel=2)
+    # FR-014: before validation and the preview, so the preview, the commit and any approval cover these bytes.
+    page_edits = _assign_page_ids(list(edits)) if assign_page_ids else list(edits)
+    patch = WikiPatchSet(
+        edits=page_edits, source_path=source, backend=backend, rationale=rationale, proposer=resolve_actor(by)
+    )
     set_errors = validate_patch_set(patch)
     if set_errors:
         raise ContractViolationError("patch-set failed set-level validation:\n  - " + "\n  - ".join(set_errors))
+    # FR-028 / FR-029: after the escape checks; every wiki, legacy included.
+    check_reserved_edits(patch.edits)
     per_edit_errors = [error for edit in patch.edits for error in validate_page_edit_semantics(edit, paths)]
     if per_edit_errors:
         raise ContractViolationError(
@@ -645,6 +697,7 @@ def promote(
     lock_timeout: float | None = None,
     entry_point: str = PROMOTE_ENTRY_POINT_API,
     allow_unguarded_updates: bool = False,
+    by: str | None = None,
 ) -> PromoteResult:
     """Apply a patch-set directory to the wiki (the only write into the wiki).
 
@@ -664,7 +717,13 @@ def promote(
     releasing it, writing nothing (point-in-time evidence). ``lock_timeout``
     overrides ``paths.lock_timeout`` (seconds to wait for the lock).
     ``entry_point`` (``"api"`` or ``"cli"``) is recorded in the receipt as
-    software identity.
+    software identity. ``by`` names who promotes; the receipt records it as
+    ``actor`` ``{name, source}`` by the rule :func:`propose` uses for
+    ``proposer`` (attribution, not authentication). When the manifest's
+    policy sets ``auto_approve_on_promote``, each created or updated content
+    page whose live bytes still match the committed ones is then approved
+    under that actor (drafts never); ``PromoteResult.approved_paths`` lists
+    them and a skipped page is a warning, never a failed promotion.
 
     Raises ``SourceMissingError`` when the directory does not exist,
     ``PathOutsideRootError`` when it lies outside the root without
@@ -684,7 +743,81 @@ def promote(
         dry_run=dry_run,
         entry_point=entry_point,
         allow_unguarded_updates=allow_unguarded_updates,
+        by=by,
     )
+
+
+# ── approve and review_state: approval bound to the revision and the policy ──
+
+
+def approve(
+    pages: list[str],
+    paths: WikiPaths,
+    *,
+    by: str | None = None,
+    expected: dict[str, str] | None = None,
+) -> ApproveResult:
+    """Record that each page's live revision is approved under the wiki's current policy (FR-021).
+
+    ``pages`` are wiki-relative paths; ``expected`` maps a page path to the
+    sha256 the caller reviewed (``read_page``), and a page whose live bytes
+    differ is refused. ``by`` names the approver (``flag``; else
+    ``WIKI_STUDIO_ACTOR``, ``env``; else none), attribution, not
+    authentication. Each decision is one immutable record under
+    ``<wiki>/.audit/approvals/``, written by ``promoter.py`` under the wiki
+    lock; a page whose live bytes already carry a record that satisfies the
+    policy is reported in ``ApproveResult.existing`` and nothing is written.
+
+    Raises ``PathOutsideRootError`` (7) and ``SourceMissingError`` (5) as
+    ``read_page``; ``PromoteValidationError`` (9, nothing written) naming
+    each page and reason: expected revision differs, a structural-lint
+    violation for the page, ``status: draft``, ``superseded_by``, an approver
+    required and none named; ``ContractViolationError`` (4) for a legacy wiki
+    (run ``init``), a newer or malformed manifest, drift on a governed wiki
+    and a symlink in the approval tree; ``OutputWriteError`` (6) when
+    publication fails part way, naming the pages published and not (running
+    ``approve`` again is idempotent). Drift on a managed wiki is in
+    ``ApproveResult.warnings``.
+    """
+    try:
+        return _approve(list(pages), paths, by=by, expected=expected)
+    except OSError as exc:
+        raise OutputWriteError(f"could not write an approval record under {paths.wiki_dir}: {exc}") from exc
+
+
+def review_state(paths: WikiPaths, *, pages: list[str] | None = None) -> list[ReviewState]:
+    """Each page's review state from its verified approval records; reads only, takes no lock (FR-026).
+
+    Advisory and point-in-time, like ``promote --dry-run``. ``pages=None``
+    covers every page the structural linter lists except the root
+    ``index.md`` and ``log.md``; an explicit list covers exactly those pages
+    (exit 7 / 5 as ``read_page``). States, decided in order: a legacy wiki
+    reads ``unapproved`` with reason ``manifest_missing``; a page carrying
+    ``superseded_by`` reads ``superseded``; a live ``status: draft`` reads
+    ``unapproved`` with reason ``draft``; then ``approved`` when a verified
+    record for the live bytes satisfies the current policy,
+    ``policy-changed`` when such records exist but none satisfies it,
+    ``stale`` when only records for other bytes exist, else ``unapproved``.
+    Frontmatter never makes a page approved. Each state names the live and
+    the approved sha256 and the record it rests on.
+    """
+    return review_states(paths, pages)
+
+
+def findings(paths: WikiPaths, *, pages: list[str] | None = None) -> FindingsResult:
+    """What needs a curator's attention, from code that takes no backend and calls no model (FR-037, FR-038).
+
+    Counts by kind first, then the findings: the deterministic health kinds
+    (``stale-claim``, ``weak-orphan``, ``missing-cross-link``,
+    ``avoid-format``), the review kinds from :func:`review_state`
+    (``unapproved``, ``approval-stale``, ``approval-policy-changed``),
+    ``superseded-still-indexed`` and ``no-page-id``. Reads only, takes no
+    lock. ``pages=None`` covers the whole wiki; an explicit list scopes every
+    kind to those pages (``PathOutsideRootError`` / ``SourceMissingError`` as
+    ``read_page``). A completed run is a result whatever it finds;
+    ``lint --health --strict`` stays the CI gate.
+    """
+    return _findings(paths, pages=pages)
 
 
 # ── read: one page, its text and the hash of the bytes read ───
@@ -755,15 +888,41 @@ def read_page(path: str | os.PathLike[str], paths: WikiPaths) -> ReadResult:
 # ── init ──────────────────────────────────────────────────────
 
 
-def init(paths: WikiPaths, *, title: str = DEFAULT_WIKI_TITLE) -> InitResult:
-    """Create the wiki directory with a minimal ``index.md`` and ``log.md`` when absent; never overwrites.
+def init(paths: WikiPaths, *, title: str = DEFAULT_WIKI_TITLE, update_schema: bool = False) -> InitResult:
+    """Create the wiki directory with a minimal ``index.md`` and ``log.md`` when absent, and the root manifest.
 
-    Raises ``OutputWriteError`` when the directory or a file cannot be written.
+    Never overwrites: a wiki without a manifest gains one and nothing else
+    changes. ``update_schema`` acknowledges changed project schema overrides
+    by rewriting only the manifest's ``schema_fingerprint``.
+    ``InitResult.manifest`` says what happened (``created``, ``existing``,
+    ``updated``).
+
+    Raises ``ContractViolationError`` (exit 4) for a symlinked wiki directory,
+    manifest or schema override, and for a malformed or newer manifest;
+    ``OutputWriteError`` when the directory or a file cannot be written.
     """
     try:
-        return init_wiki(paths, title=title)
+        return init_wiki(paths, title=title, update_schema=update_schema)
     except OSError as exc:
         raise OutputWriteError(f"could not initialise the wiki at {paths.wiki_dir}: {exc}") from exc
+
+
+# ── info: the contract this build and this wiki follow ────────
+
+
+def info(paths: WikiPaths) -> InfoResult:
+    """Describe the shipped build and the wiki's knowledge contract (FR-010); reads only, takes no lock.
+
+    ``package_version``; ``schema_contract`` (schema id and version, whether
+    the rules come from project overrides, the current and the declared
+    fingerprint, drift); ``formats`` and ``capabilities`` of this build; and
+    ``manifest`` (``present`` with its version, ``wiki_id``, policy and mode,
+    or ``missing`` for a legacy wiki with the instruction to run ``init``).
+    ``warnings`` carries the drift message ``propose`` and ``promote`` give.
+    A host checks this before it writes. Raises ``ContractViolationError``
+    (exit 4) for a malformed or newer manifest and a symlinked override.
+    """
+    return describe(paths)
 
 
 # ── propose from a directory of agent-written files ───────────

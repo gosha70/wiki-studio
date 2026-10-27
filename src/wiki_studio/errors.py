@@ -78,6 +78,13 @@ REASON_WIKI_IDENTITY_UNAVAILABLE = "wiki_identity_unavailable"
 REASON_PAYLOAD_CHANGED = "payload_changed"
 
 
+class DriftWarning(UserWarning):
+    """The project schema overrides changed since ``init`` on a managed wiki (on a governed one it is exit 4).
+
+    ``api.propose`` emits it through ``warnings.warn``; a caller escalates it
+    to an error with the standard warnings filter. Not an exit code."""
+
+
 class AuditFlushError(IngestError):
     """wiki audit-flush: not a git work tree; append-only invariant violated;
     working log malformed; or git commit failed. Exit 11."""
