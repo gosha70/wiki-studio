@@ -79,8 +79,8 @@ jobs:
       - uses: snok/install-poetry@v1
       - run: poetry install --no-interaction
       - name: pip-audit vulnerability scan
-        # The package has no runtime dependencies; this audits the dev
-        # toolchain resolved in poetry.lock.
+        # The core package has no runtime dependencies; this audits the dev
+        # group resolved in poetry.lock, which includes the optional mcp SDK.
         run: poetry run pip-audit --skip-editable
 
   memkernel-compat:
@@ -180,3 +180,52 @@ jobs:
           from wiki_studio.prompt import load_schema_files
           print("All imports OK;", len(load_schema_files(WikiPaths.for_root("/tmp"))), "schema documents packaged")
           EOF
+      - name: Prove the base install is standard-library only (0.8.0 FR-033)
+        # The wheel without extras: every core module imports under `python -I` with
+        # nothing outside the standard library in sys.modules; every Requires-Dist is
+        # behind the `mcp` extra; wiki-studio-mcp without the extra exits 2 with the
+        # install instruction.
+        run: |
+          python -m venv /tmp/base
+          /tmp/base/bin/pip install --quiet dist/*.whl
+          /tmp/base/bin/python -I - <<'EOF'
+          import importlib, pathlib, sys
+          # What the interpreter loaded at start-up (a site hook, say) is not the core's doing.
+          preloaded = set(sys.modules)
+          import wiki_studio
+          root = pathlib.Path(wiki_studio.__file__).parent
+          names = []
+          for py in sorted(root.rglob("*.py")):
+              rel = py.relative_to(root).with_suffix("")
+              # The adapter is the extra; __main__ runs the CLI when imported.
+              if rel.parts[0] == "mcp_adapter" or rel.name == "__main__":
+                  continue
+              parts = rel.parts[:-1] if rel.name == "__init__" else rel.parts
+              names.append(".".join(("wiki_studio", *parts)))
+          for name in names:
+              importlib.import_module(name)
+          allowed = set(sys.stdlib_module_names) | {"wiki_studio"}
+          foreign = sorted(
+              name for name in set(sys.modules) - preloaded
+              if name.split(".")[0] not in allowed and not name.startswith("_") and name not in sys.builtin_module_names
+          )
+          assert not foreign, f"non-standard-library modules loaded by the core: {foreign}"
+          assert "mcp" not in sys.modules and "wiki_studio.mcp_adapter" not in sys.modules
+          print(f"{len(names)} core modules imported; standard library only")
+          EOF
+          python - <<'EOF'
+          import glob, zipfile
+          wheel = zipfile.ZipFile(glob.glob("dist/*.whl")[0])
+          metadata = next(n for n in wheel.namelist() if n.endswith(".dist-info/METADATA"))
+          requires = [l for l in wheel.read(metadata).decode().splitlines() if l.startswith("Requires-Dist:")]
+          assert requires, "expected the mcp extra in Requires-Dist"
+          bad = [l for l in requires if 'extra == "mcp"' not in l]
+          assert not bad, f"Requires-Dist outside the mcp extra: {bad}"
+          print("Requires-Dist:", requires)
+          EOF
+          set +e
+          message="$(/tmp/base/bin/wiki-studio-mcp 2>&1 >/dev/null)"
+          code=$?
+          set -e
+          test "$code" -eq 2
+          test "$message" = "wiki-studio-mcp needs the mcp extra: pip install 'wiki-studio[mcp]'"

@@ -21,6 +21,7 @@ The code was extracted from
 
 ```bash
 pip install wiki-studio          # Python 3.11–3.13, no runtime dependencies
+pip install 'wiki-studio[mcp]'   # optional: the MCP server, wiki-studio-mcp (see MCP)
 wiki-studio --help
 wiki-studio --version           # 0.7.0
 ```
@@ -533,6 +534,29 @@ additions with defaults in a minor one.
 
 Consumer recipes for code-copilot-team, memkernel and document-assistant
 are in [`docs/consumers.md`](docs/consumers.md).
+
+## MCP
+
+An MCP host (Claude Code, Kiro) can use the wiki without a shell through
+the optional adapter, the one optional dependency (the official `mcp` SDK):
+
+```bash
+pip install 'wiki-studio[mcp]'
+claude mcp add wiki-studio -- wiki-studio-mcp --root /path/to/project --by agent
+```
+
+`wiki-studio-mcp` serves eight tools over stdio: `find`, `read_page`,
+`propose`, `promote`, `lint`, `info`, `findings` and `review_state`. The
+wiki, the actor (`--by`) and the default ranker are fixed at launch; no tool
+takes a root, directory, backend or actor, and `approve`, `ingest`, `query`,
+`audit-flush` and `init` are not exposed. `--disable-tool promote` is
+propose-only mode: proposals wait for a person to promote and approve them.
+Errors are `{error, exit_code, message}` with the exit codes above. Without
+the extra, `wiki-studio-mcp` prints the install instruction and exits 2; the
+base install still imports nothing outside the standard library. Flags,
+results, host configuration and the trace file:
+[`docs/mcp-adapter.md`](docs/mcp-adapter.md); the dependency review and the
+tool contract: `docs/adr/0003-optional-mcp-dependency-and-tool-contract.md`.
 
 ## Evidence
 

@@ -964,29 +964,7 @@ def _do_find(args: argparse.Namespace) -> int:
     for warning in result.warnings:
         print(f"warning: {warning}", file=sys.stderr)
     if args.json:
-        payload = {
-            "question": result.question,
-            "index": paths.relative_to_root(result.index),
-            "pages": [
-                {
-                    "path": p.path,
-                    "file": paths.relative_to_root(p.file),
-                    "title": p.title,
-                    "sha256": p.sha256,
-                    "bytes": p.bytes,
-                }
-                for p in result.pages
-            ],
-            "ranker": result.ranker,
-            "fallback_reason": result.fallback_reason,
-            "bytes_loaded": result.bytes_loaded,
-            "max_bytes": result.max_bytes,
-            "ranker_config_hash": result.ranker_config_hash,
-            "omitted": [{"path": o.path, "bytes": o.bytes} for o in result.omitted],
-            "ineligible": [{"path": i.path, "reason": i.reason} for i in result.ineligible],
-            "warnings": list(result.warnings),
-        }
-        print(json.dumps(payload, indent=2))
+        print(json.dumps(result.as_dict(paths), indent=2))
         return 0
     print(f"ranker: {result.ranker}  ({result.bytes_loaded} of {result.max_bytes} bytes loaded)")
     print(f"{paths.relative_to_root(result.index)}  (always read first)")

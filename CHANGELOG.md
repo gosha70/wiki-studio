@@ -50,6 +50,30 @@ uses [Semantic Versioning](https://semver.org/).
   protocol (`heldout/protocol.md`, enforced by `heldout_protocol.py`) are in
   place; the held-out run and the basis of the default ranker are pending.
   Runs 1 and 2 are pinned by sha256 and unchanged.
+- The MCP adapter as an extra (0.8.0, US4). `pip install 'wiki-studio[mcp]'`
+  adds the first optional dependency, the official MCP SDK
+  (`mcp>=2.3,<3`), and the `wiki-studio-mcp` stdio server.
+  - It serves exactly eight tools: `find`, `read_page`, `propose`,
+    `promote`, `lint`, `info`, `findings` and `review_state`.
+  - The wiki, the actor (`--by`) and the default ranker are fixed at launch.
+  - No tool takes a root, directory, backend, actor or escape-hatch
+    argument.
+  - `--disable-tool` removes tools; `--disable-tool promote` is
+    propose-only mode.
+  - `propose` assigns a `page_id` to every create.
+  - `promote` takes a one-component proposal name and records
+    `promoter.entry_point: "mcp"`. It honours `auto_approve_on_promote` and
+    says so in a warning.
+  - `lint` never reaches a model.
+  - Errors are `{error, exit_code, message}` with the CLI's exit codes.
+  - `--trace PATH` appends one metadata line per request.
+
+  Without the extra, `wiki-studio-mcp` prints the install instruction and
+  exits 2. The base install still imports only the standard library, and CI
+  proves it on the built wheel. Two library additions:
+  `api.PROMOTE_ENTRY_POINT_MCP` and `api.check_proposal_name`.
+  `FindResult.as_dict(paths)` returns the `find --json` object. Docs:
+  `docs/mcp-adapter.md`; decision record: ADR-0003.
 
 ### Changed
 
@@ -57,6 +81,8 @@ uses [Semantic Versioning](https://semver.org/).
   FR-003), reported once as `<path>: not valid UTF-8 (<reason> at byte <n>)`.
   Before, such a page read as empty in `find`, `query` and the health and
   prose checks and could crash `lint --health`.
+- The receipt's `promoter.entry_point` may now be `mcp` (0.8.0, FR-039), an
+  additive value; `receipt_version` stays 1.
 
 ### Upgrade notes
 

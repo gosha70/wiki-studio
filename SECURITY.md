@@ -84,6 +84,25 @@ advisory unless you ask otherwise.
   the proposals directory can change them. A way to forge or alter these
   records is not a vulnerability; a way to make wiki-studio record a name
   the caller did not supply is.
+- The optional MCP adapter (`wiki-studio-mcp`, the `mcp` extra, from 0.8.0)
+  is the agent surface. It serves exactly eight tools over stdio: `find`,
+  `read_page`, `propose`, `promote`, `lint`, `info`, `findings` and
+  `review_state`. `approve`, `ingest`, `query`, `audit-flush` and `init` are
+  not tools, and no tool takes a root, directory, backend, actor or
+  escape-hatch argument: the layout, the actor and the default ranker are
+  fixed when the host launches the server, and client-advertised MCP roots
+  are ignored. `--disable-tool` only removes tools (`--disable-tool promote`
+  is propose-only mode). The actor is the launch `--by` or
+  `WIKI_STUDIO_ACTOR`, so an agent cannot record a person's name as proposer
+  or promoter; it is attribution, not authentication. On a wiki whose policy
+  sets `auto_approve_on_promote`, an agent's promote approves its own
+  proposal: that is the host's configured policy, and the result says so in
+  a warning naming the policy and the server's actor. No tool reaches a
+  model (`lint` runs without a backend). Error results carry the
+  wiki-studio exception class, its exit code and its message; any other
+  exception is reported by class name only. The opt-in trace (`--trace`)
+  records request metadata only, never page content, questions, edits or
+  paths, and must lie outside the wiki.
 
 Anything that lets a source file, a backend response or a proposal
 directory write outside the wiki and proposals directories, run a command,

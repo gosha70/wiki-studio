@@ -168,6 +168,7 @@ STATE_COMMITTING = "committing"
 STATE_COMMITTED = "committed"
 PROMOTE_ENTRY_POINT_API = "api"
 PROMOTE_ENTRY_POINT_CLI = "cli"
+PROMOTE_ENTRY_POINT_MCP = "mcp"
 
 # Staging reads relative to the wiki-directory descriptor where the platform can
 # (POSIX), so identity and staged reads refer to one directory object. Elsewhere
@@ -1697,7 +1698,7 @@ def promote(
         lock file itself may be created). The result is point-in-time
         evidence; a real promote checks again.
     entry_point : str
-        ``"api"`` or ``"cli"``, recorded in the receipt as software identity.
+        ``"api"``, ``"cli"`` or ``"mcp"`` (0.8.0), recorded in the receipt as software identity.
     allow_unguarded_updates : bool
         Compatibility mode with incomplete conflict protection: apply
         ``update`` edits that carry no ``base_sha256`` (proposals written

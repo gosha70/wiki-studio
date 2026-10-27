@@ -43,7 +43,7 @@ import stat
 import warnings
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from .audit import append_ingest_log, build_log_record
 from .audit_flush import FlushResult, flush_state
@@ -75,6 +75,7 @@ from .promoter import (
     LOG_NAME,
     PROMOTE_ENTRY_POINT_API,
     PROMOTE_ENTRY_POINT_CLI,
+    PROMOTE_ENTRY_POINT_MCP,
     ApproveResult,
     InitResult,
     PromoteResult,
@@ -114,6 +115,7 @@ __all__ = [
     "ALLOW_OUT_OF_REPO_PROMOTE_HINT",
     "PROMOTE_ENTRY_POINT_API",
     "PROMOTE_ENTRY_POINT_CLI",
+    "PROMOTE_ENTRY_POINT_MCP",
     "PROPOSE_BACKEND",
     "ApproveResult",
     "AuditFlushResult",
@@ -146,6 +148,7 @@ __all__ = [
     "find",
     "findings",
     "backend_display_name",
+    "check_proposal_name",
     "info",
     "ingest",
     "init",
@@ -576,6 +579,19 @@ def _ingest_multi(
 # ── propose ───────────────────────────────────────────────────
 
 
+def check_proposal_name(name: str) -> None:
+    """Raise ``ValueError`` unless ``name`` is one path component :func:`propose` accepts (0.8.0).
+
+    ASCII letters, digits, ``.``, ``_`` and ``-``, not starting with ``.``: so
+    ``<proposals_dir>/<name>`` never leaves the proposals directory.
+    """
+    if not isinstance(name, str) or not _PROPOSAL_NAME_RE.fullmatch(name):
+        raise ValueError(
+            "name must be one path component of ASCII letters, digits, '.', '_' and '-' "
+            f"not starting with '.', got {name!r}"
+        )
+
+
 def propose(
     edits: list[PageEdit],
     paths: WikiPaths,
@@ -629,11 +645,7 @@ def propose(
     reserved for the approval record (``approved``, ``approved_by``,
     ``approval``, ``review_state``).
     """
-    if not _PROPOSAL_NAME_RE.fullmatch(name):
-        raise ValueError(
-            "name must be one path component of ASCII letters, digits, '.', '_' and '-' "
-            f"not starting with '.', got {name!r}"
-        )
+    check_proposal_name(name)
     # The knowledge contract (FR-009, FR-011): refused on a newer or malformed
     # manifest and on governed drift; managed drift is a DriftWarning, now.
     for message in check_write_contract(paths):
@@ -1057,6 +1069,31 @@ class FindResult:
     ineligible: tuple[IneligiblePage, ...] = ()
     ranker_config_hash: str | None = None
     warnings: tuple[str, ...] = ()
+
+    def as_dict(self, paths: WikiPaths) -> dict[str, Any]:
+        """The ``find --json`` object (FR-009), files relative to ``paths.root``; the MCP ``find`` tool returns it."""
+        return {
+            "question": self.question,
+            "index": paths.relative_to_root(self.index),
+            "pages": [
+                {
+                    "path": p.path,
+                    "file": paths.relative_to_root(p.file),
+                    "title": p.title,
+                    "sha256": p.sha256,
+                    "bytes": p.bytes,
+                }
+                for p in self.pages
+            ],
+            "ranker": self.ranker,
+            "fallback_reason": self.fallback_reason,
+            "bytes_loaded": self.bytes_loaded,
+            "max_bytes": self.max_bytes,
+            "ranker_config_hash": self.ranker_config_hash,
+            "omitted": [{"path": o.path, "bytes": o.bytes} for o in self.omitted],
+            "ineligible": [{"path": i.path, "reason": i.reason} for i in self.ineligible],
+            "warnings": list(self.warnings),
+        }
 
 
 def _page_title(text: str, fallback: str) -> str:
