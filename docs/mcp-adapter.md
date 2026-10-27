@@ -209,13 +209,79 @@ not depend on SDK internals.
 
 ## SDK versions
 
-`mcp>=2.3,<3`. CI runs the adapter tests at the locked dev-group version.
-The `mcp-min` and `mcp-latest` jobs (0.8.0 US5) run them at `mcp==2.3.0` and
-at the newest `mcp<3`; both are blocking. A new SDK release can therefore
+`mcp>=2.3,<3`. CI runs the adapter tests and the conformance suite at the
+locked dev-group version. The `mcp-min` and `mcp-latest` jobs run them at
+`mcp==2.3.0` and at the newest `mcp<3`; both are blocking. A new SDK release can therefore
 turn an unrelated PR red. The response is a fix PR that lowers the ceiling to
 the last known-good minor (for example `>=2.3,<2.5`) and opens an issue for
 the adaptation. The pin is never widened and the job never gets
 `continue-on-error`.
+
+## Conformance
+
+`conformance/mcp/` holds a suite that checks this tool contract against any
+server command. It imports nothing from `wiki_studio`, so another
+implementation of the surface can run it too. It needs the `mcp` SDK.
+
+```bash
+python -m conformance.mcp.run --server-cmd "wiki-studio-mcp --root {root}"
+```
+
+The suite copies `conformance/mcp/fixture/` into a temporary root (`{root}`
+in the command becomes that root) and drives the server through the SDK's
+client over stdio. It runs once per tested protocol version:
+
+- `2025-06-18` and `2025-11-25`, by the initialize handshake;
+- `2026-07-28`, by the per-request envelope.
+
+`--protocol-version V` (repeatable) narrows the run. `--trace PATH` passes
+`--trace PATH` to every launch. Each version runs twelve named cases:
+
+1. The server negotiates the version, or refuses it cleanly.
+2. `tools/list` is exactly the eight tools, with none of the forbidden
+   arguments. Started with `--disable-tool promote`, the list lacks
+   `promote`, a `promote` call is an error, and the other seven work.
+3. `find` returns at most five index-linked pages within the budget and
+   names its ranker.
+4. `read_page`'s `sha256` is the file's. An absolute path, `../` and a
+   symlink are exit-7 errors.
+5. `propose` writes under the proposals directory, leaves the wiki
+   byte-identical, and its create carries a `page_id`.
+6. `promote` lands that proposal with a `committed` receipt and the archive.
+7. A guarded `update` lands. The same update after a hand edit is an exit-9
+   error, and the wiki is unchanged.
+8. `promote` of `../x` or of an absolute name is refused, and a proposal
+   placed there is not applied.
+9. On the default-policy fixture the promoted page is not `approved`.
+10. On the `auto_approve_on_promote` fixture the promote succeeds, lists the
+    page in `approved_paths` with the policy warning, and the approval
+    record's approver is the launch actor.
+11. `lint` with `health` makes no backend call. A stub that records every
+    invocation stands in for the backend CLI.
+12. stdout carries JSON-RPC frames only. A relay records every byte the
+    server writes.
+
+The suite exits 0 when every case passes, 1 when one fails, and 2 when it
+cannot run (for example without the SDK).
+`tests/test_mcp_conformance.py` runs it against `wiki-studio-mcp`.
+
+### Host runs
+
+A host run is the evidence the protocol suite cannot give: a real MCP host,
+at a pinned version, doing the fixed scenario in
+`conformance/mcp/scenario.md` (find, read, propose an update carrying the
+hash, promote, `review_state`) against the default-policy fixture with
+`--trace`.
+
+```bash
+python -m conformance.mcp.run check-host-run --run conformance/runs/<date>-claude-code-<version>
+```
+
+The checker applies cases 2-9 to the run's trace and end state. It never
+reads the transcript. `conformance/runs/README.md` gives the run
+directory's layout and the Claude Code (`claude -p --mcp-config`) and Kiro
+instructions. The owner performs host runs outside CI. `docs/compatibility.md`
+lists what has been run.
 
 ## What the adapter does not do
 

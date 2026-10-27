@@ -4,8 +4,8 @@
 
 | Version | Supported |
 |---|---|
-| 0.7.x | yes |
-| 0.6.x, 0.5.x, 0.4.x, 0.3.x, 0.2.x, 0.1.x | no (upgrade to 0.7; the library API is a superset, see the upgrade notes in `CHANGELOG.md`) |
+| 0.8.x | yes |
+| 0.7.x, 0.6.x, 0.5.x, 0.4.x, 0.3.x, 0.2.x, 0.1.x | no (upgrade to 0.8; the library API is a superset, see the upgrade notes in `CHANGELOG.md`) |
 
 Fixes are released as patch versions of the latest minor line.
 
@@ -22,7 +22,8 @@ advisory unless you ask otherwise.
 
 ## What to look at
 
-- `wiki-studio` has no runtime dependencies; the LLM backends are copilot CLIs
+- `wiki-studio` has no runtime dependencies (the optional `mcp` extra adds
+  the official MCP SDK for `wiki-studio-mcp` only); the LLM backends are copilot CLIs
   the tool starts as subprocesses with the rendered prompt as an argument.
   Prompts contain the source being ingested and wiki pages, so backend
   stderr may echo them; error messages therefore carry only a redacted

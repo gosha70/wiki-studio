@@ -6,6 +6,18 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-10-27 (build; tagged after the evidence PR)
+
+Discovery and portability, Release C of `docs/roadmap.md` (issue #38). A
+second ranker, FTS5 with bm25 over the same index-linked candidates, runs
+behind the index-first workflow with a byte budget and a rebuildable cache
+outside the wiki. A preregistered held-out measurement will decide the
+default ranker. An optional MCP adapter gives MCP hosts the curation loop
+with the CLI's boundary, and a conformance suite checks it. Exit codes 0
+and 2..11 are unchanged; the `api` changes are additive with defaults; the
+page schema does not change (ADR-0002 is untouched); the receipt stays
+version 1. Release C is not declared closed by this entry; see Limitations.
+
 ### Added
 
 - Ranked discovery with a context budget (0.8.0, US1). `find` and `query`
@@ -74,6 +86,18 @@ uses [Semantic Versioning](https://semver.org/).
   `api.PROMOTE_ENTRY_POINT_MCP` and `api.check_proposal_name`.
   `FindResult.as_dict(paths)` returns the `find --json` object. Docs:
   `docs/mcp-adapter.md`; decision record: ADR-0003.
+- The MCP conformance suite (0.8.0, US5). `python -m conformance.mcp.run
+  --server-cmd "COMMAND"` drives any MCP server over stdio through the
+  SDK's client against a fixture wiki (`conformance/mcp/fixture/`, a
+  default-policy and an `auto_approve_on_promote` variant). It runs twelve
+  named cases once per tested protocol version: `2025-06-18` and
+  `2025-11-25` by handshake, `2026-07-28` by the per-request envelope. It
+  imports nothing from `wiki_studio`. `check-host-run --run DIR` applies
+  cases 2-9 to a recorded host run's trace and end state; the fixed scenario
+  is `conformance/mcp/scenario.md` and the run layout
+  `conformance/runs/README.md`. CI gains the blocking `mcp-min`
+  (`mcp==2.3.0`) and `mcp-latest` (newest `mcp<3`) jobs.
+  `docs/compatibility.md` gains an MCP table.
 
 ### Changed
 
@@ -81,6 +105,17 @@ uses [Semantic Versioning](https://semver.org/).
   FR-003), reported once as `<path>: not valid UTF-8 (<reason> at byte <n>)`.
   Before, such a page read as empty in `find`, `query` and the health and
   prose checks and could crash `lint --health`.
+- The 0.7.0 page selector is now named the `index-first` ranker. It is
+  unchanged, and it stays the default.
+- The default ranker is `index-first`. Its basis is pending the held-out
+  run: the evidence PR records the held-out measurement and applies the rule
+  of FR-029 (FTS5 becomes the default only if it is no worse than
+  `index-first` at hit at 1 and at hit at 5 on the held-out set, with at
+  least 15 held-out questions with a gold page and at least ten eligible
+  pages), and this entry then states which basis the default rests on. Until
+  then `fts5` is opt-in (`--ranker fts5`, `WIKI_STUDIO_RANKER=fts5`, the MCP
+  server's `--ranker`), untuned, with the development-set result
+  `eval/navigation/run3/results-untuned.json`.
 - The receipt's `promoter.entry_point` may now be `mcp` (0.8.0, FR-039), an
   additive value; `receipt_version` stays 1.
 
@@ -95,6 +130,33 @@ uses [Semantic Versioning](https://semver.org/).
   cache with one `.gitignore` pattern, `.<wiki-dir-name>.wiki-studio.*`
   (`.wiki.wiki-studio.*` for the default `knowledge/wiki`). To reset the
   search cache, delete the file; the next `fts5` call rebuilds it.
+- No change is needed for `api` callers who pass none of the new keywords:
+  every new parameter is keyword-only with a default. Under the default
+  `index-first` ranker `find` and `query` select as 0.7.0 did, except that
+  superseded and non-UTF-8 pages are never selected and a page that does
+  not fit the 65,536-byte budget is skipped.
+
+### Limitations
+
+- The discovery evidence is small: small question sets; questions written
+  by the author's tooling; a held-out ingest by one model in one attempt.
+  No claim of superiority over other products is made.
+- The basis of the default ranker is pending the held-out run (see
+  Changed). The held-out questions, ingest, freeze, tuning and the one
+  held-out run are owner-run steps in the evidence PR
+  (`eval/navigation/heldout/protocol.md`); the build performed none of
+  them.
+- The MCP host run is not recorded yet. Until a recorded Claude Code run
+  passes `check-host-run`, the `mcp` extra is a preview and its evidence is
+  the protocol-level conformance suite in CI. Kiro is documented and not
+  release-blocking.
+- No scope was cut by the build. The circuit breaker's week checkpoints are
+  applied by the owner at the build-PR review; a cut would be named here.
+- Release C is not declared closed. It closes only when all three
+  exit-evidence items exist on the 0.8.0 tag: versioned retrieval results
+  on declared fixtures including the held-out run, the cache recovery
+  tests, and one non-memkernel runtime passing the adapter conformance
+  suite in a recorded host run.
 
 ## [0.7.0] — 2026-10-27
 

@@ -23,7 +23,7 @@ The code was extracted from
 pip install wiki-studio          # Python 3.11–3.13, no runtime dependencies
 pip install 'wiki-studio[mcp]'   # optional: the MCP server, wiki-studio-mcp (see MCP)
 wiki-studio --help
-wiki-studio --version           # 0.7.0
+wiki-studio --version           # 0.8.0
 ```
 
 From a checkout: `poetry install`, then `poetry run wiki-studio --help`.
@@ -558,6 +558,14 @@ results, host configuration and the trace file:
 [`docs/mcp-adapter.md`](docs/mcp-adapter.md); the dependency review and the
 tool contract: `docs/adr/0003-optional-mcp-dependency-and-tool-contract.md`.
 
+**Status: preview.** The adapter's evidence so far is the protocol-level
+conformance suite (`python -m conformance.mcp.run --server-cmd
+"wiki-studio-mcp --root {root}"`, twelve cases for each tested protocol
+version, run in CI at the SDK floor and at the newest `mcp<3`). It stops
+being a preview when a recorded Claude Code run passes `check-host-run`
+(`conformance/runs/README.md`); `docs/compatibility.md` lists what has been
+tested.
+
 ## Evidence
 
 What is measured so far is one component, not an agent: the querier's
@@ -664,6 +672,30 @@ before tuning, one held-out run under a frozen configuration hash. `fts5`
 becomes the default only if it is no worse than `index-first` at hit at 1
 and at 5 there, with at least 15 gold questions and ten eligible pages;
 until that run exists the default is `index-first`.
+
+| Number | Run 3, development, untuned: `index-first` | Run 3, development, untuned: `fts5` | Run 3, development, tuned | Held-out |
+|---|---|---|---|---|
+| Questions with a gold page / eligible pages | 21 / 9 | 21 / 9 | pending | pending the held-out run |
+| Hit at 1 (random baseline) | 3 of 21, 14.3% (8.5%) | 14 of 21, 66.7% (11.1%) | pending | pending the held-out run |
+| Hit at 5 (random baseline) | 10 of 21, 47.6% (24.9%) | 20 of 21, 95.2% (55.6%) | pending | pending the held-out run |
+| Discordant questions at 1 / at 5 (only this ranker hits) | 1 / 0 | 12 / 10 | pending | pending the held-out run |
+| Competing questions where a distractor outranks gold | 2 of 4 | 0 of 4 | pending | pending the held-out run |
+| Unanswerable questions (6): empty selection / mean pages / mean bytes loaded | 1 of 6 / 4.0 / 25,176 | 0 of 6 / 5.0 / 34,986 | pending | pending the held-out run |
+| Context per question, median bytes / words (35 questions) | 11,664 / 1,454 | 33,323 / 4,279 | pending | pending the held-out run |
+| Ingest coverage | 21 of 29 (inherited from run 2, not re-measured) | same | same | pending the held-out run |
+| `find` latency, median (cold cache / warm cache / in memory, no cache) | — | 3.8 / 2.0 / 2.3 ms | pending | pending the held-out run |
+
+Run 3's `index-first` column reproduces run 2's selector numbers, as it
+must. The `fts5` column is the untuned configuration (`porter unicode61`,
+weights 4, 4, 2, 1, `ranker_config_hash` `c4b6576a…`) on the development
+set; it is not the basis of any default. The latency was measured on one
+machine (macOS arm64, Python 3.13.2, SQLite 3.48.0, five repetitions over
+the 35 questions); on a nine-page wiki the on-disk cache saves about a
+third of a millisecond per warm call over an in-memory build, so its value
+on small wikis is small. The tuned column and the held-out column are filled
+by the evidence PR. Read these numbers with their caveats: small sets;
+questions written by the author's tooling; an ingest by one model in one
+attempt; no claim of superiority over other products.
 
 ## Development
 

@@ -28,9 +28,9 @@ jobs:
       - uses: snok/install-poetry@v1
       - run: poetry install --no-interaction
       - name: Ruff check
-        run: poetry run ruff check src/ tests/
+        run: poetry run ruff check src/ tests/ conformance/
       - name: Ruff format check
-        run: poetry run ruff format --check src/ tests/
+        run: poetry run ruff format --check src/ tests/ conformance/
 
   typecheck:
     name: Type Check
@@ -153,6 +153,59 @@ jobs:
       - name: Run the Release B loop cases against the installed packages
         # The import check above guarantees the suite is not skipped here.
         run: /tmp/loop/bin/python -m pytest -q -p no:cacheprovider -rs tests/integration/test_release_b_loop.py
+
+  mcp-min:
+    # The MCP adapter and the conformance suite at the SDK floor (0.8.0 FR-044):
+    # the wheel with its `mcp` extra and mcp==2.3.0 in a fresh virtual environment.
+    # Blocking. The `test` job runs the same files at the locked dev-group version.
+    name: MCP adapter (mcp==2.3.0)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - uses: snok/install-poetry@v1
+      - name: Build the wheel
+        run: poetry build
+      - name: Install the wheel with the mcp extra at the SDK floor
+        run: |
+          python -m venv /tmp/mcp-min
+          /tmp/mcp-min/bin/pip install --quiet --upgrade pip
+          /tmp/mcp-min/bin/pip install --quiet "$(ls dist/*.whl)[mcp]" "mcp==2.3.0" pytest
+          /tmp/mcp-min/bin/pip check
+          /tmp/mcp-min/bin/python -c "import importlib.metadata as m; v = m.version('mcp'); print('mcp', v); assert v == '2.3.0'"
+      - name: Run the adapter tests and the conformance suite
+        # The import check above guarantees the SDK-driven tests are not skipped here.
+        run: /tmp/mcp-min/bin/python -m pytest -q -p no:cacheprovider -rs tests/test_mcp_adapter.py tests/test_mcp_conformance.py
+
+  mcp-latest:
+    # The same at the newest mcp<3 that `pip install "wiki-studio[mcp]"` resolves
+    # (0.8.0 FR-044). Blocking: a new SDK release that breaks it is answered by a fix
+    # PR lowering the ceiling to the last known-good minor plus an issue for the
+    # adaptation (docs/mcp-adapter.md); the pin is never widened and this job never
+    # gets continue-on-error.
+    name: MCP adapter (newest mcp<3)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - uses: snok/install-poetry@v1
+      - name: Build the wheel
+        run: poetry build
+      - name: Install the wheel with the mcp extra at the newest allowed SDK
+        run: |
+          python -m venv /tmp/mcp-latest
+          /tmp/mcp-latest/bin/pip install --quiet --upgrade pip
+          /tmp/mcp-latest/bin/pip install --quiet --upgrade "$(ls dist/*.whl)[mcp]" pytest
+          /tmp/mcp-latest/bin/pip check
+          /tmp/mcp-latest/bin/python -c "import importlib.metadata as m; print('mcp', m.version('mcp'))"
+      - name: Run the adapter tests and the conformance suite
+        run: /tmp/mcp-latest/bin/python -m pytest -q -p no:cacheprovider -rs tests/test_mcp_adapter.py tests/test_mcp_conformance.py
 
   build-check:
     name: Build Check

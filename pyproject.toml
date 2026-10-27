@@ -3,7 +3,7 @@
 
 [tool.poetry]
 name = "wiki-studio"
-version = "0.7.0"
+version = "0.8.0"
 description = "Karpathy-pattern LLM wiki maintainer: ingest, promote, query, lint and audit a curated markdown knowledge base."
 authors = ["EGOGE <i.am.goga@gmail.com>"]
 license = "Apache-2.0"
@@ -61,7 +61,7 @@ target-version = "py311"
 src = ["src", "tests"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["wiki_studio", "tests", "eval"]
+known-first-party = ["wiki_studio", "tests", "eval", "conformance"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "A", "SIM", "TCH"]

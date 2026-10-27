@@ -13,10 +13,13 @@ development, one `## US<n>:` group in `tasks.md` per build phase).
 ```bash
 poetry install                                   # once
 poetry run pytest -q -p no:cacheprovider          # unit + e2e (test backend, no network)
-poetry run ruff check src/ tests/ && poetry run ruff format --check src/ tests/
+poetry run ruff check src/ tests/ conformance/ && poetry run ruff format --check src/ tests/ conformance/
 poetry run mypy src/
 poetry run pytest -q --cov=wiki_studio --cov-fail-under=92
 poetry run wiki-studio --help                        # the CLI
+poetry run wiki-studio-mcp --help                    # the MCP server (the `mcp` extra)
+poetry run python -m conformance.mcp.run --server-cmd "wiki-studio-mcp --root {root}"   # MCP conformance suite
+poetry run python -m eval.navigation.discovery --help    # discovery evaluation runner
 poetry build                                     # wheel + sdist
 ```
 
@@ -35,6 +38,9 @@ src/wiki_studio/ingestor*.py    single-source and multi-page ingest (proposal ge
 src/wiki_studio/promoter.py     THE ONLY MODULE THAT WRITES INTO THE WIKI DIRECTORY (lint-gated, scoped commit, receipt protocol)
 src/wiki_studio/wikilock.py     WikiLock: the OS advisory lock beside the resolved wiki that serialises cooperating writers
 src/wiki_studio/querier.py      index-first question answering over wiki pages
+src/wiki_studio/discovery.py    rankers (index-first, fts5), eligibility, the byte budget, the FTS5 probe, RankerConfig
+src/wiki_studio/search_index.py the FTS5 index in memory and the on-disk search cache beside the lock (its only writer)
+src/wiki_studio/mcp_adapter/    wiki-studio-mcp: the optional MCP server (the only place `mcp` is imported, behind the extra)
 src/wiki_studio/lint.py         structural linter (frontmatter, page_type, slug, placement, links, reachability)
 src/wiki_studio/health_lint.py  knowledge-health checks (contradictions, stale claims, weak orphans, cross-links)
 src/wiki_studio/audit*.py       ingest log, audit tree validation, audit flush (git)
@@ -42,6 +48,8 @@ src/wiki_studio/prompt.py, proposal.py, wiki_state.py, yaml_lite.py, errors.py
 src/wiki_studio/backends/       copilot_cli (claude, codex, cursor, pi), json_extract, test (deterministic, for CI)
 src/wiki_studio/schema/*.md     page-types, ingest, citation, lint, audit rules, WIKI_MAINTAINER (package data)
 tests/                     unittest-style tests run by pytest; fixtures under tests/fixtures/
+conformance/mcp/           adapter-agnostic MCP conformance suite (run.py, fixture/, scenario.md); conformance/runs/ host runs
+eval/navigation/           frozen runs 1-2 (never edited), discovery.py runner, run3/ development set, heldout/ protocol
 ```
 
 ## Conventions that CI enforces

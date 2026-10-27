@@ -145,7 +145,7 @@ class TestCliHelp(_LayoutCase):
         result = self.run_cli("--version")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), __version__)
-        self.assertEqual(__version__, "0.7.0")
+        self.assertEqual(__version__, "0.8.0")
 
     def test_each_verb_help_exits_zero(self) -> None:
         for verb in _VERBS:
