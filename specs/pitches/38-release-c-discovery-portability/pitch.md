@@ -72,7 +72,22 @@ These facts drive the scopes and rabbit holes.
    `UnicodeDecodeError` is a `ValueError`. The fix goes into that helper:
    it catches `UnicodeDecodeError` as it catches `OSError` and returns
    the empty string, so the selector's body is untouched. No frozen
-   fixture has a non-UTF-8 page, so no frozen number moves.
+   fixture has a non-UTF-8 page, so no frozen number moves. The helper
+   has four callers, and the change reaches all of them:
+
+   | Caller | Today, on a non-UTF-8 page | After the change |
+   |---|---|---|
+   | `querier._select_query_candidates` (index-first) | crash | the page reads as empty and is never selected |
+   | `health_lint` (five call sites) | crash | the page reads as empty and is never checked |
+   | `prose_lint` (two call sites) | crash | the page reads as empty and is never checked |
+   | `wiki_state` (ingest's wiki state, the prompt) | crash | the model sees the page as empty; an update drafted against it fails its base-hash check at `promote`, so the wiki is safe |
+
+   An empty read makes the page invisible without a word, and the
+   structural lint (`lint.py:120`, `errors="replace"`) does not flag it
+   either. So the helper change comes with one structural-lint rule: a
+   wiki page that is not valid UTF-8 is a violation, reported once with
+   its path (S1). Every caller is then safe, and the page is reported
+   instead of disappearing.
 5. **The single-writer scans are syntactic.** `tests/test_e2e.py:1054-1092`
    and `tests/test_audit.py:466-508` flag a write call on a line that
    mentions `wiki_dir`. A `sqlite3.connect(...)` under the wiki would pass
@@ -265,7 +280,12 @@ S4.
   the result. In the index-first path it reads as empty, through the
   helper fix in finding 4, rather than raising. The selector's body is
   not edited, the frozen numbers do not move, and `test_navigation_eval`
-  proves it.
+  proves it. Because that helper also serves the health checks, the
+  prose lint and ingest's wiki state (finding 4), the structural lint
+  gains one rule: a page that is not valid UTF-8 is a violation that
+  names the path. It is fatal like every structural violation, so
+  `promote` refuses a patch set that introduces one, and `lint` reports
+  an existing one once instead of every reader going quiet.
 - **Documents.** The columns are path (the slug and path segments as
   words), title (frontmatter), headings and body (frontmatter removed).
 - **Query.** The question goes through the querier's tokenizer and the
@@ -306,7 +326,9 @@ S4.
   Questions that contain `"`, `NEAR`, `AND`, `-`, `*`, `:`, parentheses
   or non-ASCII never raise. A superseded page is never selected. An
   oversized-page fixture covers skip-and-continue and an index over
-  budget. The cap and tie order hold. A link to a symlinked page or to
+  budget. A non-UTF-8 page fixture: `find` with either ranker skips it
+  and counts it, `lint` reports the one violation with its path, and
+  `lint --health` and `lint --prose` complete without raising. The cap and tie order hold. A link to a symlinked page or to
   `../` is never a candidate. `find` leaves the wiki tree byte-identical.
 
 ### S2: The rebuildable cache, ~6-8h
@@ -903,3 +925,4 @@ chooses a fix session, a cut from the list above, or a hold.
 | 2026-10-26 | shaped (revised) | Owner decisions on the five open items: D5 and D16 confirmed; D8 overruled (the held-out set is a fresh corpus ingested as in run 2 under a frozen protocol, with ingestion coverage reported; proposed sources mapatlas docs at 7c3a8de (D8a) and a 15-gold-question floor for D5 (D8b), both to confirm); D9 kept as the owner's default (questions written from the held-out source documents before the ingest); D14 overruled (MCP promote honours `auto_approve_on_promote` and warns, no `--allow-auto-approve`). S3 now 10-14h; total 36-48h; appetite stays 6w. bet_status unchanged. |
 | 2026-10-27 | shaped (revised) | D8b approved. D8a approved with a correction: the held-out sources are the eight user-facing README files of mapatlas at 7c3a8de609fb8e2173a74a884afdc4029ff18ca5 (30,554 bytes); `experiment/rubric.md` and `experiment/results.md` removed. bet_status unchanged. |
 | 2026-10-27 | shaped (revised) | PR #50 review. Owner decision D8c: a ten-eligible-page floor for D5, with the random baseline and eligible page count reported beside every hit rate; `WIKI_STUDIO_RANKER` and a server `--ranker` flag set the default ranker; the CHANGELOG states the basis of the default. Fixes: the cache is measured against an in-memory build in S3's latency block; `--disable-tool NAME` (propose-only mode) can remove MCP tools but never add them, with a conformance case; MCP `propose` assigns `page_id` (D20); the non-UTF-8 fix lives in `_read_text_or_empty`, not in the selector. bet_status unchanged. |
+| 2026-10-27 | shaped (revised) | PR #50 review, second pass. Finding 4 lists the four callers of `_read_text_or_empty` and what each does after the change; a non-UTF-8 page becomes a structural-lint violation so it is reported once instead of reading as empty everywhere (S1). bet_status unchanged. |
