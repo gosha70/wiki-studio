@@ -181,3 +181,5 @@ cython_debug/
 .cursorindexingignore
 # code-copilot-team review-loop state (transient)
 .cct/
+# wiki-studio's lock and search cache beside a wiki named `wiki` (the evaluation fixtures)
+.wiki.wiki-studio.*

@@ -39,6 +39,17 @@ uses [Semantic Versioning](https://semver.org/).
   owner-only (`0o600`). `WikiPaths` gains `search_cache` and
   `search_cache_file()`; `info.discovery.cache` reports
   `{path, state: present | missing | unusable, reason}`.
+- Discovery evidence (0.8.0, US3). `python -m eval.navigation.discovery run`
+  measures both rankers over a frozen fixture, with the eligible page count
+  and the random baseline beside every hit rate, absent-question behaviour,
+  context size and latency (cached beside in-memory); `tune` and `decide`
+  implement the closed tuning grid and the default-ranker rule. Run 3's
+  untuned development-set result (`eval/navigation/run3/results-untuned.json`)
+  is committed before any tuning. The held-out set (`eval/navigation/heldout/`,
+  the eight mapatlas READMEs at a pinned commit) and its preregistered
+  protocol (`heldout/protocol.md`, enforced by `heldout_protocol.py`) are in
+  place; the held-out run and the basis of the default ranker are pending.
+  Runs 1 and 2 are pinned by sha256 and unchanged.
 
 ### Changed
 

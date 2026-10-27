@@ -25,3 +25,13 @@ licensed under the Apache License, Version 2.0, at tag v0.4.0 (commit
 1beebf7bfdf77fc52eb7c0cb534eca1017416304): README.md and docs/**/*.md,
 now eval/navigation/corpus/ with paths preserved. Per-file checksums are
 in eval/navigation/manifest.json. These files are excluded from the wheel.
+
+This repository also includes, as the held-out evaluation corpus and not as
+part of the distributed package, documentation copied verbatim from
+gosha70/mapatlas (https://github.com/gosha70/mapatlas), licensed under the
+Apache License, Version 2.0, at commit
+7c3a8de609fb8e2173a74a884afdc4029ff18ca5: README.md, apps/demo/README.md
+and packages/{core,maplibre,offline-pmtiles,react,recorder-web,storage-idb}/README.md,
+now eval/navigation/heldout/corpus/ with "/" in each path replaced by "__".
+Per-file checksums are in eval/navigation/heldout/manifest.json. These files
+are excluded from the wheel.

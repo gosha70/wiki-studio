@@ -622,6 +622,25 @@ unchanged. Agent-level evidence, an arm in `agent-memory-bench` next to
 memkernel's, is tracked in
 [issue #10](https://github.com/gosha70/wiki-studio/issues/10).
 
+Run 3 and a held-out set (0.8.0) measure the second ranker, `fts5`, beside
+`index-first` without touching runs 1 and 2: their files are pinned by
+sha256 (`tests/test_frozen_runs.py`) and the numbers above stay the
+published baseline. `python -m eval.navigation.discovery run` calls `find`
+with both rankers and reports, beside every hit rate, the eligible page
+count and the random baseline, plus absent-question behaviour, bytes and
+words loaded, and latency through the cache and without it. Run 3 is the
+development set, run 2's frozen wiki and its 21 questions with a gold page:
+`eval/navigation/run3/results-untuned.json` is the untuned configuration's
+result, committed before any tuning, and it is development-set evidence
+only. The default is decided on a fresh held-out corpus, the eight
+user-facing READMEs of mapatlas at a pinned commit, under the preregistered
+protocol in `eval/navigation/heldout/protocol.md`: questions committed
+before the ingest, one ingest with no retries, the wiki and the gold frozen
+before tuning, one held-out run under a frozen configuration hash. `fts5`
+becomes the default only if it is no worse than `index-first` at hit at 1
+and at 5 there, with at least 15 gold questions and ten eligible pages;
+until that run exists the default is `index-first`.
+
 ## Development
 
 ```bash
