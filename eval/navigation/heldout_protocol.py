@@ -221,12 +221,13 @@ def step_questions(heldout_dir: Path, commit: str) -> str:
     if not path.is_file():
         raise ProtocolError(f"{path} not found; the questions are written and committed first")
     validate_questions(json.loads(path.read_text(encoding="utf-8")))
-    committed = hashlib.sha256(_committed_bytes(commit, path)).hexdigest()
+    sha = _git("rev-parse", commit)  # resolved once: the bytes checked are the commit recorded
+    committed = hashlib.sha256(_committed_bytes(sha, path)).hexdigest()
     on_disk = _sha256(path)
     if committed != on_disk:
         raise ProtocolError(f"questions.json differs from its committed version at {commit}; commit it first")
     manifest["questions_sha256"] = on_disk
-    manifest["questions_commit"] = _git("rev-parse", commit)
+    manifest["questions_commit"] = sha
     advance(manifest, STATE_QUESTIONS)
     save_manifest(heldout_dir, manifest)
     return f"questions: recorded {on_disk[:12]} at {manifest['questions_commit'][:12]}"
@@ -284,6 +285,8 @@ def step_probe(heldout_dir: Path, claude_binary: str) -> bool:
         "query_log": heldout_dir / "doc_internal",
         "proposals": heldout_dir / PROPOSALS_DIR,
         "wiki": heldout_dir / WIKI_DIR,
+        "corpus": heldout_dir / CORPUS_DIR,
+        "heldout_set": heldout_dir,  # everything else beside them: questions.json, gold.json, the manifest
     }
     before = {name: _tree_hash(path) for name, path in watched.items()}
     command = [claude_binary, "-p", PROBE_PROMPT]
@@ -360,7 +363,8 @@ def _ingest_one(heldout_dir: Path, number: int, entry: dict[str, Any], env: dict
         "path": entry["path"],
         "attempts": 1,
         "ingest_exit_code": code,
-        "model_calls": 0 if code == EXIT_BACKEND_NOT_FOUND else 1,
+        # Not a measurement: one per attempt that reached the backend, whether or not it made a call.
+        "model_calls_upper_bound": 0 if code == EXIT_BACKEND_NOT_FOUND else 1,
         "proposal_dir": written[0] if written else None,
         "promote_exit_code": None,
         "pages_written": [],
@@ -428,7 +432,7 @@ def step_ingest(heldout_dir: Path) -> str:
         "rejected": sum(d["disposition"] == DISPOSITION_REJECTED for d in documents),
         "backend_error": sum(d["disposition"] == DISPOSITION_BACKEND_ERROR for d in documents),
         "timeout": sum(d["disposition"] == DISPOSITION_TIMEOUT for d in documents),
-        "model_calls": sum(d["model_calls"] for d in documents),
+        "model_calls_upper_bound": sum(d["model_calls_upper_bound"] for d in documents),
         "total_wall_seconds": round(sum(d["wall_seconds"] for d in documents), 3),
         "lint_clean": lcode == 0,
     }
@@ -468,7 +472,11 @@ def validate_gold(questions: list[dict[str, Any]], gold: Any, wiki_dir: Path) ->
             raise ProtocolError(f"gold for {q['id']}: distractors must be a list")
         if q["kind"] == KIND_ABSENT and target is not None:
             raise ProtocolError(f"{q['id']} is absent; its gold must be null")
-        if target is not None and not (isinstance(target, str) and (wiki_dir / target).is_file()):
+        if target is not None and not (
+            isinstance(target, str)
+            and (wiki_dir / target).resolve().is_relative_to(wiki_dir.resolve())
+            and (wiki_dir / target).is_file()
+        ):
             raise ProtocolError(f"gold for {q['id']} names no page of the frozen wiki: {target!r}")
 
 

@@ -16,6 +16,7 @@ import dataclasses
 import hashlib
 import io
 import json
+import posixpath
 import shutil
 import tempfile
 import unittest
@@ -25,8 +26,11 @@ from unittest import mock
 
 from eval.navigation import discovery, heldout_protocol
 from eval.navigation.run2_protocol import _tree_hash
+from wiki_studio import api
 from wiki_studio import discovery as wiki_discovery
 from wiki_studio.discovery import RANKER_FTS5, RANKER_INDEX_FIRST, RankerConfig, ranker_config_hash
+from wiki_studio.paths import WikiPaths
+from wiki_studio.querier import _extract_index_links
 
 NAVIGATION = Path(__file__).resolve().parents[1] / "eval" / "navigation"
 RUN2 = NAVIGATION / "run2"
@@ -292,6 +296,14 @@ class TestTuneGuards(unittest.TestCase):
         with self.assertRaisesRegex(discovery.RunnerError, "frozen"):
             self._tune(heldout, run3, [untuned])
 
+    def test_tune_refuses_candidates_without_the_untuned_configuration(self) -> None:
+        heldout = _frozen_heldout(self.root)
+        run3 = _run3_with_untuned(self.root)
+        other = dataclasses.replace(discovery.load_config(UNTUNED), min_match_tokens=2)
+        with self.assertRaisesRegex(discovery.RunnerError, "tie-break"):
+            self._tune(heldout, run3, [other])
+        self.assertFalse((run3 / discovery.TUNED_CONFIG_NAME).exists())
+
     def test_the_grid_is_closed(self) -> None:
         grid = discovery.grid()
         self.assertEqual(len(grid), 108)
@@ -386,6 +398,33 @@ class TestHeldOutRunGuards(unittest.TestCase):
 
         self.assertTrue(discovery.reproduce(results, heldout, NAVIGATION))
 
+    def test_post_hoc_refuses_when_the_original_ran_under_another_configuration(self) -> None:
+        heldout = _frozen_heldout(self.root)
+        self._freeze_live_config()
+        code, _out, err = self._main_run(heldout)
+        self.assertEqual(code, 0, err)
+        results = heldout / "results.json"
+        document = json.loads(results.read_text(encoding="utf-8"))
+        document["parameters"]["ranker_config_hash"] = "0" * 64
+        results.write_text(json.dumps(document), encoding="utf-8")
+        code, _out, err = self._main_run(heldout, "--post-hoc", "rerun-1")
+        self.assertEqual(code, 1)
+        self.assertIn("not produced under the current", err)
+        self.assertFalse((heldout / "results-post-hoc-rerun-1.json").exists())
+
+    def test_inherited_ingest_coverage_needs_the_fixtures_results(self) -> None:
+        fixture = self.root / "dev"
+        shutil.copytree(RUN2 / "wiki", fixture / "wiki")
+        shutil.copy(RUN2 / "gold.json", fixture / "gold.json")
+        with self.assertRaisesRegex(discovery.RunnerError, "inherited"):
+            discovery.compute(
+                fixture,
+                NAVIGATION,
+                config=discovery.load_config(UNTUNED),
+                search_cache=self.root / "c.sqlite",
+                latency=False,
+            )
+
     def test_post_hoc_needs_the_original_run(self) -> None:
         heldout = _frozen_heldout(self.root)
         self._freeze_live_config()
@@ -448,8 +487,15 @@ class TestDecisionRule(unittest.TestCase):
         self.assertIn("fewer than 10 eligible pages (9", decision.basis)
 
     def test_a_fallback_is_not_a_pass(self) -> None:
-        decision = discovery.decide(_results((0.5, 0.8), (0.5, 0.8), ran_as=RANKER_INDEX_FIRST), FLOORS_MET)
+        results = _results((0.5, 0.8), (0.5, 0.8), ran_as=RANKER_INDEX_FIRST)
+        decision = discovery.decide(results, FLOORS_MET)
         self.assertEqual(decision.default_ranker, RANKER_INDEX_FIRST)
+        self.assertIn("fell back on at least one", decision.basis)
+        results["per_question"] = [
+            {RANKER_FTS5: {"ran_as": RANKER_FTS5}},
+            {RANKER_FTS5: {"ran_as": RANKER_INDEX_FIRST}},
+        ]
+        self.assertIn("1 of 2 questions", discovery.decide(results, FLOORS_MET).basis)
 
     def test_decide_without_a_heldout_run_says_pending(self) -> None:
         with tempfile.TemporaryDirectory() as tmp, mock.patch.object(discovery, "HELDOUT_DIR", Path(tmp)):
@@ -511,11 +557,17 @@ class TestHeldOutProtocolOrder(unittest.TestCase):
                     self.assertIn(f"expected state {expected!r}", err)
                     self.assertEqual(_manifest(self.heldout)["state"], state)
 
-    def test_the_committed_manifest_is_in_state_sources(self) -> None:
-        # The build ships the sources only; every later state is the owner's (the evidence PR).
+    def test_the_committed_manifest_moved_through_the_states_in_order(self) -> None:
+        # The build ships the sources only; every later state is the owner's (the evidence PR), taken in order.
         manifest = _manifest(HELDOUT)
-        self.assertIn(manifest["state"], heldout_protocol.STATES)
-        self.assertEqual(manifest["history"][0]["state"], heldout_protocol.STATE_SOURCES)
+        visited = [h["state"] for h in manifest["history"]]
+        self.assertEqual(visited, list(heldout_protocol.STATES[: len(visited)]))
+        self.assertEqual(manifest["state"], visited[-1])
+        if not (HELDOUT / "wiki").exists():
+            self.assertIn(
+                manifest["state"],
+                heldout_protocol.STATES[: heldout_protocol.STATES.index(heldout_protocol.STATE_INGESTED)],
+            )
 
     def test_questions_records_the_committed_set(self) -> None:
         _set_manifest(self.heldout, state=heldout_protocol.STATE_SOURCES)
@@ -606,6 +658,38 @@ class TestHeldOutProtocolOrder(unittest.TestCase):
         _write(heldout / "gold.json", json.dumps([dict(GOLD[0], gold="concepts/none.md"), *GOLD[1:]]))
         with self.assertRaisesRegex(heldout_protocol.ProtocolError, "names no page"):
             heldout_protocol.step_freeze(heldout)
+
+    def test_freeze_refuses_gold_outside_the_wiki(self) -> None:
+        heldout = _synthetic_heldout(Path(self._tmp.name) / "fixture")
+        heldout_protocol.step_freeze_wiki(heldout)
+        _write(heldout / "gold.json", json.dumps([dict(GOLD[0], gold="../questions.json"), *GOLD[1:]]))
+        with self.assertRaisesRegex(heldout_protocol.ProtocolError, "names no page"):
+            heldout_protocol.step_freeze(heldout)
+
+    def test_questions_checks_the_bytes_of_the_resolved_commit(self) -> None:
+        _set_manifest(self.heldout, state=heldout_protocol.STATE_SOURCES)
+        _write(self.heldout / "questions.json", json.dumps(_valid_questions()))
+        data = (self.heldout / "questions.json").read_bytes()
+        with (
+            mock.patch.object(heldout_protocol, "_committed_bytes", return_value=data) as committed,
+            mock.patch.object(heldout_protocol, "_git", return_value="b" * 40),
+        ):
+            code, _out, err = self._main("questions", "--commit", "HEAD")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(committed.call_args.args[0], "b" * 40)
+
+    def test_the_eligible_pages_are_the_ones_find_considers(self) -> None:
+        # read_eligible_pages reimplements find's eligibility loop; on the development wiki they agree.
+        wiki_dir = RUN2 / "wiki"
+        links = _extract_index_links((wiki_dir / "index.md").read_text(encoding="utf-8"), wiki_dir)
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = WikiPaths.for_root(
+                RUN2, wiki_dir=wiki_dir, proposals_dir=RUN2 / "proposals", search_cache=Path(tmp) / "c.sqlite"
+            )
+            result = api.find("anything", paths, ranker=RANKER_INDEX_FIRST)
+        candidates = {rel for rel in links if posixpath.normpath(rel) not in wiki_discovery._NEVER_CANDIDATES}
+        expected = candidates - {page.path for page in result.ineligible}
+        self.assertEqual(set(heldout_protocol.read_eligible_pages(wiki_dir)), expected)
 
 
 if __name__ == "__main__":

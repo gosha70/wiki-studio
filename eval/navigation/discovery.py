@@ -278,7 +278,7 @@ def _navigation(per_question: list[dict[str, Any]], ranker: str, eligible: int) 
         # (run.py's rule over the eligible pages: the same number of pages drawn at random).
         "eligible_pages": eligible,
         "random_hit_at_1": _mean([(1 / eligible if r["selected"] else 0.0) for r in entries]) if eligible else None,
-        "random_hit_at_5": _mean([len(r["selected"]) / eligible for r in entries]) if eligible else None,
+        "random_hit_at_5": _mean([min(len(r["selected"]), eligible) / eligible for r in entries]) if eligible else None,
         "competing_evaluated": len(competing),
         "distractor_outranks": _ratio(sum(bool(r["distractor_outranks"]) for r in competing), len(competing)),
         "empty_selection": [e["id"] for e in evaluated if not e[ranker]["selected"]],
@@ -341,9 +341,10 @@ def _ingest_coverage(fixture_dir: Path, answer_in_a_page: int, answerable: int) 
             "rate": _ratio(answer_in_a_page, answerable),
         }
     own = fixture_dir / RESULTS_NAME
-    if own.is_file():
-        counts = json.loads(own.read_text(encoding="utf-8"))["counts"]
-        answer_in_a_page, answerable = counts["with_gold"], counts["questions"] - counts["absent"]
+    if not own.is_file():
+        raise RunnerError(f"{_label(own)} not found; the development wiki's ingest coverage is inherited from it")
+    counts = json.loads(own.read_text(encoding="utf-8"))["counts"]
+    answer_in_a_page, answerable = counts["with_gold"], counts["questions"] - counts["absent"]
     return {
         "basis": "inherited, not re-measured",
         "source": _label(own),
@@ -435,7 +436,10 @@ def compute(
 
 
 def _rank_in_memory(wiki_dir: Path, question: str, config: RankerConfig) -> list[str]:
-    """``find``'s fts5 selection with a fresh in-memory index and no cache (the cache's comparison point)."""
+    """``find``'s fts5 ranking with a fresh in-memory index and no cache (the cache's comparison point).
+
+    Ranking only: it does not apply ``find``'s byte budget or load the selected pages.
+    """
     pages = read_eligible_pages(wiki_dir)
     documents = [build_document(rel, page.text) for rel, page in pages.items()]
     with build_in_memory(documents, tokenizer=config.tokenizer) as index:
@@ -486,6 +490,8 @@ def _measure_latency(inputs: _Inputs, config: RankerConfig, cache_dir: Path) -> 
     for repetition in range(LATENCY_REPETITIONS):
         for number, q in enumerate(inputs.questions):
             cache = cache_dir / f"latency-{repetition}-{number}.sqlite"
+            for previous in cache_dir.iterdir():  # one cold cache on disk at a time
+                previous.unlink()
             paths = WikiPaths.for_root(
                 root, wiki_dir=inputs.paths.wiki_dir, proposals_dir=inputs.paths.proposals_dir, search_cache=cache
             )
@@ -600,6 +606,8 @@ def tune(
         raise RunnerError(f"tune: FTS5 is not available in this Python's SQLite ({fts5_available().reason})")
 
     candidates = grid() if configurations is None else configurations
+    if untuned not in candidates:
+        raise RunnerError(f"tune: the candidates must include {UNTUNED_CONFIG_NAME}'s configuration (the tie-break)")
     records: list[dict[str, Any]] = []
     with tempfile.TemporaryDirectory() as tmp:
         for number, config in enumerate(candidates):
@@ -691,7 +699,13 @@ def decide(results: dict[str, Any], manifest: dict[str, Any]) -> Decision:
             f"fts5 stays opt-in for want of evidence, not from a measured loss: {'; '.join(floors)} ({numbers})",
         )
     if fts5["ran_as"] != [RANKER_FTS5]:
-        return Decision(RANKER_INDEX_FIRST, f"fts5 did not run on the held-out set (ran as {fts5['ran_as']})")
+        per_question = results.get("per_question") or []
+        fallbacks = sum(e[RANKER_FTS5]["ran_as"] != RANKER_FTS5 for e in per_question)
+        count = f"{fallbacks} of {len(per_question)} questions, " if per_question else ""
+        return Decision(
+            RANKER_INDEX_FIRST,
+            f"fts5 fell back on at least one held-out question ({count}ran as {fts5['ran_as']})",
+        )
     if (fts5["hit_at_1"] or 0.0) < (index_first["hit_at_1"] or 0.0):
         return Decision(RANKER_INDEX_FIRST, f"held-out measurement: fts5 is lower at hit at 1 ({numbers})")
     if (fts5["hit_at_5"] or 0.0) < (index_first["hit_at_5"] or 0.0):
@@ -702,8 +716,15 @@ def decide(results: dict[str, Any], manifest: dict[str, Any]) -> Decision:
 # ── run (the held-out guards) ─────────────────────────────────
 
 
-def heldout_output(heldout_dir: Path, *, config_given: bool, post_hoc: str | None, run3_dir: Path = RUN3_DIR) -> Path:
-    """Where the held-out run may write, or a refusal (FR-028)."""
+def heldout_output(
+    heldout_dir: Path,
+    *,
+    config_given: bool,
+    post_hoc: str | None,
+    live_config: RankerConfig,
+    run3_dir: Path = RUN3_DIR,
+) -> Path:
+    """Where the held-out run under ``live_config`` may write, or a refusal (FR-028)."""
     if config_given:
         raise RunnerError("run: --config is refused for the held-out set; the one run uses the frozen configuration")
     manifest = load_manifest(heldout_dir)
@@ -713,7 +734,8 @@ def heldout_output(heldout_dir: Path, *, config_given: bool, post_hoc: str | Non
         raise RunnerError(f"run: refusing; the held-out set is not frozen (state {state!r}, expected {STATE_FROZEN!r})")
     if not tuned.is_file():
         raise RunnerError(f"run: refusing; {_label(tuned)} does not exist (tune first, FR-021)")
-    if ranker_config_hash(load_config(tuned)) != ranker_config_hash(_live_config()):
+    tuned_hash = ranker_config_hash(load_config(tuned))
+    if tuned_hash != ranker_config_hash(live_config):
         raise RunnerError(
             f"run: refusing; {TUNED_CONFIG_NAME}'s hash differs from the live ranker_config_hash(); "
             "set DEFAULT_RANKER_CONFIG to the tuned configuration first"
@@ -733,6 +755,8 @@ def heldout_output(heldout_dir: Path, *, config_given: bool, post_hoc: str | Non
         raise RunnerError(f"run: --post-hoc label {post_hoc!r} must be letters, digits, '.', '_' or '-'")
     if not original.exists():
         raise RunnerError("run: --post-hoc is for runs after the one held-out run, which has not happened")
+    if json.loads(original.read_text(encoding="utf-8"))["parameters"]["ranker_config_hash"] != tuned_hash:
+        raise RunnerError(f"run: refusing; {RESULTS_NAME} was not produced under the current {TUNED_CONFIG_NAME}")
     labelled = heldout_dir / f"{POST_HOC_PREFIX}{post_hoc}.json"
     if labelled.exists():
         raise RunnerError(f"run: {labelled.name} exists; choose another label")
@@ -755,11 +779,14 @@ def run(
 ) -> tuple[dict[str, Any], Path | None]:
     """One evaluation; the held-out set's output path (written by the caller) or None for stdout."""
     output: Path | None = None
+    live = _live_config()  # read once: the config the held-out guard checks is the one that runs
     if is_heldout(fixture_dir):
-        output = heldout_output(fixture_dir, config_given=config_path is not None, post_hoc=post_hoc, run3_dir=run3_dir)
+        output = heldout_output(
+            fixture_dir, config_given=config_path is not None, post_hoc=post_hoc, live_config=live, run3_dir=run3_dir
+        )
     elif post_hoc is not None:
         raise RunnerError("run: --post-hoc applies to the held-out set only")
-    config = load_config(config_path) if config_path is not None else _live_config()
+    config = load_config(config_path) if config_path is not None else live
     with tempfile.TemporaryDirectory() as tmp:
         cache = search_cache if search_cache is not None else Path(tmp) / CACHE_FILE_NAME
         results = compute(fixture_dir, shared_dir, config=config, search_cache=cache)

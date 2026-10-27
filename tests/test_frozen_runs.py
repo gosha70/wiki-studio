@@ -297,7 +297,8 @@ class TestHeldOutPins(unittest.TestCase):
             self.skipTest("heldout/wiki/ does not exist yet (the owner's ingest, FR-025)")
         pins = _parse(HELDOUT_PINS)
         self.assertTrue(pins, "heldout/wiki/ exists: pin its files, the archived proposals and the manifest (FR-026)")
-        self.assertTrue(any(rel.startswith("wiki/") for rel in pins))
+        self.assertTrue(any(rel.startswith("wiki/") for rel in pins), "HELDOUT_PINS pins no heldout/wiki/ file")
+        self.assertIn("manifest.json", pins, "HELDOUT_PINS does not pin heldout/manifest.json")
         for rel, digest in pins.items():
             with self.subTest(path=rel):
                 self.assertEqual(_sha256(HELDOUT / rel), digest, f"eval/navigation/heldout/{rel} changed; it is frozen")

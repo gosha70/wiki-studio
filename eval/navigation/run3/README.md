@@ -20,8 +20,16 @@ machine-dependent):
 
 ```bash
 python -m eval.navigation.discovery run --fixture eval/navigation/run2 --shared eval/navigation \
-    --config eval/navigation/run3/ranker-config-untuned.json
+    --config eval/navigation/run3/ranker-config-untuned.json > /tmp/reproduced.json
+diff <(jq 'del(.latency, .parameters.sqlite_version, .parameters.wiki_studio_version)' /tmp/reproduced.json) \
+     <(jq 'del(.latency, .parameters.sqlite_version, .parameters.wiki_studio_version)' eval/navigation/run3/results-untuned.json)
 ```
+
+The canonical reproduction is `tests/test_discovery_eval.py`, which runs the
+same comparison (`discovery.reproduce`). `latency.in_memory_no_cache` times
+ranking only, over a fresh in-memory index: it does not apply `find`'s byte
+budget or load the selected pages, so it is a lower bound beside the cached
+`find` timings, not the same workload.
 
 Every results file records its configuration under `parameters`, and
 `tests/test_discovery_eval.py` reproduces each one in memory under that
