@@ -19,7 +19,7 @@ import json
 import logging
 import sys
 import typing
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from .. import __version__
 from ..errors import IngestError
@@ -38,7 +38,7 @@ except ImportError as exc:  # the mcp extra is not installed
     raise ImportError(INSTALL_INSTRUCTION) from exc
 
 SERVER_NAME = "wiki-studio"
-TRANSPORT_STDIO = "stdio"
+TRANSPORT_STDIO: Final = "stdio"
 LOG_FORMAT = f"{PROG}: %(levelname)s %(name)s: %(message)s"
 
 logger = logging.getLogger(__name__)

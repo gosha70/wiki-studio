@@ -60,6 +60,7 @@ from .discovery import (
     describe_discovery,
     resolve_ranker,
     select,
+    validate_max_pages,
 )
 from .errors import ContractViolationError, DriftWarning, OutputWriteError, PathOutsideRootError, SourceMissingError
 from .findings import Finding, FindingsResult
@@ -1126,9 +1127,10 @@ def find(
     then the default). ``ranker_config`` (None: the live default) configures
     ``fts5``. An empty ``pages`` means no eligible page matched. Raises
     ``SourceMissingError`` (exit 5) when the wiki has no ``index.md`` and
-    ``ValueError`` for an unknown ranker or a ``max_bytes`` that is not a
-    positive integer.
+    ``ValueError`` for an unknown ranker, a ``max_pages`` outside 1..5 or a
+    ``max_bytes`` that is not a positive integer.
     """
+    validate_max_pages(max_pages)
     resolved, _source = resolve_ranker(ranker)
     selection = select(paths, question, max_pages=max_pages, max_bytes=max_bytes, ranker=resolved, config=ranker_config)
     if not selection.index_md:
@@ -1174,19 +1176,25 @@ def query(
     redact_output: bool = True,
     max_bytes: int = DEFAULT_MAX_CONTEXT_BYTES,
     ranker: str | None = None,
+    ranker_config: RankerConfig | None = None,
 ) -> QueryResult:
     """Answer ``question`` index-first over the wiki; with ``file_back`` also write a patch-set for the answer.
 
-    Pages are selected as :func:`find` selects them (``max_bytes``, ``ranker``).
+    Pages are selected as :func:`find` selects them (``max_pages`` in 1..5,
+    ``max_bytes``, ``ranker``, ``ranker_config``); a rejected value is a
+    ``ValueError`` before any backend is resolved.
     """
+    max_pages = DEFAULT_MAX_QUERY_PAGES if max_pages is None else max_pages
+    validate_max_pages(max_pages)
     resolve_ranker(ranker)
     resolved = prepare_backend(backend, paths, redact_output=redact_output)
     querier = DefaultQuerier(
         backend=resolved,
         paths=paths,
-        max_pages=DEFAULT_MAX_QUERY_PAGES if max_pages is None else max_pages,
+        max_pages=max_pages,
         max_bytes=max_bytes,
         ranker=ranker,
+        ranker_config=ranker_config,
     )
     if not file_back:
         return QueryResult(answer=querier.query(question), patch=None, file_back_dir=None)

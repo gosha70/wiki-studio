@@ -119,6 +119,28 @@ version 1. Release C is not declared closed by this entry; see Limitations.
 - The receipt's `promoter.entry_point` may now be `mcp` (0.8.0, FR-039), an
   additive value; `receipt_version` stays 1.
 
+### Fixed
+
+- PR #56 review (0.8.0, before the tag): discovery reads `index.md` and every
+  candidate page from a descriptor opened with `O_NOFOLLOW`, so a page swapped
+  for a symlink after the link check is never read, and two spellings of one
+  index link load the page once; `find`, `query`, `api.find` and `api.query`
+  refuse `max_pages` outside 1..5, and `api.query` and `DefaultQuerier` accept
+  `ranker_config`; an existing search-cache file (and its journal) wider than
+  owner-only is tightened to `0600` before any page text is written, and one
+  that cannot be tightened is not used; the MCP server passes its launch
+  `--by` to `propose` and `promote`, refuses a `--proposals-dir` outside the
+  root at launch (exit 2), and opens `--trace` with `O_NOFOLLOW` so a symlink
+  can never route the trace into the wiki; each `tools/call` trace line now
+  carries `arg_keys`, `result_keys` and a content-free `summary`, and
+  `check-host-run` labels each case `proved`, `proved-by-end-state` or
+  `not-provable-from-host-run (protocol suite)`; the held-out run writes an
+  immutable `run-attempt.json` and moves to `run-started` before computing, so
+  an interrupted attempt can only be recovered as a labelled post-hoc run, and
+  `pin` and `ingest` refuse a dirty tree or a source that differs from the
+  pins; `poetry.lock` locks the `mcp` extra and ADR-0003's licence table is
+  read from it.
+
 ### Upgrade notes
 
 - 0.8.0 adds a structural rule: every wiki page must be valid UTF-8. A wiki

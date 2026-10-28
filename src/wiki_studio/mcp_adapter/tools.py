@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, Any
 
 from .. import __version__, api
 from ..contract import POLICY_AUTO_APPROVE_ON_PROMOTE
-from ..discovery import DEFAULT_MAX_CONTEXT_BYTES, RANKER_SOURCE_FLAG, resolve_ranker
+from ..discovery import DEFAULT_MAX_CONTEXT_BYTES, MIN_FIND_PAGES, RANKER_SOURCE_FLAG, resolve_ranker
 from ..errors import DriftWarning, IngestError
 from ..promoter import PROMOTE_ENTRY_POINT_MCP
 from ..querier import DEFAULT_MAX_QUERY_PAGES
@@ -41,7 +41,6 @@ if TYPE_CHECKING:
 
     from .config import LaunchConfig
 
-MIN_FIND_PAGES = 1
 PROPOSE_SOURCE = "mcp"
 PROPOSE_BACKEND = "mcp"
 PROPOSAL_NAME_PREFIX = "mcp"
@@ -173,8 +172,9 @@ class WikiTools:
         Each edit is {path, action, content, base_sha256?} with action create,
         update, append-index or append-log; an update carries read_page's
         sha256. Every create gets a page_id. `name` defaults to
-        mcp-<utc>-<hex>. Promote it with the promote tool, or leave it for a
-        person.
+        mcp-<utc>-<hex>. `proposal_dir` is always root-relative (the
+        proposals directory lies inside the root, checked at launch). Promote
+        it with the promote tool, or leave it for a person.
         """
         if not isinstance(edits, list):
             raise ValueError("edits must be a list of objects")

@@ -280,6 +280,34 @@ class TestOnDiskCache(CacheCase):
         self.find("retry")
         self.assertEqual(stat.S_IMODE(self.cache.stat().st_mode), 0o600)
 
+    @unittest.skipUnless(POSIX, "POSIX file modes")
+    def test_a_pre_existing_wider_file_is_tightened_before_it_is_filled(self) -> None:
+        self.cache.write_bytes(b"")
+        os.chmod(self.cache, 0o644)
+        journal = Path(str(self.cache) + "-journal")
+        journal.write_bytes(b"")
+        os.chmod(journal, 0o644)
+        with self.wiki_unchanged():
+            result = self.find("retry backoff")
+        self.assertEqual(result.warnings, ())
+        self.assertEqual(stat.S_IMODE(self.cache.stat().st_mode), 0o600)
+        self.assertIn("concepts/retry-backoff.md", self.manifest_rows())
+        if journal.exists():
+            self.assertEqual(stat.S_IMODE(journal.lstat().st_mode), 0o600)
+
+    @unittest.skipUnless(POSIX, "POSIX file modes")
+    def test_a_wider_file_that_cannot_be_tightened_is_never_filled(self) -> None:
+        self.cache.write_bytes(b"")
+        os.chmod(self.cache, 0o644)
+        with mock.patch.object(os, "fchmod", side_effect=PermissionError("not the owner")), self.wiki_unchanged():
+            result = self.find("retry backoff")
+        self.assertEqual([p.path for p in result.pages], fresh_ranking(self.paths, "retry backoff")[:5])
+        self.assertEqual(len(result.warnings), 1)
+        self.assertIn("cannot be tightened", result.warnings[0])
+        self.assertIn(FALLBACK_TEXT, result.warnings[0])
+        self.assertEqual(self.cache.stat().st_size, 0, "no page text reached the readable file")
+        self.assertEqual(stat.S_IMODE(self.cache.stat().st_mode), 0o644)
+
     def test_no_journal_is_left_behind(self) -> None:
         self.find("retry")
         self.assertFalse(Path(str(self.cache) + "-journal").exists())

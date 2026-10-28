@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING
 from ..contract import POLICY_AUTO_APPROVE_ON_PROMOTE, read_manifest
 from ..discovery import RANKERS, resolve_ranker
 from ..errors import ContractViolationError
-from ..paths import WikiPaths, resolve_actor
+from ..paths import WikiPaths, path_inside_dir, resolve_actor
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -158,7 +158,11 @@ def parse_launch(argv: Sequence[str], *, env: Mapping[str, str] | None = None, c
     """Parse the launch flags and resolve the layout, the actor and the ranker once.
 
     Raises :class:`LaunchError` for an unknown ``--disable-tool`` name, a bad
-    location, lock timeout or ranker. ``argparse`` itself exits 2 on a malformed command line.
+    location, lock timeout or ranker, and for a proposals directory outside
+    the root: the adapter's proposal boundary is inside the root, so
+    ``propose`` always reports a root-relative ``proposal_dir`` (FR-035) and
+    ``promote`` never needs ``allow_out_of_repo`` (FR-039). ``argparse``
+    itself exits 2 on a malformed command line.
     """
     args = build_parser().parse_args(list(argv))
     unknown = [name for name in args.disable_tool if name not in TOOL_NAMES]
@@ -178,6 +182,12 @@ def parse_launch(argv: Sequence[str], *, env: Mapping[str, str] | None = None, c
         ranker, ranker_source = resolve_ranker(args.ranker, env=env)
     except ValueError as exc:
         raise LaunchError(str(exc)) from exc
+    if not path_inside_dir(paths.proposals_dir, paths.root):
+        raise LaunchError(
+            f"proposals directory {paths.proposals_dir} is outside the root {paths.root}; the adapter's proposal "
+            "boundary is inside the root (propose reports a root-relative proposal_dir and promote never passes "
+            "allow_out_of_repo)"
+        )
     trace: Path | None = None
     if args.trace is not None:
         # Checked against the wiki and opened by trace.open_trace before the server starts.

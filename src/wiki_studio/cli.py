@@ -347,7 +347,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         "--max-pages",
         type=int,
         default=None,
-        help="Max number of wiki pages to load into the query prompt. Default 5 (DEFAULT_MAX_QUERY_PAGES).",
+        help="Max number of wiki pages to load into the query prompt, 1..5. Default 5 (DEFAULT_MAX_QUERY_PAGES).",
     )
     p_query.add_argument(
         "--debug-unsafe-output",
@@ -524,7 +524,9 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         "pages ranked by --ranker within --max-bytes), without calling a model and without writing the query log.",
     )
     p_find.add_argument("question", help="The question, in plain words.")
-    p_find.add_argument("--max-pages", type=int, default=api.DEFAULT_MAX_QUERY_PAGES, help="At most this many pages.")
+    p_find.add_argument(
+        "--max-pages", type=int, default=api.DEFAULT_MAX_QUERY_PAGES, help="At most this many pages (1..5)."
+    )
     p_find.add_argument("--json", action="store_true", help="Print the result as one JSON object.")
     _add_discovery_flags(p_find)
 

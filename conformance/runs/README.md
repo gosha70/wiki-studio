@@ -7,10 +7,24 @@ because it needs the owner's account and a model. `check-host-run` then
 applies conformance cases 2-9 to the run's trace and the fixture's end
 state. It never reads the transcript.
 
+The trace holds no content, so a host run proves less than the protocol
+suite does, and the checker labels each case with what proves it:
+
+| Label | Cases | What the run shows |
+|---|---|---|
+| `proved` | 2, 3, 4 | From the trace's evidence lines: `tools/list` named exactly the eight tools; every `find` stayed within five pages and its `max_pages`, named a ranker and gave every page a sha256; `read_page` returned a sha256 and one `read_page` was refused with exit 7 (the scenario's traversal step). Not shown: the argument schemas, index linkage, the byte budget, that the sha256 is the file's. |
+| `proved-by-end-state` | 5, 6, 9 | The trace's counts plus the end state: the update carried `base_sha256` and the proposal is archived (5); the promote applied paths, was not a dry run, and its receipt is `committed` with `entry_point: mcp`, the update landed from the fixture's revision with no unguarded path (6); `review_state` after the promote reports no approved page, the promote approved none and no approval record exists (9). Not shown: that the wiki stayed unchanged between propose and promote. |
+| `not-provable-from-host-run (protocol suite)` | 7, 8 | The stale-update refusal and `promote` of `../x` are not in the scenario. Counted as skipped, never as passed. |
+
+A run whose trace has no `read_page` refused with exit 7 fails case 4 with
+"containment is not provable from this run". The verdict line names the
+cases the run proves, and `verdict.proved` in `manifest.json` lists them.
+
 The protocol-level suite in CI (`python -m conformance.mcp.run`, the
-`mcp-min` and `mcp-latest` jobs) is supporting evidence. It is not a
-substitute for a recorded host run. A failed attempt is recorded too, with
-its verdict; it is never hidden or overwritten. A second attempt is a new
+`mcp-min` and `mcp-latest` jobs) is the evidence for everything a host run
+cannot show. It is not a substitute for a recorded host run, and a host run
+is not a substitute for it. A failed attempt is recorded too, with its
+verdict; it is never hidden or overwritten. A second attempt is a new
 directory.
 
 ## The run directory
@@ -20,7 +34,7 @@ directory.
 | Entry | What it holds |
 |---|---|
 | `manifest.json` | The keys below. |
-| `trace.jsonl` | The server's `--trace` file, one JSON line per request (`docs/mcp-adapter.md`, Trace). It has no page content, question text, edit content or path. |
+| `trace.jsonl` | The server's `--trace` file, one JSON line per request (`docs/mcp-adapter.md`, Trace). It has no page content, question text, edit content or path; its `tool_names`, `arg_keys`, `result_keys` and per-tool `summary` keys are the checker's evidence. |
 | `end-state/` | The fixture project root after the run (the wiki, the proposals directory and its `.applied/` archive), without the derived lock and search-cache files beside the wiki. |
 | `transcript.txt` | Optional. The host's output, kept for people. The checker does not read it. |
 
@@ -36,7 +50,7 @@ directory.
 | `protocol_version` | The protocol version the host negotiated, as the trace records it |
 | `scenario_sha256` | sha256 of `conformance/mcp/scenario.md` as used |
 | `end_state_sha256` | `python -m conformance.mcp.run tree-hash <run>/end-state` |
-| `verdict` | Written by `check-host-run --record`: `passed` and each case's status |
+| `verdict` | Written by `check-host-run --record`: `passed`, each case's status (`cases`) and proof label (`proof`), and the case lists `proved`, `not_provable` and `failed` |
 
 ## Claude Code
 

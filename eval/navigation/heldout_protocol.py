@@ -3,10 +3,10 @@
 """The held-out set of the discovery evaluation, as ``heldout/protocol.md`` states (0.8.0, FR-022..FR-030).
 
 ``heldout/manifest.json`` carries ``state`` through ``sources`` → ``questions``
-→ ``pinned`` → ``ingested`` → ``wiki-frozen`` → ``frozen`` → ``run`` with a
-timestamp per transition. Each subcommand runs in one state only and refuses
-any other (exit 1, naming the expected state), so the preregistered order is
-enforced by the tool, not only by the document:
+→ ``pinned`` → ``ingested`` → ``wiki-frozen`` → ``frozen`` → ``run-started`` →
+``run`` with a timestamp per transition. Each subcommand runs in one state
+only and refuses any other (exit 1, naming the expected state), so the
+preregistered order is enforced by the tool, not only by the document:
 
     python -m eval.navigation.heldout_protocol questions --commit SHA   # sources → questions
     python -m eval.navigation.heldout_protocol pin --model FULL-NAME    # questions → pinned
@@ -15,9 +15,11 @@ enforced by the tool, not only by the document:
     python -m eval.navigation.heldout_protocol freeze-wiki              # ingested → wiki-frozen
     python -m eval.navigation.heldout_protocol freeze                   # wiki-frozen → frozen
 
-The last transition, ``frozen`` → ``run``, belongs to the one held-out run of
-``eval.navigation.discovery``. Nothing here commits; the owner commits after
-each step. Run 2's helpers are reused and ``run2_protocol.py`` is not edited.
+The last transitions, ``frozen`` → ``run-started`` → ``run``, belong to the one
+held-out run of ``eval.navigation.discovery``, which writes the immutable
+attempt marker ``heldout/run-attempt.json`` before it computes anything.
+Nothing here commits; the owner commits after each step. Run 2's helpers are
+reused and ``run2_protocol.py`` is not edited.
 """
 
 from __future__ import annotations
@@ -27,6 +29,7 @@ import hashlib
 import json
 import os
 import posixpath
+import shutil
 import subprocess
 import sys
 import time
@@ -47,11 +50,13 @@ from eval.navigation.run2_protocol import (
     _tree_hash,
     _version,
 )
+from wiki_studio import __version__
 from wiki_studio.discovery import _NEVER_CANDIDATES, LoadedPage, _read_eligible
 from wiki_studio.querier import _extract_index_links
 
 HELDOUT_DIR = Path(__file__).resolve().parent / "heldout"
 MANIFEST_NAME = "manifest.json"
+RUN_ATTEMPT_NAME = "run-attempt.json"  # the one held-out attempt's marker: written once, never overwritten
 QUESTIONS_NAME = "questions.json"
 GOLD_NAME = "gold.json"
 CORPUS_DIR = "corpus"
@@ -68,6 +73,7 @@ STATE_PINNED = "pinned"
 STATE_INGESTED = "ingested"
 STATE_WIKI_FROZEN = "wiki-frozen"
 STATE_FROZEN = "frozen"
+STATE_RUN_STARTED = "run-started"
 STATE_RUN = "run"
 STATES: tuple[str, ...] = (
     STATE_SOURCES,
@@ -76,6 +82,7 @@ STATES: tuple[str, ...] = (
     STATE_INGESTED,
     STATE_WIKI_FROZEN,
     STATE_FROZEN,
+    STATE_RUN_STARTED,
     STATE_RUN,
 )
 
@@ -89,6 +96,8 @@ MIN_COMPETING = 6
 MIN_ABSENT = 6
 
 BACKEND = "claude"
+SOURCE_PATHS: tuple[str, ...] = ("src", "eval")  # must be committed clean when the pins are taken (FR-024)
+SOURCE_CHECK_KEYS: tuple[str, ...] = ("wiki_studio_commit", "wiki_studio_version", "claude_path", "tree_clean")
 ENV_MODEL = "ANTHROPIC_MODEL"
 ENV_ISOLATION_HOOK_SKIP = "HOOK_SKIP"
 ENV_ISOLATION_CONFIG_DIR = "CLAUDE_CONFIG_DIR"
@@ -243,8 +252,30 @@ def _heldout_env(heldout_dir: Path, model: str | None) -> dict[str, str]:
     return env
 
 
+def _source_check(step: str, claude_binary: str) -> dict[str, Any]:
+    """What would execute: the commit, the version, the backend executable, and a clean tree under src/ and eval/."""
+    dirty = _git("status", "--porcelain", "--untracked-files=no", "--", *SOURCE_PATHS)
+    if dirty:
+        raise ProtocolError(
+            f"{step}: refusing; uncommitted changes under {' and '.join(SOURCE_PATHS)} (commit first so the pinned "
+            f"commit is the code that runs):\n{dirty}"
+        )
+    claude_path = shutil.which(claude_binary)
+    if claude_path is None:
+        raise ProtocolError(f"{step}: refusing; the backend executable {claude_binary!r} is not on PATH")
+    return {
+        "wiki_studio_commit": _git("rev-parse", "HEAD"),
+        "wiki_studio_version": __version__,
+        "claude_path": claude_path,
+        "tree_clean": True,
+    }
+
+
 def step_pin(heldout_dir: Path, model: str | None, claude_binary: str) -> str:
-    """Pin versions, backend, model, timeout and environment before the first attempt (FR-024)."""
+    """Pin versions, backend, model, timeout and environment before the first attempt (FR-024).
+
+    Refuses a dirty tree under ``src/`` or ``eval/``: the pinned commit must be the code that runs.
+    """
     manifest = load_manifest(heldout_dir)
     require_state(manifest, STATE_QUESTIONS, "pin")
     _verify_corpus(heldout_dir, manifest)
@@ -252,10 +283,10 @@ def step_pin(heldout_dir: Path, model: str | None, claude_binary: str) -> str:
     model = model or os.environ.get(ENV_MODEL)
     if not model:
         raise ProtocolError(f"pin: name the model by its full name (--model or {ENV_MODEL})")
+    source = _source_check("pin", claude_binary)
     env = _heldout_env(heldout_dir, model)
     manifest["pins"] = {
-        "wiki_studio_commit": _git("rev-parse", "HEAD"),
-        "wiki_studio_version": _version([sys.executable, "-m", "wiki_studio", "--version"]),
+        **source,
         "backend": BACKEND,
         "model": model,
         "claude_code_version": _version([claude_binary, "--version"]),
@@ -405,7 +436,20 @@ def step_ingest(heldout_dir: Path) -> str:
         raise ProtocolError("ingest: heldout/wiki/ already exists; the ingest starts from a fresh `init`")
     _verify_corpus(heldout_dir, manifest)
     _verify_file(heldout_dir, manifest, QUESTIONS_NAME, "questions_sha256")
-    env = _heldout_env(heldout_dir, manifest["pins"]["model"])
+    pins = manifest["pins"]
+    source = _source_check("ingest", BACKEND)  # what `wiki_studio ingest --backend claude` resolves
+    mismatches = [
+        f"{key}: pinned {pins.get(key)!r}, now {source[key]!r}"
+        for key in SOURCE_CHECK_KEYS
+        if pins.get(key) != source[key]
+    ]
+    if mismatches:
+        raise ProtocolError(
+            "ingest: refusing; the executed source differs from the pins (re-pin from the pinned checkout):\n"
+            + "\n".join(mismatches)
+        )
+    manifest["ingest_source_check"] = {**source, "checked_at": _now()}
+    env = _heldout_env(heldout_dir, pins["model"])
     (heldout_dir / LOGS_DIR).mkdir(exist_ok=True)
     init_code, _wall, _out, init_err = _run_logged(
         [sys.executable, "-m", "wiki_studio", "init"], env, heldout_dir / LOGS_DIR / "00-init"

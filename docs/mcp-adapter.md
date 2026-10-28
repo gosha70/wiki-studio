@@ -31,7 +31,7 @@ setting is read once at launch and held for the life of the process.
 |---|---|---|
 | `--root PATH` | `WIKI_STUDIO_ROOT` | project root |
 | `--wiki-dir PATH` | `WIKI_STUDIO_WIKI_DIR` | wiki directory |
-| `--proposals-dir PATH` | `WIKI_STUDIO_PROPOSALS_DIR` | proposals directory |
+| `--proposals-dir PATH` | `WIKI_STUDIO_PROPOSALS_DIR` | proposals directory; must lie inside the root, so `propose` reports a root-relative `proposal_dir` and `promote` never needs `allow_out_of_repo` |
 | `--source-root PATH` (repeatable) | `WIKI_STUDIO_SOURCE_ROOTS` | directories outside the root that pages may link into |
 | `--lock-timeout SECONDS` | `WIKI_STUDIO_LOCK_TIMEOUT` | wiki-lock wait |
 | `--search-cache PATH` | `WIKI_STUDIO_SEARCH_CACHE` | the `fts5` search cache, outside the wiki |
@@ -45,7 +45,7 @@ The server exits 2 without serving when:
 
 - a flag is malformed;
 - a value is rejected (a negative lock timeout, an unknown ranker, a search
-  cache inside the wiki);
+  cache inside the wiki, a proposals directory outside the root);
 - `--disable-tool` names an unknown tool;
 - `--trace` lies inside the wiki or cannot be opened for appending.
 
@@ -191,16 +191,33 @@ With `--trace PATH`, the server appends one JSON line per request to
 `PATH`:
 
 ```json
-{"ts":"2026-10-27T12:00:00.000Z","method":"tools/call","tool":"find","protocol_version":"2025-06-18","client_name":"claude-code","client_version":"2.1.0","outcome":0,"duration_ms":12}
+{"ts":"2026-10-27T12:00:00.000Z","method":"tools/call","tool":"find","protocol_version":"2025-06-18","client_name":"claude-code","client_version":"2.1.0","outcome":0,"duration_ms":12,"tool_names":null,"arg_keys":["max_pages","question"],"result_keys":["bytes_loaded","max_bytes","omitted","pages","ranker","ranker_config_hash"],"summary":{"pages":2,"max_pages":5,"ranker":"index-first","has_sha256":true}}
 ```
 
 - `outcome` is 0, or the error result's `exit_code` (1 for a protocol-level
   error).
 - Page content, question text, edit content and file paths are never
-  traced.
+  traced. The last four keys are the non-content evidence a host-run
+  checker needs (`conformance/runs/README.md`): `tool_names` is a
+  `tools/list` result's names (null on other lines); `arg_keys` and
+  `result_keys` are a `tools/call`'s sorted argument and top-level result
+  key names (null on other lines); `summary` is computed per tool from the
+  call's arguments and result, and holds counts and flags only:
+  - `find`: `pages` (count), `max_pages` (the argument, or null),
+    `ranker` (its name), `has_sha256` (every page carries one);
+  - `read_page`: `has_sha256`;
+  - `propose`: `creates`, `updates`, `with_base_sha256` (updates carrying
+    it), `page_id_supplied` (creates whose submitted content already names
+    a `page_id`; the result does not list the ids the server assigns, so
+    assignment is checked from the end state, not the trace);
+  - `promote`: `applied` (count), `dry_run`, `approved` (count);
+  - `review_state`: `states` (count), `approved` (count);
+  - any error result: `{"exit_code": N}`; `lint`, `info` and `findings`:
+    null.
 - The file is opened append-only and must lie outside the wiki. A path
-  inside the wiki, or one that cannot be opened, is a launch error (exit 2),
-  never a silent drop.
+  inside the wiki, a symlink (the file is opened without following one, and
+  must be a regular file), or one that cannot be opened, is a launch error
+  (exit 2), never a silent drop.
 - Without the flag, nothing is written.
 
 The server reads the JSON-RPC frames as they pass between stdio and the SDK,
@@ -269,19 +286,44 @@ cannot run (for example without the SDK).
 
 A host run is the evidence the protocol suite cannot give: a real MCP host,
 at a pinned version, doing the fixed scenario in
-`conformance/mcp/scenario.md` (find, read, propose an update carrying the
-hash, promote, `review_state`) against the default-policy fixture with
-`--trace`.
+`conformance/mcp/scenario.md` (find, read, a `read_page` of `../outside.md`
+that the server must refuse, propose an update carrying the hash, promote,
+`review_state`) against the default-policy fixture with `--trace`.
 
 ```bash
 python -m conformance.mcp.run check-host-run --run conformance/runs/<date>-claude-code-<version>
 ```
 
-The checker applies cases 2-9 to the run's trace and end state. It never
-reads the transcript. `conformance/runs/README.md` gives the run
-directory's layout and the Claude Code (`claude -p --mcp-config`) and Kiro
-instructions. The owner performs host runs outside CI. `docs/compatibility.md`
-lists what has been run.
+The checker applies cases 2-9 to the run's trace and end state, never the
+transcript, and labels each case with what proves it. The trace holds no
+content, so a host run proves less than the protocol suite does, and the
+checker says so:
+
+- `proved` from the trace's evidence lines: case 2 (the `tools/list` line
+  names exactly the eight tools; the argument schemas are the suite's),
+  case 3 (every `find` within five pages and within its `max_pages`, a
+  ranker named, every page with a sha256; index linkage and the byte budget
+  are the suite's) and case 4 (`read_page` returned a sha256, and a
+  `read_page` was refused with exit 7: the scenario's traversal step; that
+  the sha256 is the file's is the suite's check, and a run without the
+  refusal line fails case 4 as "containment is not provable from this run").
+- `proved-by-end-state`: case 5 (the creates and updates counted, every
+  update carrying `base_sha256`, the proposal archived, created pages
+  carrying a `page_id` in the end state; that the wiki stayed unchanged
+  between propose and promote is not provable from a trace), case 6
+  (`promote` applied paths and was not a dry run; the receipt is
+  `committed` with `entry_point: mcp`, the update landed from the
+  fixture's revision with no unguarded path) and case 9 (`review_state`
+  after the promote reports no approved page, the promote approved none,
+  no approval record exists).
+- `not-provable-from-host-run (protocol suite)`: case 7 (the stale-update
+  refusal) and case 8 (`promote` of `../x`), which the scenario does not
+  exercise. They count as skipped, never as passed.
+
+The verdict line names the cases the run proves. `conformance/runs/README.md`
+gives the run directory's layout and the Claude Code
+(`claude -p --mcp-config`) and Kiro instructions. The owner performs host
+runs outside CI. `docs/compatibility.md` lists what has been run.
 
 ## What the adapter does not do
 

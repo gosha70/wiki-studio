@@ -398,6 +398,92 @@ class TestHeldOutRunGuards(unittest.TestCase):
 
         self.assertTrue(discovery.reproduce(results, heldout, NAVIGATION))
 
+    def test_the_one_run_leaves_an_immutable_attempt_marker(self) -> None:
+        heldout = _frozen_heldout(self.root)
+        self._freeze_live_config()
+        code, _out, err = self._main_run(heldout)
+        self.assertEqual(code, 0, err)
+        marker = json.loads((heldout / heldout_protocol.RUN_ATTEMPT_NAME).read_text(encoding="utf-8"))
+        self.assertEqual(marker["ranker_config_hash"], ranker_config_hash(discovery._live_config()))
+        self.assertEqual(marker["wiki_studio_version"], discovery.__version__)
+        self.assertTrue(marker["started_at"] and marker["wiki_studio_commit"])
+        manifest = _manifest(heldout)
+        visited = [h["state"] for h in manifest["history"][-2:]]
+        self.assertEqual(visited, [heldout_protocol.STATE_RUN_STARTED, heldout_protocol.STATE_RUN])
+        document = json.loads((heldout / "results.json").read_text(encoding="utf-8"))
+        self.assertEqual(document[discovery.ATTEMPT_KEY], marker)
+        self.assertEqual(manifest[discovery.ATTEMPT_KEY], marker)
+        with self.assertRaises(discovery.RunnerError):
+            discovery._write_attempt_marker(heldout, {"started_at": "later"})
+
+    def test_an_interrupted_attempt_is_never_repeated_as_the_original(self) -> None:
+        heldout = _frozen_heldout(self.root)
+        self._freeze_live_config()
+        results = heldout / "results.json"
+        marker = heldout / heldout_protocol.RUN_ATTEMPT_NAME
+        compute = discovery.compute
+        with (
+            mock.patch.object(discovery, "compute", side_effect=RuntimeError("the machine went away")),
+            self.assertRaisesRegex(RuntimeError, "the machine went away"),
+        ):
+            self._main_run(heldout)
+        self.assertTrue(marker.is_file())
+        self.assertFalse(results.exists())
+        manifest = _manifest(heldout)
+        self.assertEqual(manifest["state"], heldout_protocol.STATE_RUN_STARTED)
+        self.assertTrue(manifest[discovery.ATTEMPT_KEY]["failed_at"])
+        self.assertIn("RuntimeError", manifest[discovery.ATTEMPT_KEY]["error"])
+        marker_bytes = marker.read_bytes()
+        started = json.loads(marker_bytes)["started_at"]
+
+        code, _out, err = self._main_run(heldout)
+        self.assertEqual(code, 1)
+        self.assertIn(f"started at {started}", err)
+        self.assertIn("--post-hoc", err)
+        self.assertFalse(results.exists())
+        self.assertEqual(marker.read_bytes(), marker_bytes)
+        self.assertEqual(_manifest(heldout)["state"], heldout_protocol.STATE_RUN_STARTED)
+
+        with mock.patch.object(discovery, "compute", wraps=compute):
+            code, _out, err = self._main_run(heldout, "--post-hoc", "recovery")
+        self.assertEqual(code, 0, err)
+        self.assertTrue((heldout / "results-post-hoc-recovery.json").is_file())
+        self.assertFalse(results.exists())
+        self.assertEqual(marker.read_bytes(), marker_bytes)
+        self.assertEqual(_manifest(heldout)["state"], heldout_protocol.STATE_RUN_STARTED)
+
+    def test_a_crashed_attempt_without_a_failure_record_is_post_hoc_only(self) -> None:
+        # The process was killed after the marker: no failed_at, run-started, no results.json.
+        heldout = _frozen_heldout(self.root)
+        self._freeze_live_config()
+        with (
+            mock.patch.object(discovery, "compute", side_effect=KeyboardInterrupt),
+            self.assertRaises(KeyboardInterrupt),
+        ):
+            discovery.run(heldout, NAVIGATION, config_path=None, search_cache=None, post_hoc=None, run3_dir=self.run3)
+        manifest = _manifest(heldout)
+        manifest[discovery.ATTEMPT_KEY].pop("failed_at")
+        manifest[discovery.ATTEMPT_KEY].pop("error")
+        (heldout / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+        code, _out, err = self._main_run(heldout)
+        self.assertEqual((code, "--post-hoc" in err), (1, True))
+        code, _out, err = self._main_run(heldout, "--post-hoc", "after-kill")
+        self.assertEqual(code, 0, err)
+        self.assertFalse((heldout / "results.json").exists())
+
+    def test_post_hoc_after_a_failed_attempt_checks_the_markers_configuration(self) -> None:
+        heldout = _frozen_heldout(self.root)
+        self._freeze_live_config()
+        with mock.patch.object(discovery, "compute", side_effect=RuntimeError("boom")), self.assertRaises(RuntimeError):
+            self._main_run(heldout)
+        other = RankerConfig("unicode61", (1.0, 2.0, 4.0, 1.0), 2, 5)
+        with mock.patch.object(wiki_discovery, "DEFAULT_RANKER_CONFIG", other):
+            discovery._write_json(self.run3 / discovery.TUNED_CONFIG_NAME, discovery.config_document(other))
+            code, _out, err = self._main_run(heldout, "--post-hoc", "retuned")
+        self.assertEqual(code, 1)
+        self.assertIn("not produced under the current", err)
+        self.assertFalse((heldout / "results-post-hoc-retuned.json").exists())
+
     def test_post_hoc_refuses_when_the_original_ran_under_another_configuration(self) -> None:
         heldout = _frozen_heldout(self.root)
         self._freeze_live_config()
@@ -607,6 +693,136 @@ class TestHeldOutProtocolOrder(unittest.TestCase):
         code, _out, err = self._main("pin", "--model", "claude-opus-5-5")
         self.assertEqual(code, 1)
         self.assertIn("questions.json's sha256 differs", err)
+
+    def _git_stub(self, status: str, head: str) -> Any:
+        def fake(*args: str) -> str:
+            return status if args[0] == "status" else head
+
+        return fake
+
+    def test_pin_refuses_a_dirty_tree(self) -> None:
+        _write(self.heldout / "questions.json", json.dumps(_valid_questions()))
+        _set_manifest(
+            self.heldout,
+            state=heldout_protocol.STATE_QUESTIONS,
+            corpus_files=[],
+            questions_sha256=_sha256(self.heldout / "questions.json"),
+        )
+        with (
+            mock.patch.object(heldout_protocol, "_git", self._git_stub(" M src/wiki_studio/discovery.py", "a" * 40)),
+            mock.patch.object(heldout_protocol.shutil, "which", return_value="/usr/local/bin/claude"),
+        ):
+            code, _out, err = self._main("pin", "--model", "claude-opus-5-5")
+        self.assertEqual(code, 1)
+        self.assertIn("uncommitted changes", err)
+        self.assertIn("src/wiki_studio/discovery.py", err)
+        manifest = _manifest(self.heldout)
+        self.assertEqual(manifest["state"], heldout_protocol.STATE_QUESTIONS)
+        self.assertNotIn("pins", manifest)
+
+    def test_pin_records_the_executed_source(self) -> None:
+        _write(self.heldout / "questions.json", json.dumps(_valid_questions()))
+        _set_manifest(
+            self.heldout,
+            state=heldout_protocol.STATE_QUESTIONS,
+            corpus_files=[],
+            questions_sha256=_sha256(self.heldout / "questions.json"),
+        )
+        with (
+            mock.patch.object(heldout_protocol, "_git", self._git_stub("", "a" * 40)),
+            mock.patch.object(heldout_protocol.shutil, "which", return_value="/usr/local/bin/claude"),
+            mock.patch.object(heldout_protocol, "_version", return_value="2.0.0 (Claude Code)"),
+        ):
+            code, _out, err = self._main("pin", "--model", "claude-opus-5-5")
+        self.assertEqual(code, 0, err)
+        pins = _manifest(self.heldout)["pins"]
+        self.assertEqual(pins["wiki_studio_commit"], "a" * 40)
+        self.assertEqual(pins["wiki_studio_version"], heldout_protocol.__version__)
+        self.assertEqual(pins["claude_path"], "/usr/local/bin/claude")
+        self.assertEqual(pins["claude_code_version"], "2.0.0 (Claude Code)")
+        self.assertIs(pins["tree_clean"], True)
+
+    def _pinned_for_ingest(self, commit: str) -> None:
+        _write(self.heldout / "questions.json", json.dumps(_valid_questions()))
+        _set_manifest(
+            self.heldout,
+            state=heldout_protocol.STATE_PINNED,
+            corpus_files=[],
+            questions_sha256=_sha256(self.heldout / "questions.json"),
+            isolation_probe={"passed": True},
+            pins={
+                "wiki_studio_commit": commit,
+                "wiki_studio_version": heldout_protocol.__version__,
+                "claude_path": "/usr/local/bin/claude",
+                "tree_clean": True,
+                "model": "claude-opus-5-5",
+            },
+        )
+
+    def test_ingest_refuses_source_that_differs_from_the_pins(self) -> None:
+        self._pinned_for_ingest("b" * 40)
+
+        def never(*_args: Any, **_kwargs: Any) -> Any:
+            self.fail("the ingest runner was called although the source check failed")
+
+        with (
+            mock.patch.object(heldout_protocol, "_git", self._git_stub("", "a" * 40)),
+            mock.patch.object(heldout_protocol.shutil, "which", return_value="/usr/local/bin/claude"),
+            mock.patch.object(heldout_protocol, "_run_logged", never),
+        ):
+            code, _out, err = self._main("ingest")
+        self.assertEqual(code, 1)
+        self.assertIn("wiki_studio_commit", err)
+        self.assertIn("a" * 40, err)
+        self.assertNotIn("claude_path", err)
+        manifest = _manifest(self.heldout)
+        self.assertEqual(manifest["state"], heldout_protocol.STATE_PINNED)
+        self.assertNotIn("ingest", manifest)
+        self.assertFalse((self.heldout / "wiki").exists())
+
+    def test_ingest_refuses_a_dirty_tree_before_the_first_attempt(self) -> None:
+        self._pinned_for_ingest("a" * 40)
+
+        def never(*_args: Any, **_kwargs: Any) -> Any:
+            self.fail("the ingest runner was called although the tree is dirty")
+
+        with (
+            mock.patch.object(heldout_protocol, "_git", self._git_stub(" M eval/navigation/discovery.py", "a" * 40)),
+            mock.patch.object(heldout_protocol.shutil, "which", return_value="/usr/local/bin/claude"),
+            mock.patch.object(heldout_protocol, "_run_logged", never),
+        ):
+            code, _out, err = self._main("ingest")
+        self.assertEqual(code, 1)
+        self.assertIn("uncommitted changes", err)
+        self.assertNotIn("ingest", _manifest(self.heldout))
+
+    def test_ingest_records_the_recomputed_source_check(self) -> None:
+        self._pinned_for_ingest("a" * 40)
+
+        def runner(cmd: list[str], _env: dict[str, str], log_prefix: Path) -> tuple[int, float, str, str]:
+            log_prefix.parent.mkdir(parents=True, exist_ok=True)
+            return 0, 0.0, "", ""
+
+        with (
+            mock.patch.object(heldout_protocol, "_git", self._git_stub("", "a" * 40)),
+            mock.patch.object(heldout_protocol.shutil, "which", return_value="/usr/local/bin/claude"),
+            mock.patch.object(heldout_protocol, "_run_logged", runner),
+        ):
+            code, _out, err = self._main("ingest")
+        self.assertEqual(code, 0, err)
+        manifest = _manifest(self.heldout)
+        self.assertEqual(manifest["state"], heldout_protocol.STATE_INGESTED)
+        check = manifest["ingest_source_check"]
+        self.assertTrue(check.pop("checked_at"))
+        self.assertEqual(
+            check,
+            {
+                "wiki_studio_commit": "a" * 40,
+                "wiki_studio_version": heldout_protocol.__version__,
+                "claude_path": "/usr/local/bin/claude",
+                "tree_clean": True,
+            },
+        )
 
     def test_ingest_refuses_without_a_passed_probe(self) -> None:
         _set_manifest(self.heldout, state=heldout_protocol.STATE_PINNED, isolation_probe={"passed": False})

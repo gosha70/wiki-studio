@@ -25,6 +25,7 @@ import argparse
 import itertools
 import json
 import math
+import os
 import platform
 import re
 import sqlite3
@@ -39,9 +40,11 @@ from typing import TYPE_CHECKING, Any
 from eval.navigation.heldout_protocol import (
     HELDOUT_DIR,
     MANIFEST_NAME,
+    RUN_ATTEMPT_NAME,
     SET_HELDOUT,
     STATE_FROZEN,
     STATE_RUN,
+    STATE_RUN_STARTED,
     ProtocolError,
     advance,
     load_manifest,
@@ -63,6 +66,7 @@ from eval.navigation.run import (
     load_stopwords,
     question_words,
 )
+from eval.navigation.run2_protocol import _git, _now
 from wiki_studio import __version__, api
 from wiki_studio import discovery as wiki_discovery
 from wiki_studio.discovery import (
@@ -92,8 +96,9 @@ CACHE_FILE_NAME = "search-cache.sqlite"
 WIKI_DIR = "wiki"
 PROPOSALS_DIR = "proposals"
 
-# Not compared when a results file is reproduced (FR-020): where it ran, not what it measured.
+# Not compared when a results file is reproduced (FR-020): where and when it ran, not what it measured.
 LATENCY_KEY = "latency"
+ATTEMPT_KEY = "run_attempt"  # the one held-out attempt (its marker's record), in results.json and the manifest
 ENVIRONMENT_PARAMETERS: tuple[str, ...] = ("sqlite_version", "wiki_studio_version")
 
 LATENCY_REPETITIONS = 5
@@ -524,7 +529,7 @@ def _measure_latency(inputs: _Inputs, config: RankerConfig, cache_dir: Path) -> 
 
 def comparable(results: dict[str, Any]) -> dict[str, Any]:
     """A results document without ``latency`` and the environment parameters (FR-020)."""
-    document = {k: v for k, v in results.items() if k != LATENCY_KEY}
+    document = {k: v for k, v in results.items() if k not in (LATENCY_KEY, ATTEMPT_KEY)}
     document["parameters"] = {k: v for k, v in results["parameters"].items() if k not in ENVIRONMENT_PARAMETERS}
     return document
 
@@ -730,7 +735,7 @@ def heldout_output(
     manifest = load_manifest(heldout_dir)
     state = manifest.get("state")
     tuned = run3_dir / TUNED_CONFIG_NAME
-    if state not in (STATE_FROZEN, STATE_RUN):
+    if state not in (STATE_FROZEN, STATE_RUN_STARTED, STATE_RUN):
         raise RunnerError(f"run: refusing; the held-out set is not frozen (state {state!r}, expected {STATE_FROZEN!r})")
     if not tuned.is_file():
         raise RunnerError(f"run: refusing; {_label(tuned)} does not exist (tune first, FR-021)")
@@ -745,22 +750,99 @@ def heldout_output(
     except ProtocolError as exc:
         raise RunnerError(f"run: {exc}") from exc
     original = heldout_dir / RESULTS_NAME
+    marker = heldout_dir / RUN_ATTEMPT_NAME
+    attempt = _attempt_record(heldout_dir, manifest)
     if post_hoc is None:
-        if original.exists() or state == STATE_RUN:
+        if attempt is not None or marker.exists() or original.exists() or state in (STATE_RUN_STARTED, STATE_RUN):
+            started = attempt.get("started_at") if attempt else "an unrecorded time"
             raise RunnerError(
-                f"run: refusing; the one held-out run is recorded in {RESULTS_NAME}; a later run needs --post-hoc LABEL"
+                f"run: refusing; the one held-out attempt was started at {started} ({_label(marker)}); "
+                "any further run needs --post-hoc LABEL"
             )
         return original
     if not POST_HOC_LABEL_RE.match(post_hoc):
         raise RunnerError(f"run: --post-hoc label {post_hoc!r} must be letters, digits, '.', '_' or '-'")
-    if not original.exists():
+    if attempt is None or not marker.exists():
         raise RunnerError("run: --post-hoc is for runs after the one held-out run, which has not happened")
-    if json.loads(original.read_text(encoding="utf-8"))["parameters"]["ranker_config_hash"] != tuned_hash:
-        raise RunnerError(f"run: refusing; {RESULTS_NAME} was not produced under the current {TUNED_CONFIG_NAME}")
+    if original.exists():
+        recorded_hash = json.loads(original.read_text(encoding="utf-8"))["parameters"]["ranker_config_hash"]
+        produced = RESULTS_NAME
+    elif _attempt_failed(manifest, original):
+        recorded_hash, produced = attempt.get("ranker_config_hash"), marker.name
+    else:
+        raise RunnerError(
+            f"run: --post-hoc is for runs after the one held-out run; the attempt started at "
+            f"{attempt.get('started_at')} has neither written {RESULTS_NAME} nor failed"
+        )
+    if recorded_hash != tuned_hash:
+        raise RunnerError(f"run: refusing; {produced} was not produced under the current {TUNED_CONFIG_NAME}")
     labelled = heldout_dir / f"{POST_HOC_PREFIX}{post_hoc}.json"
     if labelled.exists():
         raise RunnerError(f"run: {labelled.name} exists; choose another label")
     return labelled
+
+
+def _attempt_record(heldout_dir: Path, manifest: dict[str, Any]) -> dict[str, Any] | None:
+    """The one attempt as its marker records it (the manifest's copy when the marker is unreadable), or None."""
+    marker = heldout_dir / RUN_ATTEMPT_NAME
+    if marker.is_file():
+        try:
+            record: dict[str, Any] = json.loads(marker.read_text(encoding="utf-8"))
+            return record
+        except (OSError, ValueError):
+            pass
+    recorded = manifest.get(ATTEMPT_KEY)
+    return dict(recorded) if isinstance(recorded, dict) else None
+
+
+def _attempt_failed(manifest: dict[str, Any], original: Path) -> bool:
+    """The attempt ended without the original: a failure recorded in the manifest, or never reaching ``run``."""
+    recorded = manifest.get(ATTEMPT_KEY) or {}
+    return bool(recorded.get("failed_at")) or (manifest.get("state") == STATE_RUN_STARTED and not original.exists())
+
+
+def _write_attempt_marker(heldout_dir: Path, attempt: dict[str, Any]) -> None:
+    """Create ``run-attempt.json`` exclusively: never overwritten, so a second attempt cannot pose as the first."""
+    marker = heldout_dir / RUN_ATTEMPT_NAME
+    try:
+        fd = os.open(marker, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+    except FileExistsError as exc:
+        raise RunnerError(f"run: refusing; {_label(marker)} exists; the one held-out attempt has started") from exc
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        handle.write(json.dumps(attempt, indent=2, sort_keys=True) + "\n")
+
+
+def _official_attempt(
+    heldout_dir: Path, shared_dir: Path | None, *, config: RankerConfig, search_cache: Path
+) -> dict[str, Any]:
+    """The one held-out run (FR-028): marker and ``run-started`` first, then compute, write, ``run``.
+
+    A failure after the marker leaves the manifest in ``run-started`` with the
+    failure recorded; the attempt is then recoverable only as ``--post-hoc``.
+    """
+    attempt = {
+        "started_at": _now(),
+        "ranker_config_hash": ranker_config_hash(config),
+        "wiki_studio_version": __version__,
+        "wiki_studio_commit": _git("rev-parse", "HEAD"),
+    }
+    _write_attempt_marker(heldout_dir, attempt)
+    manifest = load_manifest(heldout_dir)
+    manifest[ATTEMPT_KEY] = dict(attempt)
+    advance(manifest, STATE_RUN_STARTED)
+    save_manifest(heldout_dir, manifest)
+    try:
+        results = compute(heldout_dir, shared_dir, config=config, search_cache=search_cache)
+        results[ATTEMPT_KEY] = attempt
+        _write_json(heldout_dir / RESULTS_NAME, results)
+    except BaseException as exc:
+        manifest[ATTEMPT_KEY]["failed_at"] = _now()
+        manifest[ATTEMPT_KEY]["error"] = f"{type(exc).__name__}: {exc}"
+        save_manifest(heldout_dir, manifest)
+        raise
+    advance(manifest, STATE_RUN)
+    save_manifest(heldout_dir, manifest)
+    return results
 
 
 def _live_config() -> RankerConfig:
@@ -777,7 +859,7 @@ def run(
     post_hoc: str | None,
     run3_dir: Path = RUN3_DIR,
 ) -> tuple[dict[str, Any], Path | None]:
-    """One evaluation; the held-out set's output path (written by the caller) or None for stdout."""
+    """One evaluation; the held-out set's output path (written here, with its manifest) or None for stdout."""
     output: Path | None = None
     live = _live_config()  # read once: the config the held-out guard checks is the one that runs
     if is_heldout(fixture_dir):
@@ -789,7 +871,12 @@ def run(
     config = load_config(config_path) if config_path is not None else live
     with tempfile.TemporaryDirectory() as tmp:
         cache = search_cache if search_cache is not None else Path(tmp) / CACHE_FILE_NAME
-        results = compute(fixture_dir, shared_dir, config=config, search_cache=cache)
+        if output is not None and output.name == RESULTS_NAME:
+            results = _official_attempt(fixture_dir, shared_dir, config=config, search_cache=cache)
+        else:
+            results = compute(fixture_dir, shared_dir, config=config, search_cache=cache)
+            if output is not None:
+                _write_json(output, results)
     return results, output
 
 
@@ -818,11 +905,6 @@ def main(argv: list[str] | None = None) -> int:
             if output is None:
                 sys.stdout.write(json.dumps(results, indent=2, sort_keys=True) + "\n")
                 return 0
-            _write_json(output, results)
-            if output.name == RESULTS_NAME:
-                manifest = load_manifest(args.fixture)
-                advance(manifest, STATE_RUN)
-                save_manifest(args.fixture, manifest)
             print(f"run: wrote {_label(output)}")
             return 0
         if args.step == "tune":

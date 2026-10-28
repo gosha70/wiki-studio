@@ -9,9 +9,13 @@ it learns the negotiated protocol version and the client's name and version
 (``info``'s ``adapter.protocol_version``), and with ``--trace PATH`` it appends
 one JSON line per request: ``ts``, ``method``, ``tool``, ``protocol_version``,
 ``client_name``, ``client_version``, ``outcome`` (0, or the error result's
-``exit_code``) and ``duration_ms``. Page content, question text, edit content
-and file paths are never traced. Observing the wire rather than the SDK's
-internals keeps the trace independent of the SDK version.
+``exit_code``), ``duration_ms``, and the non-content evidence a host-run
+checker needs: ``tool_names`` (a ``tools/list`` result's names), ``arg_keys``
+and ``result_keys`` (a ``tools/call``'s argument and result key names) and
+``summary`` (counts and flags per tool, see :func:`_summary`). Page content,
+question text, edit content and file paths are never traced. Observing the
+wire rather than the SDK's internals keeps the trace independent of the SDK
+version.
 """
 
 from __future__ import annotations
@@ -20,12 +24,15 @@ import contextlib
 import datetime
 import json
 import os
+import select
+import stat
 import sys
 import threading
 import time
 from typing import IO, TYPE_CHECKING, Any
 
 from ..paths import path_inside_dir
+from ..review import STATE_APPROVED
 from .config import LaunchError
 
 if TYPE_CHECKING:
@@ -43,24 +50,59 @@ TRACE_KEYS = (
     "client_version",
     "outcome",
     "duration_ms",
+    "tool_names",
+    "arg_keys",
+    "result_keys",
+    "summary",
 )
 METHOD_INITIALIZE = "initialize"
+METHOD_TOOLS_LIST = "tools/list"
 METHOD_TOOLS_CALL = "tools/call"
 # The outcome of a failed request that carries no wiki-studio exit code (a protocol error, an SDK refusal).
 OUTCOME_UNCODED_ERROR = 1
 _STDIN_FD = 0
 _STDOUT_FD = 1
 _READ_CHUNK = 65536
+# How often the outbound relay checks whether the server has finished (POSIX; see _pump).
+_PUMP_POLL_SECONDS = 0.05
+_POSIX = os.name == "posix"
+# Without select on pipes (Windows) the relay cannot poll; bound the wait instead.
+_PUMP_JOIN_FALLBACK_SECONDS = 2.0
+_O_NOFOLLOW = getattr(os, "O_NOFOLLOW", 0)
+_TRACE_MODE = 0o600
+# The tools whose summary the trace computes, and the edit actions propose's summary counts.
+_TOOL_FIND = "find"
+_TOOL_READ_PAGE = "read_page"
+_TOOL_PROPOSE = "propose"
+_TOOL_PROMOTE = "promote"
+_TOOL_REVIEW_STATE = "review_state"
+_ACTION_CREATE = "create"
+_ACTION_UPDATE = "update"
+_PAGE_ID_LINE = "page_id:"
 
 
 def open_trace(path: Path, paths: WikiPaths) -> IO[str]:
-    """Open ``path`` append-only for the trace; a path inside the wiki or one that cannot open is a launch error."""
+    """Open ``path`` append-only for the trace; inside the wiki, a symlink, or unopenable is a launch error.
+
+    The containment check does not follow the final component, so the file
+    itself is opened without following a symlink (``lstat`` first, then
+    ``O_NOFOLLOW`` against a link raced in after it) and must be a regular file.
+    """
     if path_inside_dir(path, paths.wiki_dir):
         raise LaunchError(f"--trace {path} lies inside the wiki {paths.wiki_dir}; put the trace outside it")
     try:
-        return open(path, "a", encoding="utf-8")  # noqa: SIM115 - held for the process, closed by WireObserver
+        if path.is_symlink():
+            raise LaunchError(f"--trace {path} is a symlink; name the trace file itself")
+        fd = os.open(path, os.O_WRONLY | os.O_APPEND | os.O_CREAT | _O_NOFOLLOW, _TRACE_MODE)
     except OSError as exc:
         raise LaunchError(f"--trace {path} cannot be opened for appending: {exc}") from exc
+    try:
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            raise LaunchError(f"--trace {path} is not a regular file")
+        return os.fdopen(fd, "a", encoding="utf-8")
+    except (OSError, LaunchError):
+        os.close(fd)
+        raise
 
 
 def _utc_now() -> str:
@@ -77,20 +119,100 @@ def _frames(line: bytes) -> list[dict[str, Any]]:
     return [item for item in items if isinstance(item, dict)]
 
 
-def _outcome(message: dict[str, Any]) -> int:
+def _payload(message: dict[str, Any]) -> dict[str, Any] | None:
+    """A ``tools/call`` response's object: the first text block's JSON, else ``structuredContent``."""
+    result = message.get("result")
+    if not isinstance(result, dict):
+        return None
+    for block in result.get("content") or []:
+        if isinstance(block, dict) and block.get("type") == "text":
+            with contextlib.suppress(ValueError, TypeError):
+                parsed = json.loads(block.get("text", ""))
+                if isinstance(parsed, dict):
+                    return parsed
+            break
+    structured = result.get("structuredContent")
+    return structured if isinstance(structured, dict) else None
+
+
+def _outcome(message: dict[str, Any], payload: dict[str, Any] | None) -> int:
     """0 for a successful response; the error result's ``exit_code``; 1 for an uncoded error."""
     if "error" in message:
         return OUTCOME_UNCODED_ERROR
     result = message.get("result")
     if not isinstance(result, dict) or not result.get("isError"):
         return 0
-    for block in result.get("content") or []:
-        if isinstance(block, dict) and block.get("type") == "text":
-            with contextlib.suppress(ValueError, TypeError):
-                code = json.loads(block.get("text", "")).get("exit_code")
-                if isinstance(code, int):
-                    return code
-    return OUTCOME_UNCODED_ERROR
+    code = payload.get("exit_code") if payload is not None else None
+    return code if isinstance(code, int) and not isinstance(code, bool) else OUTCOME_UNCODED_ERROR
+
+
+def _tool_names(message: dict[str, Any]) -> list[str] | None:
+    """The names a ``tools/list`` result lists, or None when the response carries no list."""
+    result = message.get("result")
+    tools = result.get("tools") if isinstance(result, dict) else None
+    if not isinstance(tools, list):
+        return None
+    return sorted(t["name"] for t in tools if isinstance(t, dict) and isinstance(t.get("name"), str))
+
+
+def _list(value: object) -> list[Any]:
+    return value if isinstance(value, list) else []
+
+
+def _edits_of(arguments: dict[str, Any], action: str) -> list[dict[str, Any]]:
+    edits = arguments.get("edits")
+    return [e for e in edits if isinstance(e, dict) and e.get("action") == action] if isinstance(edits, list) else []
+
+
+def _carries_page_id(edit: dict[str, Any]) -> bool:
+    """Whether a create's submitted content already names a ``page_id`` (the content itself is never traced)."""
+    content = edit.get("content")
+    return isinstance(content, str) and any(line.startswith(_PAGE_ID_LINE) for line in content.splitlines())
+
+
+def _summary(tool: str | None, arguments: dict[str, Any], payload: dict[str, Any] | None, outcome: int) -> Any:
+    """Counts and flags per tool, from the arguments and the result; None for a tool without a summary.
+
+    For an error result the summary is ``{"exit_code": <outcome>}``. Nothing
+    here copies a value out of the arguments or the result except ``find``'s
+    ranker name, which the ``info`` tool reports anyway.
+    """
+    if outcome != 0:
+        return {"exit_code": outcome}
+    result = payload or {}
+    if tool == _TOOL_FIND:
+        pages = _list(result.get("pages"))
+        max_pages = arguments.get("max_pages")
+        return {
+            "pages": len(pages),
+            "max_pages": max_pages if isinstance(max_pages, int) and not isinstance(max_pages, bool) else None,
+            "ranker": result.get("ranker") if isinstance(result.get("ranker"), str) else None,
+            "has_sha256": all(isinstance(p, dict) and isinstance(p.get("sha256"), str) and p["sha256"] for p in pages),
+        }
+    if tool == _TOOL_READ_PAGE:
+        return {"has_sha256": isinstance(result.get("sha256"), str) and bool(result["sha256"])}
+    if tool == _TOOL_PROPOSE:
+        creates = _edits_of(arguments, _ACTION_CREATE)
+        updates = _edits_of(arguments, _ACTION_UPDATE)
+        return {
+            "creates": len(creates),
+            "updates": len(updates),
+            "with_base_sha256": sum(isinstance(e.get("base_sha256"), str) and bool(e["base_sha256"]) for e in updates),
+            "page_id_supplied": sum(_carries_page_id(e) for e in creates),
+        }
+    if tool == _TOOL_PROMOTE:
+        return {
+            "applied": len(_list(result.get("applied_paths"))),
+            "dry_run": bool(result.get("dry_run")),
+            "approved": len(_list(result.get("approved_paths"))),
+        }
+    if tool == _TOOL_REVIEW_STATE:
+        states = _list(result.get("states"))
+        return {
+            "states": len(states),
+            "approved": sum(isinstance(s, dict) and s.get("state") == STATE_APPROVED for s in states),
+        }
+    return None
 
 
 class WireObserver:
@@ -104,7 +226,7 @@ class WireObserver:
         self._trace = trace
         self._clock = clock
         self._lock = threading.Lock()
-        self._pending: dict[str, tuple[str, str | None, float]] = {}
+        self._pending: dict[str, tuple[str, str | None, dict[str, Any] | None, float]] = {}
         self._initialize_id: str | None = None
         self.protocol_version: str | None = None
         self.client_name: str | None = None
@@ -119,6 +241,9 @@ class WireObserver:
             if not isinstance(params, dict):
                 params = {}
             tool = params.get("name") if method == METHOD_TOOLS_CALL and isinstance(params.get("name"), str) else None
+            arguments: dict[str, Any] | None = None
+            if method == METHOD_TOOLS_CALL:
+                arguments = params.get("arguments") if isinstance(params.get("arguments"), dict) else {}
             key = json.dumps(message["id"])
             with self._lock:
                 if method == METHOD_INITIALIZE:
@@ -127,7 +252,7 @@ class WireObserver:
                     if isinstance(info, dict):
                         self.client_name = info.get("name") if isinstance(info.get("name"), str) else None
                         self.client_version = info.get("version") if isinstance(info.get("version"), str) else None
-                self._pending[key] = (method, tool, self._clock())
+                self._pending[key] = (method, tool, arguments, self._clock())
 
     def outbound(self, line: bytes) -> None:
         for message in _frames(line):
@@ -143,7 +268,9 @@ class WireObserver:
                     version = result.get("protocolVersion") if isinstance(result, dict) else None
                     if isinstance(version, str):
                         self.protocol_version = version
-                method, tool, started = pending
+                method, tool, arguments, started = pending
+                payload = _payload(message) if arguments is not None else None
+                outcome = _outcome(message, payload)
                 self._write(
                     {
                         "ts": _utc_now(),
@@ -152,8 +279,12 @@ class WireObserver:
                         "protocol_version": self.protocol_version,
                         "client_name": self.client_name,
                         "client_version": self.client_version,
-                        "outcome": _outcome(message),
+                        "outcome": outcome,
                         "duration_ms": round((self._clock() - started) * 1000),
+                        "tool_names": _tool_names(message) if method == METHOD_TOOLS_LIST else None,
+                        "arg_keys": None if arguments is None else sorted(arguments),
+                        "result_keys": None if arguments is None or payload is None else sorted(payload),
+                        "summary": None if arguments is None else _summary(tool, arguments, payload, outcome),
                     }
                 )
 
@@ -168,15 +299,25 @@ class WireObserver:
             self._trace.close()
 
 
-def _pump(source: int, sink: int, observe: Callable[[bytes], None]) -> None:
-    """Copy bytes from ``source`` to ``sink`` unchanged, handing each line to ``observe``; close ``sink`` at EOF.
+def _pump(source: int, sink: int, observe: Callable[[bytes], None], stop: threading.Event | None = None) -> None:
+    """Copy bytes from ``source`` to ``sink`` unchanged, handing each line to ``observe``; close ``sink`` at the end.
 
     The bytes are forwarded before they are observed, so an observer failure
-    never holds back or alters a frame.
+    never holds back or alters a frame. The relay ends at EOF on ``source``,
+    or, when ``stop`` is given, once it is set and ``source`` has been drained:
+    the SDK's stdio transport keeps a private duplicate of fd 1 for the rest
+    of the process (``mcp.server.stdio._dup_above_std``), so the outbound pipe
+    never reaches EOF on its own after ``run`` returns.
     """
     pending = b""
     try:
         while True:
+            if stop is not None and _POSIX:
+                readable, _, _ = select.select([source], [], [], _PUMP_POLL_SECONDS)
+                if not readable:
+                    if stop.is_set():
+                        break
+                    continue
             chunk = os.read(source, _READ_CHUNK)
             if not chunk:
                 break
@@ -217,8 +358,9 @@ def observed_stdio(observer: WireObserver) -> Iterator[None]:
     os.close(in_read)
     os.dup2(out_write, _STDOUT_FD)
     os.close(out_write)
+    done = threading.Event()
     inbound = threading.Thread(target=_pump, args=(real_stdin, in_write, observer.inbound), daemon=True)
-    outbound = threading.Thread(target=_pump, args=(out_read, real_stdout, observer.outbound), daemon=True)
+    outbound = threading.Thread(target=_pump, args=(out_read, real_stdout, observer.outbound, done), daemon=True)
     inbound.start()
     outbound.start()
     try:
@@ -226,8 +368,10 @@ def observed_stdio(observer: WireObserver) -> Iterator[None]:
     finally:
         with contextlib.suppress(OSError, ValueError):
             sys.stdout.flush()
-        # Pointing fd 1 back at the real stdout drops the last write end of the
-        # outbound pipe, so its relay reaches EOF after the final frame.
+        # Point fd 1 back at the real stdout, then tell the relay the server is
+        # done: it drains what the SDK wrote before ``run`` returned and ends.
+        # (The SDK keeps its own duplicate of fd 1 open, so EOF never comes.)
         os.dup2(real_stdout, _STDOUT_FD)
-        outbound.join()
+        done.set()
+        outbound.join(None if _POSIX else _PUMP_JOIN_FALLBACK_SECONDS)
         observer.close()

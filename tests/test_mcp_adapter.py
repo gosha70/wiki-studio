@@ -36,7 +36,7 @@ from wiki_studio.mcp_adapter import EXIT_LAUNCH_ERROR, INSTALL_INSTRUCTION, main
 from wiki_studio.mcp_adapter.config import TOOL_NAMES, LaunchError, describe_launch, parse_launch
 from wiki_studio.mcp_adapter.tools import INTERNAL_ERROR, WikiTools, error_payload
 from wiki_studio.mcp_adapter.trace import TRACE_KEYS, WireObserver, open_trace
-from wiki_studio.paths import ENV_ACTOR, WikiPaths
+from wiki_studio.paths import ENV_ACTOR, ENV_PROPOSALS_DIR, WikiPaths
 
 HAS_MCP = importlib.util.find_spec("mcp") is not None
 SRC_DIR = Path(__file__).resolve().parents[1] / "src"
@@ -202,6 +202,21 @@ class TestLaunch(FixtureCase):
         inside = self.wiki / "cache.sqlite"
         with self.assertRaises(LaunchError):
             self.launch("--search-cache", str(inside))
+
+    def test_a_proposals_dir_outside_the_root_is_a_launch_error(self) -> None:
+        outside = self.base / "elsewhere" / "proposals"
+        with self.assertRaisesRegex(LaunchError, "outside the root"):
+            self.launch("--proposals-dir", str(outside))
+        with self.assertRaisesRegex(LaunchError, "outside the root"):
+            self.launch(env={ENV_PROPOSALS_DIR: str(outside)})
+        self.assertFalse(outside.exists())
+
+    def test_a_proposals_dir_inside_the_root_gives_a_root_relative_proposal_dir(self) -> None:
+        tools = self.launch("--proposals-dir", str(self.root / ".memkernel" / "wiki-proposals"))
+        result = tools.propose(create_edits("timeout-policy"))
+        self.assertEqual(result["proposal_dir"], f".memkernel/wiki-proposals/{result['name']}")
+        promoted = tools.promote(result["name"])
+        self.assertIn("decisions/timeout-policy.md", promoted["applied_paths"])
 
     def test_the_start_up_line_names_wiki_actor_ranker_tools_and_policy(self) -> None:
         self.set_auto_approve()
@@ -520,6 +535,8 @@ class TestServerOverStdio(FixtureCase):
             out["find"] = await call("find", {"question": "retry backoff"})
             out["read"] = await call("read_page", {"path": RETRY_PAGE})
             out["propose"] = await call("propose", {"edits": create_edits("timeout-policy"), "name": "s1"})
+            # The same name while s1 still waits in the proposals directory (after promote it is archived and free).
+            out["e_exists"] = await call("propose", {"edits": create_edits("other-policy"), "name": "s1"})
             out["promote"] = await call("promote", {"name": "s1"})
             out["lint"] = await call("lint", {"health": True})
             out["info"] = await call("info", {})
@@ -530,7 +547,6 @@ class TestServerOverStdio(FixtureCase):
             out["e_outside"] = await call("read_page", {"path": "../notes.md"})
             out["e_missing"] = await call("read_page", {"path": "decisions/none.md"})
             out["e_contract"] = await call("propose", {"edits": [], "name": "s2"})
-            out["e_exists"] = await call("propose", {"edits": create_edits("other-policy"), "name": "s1"})
             return out
 
         out = self.run_session(["--by", "alice"], body)
@@ -631,6 +647,7 @@ class TestServerOverStdio(FixtureCase):
             "unknown tool": ["--disable-tool", "nope"],
             "trace inside the wiki": ["--trace", str(self.wiki / "trace.jsonl")],
             "unwritable trace": ["--trace", str(self.base / "missing" / "trace.jsonl")],
+            "proposals dir outside the root": ["--proposals-dir", str(self.base / "elsewhere")],
         }
         for label, flags in cases.items():
             with self.subTest(label):

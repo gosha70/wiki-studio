@@ -16,8 +16,13 @@ Two commands:
 
 ``python -m conformance.mcp.run check-host-run --run DIR [--record]``
     Applies cases 2-9 to a recorded host run (``conformance/runs/README.md``):
-    its trace and the fixture's end state, never the transcript. ``--record``
-    writes the verdict into the run's ``manifest.json``.
+    its trace and the fixture's end state, never the transcript. Each case is
+    labelled ``proved`` (by the trace's evidence lines),
+    ``proved-by-end-state`` (the end state is needed too) or
+    ``not-provable-from-host-run (protocol suite)`` (the scenario does not
+    exercise it; counted as skipped, never as passed), and the verdict names
+    the cases the run proves. ``--record`` writes the verdict into the run's
+    ``manifest.json``.
 
 ``python -m conformance.mcp.run tree-hash DIR``
     Prints the tree hash ``check-host-run`` compares with ``end_state_sha256``.
@@ -171,7 +176,7 @@ HAND_EDIT_MARKER = "Changed by hand outside the server."
 STALE_MARKER = "A draft from before the hand edit."
 
 
-class CaseFailure(Exception):
+class CaseFailureError(Exception):
     """One check of a case did not hold."""
 
 
@@ -181,7 +186,7 @@ class SuiteError(Exception):
 
 def check(condition: object, message: str) -> None:
     if not condition:
-        raise CaseFailure(message)
+        raise CaseFailureError(message)
 
 
 def page_path(slug: str) -> str:
@@ -248,10 +253,12 @@ class CaseResult:
     number: int
     status: str
     detail: str = ""
+    proof: str = ""  # a host-run case's proof label; empty for the suite's own cases
 
     def line(self) -> str:
         label = f"[{self.version}] {self.number:02d} {CASES[self.number]}"
-        return f"{self.status}  {label}" + (f": {self.detail}" if self.detail else "")
+        proof = f" [{self.proof}]" if self.proof else ""
+        return f"{self.status}  {label}{proof}" + (f": {self.detail}" if self.detail else "")
 
 
 @dataclasses.dataclass
@@ -297,7 +304,7 @@ def _require_sdk() -> None:
 def _pinned(module: Any, name: str, version: str) -> Iterator[None]:
     """Make the SDK client propose ``version`` (it otherwise proposes its latest one)."""
     if not hasattr(module, name):
-        raise CaseFailure(f"the SDK client has no {name}; this SDK cannot be pinned to {version}")
+        raise CaseFailureError(f"the SDK client has no {name}; this SDK cannot be pinned to {version}")
     with mock.patch.object(module, name, version):
         yield
 
@@ -373,7 +380,7 @@ async def _session(launch: Launch, version: str, body: Callable[[Any], Coroutine
         async with stdio_client(params, errlog=errlog) as (read, write), ClientSession(read, write) as session:
             try:
                 negotiated = await _negotiate(session, version)
-            except CaseFailure as exc:
+            except CaseFailureError as exc:
                 return Negotiation(failed=str(exc))
             except Exception as exc:  # the server refused the version with a protocol error
                 return Negotiation(refused=f"{type(exc).__name__}: {exc}")
@@ -431,7 +438,7 @@ class VersionRun:
     async def run_case(self, number: int, case: Callable[[], Coroutine[Any, Any, str | None]]) -> None:
         try:
             detail = await case()
-        except CaseFailure as exc:
+        except CaseFailureError as exc:
             self.record(number, FAIL, str(exc))
         except Exception as exc:
             self.record(number, FAIL, f"{type(exc).__name__}: {exc}")
@@ -663,7 +670,7 @@ class VersionRun:
                 }
                 for name, arguments in calls.items():
                     (await _call(session, name, arguments)).ok(f"{name} in propose-only mode")
-            except CaseFailure as exc:
+            except CaseFailureError as exc:
                 self.record(2, FAIL, f"propose-only mode: {exc}")
             else:
                 self.record(2, PASS, self.results[2].detail + "; propose-only mode lacks promote, the seven work")
@@ -707,7 +714,7 @@ class VersionRun:
                 try:
                     message = json.loads(line)
                 except ValueError:
-                    raise CaseFailure(f"{record.name}: a stdout line is not JSON: {line[:80]!r}") from None
+                    raise CaseFailureError(f"{record.name}: a stdout line is not JSON: {line[:80]!r}") from None
                 items = message if isinstance(message, list) else [message]
                 check(
                     all(isinstance(item, dict) and item.get("jsonrpc") == "2.0" for item in items),
@@ -742,9 +749,28 @@ HOST_MANIFEST_KEYS = (
 RUN_MANIFEST = "manifest.json"
 RUN_TRACE = "trace.jsonl"
 RUN_END_STATE = "end-state"
-TRACE_KEYS = ("ts", "method", "tool", "protocol_version", "client_name", "client_version", "outcome", "duration_ms")
+TRACE_KEYS = (
+    "ts",
+    "method",
+    "tool",
+    "protocol_version",
+    "client_name",
+    "client_version",
+    "outcome",
+    "duration_ms",
+    "tool_names",
+    "arg_keys",
+    "result_keys",
+    "summary",
+)
 METHOD_LIST = "tools/list"
 METHOD_CALL = "tools/call"
+# What proves a host-run case: the trace's evidence lines, the end state as well, or nothing in the scenario.
+PROOF_TRACE = "proved"
+PROOF_END_STATE = "proved-by-end-state"
+PROOF_NONE = "not-provable-from-host-run (protocol suite)"
+PROOF_FAILED = "not proved"
+INDEX_PAGES = ("index.md", "log.md")
 
 
 def _first(calls: list[tuple[int, dict[str, Any]]], tool: str, after: int = -1) -> int | None:
@@ -755,8 +781,29 @@ def _first(calls: list[tuple[int, dict[str, Any]]], tool: str, after: int = -1) 
     return None
 
 
+def _summary(record: dict[str, Any]) -> dict[str, Any]:
+    summary = record.get("summary")
+    return summary if isinstance(summary, dict) else {}
+
+
+def _int(summary: dict[str, Any], key: str) -> int:
+    value = summary.get(key)
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise CaseFailureError(f"the trace summary lacks an integer {key}")
+    return value
+
+
 def check_host_run(run_dir: Path) -> list[CaseResult]:
-    """Cases 2-9 on a recorded host run's trace and end state (FR-045)."""
+    """Cases 2-9 on a recorded host run's trace and end state (FR-045), each labelled with what proves it.
+
+    The trace holds no content, so a case is ``proved`` only when its evidence
+    lines (``tool_names``, ``summary``, ``outcome``) establish it,
+    ``proved-by-end-state`` when the fixture's end state is needed as well, and
+    ``not-provable-from-host-run`` (skipped, never passed) when the scenario
+    does not exercise it: the stale-update refusal (7) and promote-name
+    containment (8) are the protocol suite's. The detail of every case says
+    what the run does not show.
+    """
     manifest = json.loads((run_dir / RUN_MANIFEST).read_text(encoding="utf-8"))
     records = [json.loads(line) for line in (run_dir / RUN_TRACE).read_text(encoding="utf-8").splitlines() if line]
     end = run_dir / RUN_END_STATE
@@ -764,11 +811,14 @@ def check_host_run(run_dir: Path) -> list[CaseResult]:
     results: list[CaseResult] = []
     calls = [(i, r) for i, r in enumerate(records) if r.get("method") == METHOD_CALL]
 
-    def run(number: int, case: Callable[[], str]) -> None:
+    def run(number: int, proof: str, case: Callable[[], str]) -> None:
         try:
-            results.append(CaseResult(version, number, PASS, case()))
-        except (CaseFailure, OSError, ValueError, KeyError, TypeError) as exc:
-            results.append(CaseResult(version, number, FAIL, f"{type(exc).__name__}: {exc}"))
+            results.append(CaseResult(version, number, PASS, case(), proof))
+        except (CaseFailureError, OSError, ValueError, KeyError, TypeError) as exc:
+            results.append(CaseResult(version, number, FAIL, f"{type(exc).__name__}: {exc}", PROOF_FAILED))
+
+    def not_provable(number: int, detail: str) -> None:
+        results.append(CaseResult(version, number, SKIP, detail, PROOF_NONE))
 
     def recorded() -> str:
         missing = [key for key in HOST_MANIFEST_KEYS if not manifest.get(key)]
@@ -788,24 +838,56 @@ def check_host_run(run_dir: Path) -> list[CaseResult]:
     fixture_wiki = FIXTURE_PROJECT / WIKI_REL
     order: dict[str, int | None] = {}
 
+    def successful(tool: str) -> list[dict[str, Any]]:
+        return [r for _, r in calls if r.get("tool") == tool and r.get("outcome") == 0]
+
     def surface() -> str:
         recorded()
-        check(
-            any(r.get("method") == METHOD_LIST and r.get("outcome") == 0 for r in records), "no successful tools/list"
-        )
+        listed = [r for r in records if r.get("method") == METHOD_LIST and r.get("outcome") == 0]
+        check(listed, "no successful tools/list")
+        for record in listed:
+            names = record.get("tool_names")
+            check(names is not None, "the tools/list line carries no tool_names (a trace from before 0.8.0)")
+            check(names == sorted(TOOL_NAMES), f"tools/list named {names}, expected the eight")
         called = sorted({str(r.get("tool")) for _, r in calls})
         check(set(called) <= set(TOOL_NAMES), f"calls outside the eight tools: {called}")
-        return f"tools/list ok; called {called}"
+        return f"tools/list named the eight tools; called {called} (the argument schemas are the protocol suite's)"
 
     def find() -> str:
         order["find"] = _first(calls, TOOL_FIND)
         check(order["find"] is not None, "no successful find")
-        return "find succeeded"
+        finds = successful(TOOL_FIND)
+        for summary in map(_summary, finds):
+            pages = _int(summary, "pages")
+            check(pages <= MAX_FIND_PAGES, f"find returned {pages} pages, more than {MAX_FIND_PAGES}")
+            max_pages = summary.get("max_pages")
+            if isinstance(max_pages, int) and not isinstance(max_pages, bool):
+                check(pages <= max_pages, f"find returned {pages} pages for max_pages {max_pages}")
+            check(isinstance(summary.get("ranker"), str) and summary["ranker"], "find did not name its ranker")
+            check(summary.get("has_sha256") is True, "a page of find's result lacks its sha256")
+        rankers = sorted({str(_summary(r).get("ranker")) for r in finds})
+        return (
+            f"{len(finds)} find(s), each within {MAX_FIND_PAGES} pages, ranker {rankers}, every page with a sha256 "
+            "(index linkage and the byte budget are the protocol suite's)"
+        )
 
     def read_page() -> str:
         order["read"] = _first(calls, TOOL_READ_PAGE)
         check(order["read"] is not None, "no successful read_page")
-        return "read_page succeeded"
+        for summary in map(_summary, successful(TOOL_READ_PAGE)):
+            check(summary.get("has_sha256") is True, "read_page returned no sha256")
+        refused = [
+            r for _, r in calls if r.get("tool") == TOOL_READ_PAGE and r.get("outcome") == EXIT_PATH_OUTSIDE_ROOT
+        ]
+        check(
+            refused,
+            "containment is not provable from this run: no read_page was refused with exit 7 "
+            "(the scenario's traversal step); the protocol suite covers it",
+        )
+        return (
+            "read_page returned a sha256 (that it is the file's is the protocol suite's check); "
+            f"{len(refused)} read_page refused with exit 7 (the scenario's traversal step; the trace holds no path)"
+        )
 
     def after(step: str) -> int:
         """The trace position of an earlier step, which the next step must follow."""
@@ -814,23 +896,53 @@ def check_host_run(run_dir: Path) -> list[CaseResult]:
         assert position is not None
         return position
 
+    def created_pages() -> list[str]:
+        """The wiki-relative pages the receipts created (no previous bytes), other than the index pages."""
+        pages = []
+        for receipt in receipts:
+            for write in receipt.get("planned_writes") or []:
+                rel = str(write.get("path", ""))
+                rel = rel[len(WIKI_REL) + 1 :] if rel.startswith(WIKI_REL + "/") else rel
+                if write.get("pre_sha256") is None and rel.endswith(".md") and rel not in INDEX_PAGES:
+                    pages.append(rel)
+        return pages
+
     def propose() -> str:
         order["propose"] = _first(calls, TOOL_PROPOSE, after("read"))
         check(order["propose"] is not None, "no successful propose after read_page")
+        assert order["propose"] is not None
+        summary = _summary(records[order["propose"]])
+        creates, updates = _int(summary, "creates"), _int(summary, "updates")
+        with_base = _int(summary, "with_base_sha256")
+        check(creates + updates, "propose carried no create and no update")
+        check(with_base == updates, f"{updates - with_base} update(s) carried no base_sha256")
         plans = list(applied.glob("*/plan.json"))
         check(plans, "no proposal reached the proposals directory's archive")
-        return f"{len(plans)} proposal(s) archived"
+        if creates:
+            pages = created_pages()
+            check(len(pages) >= creates, f"the receipts show {len(pages)} created page(s) for {creates} create(s)")
+            for rel in pages:
+                check(PAGE_ID_RE.search((wiki / rel).read_text(encoding="utf-8")), f"{rel} carries no page_id")
+            page_ids = f"the {len(pages)} created page(s) carry a page_id in the end state"
+        else:
+            page_ids = "no create in the scenario, so page_id assignment is not exercised"
+        return (
+            f"{creates} create(s), {updates} update(s) each carrying base_sha256; {len(plans)} proposal(s) archived; "
+            f"{page_ids} (that the wiki stayed unchanged between propose and promote is not provable from a trace)"
+        )
 
     def promote() -> str:
         order["promote"] = _first(calls, TOOL_PROMOTE, after("propose"))
         check(order["promote"] is not None, "no successful promote after propose")
+        assert order["promote"] is not None
+        summary = _summary(records[order["promote"]])
+        applied_count = _int(summary, "applied")
+        check(applied_count, "promote applied no path")
+        check(summary.get("dry_run") is False, "promote was a dry run")
         check(receipts, "no receipt in the archive")
         check(all(r.get("state") == RECEIPT_COMMITTED for r in receipts), "a receipt is not committed")
         entry_points = {(r.get("promoter") or {}).get("entry_point") for r in receipts}
         check(entry_points == {ENTRY_POINT_MCP}, f"receipt entry points {sorted(map(str, entry_points))}")
-        return f"{len(receipts)} committed receipt(s), entry_point mcp"
-
-    def guarded_update() -> str:
         updated = []
         for receipt in receipts:
             check(not receipt.get("unguarded_paths"), "an update was applied without base_sha256")
@@ -838,7 +950,7 @@ def check_host_run(run_dir: Path) -> list[CaseResult]:
                 rel = str(write.get("path", ""))
                 rel = rel[len(WIKI_REL) + 1 :] if rel.startswith(WIKI_REL + "/") else rel
                 original = fixture_wiki / rel
-                if rel.endswith(".md") and rel not in ("index.md", "log.md") and original.is_file():
+                if rel.endswith(".md") and rel not in INDEX_PAGES and original.is_file():
                     check(
                         write.get("pre_sha256") == sha256_bytes(original.read_bytes()),
                         f"{rel} was not updated from the fixture's revision",
@@ -849,38 +961,62 @@ def check_host_run(run_dir: Path) -> list[CaseResult]:
                     )
                     updated.append(rel)
         check(updated, "no fixture page was updated")
-        return f"guarded update of {sorted(updated)}"
-
-    def containment() -> str:
-        outside_end = {
-            k: v
-            for k, v in snapshot(end).items()
-            if not k.startswith((WIKI_REL + "/", PROPOSALS_REL + "/")) and DERIVED_PREFIX not in k
-        }
-        outside_fixture = {k: v for k, v in snapshot(FIXTURE_PROJECT).items() if not k.startswith(WIKI_REL + "/")}
-        check(outside_end == outside_fixture, "files outside the wiki and the proposals directory changed")
-        return "nothing written outside the wiki and the proposals directory"
+        return (
+            f"applied {applied_count} path(s), not a dry run; {len(receipts)} committed receipt(s), entry_point mcp; "
+            f"guarded update of {sorted(updated)} from the fixture's revision, no unguarded path"
+        )
 
     def not_approved() -> str:
-        check(_first(calls, TOOL_REVIEW_STATE, after("promote")) is not None, "no review_state after promote")
+        position = _first(calls, TOOL_REVIEW_STATE, after("promote"))
+        check(position is not None, "no successful review_state after promote")
+        assert position is not None
+        summary = _summary(records[position])
+        check(_int(summary, "states"), "review_state returned no state")
+        check(_int(summary, "approved") == 0, f"review_state reports {summary.get('approved')} approved page(s)")
+        promoted = _summary(records[after("promote")])
+        check(_int(promoted, "approved") == 0, f"promote approved {promoted.get('approved')} page(s)")
         approvals = (
             [p for p in (wiki / APPROVALS_REL).rglob("*") if p.is_file()] if (wiki / APPROVALS_REL).is_dir() else []
         )
         check(not approvals, f"approval records exist: {len(approvals)}")
-        return "review_state called; no approval record"
+        return "review_state after promote reports no approved page, promote approved none, no approval record"
 
-    for number, case in (
-        (2, surface),
-        (3, find),
-        (4, read_page),
-        (5, propose),
-        (6, promote),
-        (7, guarded_update),
-        (8, containment),
-        (9, not_approved),
-    ):
-        run(number, case)
-    return results
+    run(2, PROOF_TRACE, surface)
+    run(3, PROOF_TRACE, find)
+    run(4, PROOF_TRACE, read_page)
+    run(5, PROOF_END_STATE, propose)
+    run(6, PROOF_END_STATE, promote)
+    not_provable(7, "the scenario has no stale update, so the exit-9 refusal is the protocol suite's")
+    not_provable(8, "the scenario promotes no ../x or absolute name, so that refusal is the protocol suite's")
+    run(9, PROOF_END_STATE, not_approved)
+    return sorted(results, key=lambda r: r.number)
+
+
+def host_verdict(results: list[CaseResult]) -> dict[str, Any]:
+    """The recorded verdict: which cases the run proves, which it cannot, and which failed."""
+    proved = [r.number for r in results if r.status == PASS]
+    not_provable = [r.number for r in results if r.status == SKIP]
+    failed = [r.number for r in results if r.status == FAIL]
+    return {
+        "passed": not failed,
+        "cases": {str(r.number): r.status for r in results},
+        "proof": {str(r.number): r.proof for r in results},
+        "proved": proved,
+        "not_provable": not_provable,
+        "failed": failed,
+    }
+
+
+def host_verdict_line(verdict: dict[str, Any]) -> str:
+    def cases(numbers: list[int]) -> str:
+        return ", ".join(str(n) for n in numbers) or "none"
+
+    text = f"verdict: the host run proves case(s) {cases(verdict['proved'])}"
+    if verdict["not_provable"]:
+        text += f"; not provable from a host run, the protocol suite's: {cases(verdict['not_provable'])}"
+    if verdict["failed"]:
+        text += f"; failed: {cases(verdict['failed'])}"
+    return text
 
 
 # ── Command line ─────────────────────────────────────────────
@@ -926,13 +1062,12 @@ def _host_main(argv: list[str]) -> int:
             raise SuiteError(f"{args.run / name} is missing (see conformance/runs/README.md)")
     results = check_host_run(args.run)
     code = _print(results)
+    verdict = host_verdict(results)
+    print(host_verdict_line(verdict))
     if args.record:
         manifest_path = args.run / RUN_MANIFEST
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        manifest["verdict"] = {
-            "passed": code == EXIT_PASS,
-            "cases": {str(r.number): r.status for r in results},
-        }
+        manifest["verdict"] = verdict
         manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     return code
 

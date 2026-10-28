@@ -44,6 +44,7 @@ from .proposal import Citation, IngestRequest, QueryAnswer, WikiPatchSet
 from .wiki_state import _read_text_or_empty, _tokenise
 
 if TYPE_CHECKING:
+    from .discovery import RankerConfig
     from .ingestor import Backend
     from .paths import WikiPaths
 
@@ -336,14 +337,17 @@ class DefaultQuerier:
     backend: Backend
     paths: WikiPaths
     max_pages: int = DEFAULT_MAX_QUERY_PAGES
-    # None means ``discovery.DEFAULT_MAX_CONTEXT_BYTES`` and ``discovery.resolve_ranker()`` (0.8.0, FR-008).
+    # None means ``discovery.DEFAULT_MAX_CONTEXT_BYTES``, ``discovery.resolve_ranker()`` and
+    # ``discovery.DEFAULT_RANKER_CONFIG`` (0.8.0, FR-008).
     max_bytes: int | None = None
     ranker: str | None = None
+    ranker_config: RankerConfig | None = None
 
     def query(self, question: str) -> QueryAnswer:
         # discovery imports this module (it wraps _select_query_candidates), so it is imported here.
-        from .discovery import DEFAULT_MAX_CONTEXT_BYTES, resolve_ranker, select, warn_selection
+        from .discovery import DEFAULT_MAX_CONTEXT_BYTES, resolve_ranker, select, validate_max_pages, warn_selection
 
+        validate_max_pages(self.max_pages)
         ranker, _source = resolve_ranker(self.ranker)
         selection = select(
             self.paths,
@@ -351,6 +355,7 @@ class DefaultQuerier:
             max_pages=self.max_pages,
             max_bytes=DEFAULT_MAX_CONTEXT_BYTES if self.max_bytes is None else self.max_bytes,
             ranker=ranker,
+            config=self.ranker_config,
         )
         warn_selection(selection)
         index_md, pages_loaded, pages_content = selection.index_md, selection.pages_loaded, selection.pages_content

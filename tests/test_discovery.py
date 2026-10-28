@@ -23,6 +23,7 @@ from tests.conftest import FIXTURES_DIR, run_cli
 from wiki_studio import api, discovery, search_index
 from wiki_studio.discovery import (
     DEFAULT_MAX_CONTEXT_BYTES,
+    DEFAULT_MAX_QUERY_PAGES,
     DEFAULT_RANKER_CONFIG,
     ENV_RANKER,
     RANKER_FTS5,
@@ -32,6 +33,7 @@ from wiki_studio.discovery import (
     ranker_config_hash,
     resolve_ranker,
 )
+from wiki_studio.errors import SourceMissingError
 from wiki_studio.paths import WikiPaths
 from wiki_studio.querier import _select_query_candidates
 from wiki_studio.search_index import build_query
@@ -330,6 +332,71 @@ class TestEligibility(DiscoveryCase):
                 self.assertEqual(result.pages, ())
                 self.assertEqual(result.ineligible, ())
 
+    def test_a_page_swapped_for_a_symlink_after_the_link_check_is_never_read(self) -> None:
+        page = self.page("concepts/twin-alpha.md")
+        original = page.read_text(encoding="utf-8")
+        outside = self.root / "secret.md"
+        outside.write_text(original.replace("Plums", "Launch codes"))
+        real_links = discovery._extract_index_links
+
+        def select_after_swap(ranker: str) -> discovery.Selection:
+            swapped = {"done": False}
+
+            def links_then_swap(*args: object, **kwargs: object) -> list[str]:
+                # The containment check passed on a regular page; the read must still refuse the symlink.
+                links = real_links(*args, **kwargs)  # type: ignore[arg-type]
+                if not swapped["done"]:
+                    swapped["done"] = True
+                    page.unlink()
+                    page.symlink_to(outside)
+                return links
+
+            with mock.patch.object(discovery, "_extract_index_links", links_then_swap):
+                selection = discovery.select(self.paths, "launch codes plums", ranker=ranker)
+            self.assertTrue(swapped["done"])
+            return selection
+
+        for ranker in RANKERS:
+            with self.subTest(ranker):
+                if ranker == RANKER_FTS5 and not HAS_FTS5:
+                    self.skipTest("this Python's SQLite has no FTS5")
+                selection = select_after_swap(ranker)
+                self.assertEqual(selection.pages_loaded, ["concepts/twin-beta.md"])
+                self.assertFalse(any("Launch codes" in loaded.text for loaded in selection.pages))
+                ineligible = [(i.path, i.reason) for i in selection.ineligible]
+                self.assertIn(("concepts/twin-alpha.md", "not-regular-file"), ineligible)
+                cache = self.paths.search_cache_file()
+                if cache.exists():
+                    self.assertNotIn(b"Launch codes", cache.read_bytes())
+                # Restore the regular page for the next ranker.
+                page.unlink()
+                page.write_text(original, encoding="utf-8")
+
+    def test_a_symlinked_index_reads_as_empty(self) -> None:
+        outside = self.root / "index-copy.md"
+        outside.write_text(self.page("index.md").read_text(encoding="utf-8"))
+        self.page("index.md").unlink()
+        self.page("index.md").symlink_to(outside)
+        selection = discovery.select(self.paths, "retry backoff")
+        self.assertEqual((selection.index_md, selection.pages, selection.bytes_loaded), ("", (), 0))
+        with self.assertRaises(SourceMissingError):
+            api.find("retry backoff", self.paths)
+
+    def test_two_spellings_of_one_link_load_the_page_once(self) -> None:
+        index = self.page("index.md")
+        index.write_text(index.read_text(encoding="utf-8") + "- [Twin beta again](./concepts/twin-beta.md)\n")
+        expected_bytes = sum(
+            len(self.page(rel).read_bytes()) for rel in ("index.md", "concepts/twin-beta.md", "concepts/twin-alpha.md")
+        )
+        for ranker in RANKERS:
+            with self.subTest(ranker):
+                if ranker == RANKER_FTS5 and not HAS_FTS5:
+                    self.skipTest("this Python's SQLite has no FTS5")
+                result = api.find("plums", self.paths, ranker=ranker)
+                self.assertEqual([p.path for p in result.pages], ["concepts/twin-beta.md", "concepts/twin-alpha.md"])
+                self.assertEqual((result.bytes_loaded, result.ineligible), (expected_bytes, ()))
+                self.assertEqual(self.found("plums", ranker=ranker, max_pages=1), ["concepts/twin-beta.md"])
+
     def test_each_page_reports_the_sha256_and_length_of_its_bytes(self) -> None:
         data = self.page("concepts/retry-backoff.md").read_bytes()
         (page, *_rest) = api.find("retry backoff", self.paths).pages
@@ -399,6 +466,21 @@ class TestCapAndTies(DiscoveryCase):
                 self.assertEqual(self.found("plums", ranker=ranker, max_pages=1), ["concepts/twin-beta.md"])
                 self.assertLessEqual(len(self.found("retry sqlite plums release circuit", ranker=ranker)), 5)
 
+    def test_max_pages_outside_one_to_five_is_refused(self) -> None:
+        self.assertEqual(DEFAULT_MAX_QUERY_PAGES, 5)
+        self.assertLessEqual(len(self.found("retry sqlite plums release circuit", max_pages=5)), 5)
+        for bad in (0, 6, 100, True, "5"):
+            with self.subTest(bad), self.assertRaisesRegex(ValueError, r"1 to 5"):
+                api.find("plums", self.paths, max_pages=bad)  # type: ignore[arg-type]
+        with self.assertRaisesRegex(ValueError, r"1 to 5"):
+            api.query("plums", self.paths, backend="test", max_pages=6)
+        result = self.cli("find", "plums", "--max-pages", "6")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("1 to 5", result.stderr)
+        result = self.cli("query", "plums", "--backend", "test", "--max-pages", "0")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("1 to 5", result.stderr)
+
     @unittest.skipUnless(HAS_FTS5, "this Python's SQLite has no FTS5")
     def test_reordering_the_index_reorders_the_tie(self) -> None:
         index = self.page("index.md")
@@ -438,6 +520,18 @@ class TestQuery(DiscoveryCase):
         budget = len(self.page("index.md").read_bytes())
         answer = api.query("retry backoff", self.paths, backend="test", max_bytes=budget).answer
         self.assertEqual(answer.pages_loaded, [])
+
+    @unittest.skipUnless(HAS_FTS5, "this Python's SQLite has no FTS5")
+    def test_query_ranks_under_the_given_ranker_configuration(self) -> None:
+        strict = RankerConfig(DEFAULT_RANKER_CONFIG.tokenizer, DEFAULT_RANKER_CONFIG.weights, 2, 5)
+        loose = api.query("retry jitter", self.paths, backend="test", ranker=RANKER_FTS5).answer.pages_loaded
+        self.assertIn("concepts/circuit-breaker.md", loose)
+        with mock.patch.object(discovery, "select", wraps=discovery.select) as spy:
+            answer = api.query(
+                "retry jitter", self.paths, backend="test", ranker=RANKER_FTS5, ranker_config=strict
+            ).answer
+        self.assertEqual(answer.pages_loaded, ["concepts/retry-backoff.md"])
+        self.assertIs(spy.call_args.kwargs["config"], strict)
 
     def test_a_bad_ranker_is_refused_before_the_backend(self) -> None:
         with self.assertRaises(ValueError):

@@ -64,8 +64,11 @@ advisory unless you ask otherwise.
   `<wiki-parent>/.<wiki-dir-name>.wiki-studio.search.sqlite` by default. A
   path inside the wiki is refused. The file is created with
   `O_CREAT | O_EXCL | O_NOFOLLOW` and mode `0o600`, so the copy is readable
-  by its owner only (on Windows the directory's default ACL applies); a
-  wider directory still exposes the file's existence and size. The cache
+  by its owner only (on Windows the directory's default ACL applies); an
+  existing cache or journal that is wider is tightened to `0o600` before
+  any page text is written, and one that cannot be tightened is not used
+  for that call. A wider directory still exposes the file's existence and
+  size. The cache
   only ranks: the text a prompt carries and citations are checked against is
   read from the wiki in that call, never from the cache. SQLite opens paths
   itself and follows symlinks, so wiki-studio checks the path and its
@@ -91,8 +94,10 @@ advisory unless you ask otherwise.
   `review_state`. `approve`, `ingest`, `query`, `audit-flush` and `init` are
   not tools, and no tool takes a root, directory, backend, actor or
   escape-hatch argument: the layout, the actor and the default ranker are
-  fixed when the host launches the server, and client-advertised MCP roots
-  are ignored. `--disable-tool` only removes tools (`--disable-tool promote`
+  fixed when the host launches the server, the proposals directory must lie
+  inside the root (a launch error otherwise, so `promote` never needs
+  `allow_out_of_repo`), and client-advertised MCP roots are ignored.
+  `--disable-tool` only removes tools (`--disable-tool promote`
   is propose-only mode). The actor is the launch `--by` or
   `WIKI_STUDIO_ACTOR`, so an agent cannot record a person's name as proposer
   or promoter; it is attribution, not authentication. On a wiki whose policy

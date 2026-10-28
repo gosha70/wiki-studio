@@ -20,8 +20,9 @@ size or stat shortcut) and ranks in the same transaction over the current
 paths only. The text stored there serves ranking and is never read back for a
 prompt. A cache that does not match is rebuilt; a corrupt one is removed and
 rebuilt; one that cannot be used safely (a symlink, an unwritable or
-read-only directory, a lock held past the busy timeout) makes that call rank
-in memory with one warning. Cache state never fails a call.
+read-only directory, a lock held past the busy timeout, an existing file
+wider than owner-only that cannot be tightened) makes that call rank in
+memory with one warning. Cache state never fails a call.
 """
 
 from __future__ import annotations
@@ -75,6 +76,8 @@ _MILLISECONDS_PER_SECOND = 1000
 CACHE_FILE_MODE = 0o600
 # POSIX only; with O_EXCL a final symlink is refused anyway.
 _O_NOFOLLOW = getattr(os, "O_NOFOLLOW", 0)
+# File modes are tightened on POSIX only; on Windows the directory's default ACL applies.
+_POSIX = os.name == "posix"
 # SQLite's rollback journal beside the database (removed with a corrupt cache so it is never replayed).
 JOURNAL_SUFFIX = "-journal"
 _URI_READ_WRITE = "?mode=rw"
@@ -351,8 +354,50 @@ def _check_parent(cache_path: Path) -> None:
         raise CacheUnusableError(f"its directory {parent} is not writable")
 
 
+def _tighten_mode(path: Path, info: os.stat_result, what: str) -> None:
+    """Make the existing regular file ``path`` (as ``lstat`` saw it in ``info``) owner-only when it is wider.
+
+    POSIX only. Bits outside :data:`CACHE_FILE_MODE` are cleared and the
+    owner's own bits are kept (a read-only ``0o400`` stays read-only). The
+    file is opened without following a symlink and ``fstat`` must show the
+    same inode before ``fchmod``; a file that cannot be tightened (not owned
+    by this user) is unusable, so no page text is ever written into a
+    readable file.
+    """
+    mode = stat.S_IMODE(info.st_mode)
+    if not _POSIX or not mode & ~CACHE_FILE_MODE:
+        return
+    try:
+        fd = os.open(path, os.O_RDONLY | _O_NOFOLLOW)
+    except OSError as exc:
+        raise CacheUnusableError(f"cannot open {what} to tighten its mode: {exc.strerror or exc}") from exc
+    try:
+        opened = os.fstat(fd)
+        if (opened.st_dev, opened.st_ino) != (info.st_dev, info.st_ino) or not stat.S_ISREG(opened.st_mode):
+            raise CacheUnusableError(f"{what} changed while being inspected")
+        try:
+            os.fchmod(fd, mode & CACHE_FILE_MODE)
+        except OSError as exc:
+            raise CacheUnusableError(f"{what} is not owner-only and cannot be tightened") from exc
+    finally:
+        os.close(fd)
+
+
+def _tighten_journal(cache_path: Path) -> None:
+    """Tighten a journal left beside the cache (it holds page text too); a missing or non-regular one is left alone."""
+    journal = cache_path.with_name(cache_path.name + JOURNAL_SUFFIX)
+    info = _lstat(journal)
+    if info is not None and stat.S_ISREG(info.st_mode):
+        _tighten_mode(journal, info, "its journal")
+
+
 def _ensure_regular_file(cache_path: Path) -> None:
-    """``lstat`` the path and create it owner-only when missing; refuse a symlink or a non-regular file."""
+    """``lstat`` the path and create it owner-only when missing; refuse a symlink or a non-regular file.
+
+    An existing file wider than owner-only, and a journal beside it, are
+    tightened to :data:`CACHE_FILE_MODE` first (FR-015).
+    """
+    _tighten_journal(cache_path)
     info = _lstat(cache_path)
     if info is None:
         try:
@@ -371,6 +416,7 @@ def _ensure_regular_file(cache_path: Path) -> None:
         raise CacheUnusableError("the path is a symlink (its target is never opened)")
     if not stat.S_ISREG(info.st_mode):
         raise CacheUnusableError("the path is not a regular file")
+    _tighten_mode(cache_path, info, "the cache file")
 
 
 def _remove_corrupt(cache_path: Path) -> None:

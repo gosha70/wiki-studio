@@ -17,7 +17,7 @@
     "max_fix_sessions_per_phase": 2
   },
   "test": {
-    "command": "poetry run ruff check src/ tests/ eval/ && poetry run ruff format --check src/ tests/ eval/ && poetry run mypy src/ && poetry run pytest -q -p no:cacheprovider --cov=wiki_studio --cov-fail-under=92",
+    "command": "poetry run ruff check src/ tests/ eval/ conformance/ && poetry run ruff format --check src/ tests/ eval/ conformance/ && poetry run mypy src/ && poetry run pytest -q -p no:cacheprovider --cov=wiki_studio --cov-fail-under=92",
     "timeout_sec": 900
   },
   "review": {
@@ -54,7 +54,7 @@
     "closes": [
       51
     ],
-    "title": "feat: wiki-studio 0.8.0 — discovery and portability (Release C): FTS5 ranking with a context budget, rebuildable cache, held-out evidence, MCP adapter extra, conformance suite"
+    "title": "feat: wiki-studio 0.8.0 \u2014 discovery and portability (Release C): FTS5 ranking with a context budget, rebuildable cache, held-out evidence, MCP adapter extra, conformance suite"
   },
   "merge": {
     "enabled": false,

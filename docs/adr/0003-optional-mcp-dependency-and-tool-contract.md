@@ -70,41 +70,47 @@ exits 2. The core never imports `mcp_adapter`. This is proved twice:
 
 ### Transitive licences
 
-The specification requires this list to be re-checked from `poetry.lock` at
-build time. **It has not been yet.** The build session that wrote this
-record could not regenerate `poetry.lock` (`poetry lock` was unavailable in
-its sandbox). The list below is taken from each package's published
-metadata, not from the lock. It must be checked against the locked set, and
-this note removed, in the commit that updates `poetry.lock`.
+Re-checked on 2026-10-27 from `poetry.lock` as regenerated for this
+release (Poetry 2.3.2), by reading each locked distribution's metadata; the
+set is `mcp` 2.3.0's dependency closure as locked, including the `crypto`
+extra of `pyjwt`. Platform-only packages are marked.
 
-| Package | Licence |
-|---|---|
-| `mcp`, `mcp-types` | MIT |
-| `anyio` | MIT |
-| `httpx2`, `httpcore` | BSD-3-Clause |
-| `h11` | MIT |
-| `idna` | BSD-3-Clause |
-| `certifi` | MPL-2.0 |
-| `sniffio` | MIT or Apache-2.0 |
-| `jsonschema`, `jsonschema-specifications`, `referencing`, `rpds-py`, `attrs` | MIT |
-| `opentelemetry-api` | Apache-2.0 |
-| `importlib-metadata` | Apache-2.0 |
-| `zipp` | MIT |
-| `pydantic`, `pydantic-core`, `annotated-types` | MIT |
-| `pydantic-settings`, `python-dotenv` (if locked) | MIT, BSD-3-Clause |
-| `pyjwt` | MIT |
-| `cryptography` | Apache-2.0 or BSD-3-Clause |
-| `cffi` | MIT |
-| `pycparser` | BSD-3-Clause |
-| `python-multipart` | Apache-2.0 |
-| `sse-starlette`, `starlette` | BSD-3-Clause |
-| `uvicorn`, `click` | BSD-3-Clause |
-| `typing-extensions` | PSF-2.0 |
-| `typing-inspection` | MIT |
-| `pywin32` (Windows only) | PSF-2.0 |
+| Package | Locked version | Licence |
+|---|---|---|
+| `mcp`, `mcp-types` | 2.3.0 | MIT |
+| `anyio` | 4.15.1 | MIT |
+| `httpx2`, `httpcore2` | 2.16.0 | BSD-3-Clause |
+| `h11` | 0.16.0 | MIT |
+| `idna` | 3.20 | BSD-3-Clause |
+| `certifi` | 2026.10.19 | MPL-2.0 |
+| `truststore` | 0.10.5 | MIT |
+| `jsonschema` | 4.26.0 | MIT |
+| `jsonschema-specifications` | 2025.9.1 | MIT |
+| `referencing` | 0.37.0 | MIT |
+| `rpds-py` | 2026.9.1 | MIT |
+| `attrs` | 26.1.0 | MIT |
+| `opentelemetry-api` | 1.45.1 | Apache-2.0 |
+| `pydantic` | 2.14.1 | MIT |
+| `pydantic-core` | 2.50.1 | MIT |
+| `annotated-types` | 0.8.0 | MIT |
+| `typing-inspection` | 0.4.4 | MIT |
+| `typing-extensions` | 4.16.0 | PSF-2.0 |
+| `pyjwt` | 2.15.1 | MIT |
+| `cryptography` | 50.0.2 | Apache-2.0 OR BSD-3-Clause |
+| `cffi` | 2.1.1 | MIT-0 |
+| `pycparser` | 3.12 | BSD-3-Clause |
+| `python-multipart` | 0.0.32 | Apache-2.0 |
+| `sse-starlette` | 3.6.0 | BSD-3-Clause |
+| `starlette` | 1.10.0 | BSD-3-Clause |
+| `uvicorn` | 0.54.0 | BSD-3-Clause |
+| `click` | 8.5.0 | BSD-3-Clause |
+| `pywin32` (Windows only) | 312 | PSF-2.0 |
 
-None is copyleft. MPL-2.0 (`certifi`) is file-level and applies only to
-modified files of that package.
+Not in the locked closure, although earlier metadata suggested them:
+`sniffio`, `importlib-metadata`, `zipp`, `pydantic-settings`,
+`python-dotenv`. None of the locked licences is copyleft. MPL-2.0
+(`certifi`) is file-level and applies only to modified files of that
+package.
 
 ## The tool contract
 

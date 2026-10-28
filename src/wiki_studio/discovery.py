@@ -21,6 +21,7 @@ on every call; the cache only ranks and never supplies text.
 
 from __future__ import annotations
 
+import errno
 import functools
 import hashlib
 import json
@@ -59,6 +60,9 @@ RANKER_SOURCE_DEFAULT = "default"
 # The byte budget over index.md plus the selected pages (FR-007).
 DEFAULT_MAX_CONTEXT_BYTES = 65536
 
+# The page cap every public surface accepts: ``MIN_FIND_PAGES..DEFAULT_MAX_QUERY_PAGES`` inclusive (FR-006, FR-035).
+MIN_FIND_PAGES = 1
+
 # The untuned FTS5 configuration (FR-005, FR-006); FR-021 replaces it with the tuned one.
 FTS5_TOKENIZER = "porter unicode61"
 WEIGHT_PATH = 4.0
@@ -77,6 +81,10 @@ INDEX_NAME = "index.md"
 LOG_NAME = "log.md"
 # index.md and log.md are read as navigation and history, never ranked as pages.
 _NEVER_CANDIDATES = frozenset({INDEX_NAME, LOG_NAME})
+
+_O_NOFOLLOW = getattr(os, "O_NOFOLLOW", 0)
+# What ``open(O_NOFOLLOW)`` raises for a symlink: ELOOP on Linux and macOS, EMLINK on the BSDs.
+_SYMLINK_ERRNOS = frozenset({errno.ELOOP, errno.EMLINK})
 
 
 class DiscoveryWarning(UserWarning):
@@ -222,19 +230,43 @@ class LoadedPage:
     bytes: int
 
 
+def _read_regular(path: Path) -> bytes | None:
+    """The bytes of the regular file at ``path``; ``None`` for a symlink or any other non-regular entry.
+
+    The file is opened with ``O_NOFOLLOW`` and its kind judged on the open
+    descriptor (as ``review._read_nofollow`` does), so an entry swapped for a
+    symlink after any earlier check is never read. Raises ``OSError`` when the
+    entry is missing or unreadable. Where ``O_NOFOLLOW`` is unavailable
+    (Windows) the open follows a symlink, so the ``lstat`` before it is the
+    weaker, non-atomic check.
+    """
+    if not _O_NOFOLLOW and not stat.S_ISREG(os.lstat(path).st_mode):
+        return None
+    try:
+        fd = os.open(path, os.O_RDONLY | _O_NOFOLLOW)
+    except OSError as exc:
+        if exc.errno in _SYMLINK_ERRNOS:
+            return None
+        raise
+    try:
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            return None
+        with os.fdopen(fd, "rb") as handle:
+            fd = -1
+            return handle.read()
+    finally:
+        if fd >= 0:
+            os.close(fd)
+
+
 def _read_eligible(wiki_dir: Path, rel: str) -> LoadedPage | IneligiblePage:
     """Read one index-linked page once and classify it (FR-004)."""
-    page = wiki_dir / rel
     try:
-        mode = page.lstat().st_mode
+        data = _read_regular(wiki_dir / rel)
     except OSError:
         return IneligiblePage(rel, INELIGIBLE_MISSING)
-    if not stat.S_ISREG(mode):
+    if data is None:
         return IneligiblePage(rel, INELIGIBLE_NOT_REGULAR_FILE)
-    try:
-        data = page.read_bytes()
-    except OSError:
-        return IneligiblePage(rel, INELIGIBLE_MISSING)
     try:
         text = data.decode("utf-8")
     except UnicodeDecodeError:
@@ -245,11 +277,16 @@ def _read_eligible(wiki_dir: Path, rel: str) -> LoadedPage | IneligiblePage:
 
 
 def _read_index(wiki_dir: Path) -> tuple[str, int]:
-    """``index.md``'s text and byte count; ``("", 0)`` when it is missing, unreadable or not UTF-8."""
+    """``index.md``'s text and byte count; ``("", 0)`` when it is missing, a symlink, unreadable or not UTF-8."""
     try:
-        data = (wiki_dir / INDEX_NAME).read_bytes()
+        data = _read_regular(wiki_dir / INDEX_NAME)
+    except OSError:
+        return "", 0
+    if data is None:
+        return "", 0
+    try:
         return data.decode("utf-8"), len(data)
-    except (OSError, UnicodeDecodeError):
+    except UnicodeDecodeError:
         return "", 0
 
 
@@ -285,6 +322,21 @@ def _validate_max_bytes(max_bytes: int) -> None:
         raise ValueError(f"max_bytes must be a positive integer, got {max_bytes!r}")
 
 
+def validate_max_pages(max_pages: int) -> None:
+    """``ValueError`` unless ``max_pages`` is an integer in ``MIN_FIND_PAGES..DEFAULT_MAX_QUERY_PAGES`` (FR-006).
+
+    ``api.find``, ``api.query`` and the MCP ``find`` tool apply it, so no public
+    surface loads more than the cap; ``select`` itself stays uncapped for the
+    cache's full-ranking checks.
+    """
+    if isinstance(max_pages, bool) or not isinstance(max_pages, int):
+        raise ValueError(
+            f"max_pages must be an integer from {MIN_FIND_PAGES} to {DEFAULT_MAX_QUERY_PAGES}, got {max_pages!r}"
+        )
+    if not MIN_FIND_PAGES <= max_pages <= DEFAULT_MAX_QUERY_PAGES:
+        raise ValueError(f"max_pages must be from {MIN_FIND_PAGES} to {DEFAULT_MAX_QUERY_PAGES}, got {max_pages}")
+
+
 def _rank_fts5(
     paths: WikiPaths, question: str, eligible: dict[str, LoadedPage], config: RankerConfig
 ) -> tuple[list[str], str | None]:
@@ -305,9 +357,15 @@ def _rank_fts5(
 def _rank_index_first(
     paths: WikiPaths, question: str, candidate_count: int, eligible: dict[str, LoadedPage]
 ) -> list[str]:
-    # The whole ranked list from the 0.7.0 selector; its own reads serve ranking only.
+    # The whole ranked list from the 0.7.0 selector; its own reads serve ranking only. The selector
+    # keeps a link's spelling, so its paths are canonicalised (and deduplicated) to match ``eligible``.
     _index, ranked, _contents = _select_query_candidates(paths, question, max_pages=candidate_count)
-    return [rel for rel in ranked if rel in eligible]
+    ordered: list[str] = []
+    for rel in ranked:
+        canonical = posixpath.normpath(rel)
+        if canonical in eligible and canonical not in ordered:
+            ordered.append(canonical)
+    return ordered
 
 
 def select(
@@ -348,9 +406,13 @@ def select(
     links = _extract_index_links(index_md, wiki_dir)
     eligible: dict[str, LoadedPage] = {}
     ineligible: list[IneligiblePage] = []
-    for rel in links:
-        if posixpath.normpath(rel) in _NEVER_CANDIDATES:
+    seen: set[str] = set()
+    for link in links:
+        # Two spellings of one page (``concepts/x.md``, ``./concepts/x.md``) are one candidate at its first position.
+        rel = posixpath.normpath(link)
+        if rel in _NEVER_CANDIDATES or rel in seen:
             continue
+        seen.add(rel)
         read = _read_eligible(wiki_dir, rel)
         if isinstance(read, LoadedPage):
             eligible[rel] = read

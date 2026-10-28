@@ -29,14 +29,18 @@ from typing import Any
 
 from conformance.mcp import run
 from wiki_studio import errors
-from wiki_studio.mcp_adapter.config import parse_launch
+from wiki_studio.mcp_adapter.config import LaunchError, parse_launch
 from wiki_studio.mcp_adapter.tools import WikiTools, error_payload
+from wiki_studio.mcp_adapter.trace import TRACE_KEYS, WireObserver, open_trace
 
 HAS_MCP = importlib.util.find_spec("mcp") is not None
 RUNNER = Path(run.__file__)
 SERVER_BOOT = "import sys; from wiki_studio.mcp_adapter import main; sys.exit(main(sys.argv[1:]))"
 HOST_PROTOCOL = "2025-11-25"
 HOST_ACTOR = "claude-code-host-run"
+TRAVERSAL_PATH = "../outside.md"
+SCENARIO_QUESTION = "How do we retry outbound calls?"
+SCENARIO_PROPOSAL = "host-run-update"
 
 
 def server_command() -> str:
@@ -232,6 +236,38 @@ class TestCaseLogic(unittest.TestCase):
 # ── check-host-run ───────────────────────────────────────────
 
 
+class HostSession:
+    """The scenario's steps served in process by the adapter's tools, traced by the wire observer as a host's are."""
+
+    def __init__(self, tools: WikiTools, trace: io.StringIO) -> None:
+        self.tools = tools
+        self.observer = WireObserver(trace)
+        self.next_id = 0
+
+    def exchange(self, method: str, params: dict[str, Any], result: dict[str, Any]) -> None:
+        self.next_id += 1
+        request = {"jsonrpc": "2.0", "id": self.next_id, "method": method, "params": params}
+        response = {"jsonrpc": "2.0", "id": self.next_id, "result": result}
+        self.observer.inbound(json.dumps(request).encode())
+        self.observer.outbound(json.dumps(response).encode())
+
+    def initialize(self) -> None:
+        params = {"protocolVersion": HOST_PROTOCOL, "clientInfo": {"name": "claude-code", "version": "9.9.9"}}
+        self.exchange("initialize", params, {"protocolVersion": HOST_PROTOCOL, "capabilities": {}})
+
+    def list_tools(self) -> None:
+        self.exchange("tools/list", {}, {"tools": [{"name": name} for name in self.tools.registry()]})
+
+    def call(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+        try:
+            payload, is_error = self.tools.registry()[name](**arguments), False
+        except (errors.IngestError, ValueError) as exc:
+            payload, is_error = error_payload(exc), True
+        result = {"content": [{"type": "text", "text": json.dumps(payload)}], "isError": is_error}
+        self.exchange("tools/call", {"name": name, "arguments": arguments}, result)
+        return payload
+
+
 class TestCheckHostRun(unittest.TestCase):
     """FR-045: cases 2-9 on a run's trace and end state, here a scenario run through the adapter's tools."""
 
@@ -240,41 +276,25 @@ class TestCheckHostRun(unittest.TestCase):
         self.addCleanup(self._tmp.cleanup)
         self.base = Path(self._tmp.name).resolve()
 
-    def record_run(self, variant: str = run.VARIANT_DEFAULT) -> Path:
-        """Do the scenario's six steps in process and record the run directory as the README describes."""
+    def record_run(self, variant: str = run.VARIANT_DEFAULT, *, traversal: bool = True) -> Path:
+        """Do the scenario's seven steps in process and record the run directory as the README describes."""
         root = run.copy_fixture(self.base / "work", variant)
-        tools = WikiTools(parse_launch(["--root", str(root), "--by", HOST_ACTOR], env={}))
-        steps = [
-            ("tools/list", None),
-            ("tools/call", run.TOOL_FIND),
-            ("tools/call", run.TOOL_READ_PAGE),
-            ("tools/call", run.TOOL_PROPOSE),
-            ("tools/call", run.TOOL_PROMOTE),
-            ("tools/call", run.TOOL_REVIEW_STATE),
-        ]
-        tools.find("How do we retry outbound calls?")
-        base = tools.read_page(run.KNOWN_PAGE)["sha256"]
+        trace = io.StringIO()
+        session = HostSession(WikiTools(parse_launch(["--root", str(root), "--by", HOST_ACTOR], env={})), trace)
+        session.initialize()
+        session.list_tools()
+        session.call(run.TOOL_FIND, {"question": SCENARIO_QUESTION})
+        base = session.call(run.TOOL_READ_PAGE, {"path": run.KNOWN_PAGE})["sha256"]
+        if traversal:
+            session.call(run.TOOL_READ_PAGE, {"path": TRAVERSAL_PATH})
         content = run.page_text("retry-policy", "Retry at most five times.")
         edit = {"path": run.KNOWN_PAGE, "action": "update", "content": content, "base_sha256": base}
-        tools.propose([edit], name="host-run-update", rationale="Cap the retries.")
-        tools.promote("host-run-update")
-        tools.review_state([run.KNOWN_PAGE])
+        session.call(run.TOOL_PROPOSE, {"edits": [edit], "name": SCENARIO_PROPOSAL, "rationale": "Cap the retries."})
+        session.call(run.TOOL_PROMOTE, {"name": SCENARIO_PROPOSAL})
+        session.call(run.TOOL_REVIEW_STATE, {"pages": [run.KNOWN_PAGE]})
         run_dir = self.base / "run"
         run_dir.mkdir()
-        trace = [
-            {
-                "ts": "2026-10-27T12:00:00.000Z",
-                "method": method,
-                "tool": tool,
-                "protocol_version": HOST_PROTOCOL,
-                "client_name": "claude-code",
-                "client_version": "9.9.9",
-                "outcome": 0,
-                "duration_ms": 3,
-            }
-            for method, tool in [("initialize", None), *steps]
-        ]
-        (run_dir / run.RUN_TRACE).write_text("".join(json.dumps(r) + "\n" for r in trace), encoding="utf-8")
+        (run_dir / run.RUN_TRACE).write_text(trace.getvalue(), encoding="utf-8")
         shutil.copytree(root, run_dir / run.RUN_END_STATE)
         for derived in (run_dir / run.RUN_END_STATE / "knowledge").glob(run.DERIVED_PREFIX + "*"):
             derived.unlink()
@@ -298,34 +318,114 @@ class TestCheckHostRun(unittest.TestCase):
     def statuses(self, run_dir: Path) -> dict[int, str]:
         return {r.number: r.status for r in run.check_host_run(run_dir)}
 
-    def test_a_scenario_run_passes_cases_2_to_9_and_the_verdict_is_recorded(self) -> None:
+    def rewrite_trace(self, run_dir: Path, edit: Any) -> None:
+        """Apply ``edit`` to each trace record (it returns the record to keep, or None to drop it)."""
+        trace = run_dir / run.RUN_TRACE
+        records = [json.loads(line) for line in trace.read_text(encoding="utf-8").splitlines() if line]
+        kept = [r for r in map(edit, records) if r is not None]
+        trace.write_text("".join(json.dumps(r) + "\n" for r in kept), encoding="utf-8")
+
+    def test_a_scenario_run_proves_cases_2_to_6_and_9_and_the_verdict_names_them(self) -> None:
         run_dir = self.record_run()
         results = run.check_host_run(run_dir)
-        self.assertEqual({r.number: r.status for r in results}, dict.fromkeys(run.HOST_RUN_CASES, run.PASS), results)
+        statuses = {r.number: r.status for r in results}
+        proofs = {r.number: r.proof for r in results}
+        self.assertEqual(statuses, {**dict.fromkeys(run.HOST_RUN_CASES, run.PASS), 7: run.SKIP, 8: run.SKIP}, results)
+        self.assertEqual(
+            proofs,
+            {
+                2: run.PROOF_TRACE,
+                3: run.PROOF_TRACE,
+                4: run.PROOF_TRACE,
+                5: run.PROOF_END_STATE,
+                6: run.PROOF_END_STATE,
+                7: run.PROOF_NONE,
+                8: run.PROOF_NONE,
+                9: run.PROOF_END_STATE,
+            },
+        )
         code, output = run_main("check-host-run", "--run", str(run_dir), "--record")
         self.assertEqual(code, run.EXIT_PASS, output)
+        self.assertIn("the host run proves case(s) 2, 3, 4, 5, 6, 9", output)
+        self.assertIn("not provable from a host run, the protocol suite's: 7, 8", output)
+        self.assertIn(f"[{run.PROOF_NONE}]", output)
         verdict = json.loads((run_dir / run.RUN_MANIFEST).read_text(encoding="utf-8"))["verdict"]
         self.assertTrue(verdict["passed"])
+        self.assertEqual(
+            (verdict["proved"], verdict["not_provable"], verdict["failed"]), ([2, 3, 4, 5, 6, 9], [7, 8], [])
+        )
         self.assertEqual(set(verdict["cases"]), {str(n) for n in run.HOST_RUN_CASES})
+        self.assertEqual(verdict["proof"]["7"], run.PROOF_NONE)
+
+    def test_the_recorded_trace_carries_the_evidence_keys_and_no_content(self) -> None:
+        run_dir = self.record_run()
+        text = (run_dir / run.RUN_TRACE).read_text(encoding="utf-8")
+        self.assertNotIn("retry outbound", text)
+        self.assertNotIn(run.KNOWN_PAGE, text)
+        self.assertNotIn(TRAVERSAL_PATH, text)
+        records = [json.loads(line) for line in text.splitlines()]
+        self.assertTrue(all(tuple(r) == TRACE_KEYS == run.TRACE_KEYS for r in records), records)
+        by_tool = {(r["tool"], r["outcome"]): r for r in records}
+        self.assertEqual(by_tool[(None, 0)]["tool_names"], sorted(run.TOOL_NAMES))
+        self.assertEqual(by_tool[("find", 0)]["arg_keys"], ["question"])
+        self.assertEqual(by_tool[("find", 0)]["summary"]["has_sha256"], True)
+        self.assertEqual(by_tool[("read_page", 0)]["summary"], {"has_sha256": True})
+        self.assertEqual(by_tool[("read_page", 7)]["summary"], {"exit_code": 7})
+        self.assertEqual(
+            by_tool[("propose", 0)]["summary"],
+            {"creates": 0, "updates": 1, "with_base_sha256": 1, "page_id_supplied": 0},
+        )
+        promoted = by_tool[("promote", 0)]["summary"]
+        self.assertGreaterEqual(promoted.pop("applied"), 1)  # the page, and the index and log lines the promote adds
+        self.assertEqual(promoted, {"dry_run": False, "approved": 0})
+        self.assertEqual(by_tool[("review_state", 0)]["summary"], {"states": 1, "approved": 0})
+        self.assertEqual(by_tool[("promote", 0)]["result_keys"], sorted(by_tool[("promote", 0)]["result_keys"]))
 
     def test_an_auto_approving_wiki_fails_case_9(self) -> None:
         statuses = self.statuses(self.record_run(run.VARIANT_AUTO_APPROVE))
         self.assertEqual(statuses[9], run.FAIL)
 
+    def test_a_seven_page_find_fails_case_3(self) -> None:
+        run_dir = self.record_run()
+
+        def seven_pages(record: dict[str, Any]) -> dict[str, Any]:
+            if record["tool"] == run.TOOL_FIND:
+                record["summary"]["pages"] = 7
+            return record
+
+        self.rewrite_trace(run_dir, seven_pages)
+        results = {r.number: r for r in run.check_host_run(run_dir)}
+        self.assertEqual(results[3].status, run.FAIL)
+        self.assertIn("7 pages", results[3].detail)
+        self.assertEqual(results[3].proof, run.PROOF_FAILED)
+
+    def test_a_trace_without_the_traversal_refusal_cannot_prove_containment(self) -> None:
+        results = {r.number: r for r in run.check_host_run(self.record_run(traversal=False))}
+        self.assertEqual(results[4].status, run.FAIL)
+        self.assertIn("containment is not provable from this run", results[4].detail)
+        self.assertIn("exit 7", results[4].detail)
+
+    def test_a_tools_list_without_the_eight_names_fails_case_2(self) -> None:
+        run_dir = self.record_run()
+
+        def drop_promote(record: dict[str, Any]) -> dict[str, Any]:
+            if record["method"] == run.METHOD_LIST:
+                record["tool_names"] = [n for n in record["tool_names"] if n != run.TOOL_PROMOTE]
+            return record
+
+        self.rewrite_trace(run_dir, drop_promote)
+        self.assertEqual(self.statuses(run_dir)[2], run.FAIL)
+
     def test_a_tampered_end_state_or_scenario_fails_case_2(self) -> None:
         run_dir = self.record_run()
         (run_dir / run.RUN_END_STATE / "extra.txt").write_text("x", encoding="utf-8")
-        statuses = self.statuses(run_dir)
-        self.assertEqual(statuses[2], run.FAIL)
-        self.assertEqual(statuses[8], run.FAIL)
+        self.assertEqual(self.statuses(run_dir)[2], run.FAIL)
         self.write_manifest(run_dir, scenario_sha256="0" * 64)
         self.assertEqual(self.statuses(run_dir)[2], run.FAIL)
 
     def test_a_trace_without_promote_fails_cases_6_and_9(self) -> None:
         run_dir = self.record_run()
-        trace = run_dir / run.RUN_TRACE
-        lines = [line for line in trace.read_text(encoding="utf-8").splitlines() if '"promote"' not in line]
-        trace.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        self.rewrite_trace(run_dir, lambda r: None if r["tool"] == run.TOOL_PROMOTE else r)
         statuses = self.statuses(run_dir)
         self.assertEqual((statuses[6], statuses[9]), (run.FAIL, run.FAIL))
 
@@ -339,6 +439,52 @@ class TestCheckHostRun(unittest.TestCase):
         run_dir = self.record_run()
         code, output = run_main("tree-hash", str(run_dir / run.RUN_END_STATE))
         self.assertEqual((code, output.strip()), (run.EXIT_PASS, run.tree_sha256(run_dir / run.RUN_END_STATE)))
+
+
+# ── The trace file (FR-041) ──────────────────────────────────
+
+
+class TestTraceFile(unittest.TestCase):
+    """``open_trace`` never follows a symlink (these belong with the adapter's trace tests; kept here for US5)."""
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory(prefix="wiki_studio-trace-")
+        self.addCleanup(self._tmp.cleanup)
+        self.base = Path(self._tmp.name).resolve()
+        self.root = run.copy_fixture(self.base, run.VARIANT_DEFAULT)
+        self.paths = parse_launch(["--root", str(self.root)], env={}).paths
+        self.index = self.root / run.WIKI_REL / "index.md"
+
+    def test_a_symlink_into_the_wiki_is_refused_and_the_page_is_untouched(self) -> None:
+        before = self.index.read_bytes()
+        link = self.base / "trace.jsonl"
+        link.symlink_to(self.index)
+        with self.assertRaisesRegex(LaunchError, "symlink"):
+            open_trace(link, self.paths)
+        self.assertEqual(self.index.read_bytes(), before)
+
+    def test_a_symlink_to_an_outside_file_is_refused(self) -> None:
+        target = self.base / "elsewhere.log"
+        target.write_text("kept\n", encoding="utf-8")
+        link = self.base / "trace.jsonl"
+        link.symlink_to(target)
+        with self.assertRaisesRegex(LaunchError, "symlink"):
+            open_trace(link, self.paths)
+        self.assertEqual(target.read_text(encoding="utf-8"), "kept\n")
+
+    def test_a_directory_is_not_a_regular_file(self) -> None:
+        with self.assertRaisesRegex(LaunchError, "cannot be opened|not a regular file"):
+            open_trace(self.base / "project", self.paths)
+
+    def test_a_plain_file_is_appended_to(self) -> None:
+        path = self.base / "trace.jsonl"
+        path.write_text("first\n", encoding="utf-8")
+        with open_trace(path, self.paths) as trace:
+            trace.write("second\n")
+        self.assertEqual(path.read_text(encoding="utf-8"), "first\nsecond\n")
+        with open_trace(self.base / "new.jsonl", self.paths) as trace:
+            trace.write("x\n")
+        self.assertEqual((self.base / "new.jsonl").read_text(encoding="utf-8"), "x\n")
 
 
 if __name__ == "__main__":

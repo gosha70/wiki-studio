@@ -23,7 +23,7 @@ poetry run python -m eval.navigation.discovery --help    # discovery evaluation 
 poetry build                                     # wheel + sdist
 ```
 
-Format with `poetry run ruff format src/ tests/` before finishing.
+Format with `poetry run ruff format src/ tests/ eval/ conformance/` before finishing.
 
 ## Layout
 
