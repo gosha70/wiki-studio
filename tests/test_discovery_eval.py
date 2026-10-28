@@ -112,9 +112,20 @@ def _synthetic_heldout(root: Path) -> Path:
         state=heldout_protocol.STATE_INGESTED,
         history=[],
         questions_sha256=_sha256(heldout / "questions.json"),
+        corpus_files=[
+            {"path": "README.md", "corpus_file": "README.md", "sha256": _sha256(heldout / "corpus" / "README.md")}
+        ],
         ingest={"summary": {"documents_ingested": 1, "promoted": 1}},
     )
     return heldout
+
+
+def _corpus_entry(heldout: Path) -> list[dict[str, Any]]:
+    """One recorded corpus file under ``heldout/corpus/`` (written if absent), as the sources step records it."""
+    source = heldout / "corpus" / "README.md"
+    if not source.is_file():
+        _write(source, "Alpha tiles are cached offline. The beta recorder writes storage.\n")
+    return [{"path": "README.md", "corpus_file": "README.md", "sha256": _sha256(source)}]
 
 
 def _frozen_heldout(root: Path) -> Path:
@@ -416,6 +427,60 @@ class TestHeldOutRunGuards(unittest.TestCase):
         with self.assertRaises(discovery.RunnerError):
             discovery._write_attempt_marker(heldout, {"started_at": "later"})
 
+    def test_an_input_error_is_refused_before_the_attempt_is_recorded(self) -> None:
+        """Inputs are checked first: a bad input is an ordinary refusal and never consumes the one attempt."""
+        heldout = _frozen_heldout(self.root)
+        self._freeze_live_config()
+        code, _out, err = self._main_run(heldout, "--search-cache", str(heldout / "cache.sqlite"))
+        self.assertEqual(code, 1)
+        self.assertIn("inside a frozen evaluation directory", err)
+        self.assertFalse((heldout / heldout_protocol.RUN_ATTEMPT_NAME).exists(), "no attempt was recorded")
+        self.assertFalse((heldout / "results.json").exists())
+        self.assertEqual(_manifest(heldout)["state"], heldout_protocol.STATE_FROZEN)
+        code, _out, err = self._main_run(heldout)
+        self.assertEqual(code, 0, err)
+        self.assertTrue((heldout / heldout_protocol.RUN_ATTEMPT_NAME).exists())
+
+    def test_a_crash_between_the_marker_and_the_manifest_is_still_recoverable(self) -> None:
+        """A marker with no results is an interrupted attempt even when the manifest never reached run-started."""
+        heldout = _frozen_heldout(self.root)
+        self._freeze_live_config()
+        marker = heldout / heldout_protocol.RUN_ATTEMPT_NAME
+        with (
+            mock.patch.object(discovery, "save_manifest", side_effect=RuntimeError("the disk went away")),
+            self.assertRaises(RuntimeError),
+        ):
+            discovery.run(heldout, NAVIGATION, config_path=None, search_cache=None, post_hoc=None, run3_dir=self.run3)
+        self.assertTrue(marker.exists())
+        self.assertEqual(_manifest(heldout)["state"], heldout_protocol.STATE_FROZEN, "the transition never landed")
+        code, _out, err = self._main_run(heldout)
+        self.assertEqual(code, 1)
+        self.assertIn("--post-hoc", err)
+        code, _out, err = self._main_run(heldout, "--post-hoc", "recovery")
+        self.assertEqual(code, 0, err)
+        self.assertTrue((heldout / "results-post-hoc-recovery.json").exists())
+        self.assertFalse((heldout / "results.json").exists(), "the original is never produced after a crash")
+
+    def test_a_missing_or_edited_held_out_corpus_is_refused_before_the_attempt(self) -> None:
+        """The held-out corpus is an input of its own: it is verified first and never borrowed from the shared set."""
+        heldout = _frozen_heldout(self.root)
+        self._freeze_live_config()
+        corpus = heldout / "corpus"
+        kept = (corpus / "README.md").read_bytes()
+        (corpus / "README.md").write_bytes(kept + b"edited after the freeze\n")
+        code, _out, err = self._main_run(heldout)
+        self.assertEqual(code, 1)
+        self.assertIn("corpus files missing or differing", err)
+        shutil.rmtree(corpus)
+        code, _out, err = self._main_run(heldout)
+        self.assertEqual(code, 1)
+        self.assertIn("corpus files missing or differing", err)
+        self.assertFalse((heldout / heldout_protocol.RUN_ATTEMPT_NAME).exists(), "no attempt was consumed")
+        self.assertEqual(_manifest(heldout)["state"], heldout_protocol.STATE_FROZEN)
+        _write(corpus / "README.md", kept.decode("utf-8"))
+        code, _out, err = self._main_run(heldout)
+        self.assertEqual(code, 0, err)
+
     def test_an_interrupted_attempt_is_never_repeated_as_the_original(self) -> None:
         heldout = _frozen_heldout(self.root)
         self._freeze_live_config()
@@ -689,7 +754,12 @@ class TestHeldOutProtocolOrder(unittest.TestCase):
 
     def test_pin_refuses_questions_edited_after_they_were_recorded(self) -> None:
         _write(self.heldout / "questions.json", json.dumps(_valid_questions()))
-        _set_manifest(self.heldout, state=heldout_protocol.STATE_QUESTIONS, corpus_files=[], questions_sha256="0" * 64)
+        _set_manifest(
+            self.heldout,
+            state=heldout_protocol.STATE_QUESTIONS,
+            corpus_files=_corpus_entry(self.heldout),
+            questions_sha256="0" * 64,
+        )
         code, _out, err = self._main("pin", "--model", "claude-opus-5-5")
         self.assertEqual(code, 1)
         self.assertIn("questions.json's sha256 differs", err)
@@ -705,7 +775,7 @@ class TestHeldOutProtocolOrder(unittest.TestCase):
         _set_manifest(
             self.heldout,
             state=heldout_protocol.STATE_QUESTIONS,
-            corpus_files=[],
+            corpus_files=_corpus_entry(self.heldout),
             questions_sha256=_sha256(self.heldout / "questions.json"),
         )
         with (
@@ -725,7 +795,7 @@ class TestHeldOutProtocolOrder(unittest.TestCase):
         _set_manifest(
             self.heldout,
             state=heldout_protocol.STATE_QUESTIONS,
-            corpus_files=[],
+            corpus_files=_corpus_entry(self.heldout),
             questions_sha256=_sha256(self.heldout / "questions.json"),
         )
         with (
@@ -747,7 +817,7 @@ class TestHeldOutProtocolOrder(unittest.TestCase):
         _set_manifest(
             self.heldout,
             state=heldout_protocol.STATE_PINNED,
-            corpus_files=[],
+            corpus_files=_corpus_entry(self.heldout),
             questions_sha256=_sha256(self.heldout / "questions.json"),
             isolation_probe={"passed": True},
             pins={

@@ -67,7 +67,10 @@ advisory unless you ask otherwise.
   by its owner only (on Windows the directory's default ACL applies); an
   existing cache or journal that is wider is tightened to `0o600` before
   any page text is written, and one that cannot be tightened is not used
-  for that call. A wider directory still exposes the file's existence and
+  for that call. Only a file that is empty or carries the cache's own SQLite
+  `application_id` is ever rebuilt, removed or tightened; an unrelated file
+  named as the cache is left untouched and the call ranks in memory. A wider
+  directory still exposes the file's existence and
   size. The cache
   only ranks: the text a prompt carries and citations are checked against is
   read from the wiki in that call, never from the cache. SQLite opens paths

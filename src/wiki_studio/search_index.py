@@ -59,6 +59,12 @@ _PATH_COLUMN_WEIGHT = 0.0
 
 # The on-disk cache (FR-013): its format, carried by ``PRAGMA user_version`` and ``meta``.
 CACHE_FORMAT = 1
+# The cache's own marker: ``PRAGMA application_id`` ("wiks"), stored in the SQLite header at byte 68. Only a file
+# that is empty or carries it is ever rebuilt, removed or tightened; any other file at the path is left untouched.
+CACHE_APPLICATION_ID = 0x77696B73
+_SQLITE_HEADER = b"SQLite format 3\x00"
+_APPLICATION_ID_OFFSET = 68
+_HEADER_BYTES = _APPLICATION_ID_OFFSET + 4
 MANIFEST_TABLE = "manifest"
 META_TABLE = "meta"
 META_CACHE_FORMAT = "cache_format"
@@ -391,13 +397,38 @@ def _tighten_journal(cache_path: Path) -> None:
         _tighten_mode(journal, info, "its journal")
 
 
-def _ensure_regular_file(cache_path: Path) -> None:
-    """``lstat`` the path and create it owner-only when missing; refuse a symlink or a non-regular file.
+def _owned(cache_path: Path) -> bool:
+    """Whether the regular file at ``cache_path`` is ours to rebuild, remove or tighten: empty, or marked.
 
-    An existing file wider than owner-only, and a journal beside it, are
-    tightened to :data:`CACHE_FILE_MODE` first (FR-015).
+    The marker is the SQLite header's ``application_id`` (:data:`CACHE_APPLICATION_ID`),
+    read from the raw bytes so a corrupt-but-headed cache still counts as ours
+    while a text file or another program's database never does.
     """
-    _tighten_journal(cache_path)
+    try:
+        fd = os.open(cache_path, os.O_RDONLY | _O_NOFOLLOW)
+    except OSError:
+        return False
+    try:
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            return False
+        head = os.read(fd, _HEADER_BYTES)
+    except OSError:
+        return False
+    finally:
+        os.close(fd)
+    if not head:
+        return True
+    if len(head) < _HEADER_BYTES or not head.startswith(_SQLITE_HEADER):
+        return False
+    return int.from_bytes(head[_APPLICATION_ID_OFFSET:_HEADER_BYTES], "big") == CACHE_APPLICATION_ID
+
+
+def _ensure_regular_file(cache_path: Path) -> None:
+    """``lstat`` the path and create it owner-only when missing; refuse a symlink, a non-regular or a foreign file.
+
+    An existing file is touched only when it is ours (:func:`_owned`); then it
+    and a journal beside it are tightened to :data:`CACHE_FILE_MODE` (FR-015).
+    """
     info = _lstat(cache_path)
     if info is None:
         try:
@@ -416,11 +447,27 @@ def _ensure_regular_file(cache_path: Path) -> None:
         raise CacheUnusableError("the path is a symlink (its target is never opened)")
     if not stat.S_ISREG(info.st_mode):
         raise CacheUnusableError("the path is not a regular file")
+    if not _owned(cache_path):
+        raise CacheUnusableError(
+            "the file is neither empty nor a wiki-studio search cache (no application id in its header); "
+            "it is left untouched"
+        )
+    _tighten_journal(cache_path)
     _tighten_mode(cache_path, info, "the cache file")
 
 
 def _remove_corrupt(cache_path: Path) -> None:
-    """Remove a corrupt cache file and its stale journal: regular files only, never through a symlink."""
+    """Remove a corrupt cache file and its stale journal: ours only, regular files only, never through a symlink.
+
+    A corrupt file whose header no longer carries the cache's application id
+    cannot be told from someone else's file, so it is left in place and the
+    call ranks in memory; deleting it by hand is the documented reset.
+    """
+    if not _owned(cache_path):
+        raise CacheUnusableError(
+            "the file is corrupt and no longer recognisable as a wiki-studio search cache; it is left in place "
+            "(delete it by hand to reset the cache)"
+        )
     for victim in (cache_path, cache_path.with_name(cache_path.name + JOURNAL_SUFFIX)):
         info = _lstat(victim)
         if info is None:
@@ -462,6 +509,9 @@ def _stored_meta(connection: sqlite3.Connection) -> dict[str, str] | None:
 
 
 def _matches(connection: sqlite3.Connection, identity: CacheIdentity) -> bool:
+    (application_id,) = connection.execute("PRAGMA application_id").fetchone()
+    if application_id != CACHE_APPLICATION_ID:
+        return False
     (user_version,) = connection.execute("PRAGMA user_version").fetchone()
     if user_version != CACHE_FORMAT:
         return False
@@ -481,6 +531,7 @@ def _rebuild_schema(connection: sqlite3.Connection, identity: CacheIdentity) -> 
     create_table(connection, identity.tokenizer)
     connection.executemany(f"INSERT INTO {META_TABLE} (key, value) VALUES (?, ?)", identity.meta().items())
     connection.execute(f"PRAGMA user_version = {CACHE_FORMAT}")
+    connection.execute(f"PRAGMA application_id = {CACHE_APPLICATION_ID}")
 
 
 def _apply_diff(connection: sqlite3.Connection, pages: Sequence[IndexedPage]) -> None:

@@ -148,13 +148,17 @@ def advance(manifest: dict[str, Any], state: str) -> None:
 
 
 def _verify_corpus(heldout_dir: Path, manifest: dict[str, Any]) -> None:
-    drifted = [
-        entry["path"]
-        for entry in manifest["corpus_files"]
-        if _sha256(heldout_dir / CORPUS_DIR / entry["corpus_file"]) != entry["sha256"]
-    ]
+    """Every recorded corpus file is present under ``corpus/`` with its recorded sha256 (D8a)."""
+    entries = manifest.get("corpus_files") or []
+    if not entries:
+        raise ProtocolError("the manifest records no corpus files; run the sources step first")
+    drifted = []
+    for entry in entries:
+        path = heldout_dir / CORPUS_DIR / entry["corpus_file"]
+        if not path.is_file() or _sha256(path) != entry["sha256"]:
+            drifted.append(entry["path"])
     if drifted:
-        raise ProtocolError(f"corpus files differ from the manifest: {', '.join(drifted)}")
+        raise ProtocolError(f"corpus files missing or differing from the manifest: {', '.join(drifted)}")
 
 
 def _verify_file(heldout_dir: Path, manifest: dict[str, Any], name: str, key: str) -> None:
@@ -166,7 +170,8 @@ def _verify_file(heldout_dir: Path, manifest: dict[str, Any], name: str, key: st
 
 
 def verify_frozen(heldout_dir: Path, manifest: dict[str, Any]) -> None:
-    """The questions, the gold and the wiki tree still hash to what ``freeze`` recorded (FR-027)."""
+    """The corpus, the questions, the gold and the wiki tree still hash to what was recorded (FR-022, FR-027)."""
+    _verify_corpus(heldout_dir, manifest)
     _verify_file(heldout_dir, manifest, QUESTIONS_NAME, "questions_sha256")
     _verify_file(heldout_dir, manifest, GOLD_NAME, "gold_sha256")
     if _tree_hash(heldout_dir / WIKI_DIR) != manifest.get("wiki_tree_sha256"):

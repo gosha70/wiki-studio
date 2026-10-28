@@ -126,16 +126,23 @@ version 1. Release C is not declared closed by this entry; see Limitations.
   for a symlink after the link check is never read, and two spellings of one
   index link load the page once; `find`, `query`, `api.find` and `api.query`
   refuse `max_pages` outside 1..5, and `api.query` and `DefaultQuerier` accept
-  `ranker_config`; an existing search-cache file (and its journal) wider than
-  owner-only is tightened to `0600` before any page text is written, and one
-  that cannot be tightened is not used; the MCP server passes its launch
+  `ranker_config`; the search cache marks itself with an
+  SQLite `application_id`, and only a file that is empty or carries it is ever
+  rebuilt, removed or tightened: a text file or another program's database
+  named by `--search-cache` is left untouched and the call ranks in memory
+  with a warning; an existing cache (and its journal) wider than owner-only is
+  tightened to `0600` before any page text is written, and one that cannot be
+  tightened is not used; the MCP server passes its launch
   `--by` to `propose` and `promote`, refuses a `--proposals-dir` outside the
   root at launch (exit 2), and opens `--trace` with `O_NOFOLLOW` so a symlink
   can never route the trace into the wiki; each `tools/call` trace line now
   carries `arg_keys`, `result_keys` and a content-free `summary`, and
   `check-host-run` labels each case `proved`, `proved-by-end-state` or
-  `not-provable-from-host-run (protocol suite)`; the held-out run writes an
-  immutable `run-attempt.json` and moves to `run-started` before computing, so
+  `not-provable-from-host-run (protocol suite)`; the held-out run verifies every
+  input first, its own corpus included (never the shared development
+  corpus), then writes an immutable `run-attempt.json` and moves to
+  `run-started` before computing; a marker with no `results.json` is an
+  interrupted attempt whatever the manifest says, so
   an interrupted attempt can only be recovered as a labelled post-hoc run, and
   `pin` and `ingest` refuse a dirty tree or a source that differs from the
   pins; `poetry.lock` locks the `mcp` extra and ADR-0003's licence table is

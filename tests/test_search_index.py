@@ -41,6 +41,7 @@ from wiki_studio.wikilock import lock_path_for
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 HAS_FTS5 = discovery.fts5_available().available
+HEADER_KEEP = 100  # the SQLite header, which carries the cache's application id
 POSIX = os.name == "posix"
 IS_ROOT = POSIX and os.geteuid() == 0
 GIT = shutil.which("git")
@@ -125,7 +126,9 @@ class CacheCase(unittest.TestCase):
     def find(self, question: str, paths: WikiPaths | None = None, **kwargs: object) -> api.FindResult:
         return api.find(question, paths or self.paths, ranker=RANKER_FTS5, **kwargs)  # type: ignore[arg-type]
 
-    def cached_ranking(self, question: str, paths: WikiPaths | None = None, **kwargs: object) -> list[str]:
+    def cached_ranking(
+        self, question: str, paths: WikiPaths | None = None, *, fallback: str | None = None, **kwargs: object
+    ) -> list[str]:
         selection = discovery.select(
             paths or self.paths,
             question,
@@ -133,22 +136,37 @@ class CacheCase(unittest.TestCase):
             ranker=RANKER_FTS5,
             **kwargs,  # type: ignore[arg-type]
         )
-        self.assertEqual(selection.warnings, (), "the cache was usable")
+        if fallback is None:
+            self.assertEqual(selection.warnings, (), "the cache was usable")
+        else:
+            self.assertEqual(len(selection.warnings), 1, selection.warnings)
+            self.assertIn(fallback, selection.warnings[0])
         return selection.pages_loaded
 
-    def assert_consistent(self, *, paths: WikiPaths | None = None, cli_args: tuple[str, ...] = ()) -> None:
-        """Every question: the cached ranking equals a fresh in-memory one, through select, api.find and the CLI."""
+    def assert_consistent(
+        self, *, paths: WikiPaths | None = None, cli_args: tuple[str, ...] = (), expect_fallback: str | None = None
+    ) -> None:
+        """Every question: the cached ranking equals a fresh in-memory one, through select, api.find and the CLI.
+
+        With ``expect_fallback`` the cache is expected to be unusable: the
+        rankings still match, and every call carries one warning naming it.
+        """
         paths = paths or self.paths
         for question in QUESTIONS:
             expected = fresh_ranking(paths, question)
-            self.assertEqual(self.cached_ranking(question, paths), expected, question)
+            self.assertEqual(self.cached_ranking(question, paths, fallback=expect_fallback), expected, question)
             found = self.find(question, paths)
             self.assertEqual([p.path for p in found.pages], expected[:5], question)
-            self.assertEqual(found.warnings, ())
             result = self.cli("find", question, "--ranker", "fts5", "--json", *cli_args)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual([p["path"] for p in json.loads(result.stdout)["pages"]], expected[:5], question)
-            self.assertNotIn("warning", result.stderr)
+            if expect_fallback is None:
+                self.assertEqual(found.warnings, ())
+                self.assertNotIn("warning", result.stderr)
+            else:
+                self.assertEqual(len(found.warnings), 1, found.warnings)
+                self.assertIn(expect_fallback, found.warnings[0])
+                self.assertIn(expect_fallback, result.stderr)
 
     def wiki_unchanged(self):  # noqa: ANN201 - context manager helper
         test = self
@@ -276,7 +294,7 @@ class TestOnDiskCache(CacheCase):
     def test_the_file_is_owner_only_after_creation_and_after_a_rebuild(self) -> None:
         self.find("retry")
         self.assertEqual(stat.S_IMODE(self.cache.stat().st_mode), 0o600)
-        self.cache.write_bytes(os.urandom(4096))
+        self.cache.write_bytes(self.cache.read_bytes()[:HEADER_KEEP] + os.urandom(4096))  # corrupt, still ours
         self.find("retry")
         self.assertEqual(stat.S_IMODE(self.cache.stat().st_mode), 0o600)
 
@@ -430,8 +448,47 @@ class TestRecovery(CacheCase):
             self.assert_consistent()
         self.assertEqual(self.user_version(), CACHE_FORMAT)
 
-    def test_a_cache_of_random_bytes(self) -> None:
-        self.cache.write_bytes(random.Random(7).randbytes(8192))
+    def test_a_cache_of_random_bytes_is_left_in_place(self) -> None:
+        """Without the cache's header the file cannot be told from someone else's: it is never removed."""
+        garbage = random.Random(7).randbytes(8192)
+        self.cache.write_bytes(garbage)
+        with self.wiki_unchanged():
+            self.assert_consistent(expect_fallback="left untouched")
+        self.assertEqual(self.cache.read_bytes(), garbage)
+        self.cache.unlink()  # the documented manual reset
+        self.assert_consistent()
+        self.assertEqual(self.user_version(), CACHE_FORMAT)
+
+    def test_an_unrelated_text_file_at_the_cache_path_is_never_touched(self) -> None:
+        """An explicit --search-cache naming someone's notes must not turn them into a database (PR #56 review)."""
+        notes = b"# Notes\n\nDo not lose me.\n"
+        self.cache.write_bytes(notes)
+        if POSIX:
+            os.chmod(self.cache, 0o644)
+        with self.wiki_unchanged():
+            self.assert_consistent(expect_fallback="left untouched")
+        self.assertEqual(self.cache.read_bytes(), notes)
+        if POSIX:
+            self.assertEqual(stat.S_IMODE(self.cache.stat().st_mode), 0o644, "a foreign file is not even tightened")
+
+    def test_another_programs_database_at_the_cache_path_is_never_touched(self) -> None:
+        connection = sqlite3.connect(self.cache)
+        connection.execute("CREATE TABLE theirs (id INTEGER PRIMARY KEY, note TEXT)")
+        connection.execute("INSERT INTO theirs (note) VALUES ('keep me')")
+        connection.commit()
+        connection.close()
+        theirs = self.cache.read_bytes()
+        with self.wiki_unchanged():
+            self.assert_consistent(expect_fallback="left untouched")
+        self.assertEqual(self.cache.read_bytes(), theirs)
+        connection = sqlite3.connect(self.cache)
+        self.assertEqual(connection.execute("SELECT note FROM theirs").fetchall(), [("keep me",)])
+        connection.close()
+
+    def test_a_corrupt_cache_with_its_header_is_rebuilt(self) -> None:
+        self.assert_consistent()
+        data = self.cache.read_bytes()
+        self.cache.write_bytes(data[:HEADER_KEEP] + random.Random(11).randbytes(8192))
         with self.wiki_unchanged():
             self.assert_consistent()
         self.assertEqual(self.user_version(), CACHE_FORMAT)
@@ -719,7 +776,8 @@ class TestProperty(CacheCase):
                 if choice == "delete":
                     self.cache.unlink()
                 elif choice == "garbage":
-                    self.cache.write_bytes(rng.randbytes(2048))
+                    # Garbage behind an intact header: corrupt, but still recognisably the cache.
+                    self.cache.write_bytes(self.cache.read_bytes()[:HEADER_KEEP] + rng.randbytes(2048))
                 else:
                     data = self.cache.read_bytes()
                     self.cache.write_bytes(data[: rng.randint(0, len(data))])

@@ -22,7 +22,7 @@ commit after each step as written.
 | 7 | Gold: `gold.json` assigned by reading the frozen wiki (below), reviewed by the owner with the questions; then freeze questions, gold and wiki, recording `gold_questions` and `eligible_pages`. Commit, and add the sha256 pins of `wiki/`, `proposals/` and the manifest to `tests/test_frozen_runs.py` | `python -m eval.navigation.heldout_protocol freeze` | `frozen` | owner |
 | 8 | Tune on the development set only (run 2's wiki, 21 gold questions): refuses unless the held-out set is `frozen` and unchanged and `run3/results-untuned.json` reproduces under `run3/ranker-config-untuned.json`; writes `run3/tuning.json` and `run3/ranker-config.json` | `python -m eval.navigation.discovery tune` | `frozen` | owner |
 | 9 | Freeze the configuration: set `DEFAULT_RANKER_CONFIG` in `src/wiki_studio/discovery.py` to `run3/ranker-config.json`; produce `run3/results.json` (a re-run of the development set: repeatable, and the redirect overwrites any earlier attempt; it is frozen once committed). Commit | `python -m eval.navigation.discovery run --fixture eval/navigation/run2 --shared eval/navigation --config eval/navigation/run3/ranker-config.json > eval/navigation/run3/results.json` | `frozen` | owner |
-| 10 | The one held-out run: refuses unless `frozen` and `run3/ranker-config.json`'s hash equals the live `ranker_config_hash()`; `--config` is refused. Before it computes anything it writes the attempt marker `run-attempt.json` exclusively (timestamp, the live `ranker_config_hash`, the wiki-studio version and commit; never overwritten) and moves to `run-started`; on success `results.json` carries the attempt record (`run_attempt`) and the state becomes `run`. Commit `results.json`, `run-attempt.json` and the manifest | `python -m eval.navigation.discovery run --fixture eval/navigation/heldout --shared eval/navigation` | `run-started` → `run` | owner |
+| 10 | The one held-out run: refuses unless `frozen` and `run3/ranker-config.json`'s hash equals the live `ranker_config_hash()`; `--config` is refused. It loads and checks every input first (the held-out corpus against its recorded hashes, never the shared development corpus; questions, gold, the frozen wiki, the cache placement), so an input error is an ordinary refusal that consumes nothing; then, before it computes anything, it writes the attempt marker `run-attempt.json` exclusively (timestamp, the live `ranker_config_hash`, the wiki-studio version and commit; never overwritten) and moves to `run-started`; on success `results.json` carries the attempt record (`run_attempt`) and the state becomes `run`. Commit `results.json`, `run-attempt.json` and the manifest | `python -m eval.navigation.discovery run --fixture eval/navigation/heldout --shared eval/navigation` | `run-started` → `run` | owner |
 | 11 | Decide (below); set `DEFAULT_RANKER` accordingly; the CHANGELOG states the basis and the README Evidence section gains the run 3 and held-out columns | `python -m eval.navigation.discovery decide` | `run` | owner |
 
 Steps 4 and 5 need the owner's Claude account and a model; they run outside
@@ -41,8 +41,10 @@ directory, never this one. The held-out run happens once: once
 `run` is refused, naming the attempt's timestamp, and any further run needs
 `--post-hoc LABEL`, which writes `results-post-hoc-<label>.json`, never
 `results.json`. An attempt that fails after the marker (the manifest records
-`failed_at`, or stays `run-started` with no `results.json`) is recoverable only
-as a labelled post-hoc run, never as the original. No tuning happens after the
+`failed_at`, or `run-attempt.json` exists with no `results.json`, whatever the
+manifest's state, since a crash can land between the marker and the
+`run-started` transition) is recoverable only as a labelled post-hoc run, never
+as the original. No tuning happens after the
 run.
 
 ## Writing the questions (D9)

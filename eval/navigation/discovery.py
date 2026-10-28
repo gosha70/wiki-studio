@@ -199,11 +199,19 @@ def _load_inputs(fixture_dir: Path, shared_dir: Path | None, search_cache: Path)
     paths = WikiPaths.for_root(
         fixture_dir, wiki_dir=wiki_dir, proposals_dir=fixture_dir / PROPOSALS_DIR, search_cache=search_cache
     )
+    if is_heldout(fixture_dir):
+        # The held-out set's corpus is an evaluation input of its own (D8a): it is
+        # never borrowed from the shared development corpus.
+        corpus_dir = fixture_dir / "corpus"
+        if not corpus_dir.is_dir() or not any(p.is_file() for p in corpus_dir.iterdir()):
+            raise RunnerError(f"the held-out corpus {corpus_dir} is missing or empty; the run never falls back")
+    else:
+        corpus_dir = _shared_file(fixture_dir, shared_dir, "corpus")
     return _Inputs(
         questions=questions,
         gold_by_id=gold_by_id,
         stopwords=load_stopwords(_shared_file(fixture_dir, shared_dir, "stopwords.txt")),
-        corpus_dir=_shared_file(fixture_dir, shared_dir, "corpus"),
+        corpus_dir=corpus_dir,
         paths=paths,
         eligible=len(read_eligible_pages(wiki_dir)),
     )
@@ -408,9 +416,15 @@ def compute(
     config: RankerConfig,
     search_cache: Path,
     latency: bool = True,
+    inputs: _Inputs | None = None,
 ) -> dict[str, Any]:
-    """The evaluation of both rankers over ``fixture_dir`` under ``config``, the cache at ``search_cache``."""
-    inputs = _load_inputs(fixture_dir, shared_dir, search_cache)
+    """The evaluation of both rankers over ``fixture_dir`` under ``config``, the cache at ``search_cache``.
+
+    ``inputs`` are loaded here unless the caller loaded them already (the
+    held-out run checks every input before it records its one attempt).
+    """
+    if inputs is None:
+        inputs = _load_inputs(fixture_dir, shared_dir, search_cache)
     per_question = _evaluate(inputs, config, RANKERS)
     non_absent = [e for e in per_question if e["kind"] != KIND_ABSENT]
     with_gold = [e for e in non_absent if e["gold"] is not None]
@@ -767,7 +781,7 @@ def heldout_output(
     if original.exists():
         recorded_hash = json.loads(original.read_text(encoding="utf-8"))["parameters"]["ranker_config_hash"]
         produced = RESULTS_NAME
-    elif _attempt_failed(manifest, original):
+    elif _attempt_failed(heldout_dir, manifest, original):
         recorded_hash, produced = attempt.get("ranker_config_hash"), marker.name
     else:
         raise RunnerError(
@@ -795,10 +809,17 @@ def _attempt_record(heldout_dir: Path, manifest: dict[str, Any]) -> dict[str, An
     return dict(recorded) if isinstance(recorded, dict) else None
 
 
-def _attempt_failed(manifest: dict[str, Any], original: Path) -> bool:
-    """The attempt ended without the original: a failure recorded in the manifest, or never reaching ``run``."""
+def _attempt_failed(heldout_dir: Path, manifest: dict[str, Any], original: Path) -> bool:
+    """The attempt ended without the original: a failure recorded in the manifest, or a marker with no results.
+
+    The marker is written before the manifest moves to ``run-started``, so a
+    crash between the two leaves the marker with the manifest still
+    ``frozen``; that is an interrupted attempt too, recoverable only as
+    ``--post-hoc``, never as the original.
+    """
     recorded = manifest.get(ATTEMPT_KEY) or {}
-    return bool(recorded.get("failed_at")) or (manifest.get("state") == STATE_RUN_STARTED and not original.exists())
+    marker = heldout_dir / RUN_ATTEMPT_NAME
+    return bool(recorded.get("failed_at")) or (marker.exists() and not original.exists())
 
 
 def _write_attempt_marker(heldout_dir: Path, attempt: dict[str, Any]) -> None:
@@ -815,11 +836,15 @@ def _write_attempt_marker(heldout_dir: Path, attempt: dict[str, Any]) -> None:
 def _official_attempt(
     heldout_dir: Path, shared_dir: Path | None, *, config: RankerConfig, search_cache: Path
 ) -> dict[str, Any]:
-    """The one held-out run (FR-028): marker and ``run-started`` first, then compute, write, ``run``.
+    """The one held-out run (FR-028): inputs checked, then marker and ``run-started``, then compute, write, ``run``.
 
-    A failure after the marker leaves the manifest in ``run-started`` with the
-    failure recorded; the attempt is then recoverable only as ``--post-hoc``.
+    Every input (questions, gold, the frozen wiki, the cache placement) is
+    loaded before the marker is written, so an input error is an ordinary
+    refusal and never consumes the one attempt. A failure after the marker
+    leaves the manifest in ``run-started`` with the failure recorded; the
+    attempt is then recoverable only as ``--post-hoc``.
     """
+    inputs = _load_inputs(heldout_dir, shared_dir, search_cache)
     attempt = {
         "started_at": _now(),
         "ranker_config_hash": ranker_config_hash(config),
@@ -832,7 +857,7 @@ def _official_attempt(
     advance(manifest, STATE_RUN_STARTED)
     save_manifest(heldout_dir, manifest)
     try:
-        results = compute(heldout_dir, shared_dir, config=config, search_cache=search_cache)
+        results = compute(heldout_dir, shared_dir, config=config, search_cache=search_cache, inputs=inputs)
         results[ATTEMPT_KEY] = attempt
         _write_json(heldout_dir / RESULTS_NAME, results)
     except BaseException as exc:
