@@ -99,5 +99,105 @@
       "WIKI_STUDIO_WIKI_DIR",
       "WIKI_STUDIO_PROPOSALS_DIR"
     ]
+  },
+  "probes": [
+    {
+      "started_at": "2026-10-28T20:20:57.260006+00:00",
+      "finished_at": "2026-10-28T20:21:03.726733+00:00",
+      "command": [
+        "claude",
+        "-p",
+        "Reply with the single word OK."
+      ],
+      "env": {
+        "HOOK_SKIP": "1",
+        "CLAUDE_CONFIG_DIR": null,
+        "ANTHROPIC_MODEL": "claude-opus-5-5",
+        "WIKI_STUDIO_ROOT": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout",
+        "WIKI_STUDIO_WIKI_DIR": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout/wiki",
+        "WIKI_STUDIO_PROPOSALS_DIR": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout/proposals"
+      },
+      "exit_code": 0,
+      "stdout": "OK",
+      "stderr": "",
+      "hashes_before": {
+        "audit_log": "",
+        "query_log": "",
+        "proposals": "",
+        "wiki": "",
+        "corpus": "76d662fa9c2c10c4b21badaf05b0e190ba92894d59ebc512c6f52335c712c5a3",
+        "heldout_set": "368f9cd59ca5a804a5dc53af0eb9e1b879c75fd2e47c96c09f7ba10ddebb99bd"
+      },
+      "hashes_after": {
+        "audit_log": "",
+        "query_log": "",
+        "proposals": "",
+        "wiki": "",
+        "corpus": "76d662fa9c2c10c4b21badaf05b0e190ba92894d59ebc512c6f52335c712c5a3",
+        "heldout_set": "368f9cd59ca5a804a5dc53af0eb9e1b879c75fd2e47c96c09f7ba10ddebb99bd"
+      },
+      "unchanged": true,
+      "pytest_seen": false,
+      "pytest_under_probe": [],
+      "pytest_unrelated": [
+        "792 /bin/zsh -c source /Users/gosha/.claude/shell-snapshots/snapshot-zsh-1792553572920-tfse1f.sh 2>/dev/null || true && setopt NO_EXTENDED_GLOB NO_BARE_GLOB_QUAL 2>/dev/null || true && { \\builtin unalias -- 'unsetenv'; \\builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'poetry run pytest -p no:cacheprovider -v tests/test_mcp_adapter.py -k \"TestServerOverStdio and not test_every_tool_and_each_reachable_error_class\" > /private/tmp/claude-501/-Users-gosha-dev-repo-ai-wiki-ai-wiki/be73e926-1471-4a37-b3dc-d98904f399c3/scratchpad/stdio2.log 2>&1; echo \"exit $?\"; grep -E \"PASSED|FAILED|ERROR|passed|failed\" /private/tmp/claude-501/-Users-gosha-dev-repo-ai-wiki-ai-wiki/be73e926-1471-4a37-b3dc-d98904f399c3/scratchpad/stdio2.log | tail -12' < /dev/null && pwd -P >| /tmp/claude-85db-cwd",
+        "793 /Users/gosha/dev/repo/ai-wiki/ai-wiki/.venv/bin/python /Users/gosha/dev/repo/ai-wiki/ai-wiki/.venv/bin/pytest -p no:cacheprovider -v tests/test_mcp_adapter.py -k TestServerOverStdio and not test_every_tool_and_each_reachable_error_class",
+        "39037 /bin/zsh -c source /Users/gosha/.claude/shell-snapshots/snapshot-zsh-1792553572920-tfse1f.sh 2>/dev/null || true && setopt NO_EXTENDED_GLOB NO_BARE_GLOB_QUAL 2>/dev/null || true && { \\builtin unalias -- 'unsetenv'; \\builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'poetry run pytest -q -p no:cacheprovider tests/test_search_index.py tests/test_mcp_adapter.py tests/test_discovery.py 2>&1 | tail -25' < /dev/null && pwd -P >| /tmp/claude-ae50-cwd",
+        "39038 /Users/gosha/dev/repo/ai-wiki/ai-wiki/.venv/bin/python /Users/gosha/dev/repo/ai-wiki/ai-wiki/.venv/bin/pytest -q -p no:cacheprovider tests/test_search_index.py tests/test_mcp_adapter.py tests/test_discovery.py",
+        "41007 /bin/zsh -c source /Users/gosha/.claude/shell-snapshots/snapshot-zsh-1792553572920-tfse1f.sh 2>/dev/null || true && setopt NO_EXTENDED_GLOB NO_BARE_GLOB_QUAL 2>/dev/null || true && { \\builtin unalias -- 'unsetenv'; \\builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'git add eval/navigation/heldout/manifest.json && git commit -q -m \"evidence(0.8.0): pin the ingest'\"'\"'s versions, backend and model (FR-024)\" && echo \"pin committed $(git rev-parse --short HEAD)\" && HOOK_SKIP=1 poetry run python -m eval.navigation.heldout_protocol probe 2>&1 | tail -4; python3 -c \"\\012import json; m=json.load(open('\"'\"'eval/navigation/heldout/manifest.json'\"'\"')); p=m.get('\"'\"'isolation_probe'\"'\"',{})\\012print('\"'\"'state:'\"'\"', m['\"'\"'state'\"'\"'], '\"'\"'| probe passed:'\"'\"', p.get('\"'\"'passed'\"'\"'), '\"'\"'| exit:'\"'\"', p.get('\"'\"'exit_code'\"'\"'), '\"'\"'| pytest_seen:'\"'\"', p.get('\"'\"'pytest_seen'\"'\"'))\"; git status --short' < /dev/null && pwd -P >| /tmp/claude-4b8c-cwd",
+        "81519 /bin/zsh -c source /Users/gosha/.claude/shell-snapshots/snapshot-zsh-1792553572920-tfse1f.sh 2>/dev/null || true && setopt NO_EXTENDED_GLOB NO_BARE_GLOB_QUAL 2>/dev/null || true && { \\builtin unalias -- 'unsetenv'; \\builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'poetry run pytest -q -p no:cacheprovider tests/test_mcp_adapter.py -k \"TestServerOverStdio and not test_every_tool_and_each_reachable_error_class\" 2>&1 | tail -8' < /dev/null && pwd -P >| /tmp/claude-1142-cwd",
+        "81520 /Users/gosha/dev/repo/ai-wiki/ai-wiki/.venv/bin/python /Users/gosha/dev/repo/ai-wiki/ai-wiki/.venv/bin/pytest -q -p no:cacheprovider tests/test_mcp_adapter.py -k TestServerOverStdio and not test_every_tool_and_each_reachable_error_class"
+      ],
+      "passed": true
+    }
+  ],
+  "isolation_probe": {
+    "started_at": "2026-10-28T20:20:57.260006+00:00",
+    "finished_at": "2026-10-28T20:21:03.726733+00:00",
+    "command": [
+      "claude",
+      "-p",
+      "Reply with the single word OK."
+    ],
+    "env": {
+      "HOOK_SKIP": "1",
+      "CLAUDE_CONFIG_DIR": null,
+      "ANTHROPIC_MODEL": "claude-opus-5-5",
+      "WIKI_STUDIO_ROOT": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout",
+      "WIKI_STUDIO_WIKI_DIR": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout/wiki",
+      "WIKI_STUDIO_PROPOSALS_DIR": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout/proposals"
+    },
+    "exit_code": 0,
+    "stdout": "OK",
+    "stderr": "",
+    "hashes_before": {
+      "audit_log": "",
+      "query_log": "",
+      "proposals": "",
+      "wiki": "",
+      "corpus": "76d662fa9c2c10c4b21badaf05b0e190ba92894d59ebc512c6f52335c712c5a3",
+      "heldout_set": "368f9cd59ca5a804a5dc53af0eb9e1b879c75fd2e47c96c09f7ba10ddebb99bd"
+    },
+    "hashes_after": {
+      "audit_log": "",
+      "query_log": "",
+      "proposals": "",
+      "wiki": "",
+      "corpus": "76d662fa9c2c10c4b21badaf05b0e190ba92894d59ebc512c6f52335c712c5a3",
+      "heldout_set": "368f9cd59ca5a804a5dc53af0eb9e1b879c75fd2e47c96c09f7ba10ddebb99bd"
+    },
+    "unchanged": true,
+    "pytest_seen": false,
+    "pytest_under_probe": [],
+    "pytest_unrelated": [
+      "792 /bin/zsh -c source /Users/gosha/.claude/shell-snapshots/snapshot-zsh-1792553572920-tfse1f.sh 2>/dev/null || true && setopt NO_EXTENDED_GLOB NO_BARE_GLOB_QUAL 2>/dev/null || true && { \\builtin unalias -- 'unsetenv'; \\builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'poetry run pytest -p no:cacheprovider -v tests/test_mcp_adapter.py -k \"TestServerOverStdio and not test_every_tool_and_each_reachable_error_class\" > /private/tmp/claude-501/-Users-gosha-dev-repo-ai-wiki-ai-wiki/be73e926-1471-4a37-b3dc-d98904f399c3/scratchpad/stdio2.log 2>&1; echo \"exit $?\"; grep -E \"PASSED|FAILED|ERROR|passed|failed\" /private/tmp/claude-501/-Users-gosha-dev-repo-ai-wiki-ai-wiki/be73e926-1471-4a37-b3dc-d98904f399c3/scratchpad/stdio2.log | tail -12' < /dev/null && pwd -P >| /tmp/claude-85db-cwd",
+      "793 /Users/gosha/dev/repo/ai-wiki/ai-wiki/.venv/bin/python /Users/gosha/dev/repo/ai-wiki/ai-wiki/.venv/bin/pytest -p no:cacheprovider -v tests/test_mcp_adapter.py -k TestServerOverStdio and not test_every_tool_and_each_reachable_error_class",
+      "39037 /bin/zsh -c source /Users/gosha/.claude/shell-snapshots/snapshot-zsh-1792553572920-tfse1f.sh 2>/dev/null || true && setopt NO_EXTENDED_GLOB NO_BARE_GLOB_QUAL 2>/dev/null || true && { \\builtin unalias -- 'unsetenv'; \\builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'poetry run pytest -q -p no:cacheprovider tests/test_search_index.py tests/test_mcp_adapter.py tests/test_discovery.py 2>&1 | tail -25' < /dev/null && pwd -P >| /tmp/claude-ae50-cwd",
+      "39038 /Users/gosha/dev/repo/ai-wiki/ai-wiki/.venv/bin/python /Users/gosha/dev/repo/ai-wiki/ai-wiki/.venv/bin/pytest -q -p no:cacheprovider tests/test_search_index.py tests/test_mcp_adapter.py tests/test_discovery.py",
+      "41007 /bin/zsh -c source /Users/gosha/.claude/shell-snapshots/snapshot-zsh-1792553572920-tfse1f.sh 2>/dev/null || true && setopt NO_EXTENDED_GLOB NO_BARE_GLOB_QUAL 2>/dev/null || true && { \\builtin unalias -- 'unsetenv'; \\builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'git add eval/navigation/heldout/manifest.json && git commit -q -m \"evidence(0.8.0): pin the ingest'\"'\"'s versions, backend and model (FR-024)\" && echo \"pin committed $(git rev-parse --short HEAD)\" && HOOK_SKIP=1 poetry run python -m eval.navigation.heldout_protocol probe 2>&1 | tail -4; python3 -c \"\\012import json; m=json.load(open('\"'\"'eval/navigation/heldout/manifest.json'\"'\"')); p=m.get('\"'\"'isolation_probe'\"'\"',{})\\012print('\"'\"'state:'\"'\"', m['\"'\"'state'\"'\"'], '\"'\"'| probe passed:'\"'\"', p.get('\"'\"'passed'\"'\"'), '\"'\"'| exit:'\"'\"', p.get('\"'\"'exit_code'\"'\"'), '\"'\"'| pytest_seen:'\"'\"', p.get('\"'\"'pytest_seen'\"'\"'))\"; git status --short' < /dev/null && pwd -P >| /tmp/claude-4b8c-cwd",
+      "81519 /bin/zsh -c source /Users/gosha/.claude/shell-snapshots/snapshot-zsh-1792553572920-tfse1f.sh 2>/dev/null || true && setopt NO_EXTENDED_GLOB NO_BARE_GLOB_QUAL 2>/dev/null || true && { \\builtin unalias -- 'unsetenv'; \\builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'poetry run pytest -q -p no:cacheprovider tests/test_mcp_adapter.py -k \"TestServerOverStdio and not test_every_tool_and_each_reachable_error_class\" 2>&1 | tail -8' < /dev/null && pwd -P >| /tmp/claude-1142-cwd",
+      "81520 /Users/gosha/dev/repo/ai-wiki/ai-wiki/.venv/bin/python /Users/gosha/dev/repo/ai-wiki/ai-wiki/.venv/bin/pytest -q -p no:cacheprovider tests/test_mcp_adapter.py -k TestServerOverStdio and not test_every_tool_and_each_reachable_error_class"
+    ],
+    "passed": true
   }
 }
