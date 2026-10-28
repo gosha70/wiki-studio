@@ -55,7 +55,7 @@
     }
   ],
   "corpus_bytes": 30554,
-  "state": "ingested",
+  "state": "wiki-frozen",
   "history": [
     {
       "state": "sources",
@@ -76,6 +76,10 @@
     {
       "state": "ingested",
       "at": "2026-10-28T21:09:10.879139+00:00"
+    },
+    {
+      "state": "wiki-frozen",
+      "at": "2026-10-28T21:09:41.384505+00:00"
     }
   ],
   "questions_sha256": "096b55c06ce8c6eb77518df9c9928d63f864cc0ee9144566b890688c64c91325",
@@ -463,5 +467,17 @@
       "total_wall_seconds": 468.318,
       "lint_clean": true
     }
+  },
+  "wiki_tree_sha256": "1269a5ca0e06ff94d2c990d83d54d44721ca923268469a3bce1fbb8549394d68",
+  "proposals_tree_sha256": "2a4f65f1066bead55eb1cca50feb13a5bb88b0175fc6185bddc5b472b9f6a65a",
+  "ingest_summary": {
+    "documents_ingested": 8,
+    "promoted": 8,
+    "rejected": 0,
+    "backend_error": 0,
+    "timeout": 0,
+    "model_calls_upper_bound": 8,
+    "total_wall_seconds": 468.318,
+    "lint_clean": true
   }
 }
