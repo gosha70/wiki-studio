@@ -55,11 +55,19 @@
     }
   ],
   "corpus_bytes": 30554,
-  "state": "sources",
+  "state": "questions",
   "history": [
     {
       "state": "sources",
       "at": "2026-10-27T20:36:31+00:00"
+    },
+    {
+      "state": "questions",
+      "at": "2026-10-28T20:18:17.900487+00:00"
     }
-  ]
+  ],
+  "questions_sha256": "096b55c06ce8c6eb77518df9c9928d63f864cc0ee9144566b890688c64c91325",
+  "questions_commit": "839946ec36947dbd16dc4aa595b445971c09fd23",
+  "questions_written_by": "a separate general-purpose agent session (fresh context) launched by the build session on 2026-10-28, given only eval/navigation/heldout/corpus/ and the question format; it saw no ranker code, no run3/ results and no tuning section",
+  "questions_reviewed_by": "the owner (gosha70) and the external reviewer, 2026-10-28; q49 reworded on review, q01-q02 kept"
 }
