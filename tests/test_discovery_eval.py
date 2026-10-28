@@ -850,9 +850,16 @@ class TestHeldOutProtocolOrder(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("questions.json's sha256 differs", err)
 
-    def _git_stub(self, status: str, head: str) -> Any:
+    def _git_stub(self, status: str, head: str, *, tree_of: Any = None) -> Any:
+        """``status`` for git status, ``head`` for rev-parse, and a listing per commit for ls-tree."""
+
         def fake(*args: str) -> str:
-            return status if args[0] == "status" else head
+            if args[0] == "status":
+                return status
+            if args[0] == "ls-tree":
+                commit = args[2]
+                return tree_of(commit) if tree_of else f"100644 blob {commit}\tsrc/wiki_studio/x.py"
+            return head
 
         return fake
 
@@ -928,13 +935,55 @@ class TestHeldOutProtocolOrder(unittest.TestCase):
         ):
             code, _out, err = self._main("ingest")
         self.assertEqual(code, 1)
-        self.assertIn("wiki_studio_commit", err)
-        self.assertIn("a" * 40, err)
+        self.assertIn(heldout_protocol.SOURCE_TREE_KEY, err)
         self.assertNotIn("claude_path", err)
         manifest = _manifest(self.heldout)
         self.assertEqual(manifest["state"], heldout_protocol.STATE_PINNED)
         self.assertNotIn("ingest", manifest)
         self.assertFalse((self.heldout / "wiki").exists())
+
+    def test_pin_can_be_retaken_before_the_ingest_and_never_after(self) -> None:
+        """A tool fix merged after the pin needs a re-pin; the old pins stay on record and the probe must rerun."""
+        self._pinned_for_ingest("b" * 40)
+        _set_manifest(self.heldout, **{**_manifest(self.heldout), "isolation_probe": {"passed": True}})
+        with (
+            mock.patch.object(heldout_protocol, "_git", self._git_stub("", "c" * 40)),
+            mock.patch.object(heldout_protocol.shutil, "which", return_value="/usr/local/bin/claude"),
+            mock.patch.object(heldout_protocol, "_version", return_value="2.1.312 (Claude Code)"),
+        ):
+            code, _out, err = self._main("pin", "--again", "--model", "claude-opus-5-5")
+        self.assertEqual(code, 0, err)
+        manifest = _manifest(self.heldout)
+        self.assertEqual(manifest["state"], heldout_protocol.STATE_PINNED)
+        self.assertEqual(manifest["pins"]["wiki_studio_commit"], "c" * 40)
+        self.assertEqual([h["wiki_studio_commit"] for h in manifest["pins_history"]], ["b" * 40])
+        self.assertTrue(manifest["pins_history"][0]["replaced_at"])
+        self.assertNotIn("isolation_probe", manifest, "the probe must run again under the new pins")
+        self.assertEqual(manifest["history"][-1]["state"], heldout_protocol.STATE_PINNED)
+        _set_manifest(self.heldout, **{**_manifest(self.heldout), "ingest": {"started_at": "now"}})
+        with (
+            mock.patch.object(heldout_protocol, "_git", self._git_stub("", "d" * 40)),
+            mock.patch.object(heldout_protocol.shutil, "which", return_value="/usr/local/bin/claude"),
+        ):
+            code, _out, err = self._main("pin", "--again", "--model", "claude-opus-5-5")
+        self.assertEqual(code, 1)
+        self.assertIn("the ingest has started", err)
+
+    def test_a_manifest_only_commit_after_the_pin_does_not_refuse_the_ingest(self) -> None:
+        """Committing the pin and the probe moves HEAD; the ingest compares the source tree, not the commit."""
+        self._pinned_for_ingest("b" * 40)
+        same_tree = "100644 blob 0123\tsrc/wiki_studio/x.py\n100644 blob 4567\teval/navigation/heldout/manifest.json"
+
+        def stop_at_init(*_args: Any, **_kwargs: Any) -> Any:
+            raise RuntimeError("reached the ingest runner")
+
+        with (
+            mock.patch.object(heldout_protocol, "_git", self._git_stub("", "a" * 40, tree_of=lambda _c: same_tree)),
+            mock.patch.object(heldout_protocol.shutil, "which", return_value="/usr/local/bin/claude"),
+            mock.patch.object(heldout_protocol, "_run_logged", stop_at_init),
+            self.assertRaises(RuntimeError),
+        ):
+            heldout_protocol.step_ingest(self.heldout)
 
     def test_ingest_refuses_a_dirty_tree_before_the_first_attempt(self) -> None:
         self._pinned_for_ingest("a" * 40)
@@ -970,6 +1019,7 @@ class TestHeldOutProtocolOrder(unittest.TestCase):
         self.assertEqual(manifest["state"], heldout_protocol.STATE_INGESTED)
         check = manifest["ingest_source_check"]
         self.assertTrue(check.pop("checked_at"))
+        self.assertRegex(check.pop(heldout_protocol.SOURCE_TREE_KEY), r"^[0-9a-f]{64}$")
         self.assertEqual(
             check,
             {
