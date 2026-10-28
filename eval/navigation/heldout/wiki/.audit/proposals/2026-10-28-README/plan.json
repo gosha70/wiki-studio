@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "source_path": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout/corpus/README.md",
+  "backend": "claude",
+  "rationale": "Four-question gate passed. The source is the MAP-ATLAS root README (eval/navigation/heldout/corpus/README.md at 79de8a1). It describes durable project knowledge a new contributor needs: the domain-agnostic engine model, the harness-neutral specs/ contract, and the downstream map-data licensing obligation. The wiki is empty, so no existing page covers these topics. I created three concept pages, one per concept, and added index and log entries for each. The README's status table is generated and changes over time, so I left its counts out of the wiki. The pages point to specs/tasks.md instead.",
+  "edits": [
+    {
+      "path": "concepts/map-atlas-engine.md",
+      "action": "create",
+      "rationale": "This is the core mental model of the project: what the engine knows, what consumers supply, the design at a glance and the two wiring steps that only a consumer can do.",
+      "preview": "preview/concepts/map-atlas-engine.md"
+    },
+    {
+      "path": "concepts/harness-neutral-specs-contract.md",
+      "action": "create",
+      "rationale": "New contributors need to know which document is authoritative, how the quick start is kept from drifting, and how to read the generated status table.",
+      "preview": "preview/concepts/harness-neutral-specs-contract.md"
+    },
+    {
+      "path": "concepts/map-data-licensing.md",
+      "action": "create",
+      "rationale": "The per-product licensing rule is easy to miss, and it applies to every consumer, so it gets its own page.",
+      "preview": "preview/concepts/map-data-licensing.md"
+    },
+    {
+      "path": "index.md",
+      "action": "append-index",
+      "rationale": "Link the new engine concept page from the index.",
+      "preview": "preview/index.md"
+    },
+    {
+      "path": "index.md",
+      "action": "append-index",
+      "rationale": "Link the new specs-contract concept page from the index.",
+      "preview": "preview/index.md.2"
+    },
+    {
+      "path": "index.md",
+      "action": "append-index",
+      "rationale": "Link the new licensing concept page from the index.",
+      "preview": "preview/index.md.3"
+    },
+    {
+      "path": "log.md",
+      "action": "append-log",
+      "rationale": "Log the page creation.",
+      "preview": "preview/log.md"
+    },
+    {
+      "path": "log.md",
+      "action": "append-log",
+      "rationale": "Log the page creation.",
+      "preview": "preview/log.md.2"
+    },
+    {
+      "path": "log.md",
+      "action": "append-log",
+      "rationale": "Log the page creation.",
+      "preview": "preview/log.md.3"
+    }
+  ]
+}

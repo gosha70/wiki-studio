@@ -55,7 +55,7 @@
     }
   ],
   "corpus_bytes": 30554,
-  "state": "pinned",
+  "state": "ingested",
   "history": [
     {
       "state": "sources",
@@ -72,6 +72,10 @@
     {
       "state": "pinned",
       "at": "2026-10-28T21:00:56.850943+00:00"
+    },
+    {
+      "state": "ingested",
+      "at": "2026-10-28T21:09:10.879139+00:00"
     }
   ],
   "questions_sha256": "096b55c06ce8c6eb77518df9c9928d63f864cc0ee9144566b890688c64c91325",
@@ -284,5 +288,180 @@
       "99151 /bin/zsh -c source /Users/gosha/.claude/shell-snapshots/snapshot-zsh-1792553572920-tfse1f.sh 2>/dev/null || true && setopt NO_EXTENDED_GLOB NO_BARE_GLOB_QUAL 2>/dev/null || true && { \\builtin unalias -- 'unsetenv'; \\builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'git add eval/navigation/heldout/manifest.json && git commit -q -m \"evidence(0.8.0): re-pin after the pin-check fix (PR #57); previous pins kept in pins_history\" && echo \"re-pin committed $(git rev-parse --short HEAD)\" && HOOK_SKIP=1 poetry run python -m eval.navigation.heldout_protocol probe 2>&1 | tail -2 && python3 -c \"\\012import json; m=json.load(open('\"'\"'eval/navigation/heldout/manifest.json'\"'\"')); p=m['\"'\"'isolation_probe'\"'\"']; print('\"'\"'probe passed:'\"'\"', p['\"'\"'passed'\"'\"'], '\"'\"'| pytest_seen:'\"'\"', p['\"'\"'pytest_seen'\"'\"'])\" && git add eval/navigation/heldout/manifest.json && git commit -q -m \"evidence(0.8.0): the isolation probe passed under the re-taken pins (FR-024)\" && echo \"probe committed $(git rev-parse --short HEAD)\" && git status --short | wc -l' < /dev/null && pwd -P >| /tmp/claude-27f4-cwd"
     ],
     "passed": true
+  },
+  "ingest_source_check": {
+    "wiki_studio_commit": "08afd59d8af882ef9dcf8d131f2e4ee7e31d4992",
+    "source_tree_sha256": "86aeecca93c0fe34d40d2ddb3c81ee7e7e8e69f7e56f65327d3e1b8902cbd8ce",
+    "wiki_studio_version": "0.8.0",
+    "claude_path": "/Applications/cmux.app/Contents/Resources/bin/claude",
+    "tree_clean": true,
+    "pinned_commit": "39796707008a25342d8ef581bf080c7455cfbd50",
+    "checked_at": "2026-10-28T21:01:22.270520+00:00"
+  },
+  "ingest": {
+    "started_at": "2026-10-28T21:01:22.370410+00:00",
+    "documents": [
+      {
+        "path": "README.md",
+        "attempts": 1,
+        "ingest_exit_code": 0,
+        "model_calls_upper_bound": 1,
+        "proposal_dir": "2026-10-28-README",
+        "promote_exit_code": 0,
+        "pages_written": [
+          "concepts/map-atlas-engine.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/map-data-licensing.md",
+          "index.md",
+          "index.md",
+          "index.md",
+          "log.md",
+          "log.md",
+          "log.md"
+        ],
+        "wall_seconds": 42.338,
+        "disposition": "promoted"
+      },
+      {
+        "path": "packages/core/README.md",
+        "attempts": 1,
+        "ingest_exit_code": 0,
+        "model_calls_upper_bound": 1,
+        "proposal_dir": "2026-10-28-packages__core__README",
+        "promote_exit_code": 0,
+        "pages_written": [
+          "concepts/mapatlas-core-package.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "index.md",
+          "log.md"
+        ],
+        "wall_seconds": 44.419,
+        "disposition": "promoted"
+      },
+      {
+        "path": "packages/maplibre/README.md",
+        "attempts": 1,
+        "ingest_exit_code": 0,
+        "model_calls_upper_bound": 1,
+        "proposal_dir": "2026-10-28-packages__maplibre__README",
+        "promote_exit_code": 0,
+        "pages_written": [
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/map-data-licensing.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/map-atlas-engine.md",
+          "index.md",
+          "log.md"
+        ],
+        "wall_seconds": 65.762,
+        "disposition": "promoted"
+      },
+      {
+        "path": "packages/offline-pmtiles/README.md",
+        "attempts": 1,
+        "ingest_exit_code": 0,
+        "model_calls_upper_bound": 1,
+        "proposal_dir": "2026-10-28-packages__offline-pmtiles__README",
+        "promote_exit_code": 0,
+        "pages_written": [
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/map-data-licensing.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/map-atlas-engine.md",
+          "index.md",
+          "log.md"
+        ],
+        "wall_seconds": 59.001,
+        "disposition": "promoted"
+      },
+      {
+        "path": "packages/react/README.md",
+        "attempts": 1,
+        "ingest_exit_code": 0,
+        "model_calls_upper_bound": 1,
+        "proposal_dir": "2026-10-28-packages__react__README",
+        "promote_exit_code": 0,
+        "pages_written": [
+          "concepts/mapatlas-react-package.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "index.md",
+          "log.md"
+        ],
+        "wall_seconds": 44.338,
+        "disposition": "promoted"
+      },
+      {
+        "path": "packages/recorder-web/README.md",
+        "attempts": 1,
+        "ingest_exit_code": 0,
+        "model_calls_upper_bound": 1,
+        "proposal_dir": "2026-10-28-packages__recorder-web__README",
+        "promote_exit_code": 0,
+        "pages_written": [
+          "concepts/mapatlas-recorder-web-package.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/mapatlas-react-package.md",
+          "log.md",
+          "index.md"
+        ],
+        "wall_seconds": 64.751,
+        "disposition": "promoted"
+      },
+      {
+        "path": "packages/storage-idb/README.md",
+        "attempts": 1,
+        "ingest_exit_code": 0,
+        "model_calls_upper_bound": 1,
+        "proposal_dir": "2026-10-28-packages__storage-idb__README",
+        "promote_exit_code": 0,
+        "pages_written": [
+          "concepts/mapatlas-storage-idb-package.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-core-package.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "index.md",
+          "log.md"
+        ],
+        "wall_seconds": 64.46,
+        "disposition": "promoted"
+      },
+      {
+        "path": "apps/demo/README.md",
+        "attempts": 1,
+        "ingest_exit_code": 0,
+        "model_calls_upper_bound": 1,
+        "proposal_dir": "2026-10-28-apps__demo__README",
+        "promote_exit_code": 0,
+        "pages_written": [
+          "concepts/mapatlas-demo-app.md",
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/map-atlas-engine.md",
+          "index.md",
+          "log.md"
+        ],
+        "wall_seconds": 83.249,
+        "disposition": "promoted"
+      }
+    ],
+    "lint": {
+      "exit_code": 0,
+      "stdout": "\nlinted 12 pages, 0 violations\n\naudit-format: clean.\n",
+      "stderr": ""
+    },
+    "completed_at": "2026-10-28T21:09:10.879066+00:00",
+    "summary": {
+      "documents_ingested": 8,
+      "promoted": 8,
+      "rejected": 0,
+      "backend_error": 0,
+      "timeout": 0,
+      "model_calls_upper_bound": 8,
+      "total_wall_seconds": 468.318,
+      "lint_clean": true
+    }
   }
 }

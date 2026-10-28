@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "source_path": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout/corpus/packages__storage-idb__README.md",
+  "backend": "claude",
+  "rationale": "Gate passed. (1) Reusable: the README sets out how the default persistence package works: lazy open, a consumer-chosen database name, local-only storage and browser eviction. (2) Citable: eval/navigation/heldout/corpus/packages__storage-idb__README.md. (3) Non-duplicative: no page covers @mapatlas/storage-idb. Existing pages only mention it from the recorder, core and offline-pmtiles side. (4) New-contributor-relevant: it is one of the six engine packages, and the wiki already has a page for each of the other five. This patch creates concepts/mapatlas-storage-idb-package.md. It updates map-atlas-engine (package summary, where-this-shows-up entry and source), harness-neutral-specs-contract (compiled README example and generated peers block) and mapatlas-core-package (the README places the MapAssetStore seam in core beside StorageAdapter). It also appends one index line and one log line.",
+  "edits": [
+    {
+      "path": "concepts/mapatlas-storage-idb-package.md",
+      "action": "create",
+      "rationale": "No page covers the storage-idb package. This page follows the per-package pattern the wiki already uses.",
+      "preview": "preview/concepts/mapatlas-storage-idb-package.md"
+    },
+    {
+      "path": "concepts/map-atlas-engine.md",
+      "action": "update",
+      "rationale": "The engine overview lists one entry per package. This edit adds the storage-idb summary, its README pointer, its source and a Related link.",
+      "preview": "preview/concepts/map-atlas-engine.md",
+      "base_sha256": "7fd061ce11f5eb3f3774d7ba6cb98da5f3b5826e0fe48272f63967fd4f5f7eb3"
+    },
+    {
+      "path": "concepts/mapatlas-core-package.md",
+      "action": "update",
+      "rationale": "The storage-idb README names MapAssetStore as a core seam beside StorageAdapter. The core page's seam list omitted it, so this edit records it without changing the existing six-seam statement.",
+      "preview": "preview/concepts/mapatlas-core-package.md",
+      "base_sha256": "6886362df34aa987f7f95c14a6dd4f58f26091e2661e333d2c46713f3698748e"
+    },
+    {
+      "path": "concepts/harness-neutral-specs-contract.md",
+      "action": "update",
+      "rationale": "The storage-idb README follows the same compiled-example and generated-peers conventions. This edit adds it to the list of places where the contract applies.",
+      "preview": "preview/concepts/harness-neutral-specs-contract.md",
+      "base_sha256": "9afbd7c6ee50516851215340e23e297257adf83ee67b9b933dd68d4add4866f3"
+    },
+    {
+      "path": "index.md",
+      "action": "append-index",
+      "rationale": "This link makes the new page reachable from index.md.",
+      "preview": "preview/index.md"
+    },
+    {
+      "path": "log.md",
+      "action": "append-log",
+      "rationale": "This is the log entry for the ingest.",
+      "preview": "preview/log.md"
+    }
+  ]
+}

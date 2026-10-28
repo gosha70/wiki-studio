@@ -1,0 +1,137 @@
+{
+  "receipt_version": 1,
+  "state": "committed",
+  "proposal": "2026-10-28-packages__maplibre__README",
+  "submission_digest": "7da2d4531bc524339e9bf675e402c0e97579de6c6bbe66ca90ef16d82bbc482b",
+  "digest_recipe": 2,
+  "submission_manifest": [
+    {
+      "path": ".ingest-snapshot/plan.json",
+      "sha256": "897cfb979e750a3a06ae226465ca7fe1b9dcaaee2b24fa1d5e5917c9c2f76e09"
+    },
+    {
+      "path": ".ingest-snapshot/preview/concepts/harness-neutral-specs-contract.md",
+      "sha256": "58814190f0ab1d4bc7f15002db4a319cf1ccb44d797fc3cfe8ec9da2a40a360e"
+    },
+    {
+      "path": ".ingest-snapshot/preview/concepts/map-atlas-engine.md",
+      "sha256": "96d51eb3c99512e330626abe806e95d8c6b270975fe0db3867041c101743a753"
+    },
+    {
+      "path": ".ingest-snapshot/preview/concepts/map-data-licensing.md",
+      "sha256": "d43f813e098ee128a9be4c1d8836f8885932a17abef0034824df9254cdca86f1"
+    },
+    {
+      "path": ".ingest-snapshot/preview/concepts/mapatlas-maplibre-package.md",
+      "sha256": "b0a0df05418e8199eb08b0c032faee0962b985b91546009b6499f74515818e51"
+    },
+    {
+      "path": ".ingest-snapshot/preview/index.md",
+      "sha256": "5b0da6c13800e59c40870d95c0b33c27e5a20e5c95c57c38e5a044022f03a3a6"
+    },
+    {
+      "path": ".ingest-snapshot/preview/log.md",
+      "sha256": "efe74bc19162cb7a350106730f17ec42e7ddb5aafc6c9a56f1acbd0ae57376c4"
+    },
+    {
+      "path": "plan.json",
+      "sha256": "897cfb979e750a3a06ae226465ca7fe1b9dcaaee2b24fa1d5e5917c9c2f76e09"
+    },
+    {
+      "path": "preview/concepts/harness-neutral-specs-contract.md",
+      "sha256": "58814190f0ab1d4bc7f15002db4a319cf1ccb44d797fc3cfe8ec9da2a40a360e"
+    },
+    {
+      "path": "preview/concepts/map-atlas-engine.md",
+      "sha256": "96d51eb3c99512e330626abe806e95d8c6b270975fe0db3867041c101743a753"
+    },
+    {
+      "path": "preview/concepts/map-data-licensing.md",
+      "sha256": "d43f813e098ee128a9be4c1d8836f8885932a17abef0034824df9254cdca86f1"
+    },
+    {
+      "path": "preview/concepts/mapatlas-maplibre-package.md",
+      "sha256": "b0a0df05418e8199eb08b0c032faee0962b985b91546009b6499f74515818e51"
+    },
+    {
+      "path": "preview/index.md",
+      "sha256": "5b0da6c13800e59c40870d95c0b33c27e5a20e5c95c57c38e5a044022f03a3a6"
+    },
+    {
+      "path": "preview/log.md",
+      "sha256": "efe74bc19162cb7a350106730f17ec42e7ddb5aafc6c9a56f1acbd0ae57376c4"
+    }
+  ],
+  "plan_sha256": "897cfb979e750a3a06ae226465ca7fe1b9dcaaee2b24fa1d5e5917c9c2f76e09",
+  "wiki_target": {
+    "st_dev": 16777231,
+    "st_ino": 303248064,
+    "path": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout/wiki"
+  },
+  "planned_writes": [
+    {
+      "path": "concepts/mapatlas-maplibre-package.md",
+      "pre_sha256": null,
+      "post_sha256": "b0a0df05418e8199eb08b0c032faee0962b985b91546009b6499f74515818e51"
+    },
+    {
+      "path": "concepts/map-data-licensing.md",
+      "pre_sha256": "ccd8e903b33cdee04fd17aa5aec35720bd0f1c3e4d20affa9514195d173ed291",
+      "post_sha256": "d43f813e098ee128a9be4c1d8836f8885932a17abef0034824df9254cdca86f1"
+    },
+    {
+      "path": "concepts/harness-neutral-specs-contract.md",
+      "pre_sha256": "f681b18df59abc442b13ddd0e456773a475694a862b76f2bd983f2063c0077e3",
+      "post_sha256": "58814190f0ab1d4bc7f15002db4a319cf1ccb44d797fc3cfe8ec9da2a40a360e"
+    },
+    {
+      "path": "concepts/map-atlas-engine.md",
+      "pre_sha256": "09c503e5982647a4913e43c5f70502b64c5ae6b648316a8887d723dd7150f82e",
+      "post_sha256": "96d51eb3c99512e330626abe806e95d8c6b270975fe0db3867041c101743a753"
+    },
+    {
+      "path": "index.md",
+      "pre_sha256": "1f73561231d2c959f587386c177d97b915f2dcf8ee3d7b92d5a5f4d5d5417406",
+      "post_sha256": "0e368c1321fca103c9f9bd83af670b53f51612ddf209a236226f20be72c0cb70"
+    },
+    {
+      "path": "log.md",
+      "pre_sha256": "7d04f764f60ef72f844a038ecc3da8ee92f5a4747f57ea92a32d6f82d975d07d",
+      "post_sha256": "8edb72fbf09006b8da8d212a739e65384ca5560fa5d51a37a911ba79e9ef05fc"
+    },
+    {
+      "path": ".audit/proposals/2026-10-28-packages__maplibre__README/plan.json",
+      "pre_sha256": null,
+      "post_sha256": "897cfb979e750a3a06ae226465ca7fe1b9dcaaee2b24fa1d5e5917c9c2f76e09"
+    },
+    {
+      "path": ".audit/proposals/2026-10-28-packages__maplibre__README/proposal.md",
+      "pre_sha256": null,
+      "post_sha256": "b59bcf981d3d1557686492ed3164971b6c223243651429388a5e2f8a19c42210"
+    }
+  ],
+  "written_paths": [
+    "concepts/mapatlas-maplibre-package.md",
+    "concepts/map-data-licensing.md",
+    "concepts/harness-neutral-specs-contract.md",
+    "concepts/map-atlas-engine.md",
+    "index.md",
+    "log.md",
+    ".audit/proposals/2026-10-28-packages__maplibre__README/plan.json",
+    ".audit/proposals/2026-10-28-packages__maplibre__README/proposal.md"
+  ],
+  "unguarded_paths": [],
+  "lock_wait_seconds": 1.1e-05,
+  "started_at": "2026-10-28T21:03:54Z",
+  "committing_at": "2026-10-28T21:03:54Z",
+  "committed_at": "2026-10-28T21:03:54Z",
+  "promoter": {
+    "package": "wiki-studio",
+    "version": "0.8.0",
+    "entry_point": "cli"
+  },
+  "actor": {
+    "name": null,
+    "source": "none"
+  }
+}

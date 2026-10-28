@@ -1,0 +1,1 @@
+- 2026-10-28 — create mapatlas-core-package (concept): ingest of packages/core/README.md, also updating map-atlas-engine and harness-neutral-specs-contract

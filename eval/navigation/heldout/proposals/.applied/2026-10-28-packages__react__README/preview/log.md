@@ -1,0 +1,1 @@
+- 2026-10-28 — create mapatlas-react-package (concept): ingest of packages/react/README.md, also updating map-atlas-engine and harness-neutral-specs-contract

@@ -1,0 +1,1 @@
+- 2026-10-28 — create mapatlas-maplibre-package (concept): ingest of packages/maplibre/README.md, also updating map-data-licensing, harness-neutral-specs-contract and map-atlas-engine

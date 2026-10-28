@@ -1,0 +1,9 @@
+applied 8 edit(s) from 2026-10-28-apps__demo__README; archived to /Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout/proposals/.applied/2026-10-28-apps__demo__README.
+  + wiki/concepts/mapatlas-demo-app.md
+  + wiki/concepts/map-data-licensing.md
+  + wiki/concepts/mapatlas-offline-pmtiles-package.md
+  + wiki/concepts/map-atlas-engine.md
+  + wiki/index.md
+  + wiki/log.md
+  + wiki/.audit/proposals/2026-10-28-apps__demo__README/plan.json
+  + wiki/.audit/proposals/2026-10-28-apps__demo__README/proposal.md

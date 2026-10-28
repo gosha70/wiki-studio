@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "source_path": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout/corpus/packages__offline-pmtiles__README.md",
+  "backend": "claude",
+  "rationale": "Gate passed. (1) Reusable: the README explains how offline regions work, the offlineLicensed refusal policy, and the extra install step. Future contributors and consumers need all three. (2) Citable: repo file eval/navigation/heldout/corpus/packages__offline-pmtiles__README.md. (3) Non-duplicative: no page covers @mapatlas/offline-pmtiles. The engine page only names the package path. (4) New-contributor-relevant: a newcomer must know that the quick start does not install this package, that download() refuses unlicensed sources, and that storing a region does not make the renderer read it. The patch creates one package page, mirroring the core and maplibre pages. It updates map-data-licensing with the offlineLicensed bulk-prefetch rule. It updates harness-neutral-specs-contract with the generated add-to-install block and the six-package packaging gate. It updates map-atlas-engine to name and link the package.",
+  "edits": [
+    {
+      "path": "concepts/mapatlas-offline-pmtiles-package.md",
+      "action": "create",
+      "rationale": "No page covers the offline-regions package. The page follows the per-package concept pages for core and maplibre.",
+      "preview": "preview/concepts/mapatlas-offline-pmtiles-package.md"
+    },
+    {
+      "path": "concepts/map-data-licensing.md",
+      "action": "update",
+      "rationale": "The source adds a concrete licensing rule: bulk offline download requires an explicit offlineLicensed declaration, and absence means refusal.",
+      "preview": "preview/concepts/map-data-licensing.md",
+      "base_sha256": "d43f813e098ee128a9be4c1d8836f8885932a17abef0034824df9254cdca86f1"
+    },
+    {
+      "path": "concepts/harness-neutral-specs-contract.md",
+      "action": "update",
+      "rationale": "The source refines the checked-docs contract. It adds the generated add-to-install block for packages outside the quick start, and it shows that the packaging gate packs all six packages.",
+      "preview": "preview/concepts/harness-neutral-specs-contract.md",
+      "base_sha256": "58814190f0ab1d4bc7f15002db4a319cf1ccb44d797fc3cfe8ec9da2a40a360e"
+    },
+    {
+      "path": "concepts/map-atlas-engine.md",
+      "action": "update",
+      "rationale": "The overview page named only the package path. It now names the package, says what the package does, and links the new page.",
+      "preview": "preview/concepts/map-atlas-engine.md",
+      "base_sha256": "96d51eb3c99512e330626abe806e95d8c6b270975fe0db3867041c101743a753",
+      "fact_warnings": [
+        "packages/offline-pmtiles"
+      ]
+    },
+    {
+      "path": "index.md",
+      "action": "append-index",
+      "rationale": "Makes the new page reachable from the index.",
+      "preview": "preview/index.md"
+    },
+    {
+      "path": "log.md",
+      "action": "append-log",
+      "rationale": "Dated log entry for this ingest.",
+      "preview": "preview/log.md"
+    }
+  ]
+}

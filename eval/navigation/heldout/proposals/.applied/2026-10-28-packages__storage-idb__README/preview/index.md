@@ -1,0 +1,1 @@
+- [@mapatlas/storage-idb — the default IndexedDB persistence](concepts/mapatlas-storage-idb-package.md) — StorageAdapter and MapAssetStore on IndexedDB, lazy open, on-device data, browser eviction

@@ -1,0 +1,155 @@
+{
+  "receipt_version": 1,
+  "state": "committed",
+  "proposal": "2026-10-28-README",
+  "submission_digest": "8d5449cc4023afc767fa8fba6a58bad083ad5b41987f3f296f376501f8ce5954",
+  "digest_recipe": 2,
+  "submission_manifest": [
+    {
+      "path": ".ingest-snapshot/plan.json",
+      "sha256": "f5394a6f294729051f32db7f756e0ce52572d5cbf19c8a2a9087be7f0bbe6829"
+    },
+    {
+      "path": ".ingest-snapshot/preview/concepts/harness-neutral-specs-contract.md",
+      "sha256": "7110808a3fe91b52dfb46a8cf30e865ce80b8fea27dfa11cbef84d58e98b44d5"
+    },
+    {
+      "path": ".ingest-snapshot/preview/concepts/map-atlas-engine.md",
+      "sha256": "9b9aca5b5e61ad1300647ebf5d20aebbedc60541852cc4ec7d7f7ebb9216d756"
+    },
+    {
+      "path": ".ingest-snapshot/preview/concepts/map-data-licensing.md",
+      "sha256": "ccd8e903b33cdee04fd17aa5aec35720bd0f1c3e4d20affa9514195d173ed291"
+    },
+    {
+      "path": ".ingest-snapshot/preview/index.md",
+      "sha256": "f917a718ba8913a6dbaf711c827f6663f063d15ec75a8f5694273a8756bd430e"
+    },
+    {
+      "path": ".ingest-snapshot/preview/index.md.2",
+      "sha256": "f67145c524147be6756120b519247665eac23400448e8abf860fb7c1836d030a"
+    },
+    {
+      "path": ".ingest-snapshot/preview/index.md.3",
+      "sha256": "3f89cfab657c5178e4f3453d0599e3d27adf76ff504b1b227ab7f45c68d5e8b0"
+    },
+    {
+      "path": ".ingest-snapshot/preview/log.md",
+      "sha256": "fa85128b5efc8dd9f9ee57d114147f856d866ed6d7104a8956aa37d4235b5e92"
+    },
+    {
+      "path": ".ingest-snapshot/preview/log.md.2",
+      "sha256": "14b98e5f7e18319ba0863eae39755a7b8426a04f00ad6d0592687393042e5b53"
+    },
+    {
+      "path": ".ingest-snapshot/preview/log.md.3",
+      "sha256": "1901401f30a070496ae4e9a24365e39de29e94fcf8bf461246debf340d6c3f0e"
+    },
+    {
+      "path": "plan.json",
+      "sha256": "f5394a6f294729051f32db7f756e0ce52572d5cbf19c8a2a9087be7f0bbe6829"
+    },
+    {
+      "path": "preview/concepts/harness-neutral-specs-contract.md",
+      "sha256": "7110808a3fe91b52dfb46a8cf30e865ce80b8fea27dfa11cbef84d58e98b44d5"
+    },
+    {
+      "path": "preview/concepts/map-atlas-engine.md",
+      "sha256": "9b9aca5b5e61ad1300647ebf5d20aebbedc60541852cc4ec7d7f7ebb9216d756"
+    },
+    {
+      "path": "preview/concepts/map-data-licensing.md",
+      "sha256": "ccd8e903b33cdee04fd17aa5aec35720bd0f1c3e4d20affa9514195d173ed291"
+    },
+    {
+      "path": "preview/index.md",
+      "sha256": "f917a718ba8913a6dbaf711c827f6663f063d15ec75a8f5694273a8756bd430e"
+    },
+    {
+      "path": "preview/index.md.2",
+      "sha256": "f67145c524147be6756120b519247665eac23400448e8abf860fb7c1836d030a"
+    },
+    {
+      "path": "preview/index.md.3",
+      "sha256": "3f89cfab657c5178e4f3453d0599e3d27adf76ff504b1b227ab7f45c68d5e8b0"
+    },
+    {
+      "path": "preview/log.md",
+      "sha256": "fa85128b5efc8dd9f9ee57d114147f856d866ed6d7104a8956aa37d4235b5e92"
+    },
+    {
+      "path": "preview/log.md.2",
+      "sha256": "14b98e5f7e18319ba0863eae39755a7b8426a04f00ad6d0592687393042e5b53"
+    },
+    {
+      "path": "preview/log.md.3",
+      "sha256": "1901401f30a070496ae4e9a24365e39de29e94fcf8bf461246debf340d6c3f0e"
+    }
+  ],
+  "plan_sha256": "f5394a6f294729051f32db7f756e0ce52572d5cbf19c8a2a9087be7f0bbe6829",
+  "wiki_target": {
+    "st_dev": 16777231,
+    "st_ino": 303248064,
+    "path": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout/wiki"
+  },
+  "planned_writes": [
+    {
+      "path": "concepts/map-atlas-engine.md",
+      "pre_sha256": null,
+      "post_sha256": "9b9aca5b5e61ad1300647ebf5d20aebbedc60541852cc4ec7d7f7ebb9216d756"
+    },
+    {
+      "path": "concepts/harness-neutral-specs-contract.md",
+      "pre_sha256": null,
+      "post_sha256": "7110808a3fe91b52dfb46a8cf30e865ce80b8fea27dfa11cbef84d58e98b44d5"
+    },
+    {
+      "path": "concepts/map-data-licensing.md",
+      "pre_sha256": null,
+      "post_sha256": "ccd8e903b33cdee04fd17aa5aec35720bd0f1c3e4d20affa9514195d173ed291"
+    },
+    {
+      "path": "index.md",
+      "pre_sha256": "e22fba62e2791230782818982a2fcda6fac5924693b523fdb390711003e2d8e4",
+      "post_sha256": "e6d837ee3c626aafb7e78ccf5cd454a1f412aab55b0bf961f0ecdaf2bc44b115"
+    },
+    {
+      "path": "log.md",
+      "pre_sha256": "64e7e23522e0565852c0832fecfa2fd38589bcb831b7aa69f54614ef1e83700c",
+      "post_sha256": "a665d0fa48a4014ece775965a2c45814c061f4547d889c220e99c7299d41950c"
+    },
+    {
+      "path": ".audit/proposals/2026-10-28-README/plan.json",
+      "pre_sha256": null,
+      "post_sha256": "f5394a6f294729051f32db7f756e0ce52572d5cbf19c8a2a9087be7f0bbe6829"
+    },
+    {
+      "path": ".audit/proposals/2026-10-28-README/proposal.md",
+      "pre_sha256": null,
+      "post_sha256": "292b4dc67dbae7c70e6b83a28baf74a8040e18d11e669c4f19716bc8f320fe79"
+    }
+  ],
+  "written_paths": [
+    "concepts/map-atlas-engine.md",
+    "concepts/harness-neutral-specs-contract.md",
+    "concepts/map-data-licensing.md",
+    "index.md",
+    "log.md",
+    ".audit/proposals/2026-10-28-README/plan.json",
+    ".audit/proposals/2026-10-28-README/proposal.md"
+  ],
+  "unguarded_paths": [],
+  "lock_wait_seconds": 1.1e-05,
+  "started_at": "2026-10-28T21:02:04Z",
+  "committing_at": "2026-10-28T21:02:04Z",
+  "committed_at": "2026-10-28T21:02:04Z",
+  "promoter": {
+    "package": "wiki-studio",
+    "version": "0.8.0",
+    "entry_point": "cli"
+  },
+  "actor": {
+    "name": null,
+    "source": "none"
+  }
+}

@@ -1,0 +1,123 @@
+{
+  "receipt_version": 1,
+  "state": "committed",
+  "proposal": "2026-10-28-packages__core__README",
+  "submission_digest": "b7b5a476f8db08f14c1062060b9d1356aacf9ec58a0efd9edfb495367fe95783",
+  "digest_recipe": 2,
+  "submission_manifest": [
+    {
+      "path": ".ingest-snapshot/plan.json",
+      "sha256": "1de9945c8e62abba3e1ad79e91eb62e3ff78b0dc2ce6682b5e805ed5456860a1"
+    },
+    {
+      "path": ".ingest-snapshot/preview/concepts/harness-neutral-specs-contract.md",
+      "sha256": "f681b18df59abc442b13ddd0e456773a475694a862b76f2bd983f2063c0077e3"
+    },
+    {
+      "path": ".ingest-snapshot/preview/concepts/map-atlas-engine.md",
+      "sha256": "09c503e5982647a4913e43c5f70502b64c5ae6b648316a8887d723dd7150f82e"
+    },
+    {
+      "path": ".ingest-snapshot/preview/concepts/mapatlas-core-package.md",
+      "sha256": "6886362df34aa987f7f95c14a6dd4f58f26091e2661e333d2c46713f3698748e"
+    },
+    {
+      "path": ".ingest-snapshot/preview/index.md",
+      "sha256": "8780f4956ecf7bef16ff13a8d0220e0d8fb9bb3ce4dc36b70f55426f98a3183a"
+    },
+    {
+      "path": ".ingest-snapshot/preview/log.md",
+      "sha256": "91f882ac9015374f3c855b960b8c937897981c504380551a4c39601e2f3e17e0"
+    },
+    {
+      "path": "plan.json",
+      "sha256": "1de9945c8e62abba3e1ad79e91eb62e3ff78b0dc2ce6682b5e805ed5456860a1"
+    },
+    {
+      "path": "preview/concepts/harness-neutral-specs-contract.md",
+      "sha256": "f681b18df59abc442b13ddd0e456773a475694a862b76f2bd983f2063c0077e3"
+    },
+    {
+      "path": "preview/concepts/map-atlas-engine.md",
+      "sha256": "09c503e5982647a4913e43c5f70502b64c5ae6b648316a8887d723dd7150f82e"
+    },
+    {
+      "path": "preview/concepts/mapatlas-core-package.md",
+      "sha256": "6886362df34aa987f7f95c14a6dd4f58f26091e2661e333d2c46713f3698748e"
+    },
+    {
+      "path": "preview/index.md",
+      "sha256": "8780f4956ecf7bef16ff13a8d0220e0d8fb9bb3ce4dc36b70f55426f98a3183a"
+    },
+    {
+      "path": "preview/log.md",
+      "sha256": "91f882ac9015374f3c855b960b8c937897981c504380551a4c39601e2f3e17e0"
+    }
+  ],
+  "plan_sha256": "1de9945c8e62abba3e1ad79e91eb62e3ff78b0dc2ce6682b5e805ed5456860a1",
+  "wiki_target": {
+    "st_dev": 16777231,
+    "st_ino": 303248064,
+    "path": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout/wiki"
+  },
+  "planned_writes": [
+    {
+      "path": "concepts/mapatlas-core-package.md",
+      "pre_sha256": null,
+      "post_sha256": "6886362df34aa987f7f95c14a6dd4f58f26091e2661e333d2c46713f3698748e"
+    },
+    {
+      "path": "concepts/map-atlas-engine.md",
+      "pre_sha256": "9b9aca5b5e61ad1300647ebf5d20aebbedc60541852cc4ec7d7f7ebb9216d756",
+      "post_sha256": "09c503e5982647a4913e43c5f70502b64c5ae6b648316a8887d723dd7150f82e"
+    },
+    {
+      "path": "concepts/harness-neutral-specs-contract.md",
+      "pre_sha256": "7110808a3fe91b52dfb46a8cf30e865ce80b8fea27dfa11cbef84d58e98b44d5",
+      "post_sha256": "f681b18df59abc442b13ddd0e456773a475694a862b76f2bd983f2063c0077e3"
+    },
+    {
+      "path": "index.md",
+      "pre_sha256": "e6d837ee3c626aafb7e78ccf5cd454a1f412aab55b0bf961f0ecdaf2bc44b115",
+      "post_sha256": "1f73561231d2c959f587386c177d97b915f2dcf8ee3d7b92d5a5f4d5d5417406"
+    },
+    {
+      "path": "log.md",
+      "pre_sha256": "a665d0fa48a4014ece775965a2c45814c061f4547d889c220e99c7299d41950c",
+      "post_sha256": "7d04f764f60ef72f844a038ecc3da8ee92f5a4747f57ea92a32d6f82d975d07d"
+    },
+    {
+      "path": ".audit/proposals/2026-10-28-packages__core__README/plan.json",
+      "pre_sha256": null,
+      "post_sha256": "1de9945c8e62abba3e1ad79e91eb62e3ff78b0dc2ce6682b5e805ed5456860a1"
+    },
+    {
+      "path": ".audit/proposals/2026-10-28-packages__core__README/proposal.md",
+      "pre_sha256": null,
+      "post_sha256": "27715efad63454a5118ab96908d0c83e3a8e7486eaa74286fd2c4f3eb006194e"
+    }
+  ],
+  "written_paths": [
+    "concepts/mapatlas-core-package.md",
+    "concepts/map-atlas-engine.md",
+    "concepts/harness-neutral-specs-contract.md",
+    "index.md",
+    "log.md",
+    ".audit/proposals/2026-10-28-packages__core__README/plan.json",
+    ".audit/proposals/2026-10-28-packages__core__README/proposal.md"
+  ],
+  "unguarded_paths": [],
+  "lock_wait_seconds": 1.1e-05,
+  "started_at": "2026-10-28T21:02:49Z",
+  "committing_at": "2026-10-28T21:02:49Z",
+  "committed_at": "2026-10-28T21:02:49Z",
+  "promoter": {
+    "package": "wiki-studio",
+    "version": "0.8.0",
+    "entry_point": "cli"
+  },
+  "actor": {
+    "name": null,
+    "source": "none"
+  }
+}

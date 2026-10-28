@@ -1,0 +1,123 @@
+{
+  "receipt_version": 1,
+  "state": "committed",
+  "proposal": "2026-10-28-packages__react__README",
+  "submission_digest": "b86036378f2e28de24a84006491ea26a26ea689031aab9fd5980259e49022715",
+  "digest_recipe": 2,
+  "submission_manifest": [
+    {
+      "path": ".ingest-snapshot/plan.json",
+      "sha256": "bd6bf20867e091fb67b6094c4f7eb073aa921b538b4c2db8c5e2c016f6a6dd70"
+    },
+    {
+      "path": ".ingest-snapshot/preview/concepts/harness-neutral-specs-contract.md",
+      "sha256": "b4e595dd6e88a2c549aa62d418c1662c7e19621f045300ddd628b1faa898fcf8"
+    },
+    {
+      "path": ".ingest-snapshot/preview/concepts/map-atlas-engine.md",
+      "sha256": "da5c7a336d8b3a31001db5b0b4b2de9062a58f23ceeb4ae6961af761eb93b799"
+    },
+    {
+      "path": ".ingest-snapshot/preview/concepts/mapatlas-react-package.md",
+      "sha256": "e61a0e204d443f24705444d6848c75e0e05b2c6a41eae2a5964cda20249a0c31"
+    },
+    {
+      "path": ".ingest-snapshot/preview/index.md",
+      "sha256": "5f92b1b77136514c06b7715475c27eefc44d86a1feda643324409685af195e81"
+    },
+    {
+      "path": ".ingest-snapshot/preview/log.md",
+      "sha256": "e593fe28c3cb9d35e7256977806468d523b11750c01ec905fb366f6e124bf327"
+    },
+    {
+      "path": "plan.json",
+      "sha256": "bd6bf20867e091fb67b6094c4f7eb073aa921b538b4c2db8c5e2c016f6a6dd70"
+    },
+    {
+      "path": "preview/concepts/harness-neutral-specs-contract.md",
+      "sha256": "b4e595dd6e88a2c549aa62d418c1662c7e19621f045300ddd628b1faa898fcf8"
+    },
+    {
+      "path": "preview/concepts/map-atlas-engine.md",
+      "sha256": "da5c7a336d8b3a31001db5b0b4b2de9062a58f23ceeb4ae6961af761eb93b799"
+    },
+    {
+      "path": "preview/concepts/mapatlas-react-package.md",
+      "sha256": "e61a0e204d443f24705444d6848c75e0e05b2c6a41eae2a5964cda20249a0c31"
+    },
+    {
+      "path": "preview/index.md",
+      "sha256": "5f92b1b77136514c06b7715475c27eefc44d86a1feda643324409685af195e81"
+    },
+    {
+      "path": "preview/log.md",
+      "sha256": "e593fe28c3cb9d35e7256977806468d523b11750c01ec905fb366f6e124bf327"
+    }
+  ],
+  "plan_sha256": "bd6bf20867e091fb67b6094c4f7eb073aa921b538b4c2db8c5e2c016f6a6dd70",
+  "wiki_target": {
+    "st_dev": 16777231,
+    "st_ino": 303248064,
+    "path": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout/wiki"
+  },
+  "planned_writes": [
+    {
+      "path": "concepts/mapatlas-react-package.md",
+      "pre_sha256": null,
+      "post_sha256": "e61a0e204d443f24705444d6848c75e0e05b2c6a41eae2a5964cda20249a0c31"
+    },
+    {
+      "path": "concepts/map-atlas-engine.md",
+      "pre_sha256": "7c72e6207fc5ea928ea7e13f41ef983732b3ab61db91d704cc32a14db635ca9b",
+      "post_sha256": "da5c7a336d8b3a31001db5b0b4b2de9062a58f23ceeb4ae6961af761eb93b799"
+    },
+    {
+      "path": "concepts/harness-neutral-specs-contract.md",
+      "pre_sha256": "e9403b7d6ab9101259ddbc0dd68e7698992178f082baf0739997354610827e27",
+      "post_sha256": "b4e595dd6e88a2c549aa62d418c1662c7e19621f045300ddd628b1faa898fcf8"
+    },
+    {
+      "path": "index.md",
+      "pre_sha256": "8c6ef3cbe4788a8cce35d30724413b24d059354b762aa7eb83fb08278a45234b",
+      "post_sha256": "8eb33161b684ad3ca8e54f3c9add9d49a5bdb9e73f443b2eb152dd815141208a"
+    },
+    {
+      "path": "log.md",
+      "pre_sha256": "ceeea37d0523ad54362513ab3545f1a0455f9e181f2ec8efa7ead3100afea9c3",
+      "post_sha256": "9c60539d2b7af16b11b52161afd4c478a44c60b80a569a23a17f1a7c625416dc"
+    },
+    {
+      "path": ".audit/proposals/2026-10-28-packages__react__README/plan.json",
+      "pre_sha256": null,
+      "post_sha256": "bd6bf20867e091fb67b6094c4f7eb073aa921b538b4c2db8c5e2c016f6a6dd70"
+    },
+    {
+      "path": ".audit/proposals/2026-10-28-packages__react__README/proposal.md",
+      "pre_sha256": null,
+      "post_sha256": "22d588529c614296000f9502fd7a81fc93ef51af99503d339e88a31e52793559"
+    }
+  ],
+  "written_paths": [
+    "concepts/mapatlas-react-package.md",
+    "concepts/map-atlas-engine.md",
+    "concepts/harness-neutral-specs-contract.md",
+    "index.md",
+    "log.md",
+    ".audit/proposals/2026-10-28-packages__react__README/plan.json",
+    ".audit/proposals/2026-10-28-packages__react__README/proposal.md"
+  ],
+  "unguarded_paths": [],
+  "lock_wait_seconds": 1.3e-05,
+  "started_at": "2026-10-28T21:05:38Z",
+  "committing_at": "2026-10-28T21:05:38Z",
+  "committed_at": "2026-10-28T21:05:38Z",
+  "promoter": {
+    "package": "wiki-studio",
+    "version": "0.8.0",
+    "entry_point": "cli"
+  },
+  "actor": {
+    "name": null,
+    "source": "none"
+  }
+}

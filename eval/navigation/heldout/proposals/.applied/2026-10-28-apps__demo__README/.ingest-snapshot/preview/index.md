@@ -1,0 +1,1 @@
+- [MAP-ATLAS demo — a field logger built only from the published packages](concepts/mapatlas-demo-app.md) — npm run demo, two independent offline layers, dev runner has no service worker, range-request troubleshooting

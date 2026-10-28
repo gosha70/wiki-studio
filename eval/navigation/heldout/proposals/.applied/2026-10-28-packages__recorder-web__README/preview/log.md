@@ -1,0 +1,1 @@
+- 2026-10-28 — create mapatlas-recorder-web-package (concept): ingest of packages/recorder-web/README.md, also updating map-atlas-engine, harness-neutral-specs-contract and mapatlas-react-package

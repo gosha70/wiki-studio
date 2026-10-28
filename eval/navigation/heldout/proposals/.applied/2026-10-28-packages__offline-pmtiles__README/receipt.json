@@ -1,0 +1,137 @@
+{
+  "receipt_version": 1,
+  "state": "committed",
+  "proposal": "2026-10-28-packages__offline-pmtiles__README",
+  "submission_digest": "62cb97609109717eaaf1de2fca5c463664621498c9e927db0bac7844c7a9ff41",
+  "digest_recipe": 2,
+  "submission_manifest": [
+    {
+      "path": ".ingest-snapshot/plan.json",
+      "sha256": "283164a2714d65e106b3dce46ff500d64c854be58cf0fa14125b8ce31b5fb362"
+    },
+    {
+      "path": ".ingest-snapshot/preview/concepts/harness-neutral-specs-contract.md",
+      "sha256": "e9403b7d6ab9101259ddbc0dd68e7698992178f082baf0739997354610827e27"
+    },
+    {
+      "path": ".ingest-snapshot/preview/concepts/map-atlas-engine.md",
+      "sha256": "7c72e6207fc5ea928ea7e13f41ef983732b3ab61db91d704cc32a14db635ca9b"
+    },
+    {
+      "path": ".ingest-snapshot/preview/concepts/map-data-licensing.md",
+      "sha256": "73b6b539cfb06f4f6794632337155f694cf8ebf2c9110a8d5be73d33534b416e"
+    },
+    {
+      "path": ".ingest-snapshot/preview/concepts/mapatlas-offline-pmtiles-package.md",
+      "sha256": "133ef56b0aa392b072fc916a4f151b04c4da3349b4443369864b97b3fe20f93b"
+    },
+    {
+      "path": ".ingest-snapshot/preview/index.md",
+      "sha256": "8f807088b09e527dd49771d6a122b9427ed56f2f22ffc5e3875aef1ccb39c90d"
+    },
+    {
+      "path": ".ingest-snapshot/preview/log.md",
+      "sha256": "faa9e21580af3cc129ef2ae094e1e062b6befa02b1b3bd450b63a5371254cd26"
+    },
+    {
+      "path": "plan.json",
+      "sha256": "283164a2714d65e106b3dce46ff500d64c854be58cf0fa14125b8ce31b5fb362"
+    },
+    {
+      "path": "preview/concepts/harness-neutral-specs-contract.md",
+      "sha256": "e9403b7d6ab9101259ddbc0dd68e7698992178f082baf0739997354610827e27"
+    },
+    {
+      "path": "preview/concepts/map-atlas-engine.md",
+      "sha256": "7c72e6207fc5ea928ea7e13f41ef983732b3ab61db91d704cc32a14db635ca9b"
+    },
+    {
+      "path": "preview/concepts/map-data-licensing.md",
+      "sha256": "73b6b539cfb06f4f6794632337155f694cf8ebf2c9110a8d5be73d33534b416e"
+    },
+    {
+      "path": "preview/concepts/mapatlas-offline-pmtiles-package.md",
+      "sha256": "133ef56b0aa392b072fc916a4f151b04c4da3349b4443369864b97b3fe20f93b"
+    },
+    {
+      "path": "preview/index.md",
+      "sha256": "8f807088b09e527dd49771d6a122b9427ed56f2f22ffc5e3875aef1ccb39c90d"
+    },
+    {
+      "path": "preview/log.md",
+      "sha256": "faa9e21580af3cc129ef2ae094e1e062b6befa02b1b3bd450b63a5371254cd26"
+    }
+  ],
+  "plan_sha256": "283164a2714d65e106b3dce46ff500d64c854be58cf0fa14125b8ce31b5fb362",
+  "wiki_target": {
+    "st_dev": 16777231,
+    "st_ino": 303248064,
+    "path": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout/wiki"
+  },
+  "planned_writes": [
+    {
+      "path": "concepts/mapatlas-offline-pmtiles-package.md",
+      "pre_sha256": null,
+      "post_sha256": "133ef56b0aa392b072fc916a4f151b04c4da3349b4443369864b97b3fe20f93b"
+    },
+    {
+      "path": "concepts/map-data-licensing.md",
+      "pre_sha256": "d43f813e098ee128a9be4c1d8836f8885932a17abef0034824df9254cdca86f1",
+      "post_sha256": "73b6b539cfb06f4f6794632337155f694cf8ebf2c9110a8d5be73d33534b416e"
+    },
+    {
+      "path": "concepts/harness-neutral-specs-contract.md",
+      "pre_sha256": "58814190f0ab1d4bc7f15002db4a319cf1ccb44d797fc3cfe8ec9da2a40a360e",
+      "post_sha256": "e9403b7d6ab9101259ddbc0dd68e7698992178f082baf0739997354610827e27"
+    },
+    {
+      "path": "concepts/map-atlas-engine.md",
+      "pre_sha256": "96d51eb3c99512e330626abe806e95d8c6b270975fe0db3867041c101743a753",
+      "post_sha256": "7c72e6207fc5ea928ea7e13f41ef983732b3ab61db91d704cc32a14db635ca9b"
+    },
+    {
+      "path": "index.md",
+      "pre_sha256": "0e368c1321fca103c9f9bd83af670b53f51612ddf209a236226f20be72c0cb70",
+      "post_sha256": "8c6ef3cbe4788a8cce35d30724413b24d059354b762aa7eb83fb08278a45234b"
+    },
+    {
+      "path": "log.md",
+      "pre_sha256": "8edb72fbf09006b8da8d212a739e65384ca5560fa5d51a37a911ba79e9ef05fc",
+      "post_sha256": "ceeea37d0523ad54362513ab3545f1a0455f9e181f2ec8efa7ead3100afea9c3"
+    },
+    {
+      "path": ".audit/proposals/2026-10-28-packages__offline-pmtiles__README/plan.json",
+      "pre_sha256": null,
+      "post_sha256": "283164a2714d65e106b3dce46ff500d64c854be58cf0fa14125b8ce31b5fb362"
+    },
+    {
+      "path": ".audit/proposals/2026-10-28-packages__offline-pmtiles__README/proposal.md",
+      "pre_sha256": null,
+      "post_sha256": "8f8758f88b20b68ce0c88b5bcd4bf0527ea37931f0a132bab802afaaf4a2a539"
+    }
+  ],
+  "written_paths": [
+    "concepts/mapatlas-offline-pmtiles-package.md",
+    "concepts/map-data-licensing.md",
+    "concepts/harness-neutral-specs-contract.md",
+    "concepts/map-atlas-engine.md",
+    "index.md",
+    "log.md",
+    ".audit/proposals/2026-10-28-packages__offline-pmtiles__README/plan.json",
+    ".audit/proposals/2026-10-28-packages__offline-pmtiles__README/proposal.md"
+  ],
+  "unguarded_paths": [],
+  "lock_wait_seconds": 2.1e-05,
+  "started_at": "2026-10-28T21:04:53Z",
+  "committing_at": "2026-10-28T21:04:53Z",
+  "committed_at": "2026-10-28T21:04:53Z",
+  "promoter": {
+    "package": "wiki-studio",
+    "version": "0.8.0",
+    "entry_point": "cli"
+  },
+  "actor": {
+    "name": null,
+    "source": "none"
+  }
+}
