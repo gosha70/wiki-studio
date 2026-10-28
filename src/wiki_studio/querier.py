@@ -44,6 +44,7 @@ from .proposal import Citation, IngestRequest, QueryAnswer, WikiPatchSet
 from .wiki_state import _read_text_or_empty, _tokenise
 
 if TYPE_CHECKING:
+    from .discovery import RankerConfig
     from .ingestor import Backend
     from .paths import WikiPaths
 
@@ -336,13 +337,28 @@ class DefaultQuerier:
     backend: Backend
     paths: WikiPaths
     max_pages: int = DEFAULT_MAX_QUERY_PAGES
+    # None means ``discovery.DEFAULT_MAX_CONTEXT_BYTES``, ``discovery.resolve_ranker()`` and
+    # ``discovery.DEFAULT_RANKER_CONFIG`` (0.8.0, FR-008).
+    max_bytes: int | None = None
+    ranker: str | None = None
+    ranker_config: RankerConfig | None = None
 
     def query(self, question: str) -> QueryAnswer:
-        index_md, pages_loaded, pages_content = _select_query_candidates(
-            paths=self.paths,
-            question=question,
+        # discovery imports this module (it wraps _select_query_candidates), so it is imported here.
+        from .discovery import DEFAULT_MAX_CONTEXT_BYTES, resolve_ranker, select, validate_max_pages, warn_selection
+
+        validate_max_pages(self.max_pages)
+        ranker, _source = resolve_ranker(self.ranker)
+        selection = select(
+            self.paths,
+            question,
             max_pages=self.max_pages,
+            max_bytes=DEFAULT_MAX_CONTEXT_BYTES if self.max_bytes is None else self.max_bytes,
+            ranker=ranker,
+            config=self.ranker_config,
         )
+        warn_selection(selection)
+        index_md, pages_loaded, pages_content = selection.index_md, selection.pages_loaded, selection.pages_content
         if not index_md:
             raise SourceMissingError(
                 f"{self.paths.wiki_label}/index.md not found; cannot run query (index is the navigation primitive)."
@@ -382,7 +398,7 @@ class DefaultQuerier:
             citations=answer.citations,
             pages_loaded=pages_loaded,
         )
-        self._append_query_log(question, answer)
+        self._append_query_log(question, answer, ranker=selection.ranker, bytes_loaded=selection.bytes_loaded)
         return answer
 
     def query_with_file_back(self, question: str) -> tuple[QueryAnswer, WikiPatchSet]:
@@ -436,8 +452,8 @@ class DefaultQuerier:
 
         return answer, patch
 
-    def _append_query_log(self, question: str, answer: QueryAnswer) -> None:
-        """Append one JSONL line to the query log (``paths.query_log``)."""
+    def _append_query_log(self, question: str, answer: QueryAnswer, *, ranker: str, bytes_loaded: int) -> None:
+        """Append one JSONL line to the query log (``paths.query_log``), with the ranker and bytes loaded."""
         log_path = self.paths.query_log
         try:
             log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -447,6 +463,8 @@ class DefaultQuerier:
                 "pages_loaded": answer.pages_loaded,
                 "citations": [{"page": c.page, "fragment": c.fragment} for c in answer.citations],
                 "answer_chars": len(answer.answer),
+                "ranker": ranker,
+                "bytes_loaded": bytes_loaded,
             }
             with log_path.open("a", encoding="utf-8") as f:
                 f.write(json.dumps(entry, ensure_ascii=False) + "\n")

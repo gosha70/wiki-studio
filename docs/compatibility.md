@@ -17,6 +17,27 @@ evidence for wiki-studio's side only, not for a pair.
 A row moves to "tested" only when a green run of the clean-install job is
 named here with its CI run.
 
+## MCP adapter
+
+The `wiki-studio[mcp]` extra (`wiki-studio-mcp`, `docs/mcp-adapter.md`)
+is tested against an MCP SDK version, a protocol version and, for the
+release evidence, a host at a pinned version. The evidence is one of two
+things:
+
+- a green `mcp-min` or `mcp-latest` CI run of the conformance suite
+  (`conformance/mcp/`), named by its run;
+- a recorded host run under `conformance/runs/` whose `check-host-run`
+  verdict passed.
+
+| Adapter (wiki-studio) | `mcp` | Protocol version | Host and version | Evidence | Status |
+|---|---|---|---|---|---|
+
+No row is recorded yet. The CI rows are added from the first green
+`mcp-min` and `mcp-latest` runs on `main`. The Claude Code row is added
+from the recorded host run in the 0.8.0 evidence PR. Kiro is documented
+but is not release-blocking. A combination with no green run or recorded
+run is not listed as tested.
+
 ## Capabilities each side needs
 
 `wiki-studio info --json` lists the capabilities of the installed build. A

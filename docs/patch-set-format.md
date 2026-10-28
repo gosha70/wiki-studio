@@ -192,7 +192,7 @@ attempts and dry runs persist no receipt.
 | `written_paths` | The paths written, filled at `committed`. |
 | `unguarded_paths` | The `update` paths applied without a `base_sha256` under `--allow-unguarded-updates` (compatibility mode with incomplete conflict protection); empty otherwise. |
 | `lock_wait_seconds`, `started_at`, `committing_at`, `committed_at` | Timing. |
-| `promoter` | Software identity only: `package`, `version`, `entry_point` (`cli` or `api`). |
+| `promoter` | Software identity only: `package`, `version`, `entry_point` (`cli`, `api`, or `mcp` from 0.8.0 for a promotion through the `wiki-studio-mcp` server's `promote` tool; an additive value, `receipt_version` stays `1`). |
 | `actor` | Optional (0.7.0, a minor-version addition like `base_sha256` in 0.6.0; `receipt_version` stays `1`). Who promoted, `{"name", "source"}` by the rule `plan.json`'s `proposer` follows: `promote --by NAME` or `api.promote(..., by=NAME)` is `flag`, else `WIKI_STUDIO_ACTOR` is `env`, else `{"name": null, "source": "none"}`. Never the OS user name. |
 
 ### Attribution is not authentication

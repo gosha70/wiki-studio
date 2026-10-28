@@ -3,7 +3,7 @@
 
 [tool.poetry]
 name = "wiki-studio"
-version = "0.7.0"
+version = "0.8.0"
 description = "Karpathy-pattern LLM wiki maintainer: ingest, promote, query, lint and audit a curated markdown knowledge base."
 authors = ["EGOGE <i.am.goga@gmail.com>"]
 license = "Apache-2.0"
@@ -32,6 +32,12 @@ include = [
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.14"
+# The one optional dependency (ADR-0003): the official MCP SDK behind the `mcp` extra,
+# imported only under wiki_studio/mcp_adapter/. The core stays standard-library only.
+mcp = { version = ">=2.3,<3", optional = true }
+
+[tool.poetry.extras]
+mcp = ["mcp"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.3"
@@ -39,9 +45,11 @@ pytest-cov = "^6.0"
 ruff = "^0.12"
 mypy = "^1.14"
 pip-audit = "^2.10.0"
+mcp = ">=2.3,<3"
 
 [tool.poetry.scripts]
 wiki-studio = "wiki_studio.cli:main"
+wiki-studio-mcp = "wiki_studio.mcp_adapter:main"
 
 [build-system]
 requires = ["poetry-core>=2.0.0"]
@@ -53,7 +61,7 @@ target-version = "py311"
 src = ["src", "tests"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["wiki_studio", "tests", "eval"]
+known-first-party = ["wiki_studio", "tests", "eval", "conformance"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "A", "SIM", "TCH"]
@@ -64,6 +72,11 @@ warn_unused_ignores = true
 warn_redundant_casts = true
 no_implicit_optional = true
 check_untyped_defs = true
+
+[[tool.mypy.overrides]]
+# The optional SDK (the `mcp` extra) may be absent where mypy runs; only mcp_adapter/server.py imports it.
+module = ["mcp", "mcp.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

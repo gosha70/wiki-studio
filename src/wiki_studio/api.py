@@ -43,7 +43,7 @@ import stat
 import warnings
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from .audit import append_ingest_log, build_log_record
 from .audit_flush import FlushResult, flush_state
@@ -51,6 +51,17 @@ from .audit_lint import validate_audit_tree
 from .backends import resolve_backend
 from .backends.copilot_cli import CopilotCliBackend
 from .contract import InfoResult, check_write_contract, describe
+from .discovery import (
+    DEFAULT_MAX_CONTEXT_BYTES,
+    DEFAULT_RANKER,
+    IneligiblePage,
+    OmittedPage,
+    RankerConfig,
+    describe_discovery,
+    resolve_ranker,
+    select,
+    validate_max_pages,
+)
 from .errors import ContractViolationError, DriftWarning, OutputWriteError, PathOutsideRootError, SourceMissingError
 from .findings import Finding, FindingsResult
 from .findings import findings as _findings
@@ -65,6 +76,7 @@ from .promoter import (
     LOG_NAME,
     PROMOTE_ENTRY_POINT_API,
     PROMOTE_ENTRY_POINT_CLI,
+    PROMOTE_ENTRY_POINT_MCP,
     ApproveResult,
     InitResult,
     PromoteResult,
@@ -88,7 +100,7 @@ from .proposal import (
 )
 from .proposal import assign_page_ids as _assign_page_ids
 from .prose_lint import run_prose_lint
-from .querier import DEFAULT_MAX_QUERY_PAGES, DefaultQuerier, _select_query_candidates
+from .querier import DEFAULT_MAX_QUERY_PAGES, DefaultQuerier
 from .review import ReviewState, review_states
 from .wiki_state import read_page_content
 from .wikilock import WikiLock
@@ -104,6 +116,7 @@ __all__ = [
     "ALLOW_OUT_OF_REPO_PROMOTE_HINT",
     "PROMOTE_ENTRY_POINT_API",
     "PROMOTE_ENTRY_POINT_CLI",
+    "PROMOTE_ENTRY_POINT_MCP",
     "PROPOSE_BACKEND",
     "ApproveResult",
     "AuditFlushResult",
@@ -119,6 +132,9 @@ __all__ = [
     "PageEdit",
     "FindResult",
     "FoundPage",
+    "IneligiblePage",
+    "OmittedPage",
+    "RankerConfig",
     "InfoResult",
     "InitResult",
     "PromoteResult",
@@ -133,6 +149,7 @@ __all__ = [
     "find",
     "findings",
     "backend_display_name",
+    "check_proposal_name",
     "info",
     "ingest",
     "init",
@@ -563,6 +580,19 @@ def _ingest_multi(
 # ── propose ───────────────────────────────────────────────────
 
 
+def check_proposal_name(name: str) -> None:
+    """Raise ``ValueError`` unless ``name`` is one path component :func:`propose` accepts (0.8.0).
+
+    ASCII letters, digits, ``.``, ``_`` and ``-``, not starting with ``.``: so
+    ``<proposals_dir>/<name>`` never leaves the proposals directory.
+    """
+    if not isinstance(name, str) or not _PROPOSAL_NAME_RE.fullmatch(name):
+        raise ValueError(
+            "name must be one path component of ASCII letters, digits, '.', '_' and '-' "
+            f"not starting with '.', got {name!r}"
+        )
+
+
 def propose(
     edits: list[PageEdit],
     paths: WikiPaths,
@@ -616,11 +646,7 @@ def propose(
     reserved for the approval record (``approved``, ``approved_by``,
     ``approval``, ``review_state``).
     """
-    if not _PROPOSAL_NAME_RE.fullmatch(name):
-        raise ValueError(
-            "name must be one path component of ASCII letters, digits, '.', '_' and '-' "
-            f"not starting with '.', got {name!r}"
-        )
+    check_proposal_name(name)
     # The knowledge contract (FR-009, FR-011): refused on a newer or malformed
     # manifest and on governed drift; managed drift is a DriftWarning, now.
     for message in check_write_contract(paths):
@@ -919,10 +945,13 @@ def info(paths: WikiPaths) -> InfoResult:
     ``manifest`` (``present`` with its version, ``wiki_id``, policy and mode,
     or ``missing`` for a legacy wiki with the instruction to run ``init``).
     ``warnings`` carries the drift message ``propose`` and ``promote`` give.
-    A host checks this before it writes. Raises ``ContractViolationError``
-    (exit 4) for a malformed or newer manifest and a symlinked override.
+    A host checks this before it writes. ``discovery`` (0.8.0) says whether
+    this Python's SQLite has FTS5, the default ranker and where it came from,
+    and the live ranker configuration hash. Raises ``ContractViolationError``
+    (exit 4) for a malformed or newer manifest and a symlinked override, and
+    ``ValueError`` when ``WIKI_STUDIO_RANKER`` names no ranker.
     """
-    return describe(paths)
+    return replace(describe(paths), discovery=describe_discovery(paths))
 
 
 # ── propose from a directory of agent-written files ───────────
@@ -1006,20 +1035,66 @@ def _read_base_manifest(root: Path) -> dict[str, str]:
 
 @dataclass(frozen=True)
 class FoundPage:
-    """One page the querier would load for a question: wiki-relative path, file and title."""
+    """One page the querier would load for a question: wiki-relative path, file, title, sha256 and byte count.
+
+    ``sha256`` and ``bytes`` describe the bytes read in this call (0.8.0).
+    """
 
     path: str
     file: Path
     title: str
+    sha256: str = ""
+    bytes: int = 0
 
 
 @dataclass(frozen=True)
 class FindResult:
-    """The pages ``query`` would put in front of a model, in order, without calling one."""
+    """The pages ``query`` would put in front of a model, in order, without calling one.
+
+    0.8.0 adds how they were chosen: the ``ranker`` that ran (``index-first``
+    when ``fts5`` fell back, with ``fallback_reason``), ``bytes_loaded``
+    (``index.md`` plus the pages) against ``max_bytes``, the ranked pages
+    ``omitted`` for the budget, the index-linked pages that are
+    ``ineligible`` and why, the ``ranker_config_hash`` of the ``fts5``
+    configuration (None for ``index-first``) and ``warnings``.
+    """
 
     question: str
     index: Path
     pages: tuple[FoundPage, ...]
+    ranker: str = DEFAULT_RANKER
+    fallback_reason: str | None = None
+    bytes_loaded: int = 0
+    max_bytes: int = DEFAULT_MAX_CONTEXT_BYTES
+    omitted: tuple[OmittedPage, ...] = ()
+    ineligible: tuple[IneligiblePage, ...] = ()
+    ranker_config_hash: str | None = None
+    warnings: tuple[str, ...] = ()
+
+    def as_dict(self, paths: WikiPaths) -> dict[str, Any]:
+        """The ``find --json`` object (FR-009), files relative to ``paths.root``; the MCP ``find`` tool returns it."""
+        return {
+            "question": self.question,
+            "index": paths.relative_to_root(self.index),
+            "pages": [
+                {
+                    "path": p.path,
+                    "file": paths.relative_to_root(p.file),
+                    "title": p.title,
+                    "sha256": p.sha256,
+                    "bytes": p.bytes,
+                }
+                for p in self.pages
+            ],
+            "ranker": self.ranker,
+            "fallback_reason": self.fallback_reason,
+            "bytes_loaded": self.bytes_loaded,
+            "max_bytes": self.max_bytes,
+            "ranker_config_hash": self.ranker_config_hash,
+            "omitted": [{"path": o.path, "bytes": o.bytes} for o in self.omitted],
+            "ineligible": [{"path": i.path, "reason": i.reason} for i in self.ineligible],
+            "warnings": list(self.warnings),
+        }
 
 
 def _page_title(text: str, fallback: str) -> str:
@@ -1035,24 +1110,56 @@ def _page_title(text: str, fallback: str) -> str:
     return fallback
 
 
-def find(question: str, paths: WikiPaths, *, max_pages: int = DEFAULT_MAX_QUERY_PAGES) -> FindResult:
-    """Run only the index-first page selection of :func:`query`: no backend, no query log.
+def find(
+    question: str,
+    paths: WikiPaths,
+    *,
+    max_pages: int = DEFAULT_MAX_QUERY_PAGES,
+    max_bytes: int = DEFAULT_MAX_CONTEXT_BYTES,
+    ranker: str | None = None,
+    ranker_config: RankerConfig | None = None,
+) -> FindResult:
+    """Run only the page selection of :func:`query`: no backend, no query log, nothing written.
 
     The result is what a model would be given to read: ``index.md`` plus up to
-    ``max_pages`` index-linked pages ranked by word overlap with the question.
-    An empty ``pages`` means no index-linked page shares a word with it. Raises
-    ``SourceMissingError`` (exit 5) when the wiki has no ``index.md``.
+    ``max_pages`` eligible index-linked pages within ``max_bytes``, ranked by
+    ``ranker`` (``fts5`` or ``index-first``; None means ``WIKI_STUDIO_RANKER``,
+    then the default). ``ranker_config`` (None: the live default) configures
+    ``fts5``. An empty ``pages`` means no eligible page matched. Raises
+    ``SourceMissingError`` (exit 5) when the wiki has no ``index.md`` and
+    ``ValueError`` for an unknown ranker, a ``max_pages`` outside 1..5 or a
+    ``max_bytes`` that is not a positive integer.
     """
-    index_md, selected, contents = _select_query_candidates(paths, question, max_pages)
-    if not index_md:
+    validate_max_pages(max_pages)
+    resolved, _source = resolve_ranker(ranker)
+    selection = select(paths, question, max_pages=max_pages, max_bytes=max_bytes, ranker=resolved, config=ranker_config)
+    if not selection.index_md:
         raise SourceMissingError(
             f"{paths.wiki_label}/index.md not found; nothing to find. Run `wiki-studio init` to create the wiki."
         )
     pages = tuple(
-        FoundPage(path=rel, file=paths.wiki_dir / rel, title=_page_title(contents[rel], Path(rel).stem))
-        for rel in selected
+        FoundPage(
+            path=page.path,
+            file=paths.wiki_dir / page.path,
+            title=_page_title(page.text, Path(page.path).stem),
+            sha256=page.sha256,
+            bytes=page.bytes,
+        )
+        for page in selection.pages
     )
-    return FindResult(question=question, index=paths.wiki_dir / INDEX_NAME, pages=pages)
+    return FindResult(
+        question=question,
+        index=paths.wiki_dir / INDEX_NAME,
+        pages=pages,
+        ranker=selection.ranker,
+        fallback_reason=selection.fallback_reason,
+        bytes_loaded=selection.bytes_loaded,
+        max_bytes=selection.max_bytes,
+        omitted=selection.omitted,
+        ineligible=selection.ineligible,
+        ranker_config_hash=selection.ranker_config_hash,
+        warnings=selection.warnings,
+    )
 
 
 # ── query ─────────────────────────────────────────────────────
@@ -1067,13 +1174,27 @@ def query(
     max_pages: int | None = None,
     output_dir: Path | None = None,
     redact_output: bool = True,
+    max_bytes: int = DEFAULT_MAX_CONTEXT_BYTES,
+    ranker: str | None = None,
+    ranker_config: RankerConfig | None = None,
 ) -> QueryResult:
-    """Answer ``question`` index-first over the wiki; with ``file_back`` also write a patch-set for the answer."""
+    """Answer ``question`` index-first over the wiki; with ``file_back`` also write a patch-set for the answer.
+
+    Pages are selected as :func:`find` selects them (``max_pages`` in 1..5,
+    ``max_bytes``, ``ranker``, ``ranker_config``); a rejected value is a
+    ``ValueError`` before any backend is resolved.
+    """
+    max_pages = DEFAULT_MAX_QUERY_PAGES if max_pages is None else max_pages
+    validate_max_pages(max_pages)
+    resolve_ranker(ranker)
     resolved = prepare_backend(backend, paths, redact_output=redact_output)
-    querier = (
-        DefaultQuerier(backend=resolved, paths=paths)
-        if max_pages is None
-        else DefaultQuerier(resolved, paths, max_pages)
+    querier = DefaultQuerier(
+        backend=resolved,
+        paths=paths,
+        max_pages=max_pages,
+        max_bytes=max_bytes,
+        ranker=ranker,
+        ranker_config=ranker_config,
     )
     if not file_back:
         return QueryResult(answer=querier.query(question), patch=None, file_back_dir=None)

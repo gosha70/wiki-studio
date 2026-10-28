@@ -1,0 +1,18 @@
+{
+  "manifest_version": 1,
+  "wiki_id": "6f1c0e52-8a3d-4b7e-9c21-5d0a7e3f4b18",
+  "schema": {
+    "id": "wiki-studio/page-schema",
+    "version": 2
+  },
+  "schema_fingerprint": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "policy": {
+    "approval_required": false,
+    "approver_required": false,
+    "auto_approve_on_promote": false
+  },
+  "created_by": {
+    "package": "wiki-studio",
+    "version": "0.8.0"
+  }
+}

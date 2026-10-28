@@ -150,9 +150,13 @@ writes on failure. A bridge therefore needs no rollback of its own:
 - **The scaffold comes from `api.init`.** It creates `index.md` and
   `log.md` only when absent and never overwrites; a bridge should call it
   rather than write the scaffold itself.
-- **Ignore the lock file.** The lock is
-  `.<wiki-dir-name>.wiki-studio.lock` beside the wiki directory; add it to
-  `.gitignore` where the wiki lives in a git checkout.
+- **Ignore the lock file and the search cache.** The lock is
+  `.<wiki-dir-name>.wiki-studio.lock` beside the wiki directory and, from
+  0.8.0, the `fts5` ranker's search cache is
+  `.<wiki-dir-name>.wiki-studio.search.sqlite` beside it. Where the wiki
+  lives in a git checkout, one `.gitignore` pattern covers both:
+  `.<wiki-dir-name>.wiki-studio.*`. The cache is derived data that is
+  refreshed on every `fts5` call; deleting it is a safe reset.
 
 #### Since wiki-studio 0.7.0: approval records and review state
 

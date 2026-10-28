@@ -128,6 +128,25 @@ class TestFrontmatter(_WikiCase):
         self.assertEqual(lint_wiki(self.wiki), [])
 
 
+class TestUtf8Rule(_WikiCase):
+    """0.8.0 (FR-003): a page whose bytes are not UTF-8 is one violation and its other checks are skipped."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        _clean_wiki(self.wiki)
+
+    def test_one_violation_with_the_reason_and_offset(self) -> None:
+        # No frontmatter and a broken link: neither is reported once the bytes are not UTF-8.
+        (self.wiki / "concepts" / "alpha.md").write_bytes(b"# Alpha \xe9t\xe9\n\nSee [gone](gone.md).\n")
+        self.assertEqual(
+            lint_wiki(self.wiki), ["concepts/alpha.md: not valid UTF-8 (invalid continuation byte at byte 8)"]
+        )
+
+    def test_a_valid_utf8_page_is_untouched_by_the_rule(self) -> None:
+        _page(self.wiki, "concepts/alpha.md", page_type="concept", body="Caf\u00e9 \u2014 see [beta](beta.md).\n")
+        self.assertEqual(lint_wiki(self.wiki), [])
+
+
 class TestPageTypeSlugAndPlacement(_WikiCase):
     def setUp(self) -> None:
         super().setUp()

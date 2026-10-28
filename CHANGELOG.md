@@ -6,6 +6,212 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-10-27 (build; tagged after the evidence PR)
+
+Discovery and portability, Release C of `docs/roadmap.md` (issue #38). A
+second ranker, FTS5 with bm25 over the same index-linked candidates, runs
+behind the index-first workflow with a byte budget and a rebuildable cache
+outside the wiki. A preregistered held-out measurement will decide the
+default ranker. An optional MCP adapter gives MCP hosts the curation loop
+with the CLI's boundary, and a conformance suite checks it. Exit codes 0
+and 2..11 are unchanged; the `api` changes are additive with defaults; the
+page schema does not change (ADR-0002 is untouched); the receipt stays
+version 1. Release C is not declared closed by this entry; see Limitations.
+
+### Added
+
+- Ranked discovery with a context budget (0.8.0, US1). `find` and `query`
+  gain `--ranker {fts5,index-first}` (or `WIKI_STUDIO_RANKER`) and
+  `--max-bytes N`. `fts5` ranks the eligible index-linked pages by bm25 over
+  SQLite FTS5 (path words, title, headings, body), ties by index order;
+  `index-first` is the 0.7.0 selector and stays the default. Without FTS5 in
+  the runtime's SQLite, `fts5` falls back to `index-first` with one stderr
+  notice and exit 0. A byte budget (default 65,536) over `index.md` plus the
+  pages skips a page that does not fit and tries the next. Superseded,
+  missing, non-regular and non-UTF-8 pages are never selected and are
+  reported as `ineligible`. `api.find` and `api.query` gain `max_bytes`,
+  `ranker` (and `api.find` `ranker_config`); `FindResult` gains `ranker`,
+  `fallback_reason`, `bytes_loaded`, `max_bytes`, `omitted`, `ineligible`,
+  `ranker_config_hash` and `warnings`; `FoundPage` gains `sha256` and
+  `bytes`; `find --json` prints them. The query log records `ranker` and
+  `bytes_loaded`. `info` gains a `discovery` key and the capabilities
+  `ranked-discovery` and `context-budget`. See `docs/knowledge-contract.md`.
+- The rebuildable search cache (0.8.0, US2). The `fts5` ranker keeps its
+  FTS5 table in `<wiki-parent>/.<wiki-dir-name>.wiki-studio.search.sqlite`,
+  beside the lock file and never inside the wiki, overridable with
+  `--search-cache` (a new common flag) or `WIKI_STUDIO_SEARCH_CACHE`; a path
+  inside the wiki is refused (exit 1). Every call rereads and hashes the
+  eligible pages and diffs them against the cache's content manifest in one
+  transaction, so the cached ranking equals a fresh one after any edit,
+  checkout, rename or delete. A cache built for another wiki, format or
+  ranker configuration is rebuilt; a corrupt one is removed and rebuilt; one
+  that cannot be used safely (a symlink, an unwritable or read-only
+  directory, a lock held past five seconds) makes that call rank in memory
+  with one warning, and `find` and `query` still exit 0. The file is created
+  owner-only (`0o600`). `WikiPaths` gains `search_cache` and
+  `search_cache_file()`; `info.discovery.cache` reports
+  `{path, state: present | missing | unusable, reason}`.
+- Discovery evidence (0.8.0, US3). `python -m eval.navigation.discovery run`
+  measures both rankers over a frozen fixture, with the eligible page count
+  and the random baseline beside every hit rate, absent-question behaviour,
+  context size and latency (cached beside in-memory); `tune` and `decide`
+  implement the closed tuning grid and the default-ranker rule. Run 3's
+  untuned development-set result (`eval/navigation/run3/results-untuned.json`)
+  is committed before any tuning. The held-out set (`eval/navigation/heldout/`,
+  the eight mapatlas READMEs at a pinned commit) and its preregistered
+  protocol (`heldout/protocol.md`, enforced by `heldout_protocol.py`) are in
+  place; the held-out run and the basis of the default ranker are pending.
+  Runs 1 and 2 are pinned by sha256 and unchanged.
+- The MCP adapter as an extra (0.8.0, US4). `pip install 'wiki-studio[mcp]'`
+  adds the first optional dependency, the official MCP SDK
+  (`mcp>=2.3,<3`), and the `wiki-studio-mcp` stdio server.
+  - It serves exactly eight tools: `find`, `read_page`, `propose`,
+    `promote`, `lint`, `info`, `findings` and `review_state`.
+  - The wiki, the actor (`--by`) and the default ranker are fixed at launch.
+  - No tool takes a root, directory, backend, actor or escape-hatch
+    argument.
+  - `--disable-tool` removes tools; `--disable-tool promote` is
+    propose-only mode.
+  - `propose` assigns a `page_id` to every create.
+  - `promote` takes a one-component proposal name and records
+    `promoter.entry_point: "mcp"`. It honours `auto_approve_on_promote` and
+    says so in a warning.
+  - `lint` never reaches a model.
+  - Errors are `{error, exit_code, message}` with the CLI's exit codes.
+  - `--trace PATH` appends one metadata line per request.
+
+  Without the extra, `wiki-studio-mcp` prints the install instruction and
+  exits 2. The base install still imports only the standard library, and CI
+  proves it on the built wheel. Two library additions:
+  `api.PROMOTE_ENTRY_POINT_MCP` and `api.check_proposal_name`.
+  `FindResult.as_dict(paths)` returns the `find --json` object. Docs:
+  `docs/mcp-adapter.md`; decision record: ADR-0003.
+- The MCP conformance suite (0.8.0, US5). `python -m conformance.mcp.run
+  --server-cmd "COMMAND"` drives any MCP server over stdio through the
+  SDK's client against a fixture wiki (`conformance/mcp/fixture/`, a
+  default-policy and an `auto_approve_on_promote` variant). It runs twelve
+  named cases once per tested protocol version: `2025-06-18` and
+  `2025-11-25` by handshake, `2026-07-28` by the per-request envelope. It
+  imports nothing from `wiki_studio`. `check-host-run --run DIR` applies
+  cases 2-9 to a recorded host run's trace and end state; the fixed scenario
+  is `conformance/mcp/scenario.md` and the run layout
+  `conformance/runs/README.md`. CI gains the blocking `mcp-min`
+  (`mcp==2.3.0`) and `mcp-latest` (newest `mcp<3`) jobs.
+  `docs/compatibility.md` gains an MCP table.
+
+### Changed
+
+- A wiki page that is not valid UTF-8 is a structural lint violation (0.8.0,
+  FR-003), reported once as `<path>: not valid UTF-8 (<reason> at byte <n>)`.
+  Before, such a page read as empty in `find`, `query` and the health and
+  prose checks and could crash `lint --health`.
+- The 0.7.0 page selector is now named the `index-first` ranker. It is
+  unchanged, and it stays the default.
+- The default ranker is `index-first`. Its basis is pending the held-out
+  run: the evidence PR records the held-out measurement and applies the rule
+  of FR-029 (FTS5 becomes the default only if it is no worse than
+  `index-first` at hit at 1 and at hit at 5 on the held-out set, with at
+  least 15 held-out questions with a gold page and at least ten eligible
+  pages), and this entry then states which basis the default rests on. Until
+  then `fts5` is opt-in (`--ranker fts5`, `WIKI_STUDIO_RANKER=fts5`, the MCP
+  server's `--ranker`), untuned, with the development-set result
+  `eval/navigation/run3/results-untuned.json`.
+- The receipt's `promoter.entry_point` may now be `mcp` (0.8.0, FR-039), an
+  additive value; `receipt_version` stays 1.
+
+### Fixed
+
+- PR #56 review (0.8.0, before the tag): discovery reads `index.md` and every
+  candidate page from a descriptor opened with `O_NOFOLLOW`, so a page swapped
+  for a symlink after the link check is never read, and two spellings of one
+  index link load the page once; `find`, `query`, `api.find` and `api.query`
+  refuse `max_pages` outside 1..5, and `api.query` and `DefaultQuerier` accept
+  `ranker_config`; the search cache marks itself with an
+  SQLite `application_id`, and only a file that is empty or carries it is ever
+  rebuilt, removed or tightened: a text file or another program's database
+  named by `--search-cache` is left untouched and the call ranks in memory
+  with a warning; an existing cache (and its journal) wider than owner-only is
+  tightened to `0600` before any page text is written, and one that cannot be
+  tightened is not used; the MCP server passes its launch
+  `--by` to `propose` and `promote`, refuses a `--proposals-dir` outside the
+  root at launch (exit 2), and opens `--trace` with `O_NOFOLLOW` so a symlink
+  can never route the trace into the wiki; each `tools/call` trace line now
+  carries `arg_keys`, `result_keys` and a content-free `summary`, and
+  `check-host-run` labels each case `proved`, `proved-by-end-state` or
+  `not-provable-from-host-run (protocol suite)`; the held-out run verifies every
+  input first, its own corpus included (never the shared development
+  corpus), then writes an immutable `run-attempt.json` and moves to
+  `run-started` before computing; a marker with no `results.json` is an
+  interrupted attempt whatever the manifest says, so
+  an interrupted attempt can only be recovered as a labelled post-hoc run, and
+  `pin` and `ingest` refuse a dirty tree or a source that differs from the
+  pins; `poetry.lock` locks the `mcp` extra and ADR-0003's licence table is
+  read from it. Discovery and the 0.7.0 selector's page reader open pages
+  with `O_NONBLOCK` and judge the kind on the descriptor, so a FIFO linked
+  from `index.md` is skipped instead of hanging `find`. The held-out set is
+  recognised by content as well as by its manifest field or path (a fixture
+  whose questions, gold or corpus files hash to the committed manifest's
+  values runs under the held-out guards whatever its own manifest says); the
+  one held-out run refuses a `run3/ranker-config.json` that `run3/tuning.json`
+  does not record as chosen, so the configuration is `tune`'s; the held-out
+  pin test pins every tracked file under `wiki/`, `proposals/` and `corpus/`
+  plus `questions.json` and `gold.json`, and never the manifest or the results
+  the run writes; and a missing stop list, questions or gold file is a
+  refusal (exit 1) naming the file, not a traceback.
+- PR #56 review, second pass (0.8.0, before the tag): the trace records only
+  known values: a `tools/call` to a name outside the eight tools and a request
+  method outside the protocol's are traced as `unknown`, argument and result
+  keys outside the tool's schema and `tools/list` names outside the eight are
+  counted in `unknown_arg_keys`, `unknown_result_keys` and
+  `unknown_tool_names` and never copied, and an error summary names the error
+  class from wiki-studio's own set; the conformance suite requires the SDK's
+  unknown-tool error for `promote` in propose-only mode, fails case 1 for
+  every version when the server negotiated none of the tested versions (the
+  suite exited 0 before), and the host scenario gains a stale update and a
+  `promote` of `../x`, from whose refusals `check-host-run` proves cases 7
+  and 8 instead of skipping them; `check-host-run` reports a run as passed,
+  and exits 0, only when every case 2-9 is proved, so a skipped scenario
+  step never yields exit evidence.
+
+### Upgrade notes
+
+- 0.8.0 adds a structural rule: every wiki page must be valid UTF-8. A wiki
+  that holds a page that is not will fail `lint` and refuse every `promote`
+  until the page is fixed. The error names the page. Remedy: re-encode the
+  page as UTF-8, or remove it and its index entry. Run `wiki-studio lint`
+  before upgrading a wiki's tooling to see whether any page is affected.
+- Where the wiki lives in a git checkout, ignore the lock and the search
+  cache with one `.gitignore` pattern, `.<wiki-dir-name>.wiki-studio.*`
+  (`.wiki.wiki-studio.*` for the default `knowledge/wiki`). To reset the
+  search cache, delete the file; the next `fts5` call rebuilds it.
+- No change is needed for `api` callers who pass none of the new keywords:
+  every new parameter is keyword-only with a default. Under the default
+  `index-first` ranker `find` and `query` select as 0.7.0 did, except that
+  superseded and non-UTF-8 pages are never selected and a page that does
+  not fit the 65,536-byte budget is skipped.
+
+### Limitations
+
+- The discovery evidence is small: small question sets; questions written
+  by the author's tooling; a held-out ingest by one model in one attempt.
+  No claim of superiority over other products is made.
+- The basis of the default ranker is pending the held-out run (see
+  Changed). The held-out questions, ingest, freeze, tuning and the one
+  held-out run are owner-run steps in the evidence PR
+  (`eval/navigation/heldout/protocol.md`); the build performed none of
+  them.
+- The MCP host run is not recorded yet. Until a recorded Claude Code run
+  passes `check-host-run`, the `mcp` extra is a preview and its evidence is
+  the protocol-level conformance suite in CI. Kiro is documented and not
+  release-blocking.
+- No scope was cut by the build. The circuit breaker's week checkpoints are
+  applied by the owner at the build-PR review; a cut would be named here.
+- Release C is not declared closed. It closes only when all three
+  exit-evidence items exist on the 0.8.0 tag: versioned retrieval results
+  on declared fixtures including the held-out run, the cache recovery
+  tests, and one non-memkernel runtime passing the adapter conformance
+  suite in a recorded host run.
+
 ## [0.7.0] — 2026-10-27
 
 Governed curation, wiki-studio's half of Release B in `docs/roadmap.md`

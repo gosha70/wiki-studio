@@ -88,7 +88,8 @@ def _intra_wiki_links_from(page: Path, wiki_dir: Path) -> list[str]:
     out: list[str] = []
     try:
         text = page.read_text(encoding="utf-8")
-    except OSError:
+    except (OSError, UnicodeDecodeError):
+        # A non-UTF-8 page is the structural linter's violation (0.8.0, FR-003); it links nowhere here.
         return out
     page_dir = page.parent
     for m in _MD_LINK_RE.finditer(text):

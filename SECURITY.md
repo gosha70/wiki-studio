@@ -4,8 +4,8 @@
 
 | Version | Supported |
 |---|---|
-| 0.7.x | yes |
-| 0.6.x, 0.5.x, 0.4.x, 0.3.x, 0.2.x, 0.1.x | no (upgrade to 0.7; the library API is a superset, see the upgrade notes in `CHANGELOG.md`) |
+| 0.8.x | yes |
+| 0.7.x, 0.6.x, 0.5.x, 0.4.x, 0.3.x, 0.2.x, 0.1.x | no (upgrade to 0.8; the library API is a superset, see the upgrade notes in `CHANGELOG.md`) |
 
 Fixes are released as patch versions of the latest minor line.
 
@@ -22,7 +22,8 @@ advisory unless you ask otherwise.
 
 ## What to look at
 
-- `wiki-studio` has no runtime dependencies; the LLM backends are copilot CLIs
+- `wiki-studio` has no runtime dependencies (the optional `mcp` extra adds
+  the official MCP SDK for `wiki-studio-mcp` only); the LLM backends are copilot CLIs
   the tool starts as subprocesses with the rendered prompt as an argument.
   Prompts contain the source being ingested and wiki pages, so backend
   stderr may echo them; error messages therefore carry only a redacted
@@ -58,6 +59,29 @@ advisory unless you ask otherwise.
   filesystems are out of scope.
 - `promote` is the only code path that writes into the wiki, and
   `audit-flush` is the only one that runs `git commit`.
+- The `fts5` ranker's search cache (from 0.8.0) holds a full copy of the
+  text of every eligible page in an SQLite file beside the wiki,
+  `<wiki-parent>/.<wiki-dir-name>.wiki-studio.search.sqlite` by default. A
+  path inside the wiki is refused. The file is created with
+  `O_CREAT | O_EXCL | O_NOFOLLOW` and mode `0o600`, so the copy is readable
+  by its owner only (on Windows the directory's default ACL applies); an
+  existing cache or journal that is wider is tightened to `0o600` before
+  any page text is written, and one that cannot be tightened is not used
+  for that call. Only a file that is empty or carries the cache's own SQLite
+  `application_id` is ever rebuilt, removed or tightened; an unrelated file
+  named as the cache is left untouched and the call ranks in memory. A wider
+  directory still exposes the file's existence and
+  size. The cache
+  only ranks: the text a prompt carries and citations are checked against is
+  read from the wiki in that call, never from the cache. SQLite opens paths
+  itself and follows symlinks, so wiki-studio checks the path and its
+  directory with `lstat` before every open and ranks in memory, without
+  opening, reading or removing anything, when either is a symlink; a corrupt
+  cache is removed only when it is a regular file. The remaining
+  check-then-open window lies outside the wiki boundary and touches only
+  derived data: a process that can swap the cache path for a symlink in that
+  window can already write the directory beside the wiki. `info` opens the
+  cache read-only, if at all.
 - `--by NAME` and `WIKI_STUDIO_ACTOR` are attribution, not authentication.
   The name recorded as `plan.json`'s `proposer` and the receipt's `actor`
   is whatever the caller supplied; nothing verifies it, and the OS user
@@ -67,6 +91,27 @@ advisory unless you ask otherwise.
   the proposals directory can change them. A way to forge or alter these
   records is not a vulnerability; a way to make wiki-studio record a name
   the caller did not supply is.
+- The optional MCP adapter (`wiki-studio-mcp`, the `mcp` extra, from 0.8.0)
+  is the agent surface. It serves exactly eight tools over stdio: `find`,
+  `read_page`, `propose`, `promote`, `lint`, `info`, `findings` and
+  `review_state`. `approve`, `ingest`, `query`, `audit-flush` and `init` are
+  not tools, and no tool takes a root, directory, backend, actor or
+  escape-hatch argument: the layout, the actor and the default ranker are
+  fixed when the host launches the server, the proposals directory must lie
+  inside the root (a launch error otherwise, so `promote` never needs
+  `allow_out_of_repo`), and client-advertised MCP roots are ignored.
+  `--disable-tool` only removes tools (`--disable-tool promote`
+  is propose-only mode). The actor is the launch `--by` or
+  `WIKI_STUDIO_ACTOR`, so an agent cannot record a person's name as proposer
+  or promoter; it is attribution, not authentication. On a wiki whose policy
+  sets `auto_approve_on_promote`, an agent's promote approves its own
+  proposal: that is the host's configured policy, and the result says so in
+  a warning naming the policy and the server's actor. No tool reaches a
+  model (`lint` runs without a backend). Error results carry the
+  wiki-studio exception class, its exit code and its message; any other
+  exception is reported by class name only. The opt-in trace (`--trace`)
+  records request metadata only, never page content, questions, edits or
+  paths, and must lie outside the wiki.
 
 Anything that lets a source file, a backend response or a proposal
 directory write outside the wiki and proposals directories, run a command,

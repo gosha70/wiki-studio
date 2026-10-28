@@ -1,0 +1,65 @@
+{
+  "set": "heldout",
+  "protocol": "eval/navigation/heldout/protocol.md (specs/wiki-studio-0-8-0, FR-022..FR-030)",
+  "corpus_repo": "https://github.com/gosha70/mapatlas",
+  "corpus_commit": "7c3a8de609fb8e2173a74a884afdc4029ff18ca5",
+  "corpus_license": "Apache-2.0",
+  "corpus_files": [
+    {
+      "path": "README.md",
+      "corpus_file": "README.md",
+      "sha256": "a063f0d253be8ff704541b0dc4d56a962ccb5bb3dc725a7a769a457013fa020d",
+      "bytes": 5347
+    },
+    {
+      "path": "packages/core/README.md",
+      "corpus_file": "packages__core__README.md",
+      "sha256": "ed7022f683dde23afa3d51a8aee522ce92941820e0a76081acbf016675a00507",
+      "bytes": 3373
+    },
+    {
+      "path": "packages/maplibre/README.md",
+      "corpus_file": "packages__maplibre__README.md",
+      "sha256": "3bdc61071ff4e2d4a144ff6567adfcfcbfc0e53b15b4f60e66639852ac4a357e",
+      "bytes": 5976
+    },
+    {
+      "path": "packages/offline-pmtiles/README.md",
+      "corpus_file": "packages__offline-pmtiles__README.md",
+      "sha256": "d917f41c629d43d137bd5f0066bfff2fbfaad59c5a348164f725ad1905e04f1f",
+      "bytes": 4346
+    },
+    {
+      "path": "packages/react/README.md",
+      "corpus_file": "packages__react__README.md",
+      "sha256": "69b28a42be315d204a680d49984f73557aab61665f75e6de1cb707b18fa0e430",
+      "bytes": 2807
+    },
+    {
+      "path": "packages/recorder-web/README.md",
+      "corpus_file": "packages__recorder-web__README.md",
+      "sha256": "c492f7f3aede097d084bcdef5e2c6845850e4d768b4c2307dd0236f727181950",
+      "bytes": 2847
+    },
+    {
+      "path": "packages/storage-idb/README.md",
+      "corpus_file": "packages__storage-idb__README.md",
+      "sha256": "2687ffd97fddfd116e1298e95066c52947cbe405fda12694759d5288f715196c",
+      "bytes": 2492
+    },
+    {
+      "path": "apps/demo/README.md",
+      "corpus_file": "apps__demo__README.md",
+      "sha256": "2097b97a736e1adbe1421140148670568c2667fd8d0721b03920bd6c00ddfbbc",
+      "bytes": 3366
+    }
+  ],
+  "corpus_bytes": 30554,
+  "state": "sources",
+  "history": [
+    {
+      "state": "sources",
+      "at": "2026-10-27T20:36:31+00:00"
+    }
+  ]
+}

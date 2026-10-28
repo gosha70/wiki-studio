@@ -32,7 +32,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Protocol
 
 from .errors import REASON_LOCK_TIMEOUT, PromoteApplyError
-from .paths import DEFAULT_LOCK_TIMEOUT
+from .paths import DEFAULT_LOCK_TIMEOUT, sidecar_path_for
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -126,8 +126,7 @@ def default_backend() -> LockBackend:
 
 def lock_path_for(wiki_dir: Path) -> Path:
     """``<resolved-wiki-parent>/.<wiki-dir-name>.wiki-studio.lock`` for ``wiki_dir``."""
-    resolved = Path(wiki_dir).resolve()
-    return resolved.parent / f".{resolved.name}{LOCK_FILE_SUFFIX}"
+    return sidecar_path_for(wiki_dir, LOCK_FILE_SUFFIX)
 
 
 class WikiLock:

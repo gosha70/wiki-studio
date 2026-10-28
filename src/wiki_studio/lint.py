@@ -122,6 +122,23 @@ def _read(path: Path) -> str:
         return ""
 
 
+def _utf8_violation(path: Path, rel: str) -> str | None:
+    """The violation for a page whose bytes are not valid UTF-8, else None (0.8.0, FR-003).
+
+    Decodes strictly; :func:`_read` keeps replacing undecodable bytes for the
+    checks that still read the page.
+    """
+    try:
+        data = path.read_bytes()
+    except OSError:
+        return None
+    try:
+        data.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        return f"{rel}: not valid UTF-8 ({exc.reason} at byte {exc.start})"
+    return None
+
+
 def _frontmatter(lines: list[str]) -> tuple[list[str] | None, int | None]:
     """Split off the frontmatter.
 
@@ -278,7 +295,7 @@ def lint_wiki(
     root: Path | None = None,
     source_roots: Sequence[Path] = (),
 ) -> list[str]:
-    """Run the six structural checks over ``wiki_dir`` and return the violations (empty when clean).
+    """Run the structural checks (UTF-8 first, 0.8.0) over ``wiki_dir`` and return the violations (empty when clean).
 
     ``live_wiki_dir`` is where the wiki really lives when ``wiki_dir`` is a
     staged copy of it (``promote``): link targets are resolved there. ``root``
@@ -295,6 +312,8 @@ def lint_wiki(
     slugs_seen: dict[str, str] = {}
     page_ids: dict[str, list[str]] = {}
     superseded: dict[str, str] = {}
+    # Pages whose bytes are not UTF-8: one violation each, and their other checks are skipped.
+    not_utf8: set[str] = set()
 
     # ── Symlinks: not pages, never followed, refused by promote ──
     for rel in symlinks_in(wiki_dir):
@@ -303,6 +322,11 @@ def lint_wiki(
     # ── Per-page checks ──────────────────────────────────────
     for page in pages:
         rel = page.relative_to(wiki_dir).as_posix()
+        encoding_problem = _utf8_violation(page, rel)
+        if encoding_problem is not None:
+            violations.append(encoding_problem)
+            not_utf8.add(rel)
+            continue
         lines = _read(page).splitlines()
         fm_lines, close_line = _frontmatter(lines)
         if close_line == 0:
@@ -374,6 +398,8 @@ def lint_wiki(
     # ── The link rule: every local target classified and checked ──
     for page in pages:
         rel = page.relative_to(wiki_dir).as_posix()
+        if rel in not_utf8:
+            continue
         for target in md_links(_read(page)):
             problem = _link_violation(rel, target, wiki_dir=wiki_dir, live_wiki_dir=live, boundaries=boundaries)
             if problem is not None:
@@ -401,7 +427,7 @@ def lint_wiki(
             queue.append(resolved)
     for page in pages:
         rel = page.relative_to(wiki_dir).as_posix()
-        if rel == LOG_NAME:
+        if rel == LOG_NAME or rel in not_utf8:
             continue
         if _canonical(page) not in reached:
             violations.append(f"{rel}: orphan — not reachable from {INDEX_NAME}")

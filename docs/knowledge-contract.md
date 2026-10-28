@@ -116,14 +116,80 @@ string key `schema` is still `project` when `<wiki>/schema/` exists and
 | `package_version` | The installed wiki-studio version. |
 | `schema_contract` | `id`, `version` (the manifest's, else this package's), `source`, `fingerprint` (current), `declared_fingerprint` (the manifest's, or `null`), `drift`. |
 | `formats` | `patch_set: 1`, `receipt: 1`, `ingest_log: 1`, `approval: 1`, `findings: 1`. |
-| `capabilities` | `wiki-lock`, `receipts`, `base-revision`, `root-manifest`, `page-id`, `attribution`, `approval-record`, `superseded-by`, `findings`. |
+| `capabilities` | `wiki-lock`, `receipts`, `base-revision`, `root-manifest`, `page-id`, `attribution`, `approval-record`, `superseded-by`, `findings`, `ranked-discovery`, `context-budget` (the last two from 0.8.0). |
 | `manifest` | Present: `state`, `manifest_version`, `wiki_id`, `policy`, `mode` (`governed` or `managed`). Missing: `state`, `mode: legacy` and an `instruction` to run `wiki-studio init`. |
+| `discovery` | From 0.8.0: `fts5`, `sqlite_version`, `fts5_reason`, `default_ranker`, `default_ranker_source`, `ranker_config_hash`, `cache`. See [Discovery](#discovery). |
 
 Both lists describe the shipped build. A scope that does not ship adds no
 capability and no format. A test checks that every advertised capability
 resolves to a verb, an API function or a key. `api.info(paths)` returns the
 same facts as an `InfoResult`. Its `warnings` carry the drift message. It
 reads only and takes no lock.
+
+## Discovery
+
+`find` and `query` read `index.md` first and then load at most `max_pages`
+(default 5) pages within a byte budget (0.8.0).
+
+**Eligibility.** A candidate is a page linked from `index.md` whose link
+stays inside the wiki (no web URL, no absolute path, no `../` escape, no
+symlink on the way). `index.md` and `log.md` are never candidates. A
+candidate is eligible when it is a regular file, its bytes are valid UTF-8
+and its frontmatter carries no `superseded_by`. Every ineligible candidate is
+reported once in `ineligible` with a `reason`: `missing`,
+`not-regular-file`, `not-utf8` or `superseded`. Each eligible page is read
+once per call; the `sha256` and `bytes` of a selected page describe that
+read, and its text is what the prompt carries and what citations are
+checked against.
+
+**Rankers.** `index-first` is the 0.7.0 selector unchanged: the question's
+words counted in the page's slug, path and first 400 characters, ties by
+index order, with ineligible pages dropped from its ranked list. `fts5` ranks
+with `bm25` over four columns (path words, title, headings, body) with
+weights 4, 4, 2 and 1 and the `porter unicode61` tokenizer, ascending, ties
+by the page's first position in `index.md`. The question is reduced to the
+querier's tokens, each double-quoted and joined with `OR`, so raw question
+text never reaches FTS5; a question with no token selects nothing.
+`ranker_config_hash` is the sha256 of the configuration's canonical JSON
+(`ranker`, `tokenizer`, `weights`, `min_match_tokens`, `max_pages`; sorted
+keys, no spaces) and is `null` for `index-first`. The ranker is the `--ranker`
+flag, else `WIKI_STUDIO_RANKER`, else the default `index-first`; an unknown
+name is refused (exit 1).
+
+**Budget.** `max_bytes` (default 65,536) counts the UTF-8 bytes of
+`index.md` plus the selected pages. Pages are taken in rank order; a page
+that does not fit is skipped and listed in `omitted` with its size, and the
+next one is tried, until `max_pages` pages are selected or the list ends.
+Pages are never truncated. If `index.md` alone is over budget, no page is
+loaded and `warnings` says so. `bytes_loaded` is what was loaded.
+
+**Fallback.** `info.discovery.fts5` says whether this Python's SQLite can
+create an FTS5 table with the tokenizer (probed once per process;
+`fts5_reason` carries the error when it cannot). When it cannot and the
+ranker is `fts5`, selection uses `index-first`, the result carries
+`ranker: "index-first"` and `fallback_reason`, the CLI prints one notice to
+stderr and the exit code stays 0. A host that needs ranked discovery checks
+`info.discovery.fts5`.
+
+`default_ranker_source` is `env` or `default`.
+
+**Cache.** The `fts5` ranker keeps its FTS5 table in a rebuildable SQLite
+file beside the wiki's lock file,
+`<wiki-parent>/.<wiki-dir-name>.wiki-studio.search.sqlite` (or
+`--search-cache` / `WIKI_STUDIO_SEARCH_CACHE`; a path inside the wiki is
+refused with exit 1, or exit 4 for a `WikiPaths` built directly with one).
+It holds a `manifest` (path, sha256, bytes), the FTS5 `pages` table and a
+`meta` table (`cache_format`, `ranker_config_hash`, `wiki_path`, `wiki_id`,
+`sqlite_version`, `package_version`); `PRAGMA user_version` is the cache
+format, 1. Every `fts5` call refreshes it in one transaction from the hashes
+of this call's reads and ranks over the current paths only, so the cached
+ranking always equals a fresh in-memory one. A mismatched `meta` or format
+is rebuilt; a corrupt file is removed and rebuilt; a cache that cannot be
+used safely makes that call rank in memory with one entry in `warnings`.
+Cache state never changes the exit code, and the cache never supplies text
+to a prompt. `cache` in `info.discovery` is `{path, state, reason}` with
+`state` one of `present`, `missing` or `unusable`; `reason` is `null` for a
+current cache. `info` opens the file read-only, if at all.
 
 ## The policy and its hash
 

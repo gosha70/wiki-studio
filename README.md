@@ -21,8 +21,9 @@ The code was extracted from
 
 ```bash
 pip install wiki-studio          # Python 3.11–3.13, no runtime dependencies
+pip install 'wiki-studio[mcp]'   # optional: the MCP server, wiki-studio-mcp (see MCP)
 wiki-studio --help
-wiki-studio --version           # 0.7.0
+wiki-studio --version           # 0.8.0
 ```
 
 From a checkout: `poetry install`, then `poetry run wiki-studio --help`.
@@ -41,10 +42,34 @@ code-copilot-team layout under the git toplevel of the current directory:
 | query log | `<root>/doc_internal/wiki-query-log.jsonl` | | |
 | ingest audit log | `<wiki-dir>/.audit/ingest-log.md` | | |
 | schema override | `<wiki-dir>/schema/` (used when present) | | |
+| wiki lock | `<wiki-parent>/.<wiki-dir-name>.wiki-studio.lock` | | |
+| search cache (the `fts5` ranker's index; must lie outside the wiki) | `<wiki-parent>/.<wiki-dir-name>.wiki-studio.search.sqlite` | `--search-cache` | `WIKI_STUDIO_SEARCH_CACHE` |
 
 Flags beat variables, variables beat defaults. The three flags are accepted
 before or after the verb. Relative flag and variable values are taken from
-the current directory.
+the current directory. A `--search-cache` or `WIKI_STUDIO_SEARCH_CACHE` path
+inside the wiki directory is refused (exit 1).
+
+The lock and the search cache sit beside the wiki directory, never inside it.
+Where the wiki lives in a git checkout, one `.gitignore` pattern covers both:
+
+```gitignore
+.<wiki-dir-name>.wiki-studio.*
+```
+
+(`.wiki.wiki-studio.*` for the default `knowledge/wiki`.) The search cache is
+derived data: `find` and `query` with `--ranker fts5` refresh it from the
+pages on every call (each eligible page is read and hashed, no timestamp
+shortcut), rebuild it when it was built for another wiki, format or ranker
+configuration, and remove and rebuild it when it is corrupt. When it cannot
+be used safely (a symlink at the path or its directory, a directory that is
+not writable, a read-only file system, another process holding it past five
+seconds) that call ranks with an in-memory index, prints one warning and
+still exits 0. The cache only ranks; the text a prompt carries is always read
+from the wiki in that call. It is created readable by its owner only, because
+it holds a copy of every eligible page's text. **To reset it, delete the
+file**; the next `fts5` call rebuilds it. `info` reports its path and state
+(`present`, `missing` or `unusable`, with a reason).
 
 ## Verbs
 
@@ -118,8 +143,8 @@ Promote writes a `receipt.json` beside the proposal (moved with it into
 finishes an interrupted archive step and never re-applies an edit.
 
 The wiki lock is an OS advisory lock on
-`<wiki-parent>/.<wiki-dir-name>.wiki-studio.lock`, outside the wiki (add it
-to `.gitignore`), keyed to the resolved wiki directory and taken by
+`<wiki-parent>/.<wiki-dir-name>.wiki-studio.lock`, outside the wiki (ignore
+it with the `.gitignore` pattern in Layout), keyed to the resolved wiki directory and taken by
 `promote`, `propose --promote`, proposal-directory creation, the ingest-log
 append and `audit-flush`. Its scope is one machine and one filesystem: it
 is not distributed, it does not protect against direct edits of wiki files
@@ -143,14 +168,16 @@ procedure is read, draft, record: read the page with `read --json`, write
 the new version from that content, and record the printed `sha256` as the
 edit's base revision, in `.base.json` beside a `propose --from` draft or as
 `PageEdit.base_sha256` for `api.propose`. `promote` then applies the
-replacement only while the live page still has that hash. `find` lists
-pages and does not hash them; `info` stays configuration.
+replacement only while the live page still has that hash. `find` reports
+the sha256 and byte count of each page it read (0.8.0); `info` stays
+configuration.
 
 ### `wiki-studio query "<question>"`
 
-Reads `index.md` first, loads the most relevant linked pages, asks the
-backend, and prints the answer; citations and the pages loaded go to
-stderr and the pages-loaded set is appended to the query log.
+Reads `index.md` first, loads the most relevant linked pages (selected as
+`find` selects them, see below), asks the backend, and prints the answer;
+citations and the pages loaded go to stderr and the pages-loaded set, the
+ranker and the bytes loaded are appended to the query log.
 
 Every citation in the reply is checked against the text that was in the
 prompt: the cited page must be `index.md` or one of the pages loaded, and
@@ -166,6 +193,8 @@ the fragment logically supports the answer.
 |---|---|
 | `--backend NAME` | as for ingest |
 | `--max-pages N` | cap on pages loaded into the prompt (default 5) |
+| `--ranker {fts5,index-first}` | how pages are ranked, as for `find` |
+| `--max-bytes N` | byte budget for `index.md` plus the pages, as for `find` |
 | `--file-back` | also ingest the question + answer as a source and write a patch-set the curator can promote; an `update` gets the fact warnings described under `ingest` |
 | `--output-dir DIR` | with `--file-back`, where to write that patch-set |
 | `--debug-unsafe-output` | as for ingest |
@@ -175,8 +204,11 @@ the fragment logically supports the answer.
 Structural lint of every page: frontmatter present and well formed with
 the required keys; `page_type` known; `slug` equals the file name and is
 unique; the page lives in its type's directory; intra-wiki links resolve;
-every page except `index.md` and `log.md` is reachable from `index.md`.
-The audit tree under `.audit/` is always checked against
+every page except `index.md` and `log.md` is reachable from `index.md`;
+every page (`index.md` and `log.md` included) is valid UTF-8. A page that is
+not is one violation, `<path>: not valid UTF-8 (<reason> at byte <n>)`, and
+its other checks are skipped; like every structural violation it fails
+`lint` and refuses every `promote` until the page is fixed (0.8.0). The audit tree under `.audit/` is always checked against
 `schema/audit-rules.md` as well.
 
 | Flag | Effect |
@@ -239,7 +271,9 @@ query and audit logs, and which schema copy applies (`packaged`, or
 `project` for a copy at `<wiki-dir>/schema/`). Overriding the root also
 counts as custom. Then the knowledge contract: package version, schema
 contract and fingerprints (with drift), format versions, capabilities and the
-root manifest (`governed`, `managed` or `legacy`); the keys are in
+root manifest (`governed`, `managed` or `legacy`), and discovery (whether
+this Python's SQLite has FTS5, the default ranker and where it came from, the
+ranker configuration hash); the keys are in
 `docs/knowledge-contract.md`. Read-only, exit 0 (4 for a malformed or newer
 manifest). `--version` stays a single line.
 
@@ -321,9 +355,32 @@ traceability, not tamper-proof evidence.
 ### `wiki-studio find "<question>"`
 
 Prints what `query` would put in front of a model, without calling one:
-`index.md` first, then up to five index-linked pages ranked by the words they
-share with the question, each with its title. Writes no query log. `--json`
-for a JSON object, `--max-pages N` for a different limit.
+`index.md` first, then up to five eligible index-linked pages within a byte
+budget, each with its title and size. Writes nothing (no query log, no file in
+the wiki). A page is eligible when `index.md` links it inside the wiki (no
+symlink, no `../`), it is a regular file, it is valid UTF-8 and it carries no
+`superseded_by`; `index.md` and `log.md` are never candidates.
+
+Two rankers order the eligible pages. `index-first` (the default) counts the
+question's words in each page's slug, path and first 400 characters, as
+0.7.0 did. `fts5` ranks by bm25 over SQLite FTS5 (path words, title, headings
+and body, weighted 4, 4, 2, 1); ties go to the page listed first in
+`index.md`. If this Python's SQLite has no FTS5, `fts5` falls back to
+`index-first`, prints one notice to stderr
+(`find: FTS5 is not available in this Python's SQLite (<reason>); using
+index-first`) and still exits 0; `info` reports whether FTS5 is available.
+
+The budget counts the UTF-8 bytes of `index.md` plus the selected pages. A
+page that does not fit is skipped, listed as omitted, and the next page is
+tried; pages are never truncated. If `index.md` alone is over budget, no
+page is loaded and a warning goes to stderr.
+
+| Flag | Effect |
+|---|---|
+| `--ranker {fts5,index-first}` | the ranker; overrides `WIKI_STUDIO_RANKER`, which overrides the default `index-first`; an unknown name exits 1 |
+| `--max-bytes N` | the byte budget (default 65536); not a positive integer: exit 1 |
+| `--max-pages N` | at most this many pages (default 5) |
+| `--json` | one JSON object: `question`, `index`, `pages` (`path`, `file`, `title`, `sha256`, `bytes`), `ranker`, `fallback_reason`, `bytes_loaded`, `max_bytes`, `ranker_config_hash`, `omitted` (`path`, `bytes`), `ineligible` (`path`, `reason`: `missing`, `not-regular-file`, `not-utf8` or `superseded`), `warnings` |
 
 `init`, `propose --from`, `find` and `read` are what an agent needs to use
 the wiki from a shell with no model backend; `docs/agent-arm/` holds a ready
@@ -372,6 +429,8 @@ redacted fingerprint of it unless `--debug-unsafe-output` is given.
 | `WIKI_STUDIO_WIKI_DIR` | wiki directory |
 | `WIKI_STUDIO_PROPOSALS_DIR` | proposals directory |
 | `WIKI_STUDIO_SOURCE_ROOTS` | `os.pathsep`-separated directories outside the root that local links in pages may reference (see Layout) |
+| `WIKI_STUDIO_RANKER` | the ranker `find` and `query` use when `--ranker` is not given: `fts5` or `index-first` (default `index-first`) |
+| `WIKI_STUDIO_SEARCH_CACHE` | where the `fts5` ranker keeps its search cache when `--search-cache` is not given (default beside the lock file; never inside the wiki; see Layout) |
 | `WIKI_STUDIO_ACTOR` | who proposes or promotes when `--by` is not given, recorded with source `env` (attribution, not authentication) |
 | `WIKI_STUDIO_BACKEND` | default backend name |
 | `WIKI_STUDIO_ENABLE_PI` | `1` adds `pi` to the auto-detect order |
@@ -476,6 +535,37 @@ additions with defaults in a minor one.
 Consumer recipes for code-copilot-team, memkernel and document-assistant
 are in [`docs/consumers.md`](docs/consumers.md).
 
+## MCP
+
+An MCP host (Claude Code, Kiro) can use the wiki without a shell through
+the optional adapter, the one optional dependency (the official `mcp` SDK):
+
+```bash
+pip install 'wiki-studio[mcp]'
+claude mcp add wiki-studio -- wiki-studio-mcp --root /path/to/project --by agent
+```
+
+`wiki-studio-mcp` serves eight tools over stdio: `find`, `read_page`,
+`propose`, `promote`, `lint`, `info`, `findings` and `review_state`. The
+wiki, the actor (`--by`) and the default ranker are fixed at launch; no tool
+takes a root, directory, backend or actor, and `approve`, `ingest`, `query`,
+`audit-flush` and `init` are not exposed. `--disable-tool promote` is
+propose-only mode: proposals wait for a person to promote and approve them.
+Errors are `{error, exit_code, message}` with the exit codes above. Without
+the extra, `wiki-studio-mcp` prints the install instruction and exits 2; the
+base install still imports nothing outside the standard library. Flags,
+results, host configuration and the trace file:
+[`docs/mcp-adapter.md`](docs/mcp-adapter.md); the dependency review and the
+tool contract: `docs/adr/0003-optional-mcp-dependency-and-tool-contract.md`.
+
+**Status: preview.** The adapter's evidence so far is the protocol-level
+conformance suite (`python -m conformance.mcp.run --server-cmd
+"wiki-studio-mcp --root {root}"`, twelve cases for each tested protocol
+version, run in CI at the SDK floor and at the newest `mcp<3`). It stops
+being a preview when a recorded Claude Code run passes `check-host-run`
+(`conformance/runs/README.md`); `docs/compatibility.md` lists what has been
+tested.
+
 ## Evidence
 
 What is measured so far is one component, not an agent: the querier's
@@ -563,6 +653,49 @@ question at random from the nine index-linked pages would hit at 1 about
 unchanged. Agent-level evidence, an arm in `agent-memory-bench` next to
 memkernel's, is tracked in
 [issue #10](https://github.com/gosha70/wiki-studio/issues/10).
+
+Run 3 and a held-out set (0.8.0) measure the second ranker, `fts5`, beside
+`index-first` without touching runs 1 and 2: their files are pinned by
+sha256 (`tests/test_frozen_runs.py`) and the numbers above stay the
+published baseline. `python -m eval.navigation.discovery run` calls `find`
+with both rankers and reports, beside every hit rate, the eligible page
+count and the random baseline, plus absent-question behaviour, bytes and
+words loaded, and latency through the cache and without it. Run 3 is the
+development set, run 2's frozen wiki and its 21 questions with a gold page:
+`eval/navigation/run3/results-untuned.json` is the untuned configuration's
+result, committed before any tuning, and it is development-set evidence
+only. The default is decided on a fresh held-out corpus, the eight
+user-facing READMEs of mapatlas at a pinned commit, under the preregistered
+protocol in `eval/navigation/heldout/protocol.md`: questions committed
+before the ingest, one ingest with no retries, the wiki and the gold frozen
+before tuning, one held-out run under a frozen configuration hash. `fts5`
+becomes the default only if it is no worse than `index-first` at hit at 1
+and at 5 there, with at least 15 gold questions and ten eligible pages;
+until that run exists the default is `index-first`.
+
+| Number | Run 3, development, untuned: `index-first` | Run 3, development, untuned: `fts5` | Run 3, development, tuned | Held-out |
+|---|---|---|---|---|
+| Questions with a gold page / eligible pages | 21 / 9 | 21 / 9 | pending | pending the held-out run |
+| Hit at 1 (random baseline) | 3 of 21, 14.3% (8.5%) | 14 of 21, 66.7% (11.1%) | pending | pending the held-out run |
+| Hit at 5 (random baseline) | 10 of 21, 47.6% (24.9%) | 20 of 21, 95.2% (55.6%) | pending | pending the held-out run |
+| Discordant questions at 1 / at 5 (only this ranker hits) | 1 / 0 | 12 / 10 | pending | pending the held-out run |
+| Competing questions where a distractor outranks gold | 2 of 4 | 0 of 4 | pending | pending the held-out run |
+| Unanswerable questions (6): empty selection / mean pages / mean bytes loaded | 1 of 6 / 4.0 / 25,176 | 0 of 6 / 5.0 / 34,986 | pending | pending the held-out run |
+| Context per question, median bytes / words (35 questions) | 11,664 / 1,454 | 33,323 / 4,279 | pending | pending the held-out run |
+| Ingest coverage | 21 of 29 (inherited from run 2, not re-measured) | same | same | pending the held-out run |
+| `find` latency, median (cold cache / warm cache / in memory, no cache) | — | 3.8 / 2.0 / 2.3 ms | pending | pending the held-out run |
+
+Run 3's `index-first` column reproduces run 2's selector numbers, as it
+must. The `fts5` column is the untuned configuration (`porter unicode61`,
+weights 4, 4, 2, 1, `ranker_config_hash` `c4b6576a…`) on the development
+set; it is not the basis of any default. The latency was measured on one
+machine (macOS arm64, Python 3.13.2, SQLite 3.48.0, five repetitions over
+the 35 questions); on a nine-page wiki the on-disk cache saves about a
+third of a millisecond per warm call over an in-memory build, so its value
+on small wikis is small. The tuned column and the held-out column are filled
+by the evidence PR. Read these numbers with their caveats: small sets;
+questions written by the author's tooling; an ingest by one model in one
+attempt; no claim of superiority over other products.
 
 ## Development
 
