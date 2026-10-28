@@ -97,7 +97,12 @@ MIN_ABSENT = 6
 
 BACKEND = "claude"
 SOURCE_PATHS: tuple[str, ...] = ("src", "eval")  # must be committed clean when the pins are taken (FR-024)
-SOURCE_CHECK_KEYS: tuple[str, ...] = ("wiki_studio_commit", "wiki_studio_version", "claude_path", "tree_clean")
+# The ingest must run the pinned code. The comparison is of the source tree (src/ and eval/ without the held-out
+# directory, which the protocol itself writes), not of the commit: committing the manifest after the pin, as the
+# protocol requires, moves HEAD without changing a line of code.
+SOURCE_TREE_KEY = "source_tree_sha256"
+HELDOUT_TREE_PREFIX = "eval/navigation/heldout/"
+SOURCE_CHECK_KEYS: tuple[str, ...] = (SOURCE_TREE_KEY, "wiki_studio_version", "claude_path", "tree_clean")
 ENV_MODEL = "ANTHROPIC_MODEL"
 ENV_ISOLATION_HOOK_SKIP = "HOOK_SKIP"
 ENV_ISOLATION_CONFIG_DIR = "CLAUDE_CONFIG_DIR"
@@ -257,8 +262,15 @@ def _heldout_env(heldout_dir: Path, model: str | None) -> dict[str, str]:
     return env
 
 
+def _source_tree(commit: str) -> str:
+    """The sha256 of ``git ls-tree -r <commit>`` over src/ and eval/, minus the held-out directory."""
+    listing = _git("ls-tree", "-r", commit, "--", *SOURCE_PATHS)
+    kept = [line for line in listing.splitlines() if HELDOUT_TREE_PREFIX not in line]
+    return hashlib.sha256("\n".join(kept).encode("utf-8")).hexdigest()
+
+
 def _source_check(step: str, claude_binary: str) -> dict[str, Any]:
-    """What would execute: the commit, the version, the backend executable, and a clean tree under src/ and eval/."""
+    """What would execute: the commit and its source tree, the version, the backend executable, a clean tree."""
     dirty = _git("status", "--porcelain", "--untracked-files=no", "--", *SOURCE_PATHS)
     if dirty:
         raise ProtocolError(
@@ -268,21 +280,32 @@ def _source_check(step: str, claude_binary: str) -> dict[str, Any]:
     claude_path = shutil.which(claude_binary)
     if claude_path is None:
         raise ProtocolError(f"{step}: refusing; the backend executable {claude_binary!r} is not on PATH")
+    head = _git("rev-parse", "HEAD")
     return {
-        "wiki_studio_commit": _git("rev-parse", "HEAD"),
+        "wiki_studio_commit": head,
+        SOURCE_TREE_KEY: _source_tree(head),
         "wiki_studio_version": __version__,
         "claude_path": claude_path,
         "tree_clean": True,
     }
 
 
-def step_pin(heldout_dir: Path, model: str | None, claude_binary: str) -> str:
+def step_pin(heldout_dir: Path, model: str | None, claude_binary: str, *, again: bool = False) -> str:
     """Pin versions, backend, model, timeout and environment before the first attempt (FR-024).
 
     Refuses a dirty tree under ``src/`` or ``eval/``: the pinned commit must be the code that runs.
     """
     manifest = load_manifest(heldout_dir)
-    require_state(manifest, STATE_QUESTIONS, "pin")
+    if again:
+        # Re-pin before the first ingest attempt (a tool fix merged after the pin, as the ingest's refusal
+        # advises): explicit, the previous pins stay on record, and the isolation probe must run again.
+        require_state(manifest, STATE_PINNED, "pin --again")
+        if "ingest" in manifest or (heldout_dir / WIKI_DIR).exists():
+            raise ProtocolError("pin --again: refusing; the ingest has started, nothing is re-pinned after it")
+        manifest.setdefault("pins_history", []).append({**manifest.get("pins", {}), "replaced_at": _now()})
+        manifest.pop("isolation_probe", None)
+    else:
+        require_state(manifest, STATE_QUESTIONS, "pin")
     _verify_corpus(heldout_dir, manifest)
     _verify_file(heldout_dir, manifest, QUESTIONS_NAME, "questions_sha256")
     model = model or os.environ.get(ENV_MODEL)
@@ -441,7 +464,10 @@ def step_ingest(heldout_dir: Path) -> str:
         raise ProtocolError("ingest: heldout/wiki/ already exists; the ingest starts from a fresh `init`")
     _verify_corpus(heldout_dir, manifest)
     _verify_file(heldout_dir, manifest, QUESTIONS_NAME, "questions_sha256")
-    pins = manifest["pins"]
+    pins = dict(manifest["pins"])
+    if SOURCE_TREE_KEY not in pins:
+        # A pin taken before the tree key existed: derive it from the pinned commit.
+        pins[SOURCE_TREE_KEY] = _source_tree(pins["wiki_studio_commit"])
     source = _source_check("ingest", BACKEND)  # what `wiki_studio ingest --backend claude` resolves
     mismatches = [
         f"{key}: pinned {pins.get(key)!r}, now {source[key]!r}"
@@ -453,6 +479,9 @@ def step_ingest(heldout_dir: Path) -> str:
             "ingest: refusing; the executed source differs from the pins (re-pin from the pinned checkout):\n"
             + "\n".join(mismatches)
         )
+    if pins.get("wiki_studio_commit") != source["wiki_studio_commit"]:
+        # Manifest commits after the pin move HEAD; the source tree is what must match, and it does.
+        source["pinned_commit"] = pins.get("wiki_studio_commit")
     manifest["ingest_source_check"] = {**source, "checked_at": _now()}
     env = _heldout_env(heldout_dir, pins["model"])
     (heldout_dir / LOGS_DIR).mkdir(exist_ok=True)
@@ -563,6 +592,9 @@ def main(argv: list[str] | None = None) -> int:
     p_pin = sub.add_parser("pin", help="Pin versions, backend and model (questions → pinned).")
     p_pin.add_argument("--model", default=None, help=f"The model by its full name (default: ${ENV_MODEL}).")
     p_pin.add_argument("--claude", default=BACKEND, help="The Claude Code binary.")
+    p_pin.add_argument(
+        "--again", action="store_true", help="Re-take the pins before the first ingest attempt (previous pins kept)."
+    )
     p_probe = sub.add_parser("probe", help="The isolation probe (in pinned; must pass).")
     p_probe.add_argument("--claude", default=BACKEND, help="The Claude Code binary.")
     sub.add_parser("ingest", help="The one ingest (pinned → ingested).")
@@ -574,7 +606,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.step == "questions":
             message = step_questions(heldout_dir, args.commit)
         elif args.step == "pin":
-            message = step_pin(heldout_dir, args.model, args.claude)
+            message = step_pin(heldout_dir, args.model, args.claude, again=args.again)
         elif args.step == "probe":
             passed = step_probe(heldout_dir, args.claude)
             print(f"probe: {'PASSED' if passed else 'FAILED'}")

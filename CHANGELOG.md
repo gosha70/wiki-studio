@@ -121,6 +121,11 @@ version 1. Release C is not declared closed by this entry; see Limitations.
 
 ### Fixed
 
+- The held-out ingest's pin check compares the source tree (`src/` and
+  `eval/` without the held-out directory) between the pinned commit and HEAD,
+  not the commit itself: the protocol commits the pin and the probe before
+  the ingest, which moved HEAD and made the check refuse every run. A pin
+  taken before this change is compared through its commit's tree.
 - PR #56 review (0.8.0, before the tag): discovery reads `index.md` and every
   candidate page from a descriptor opened with `O_NOFOLLOW`, so a page swapped
   for a symlink after the link check is never read, and two spellings of one
