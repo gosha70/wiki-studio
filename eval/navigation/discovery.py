@@ -66,7 +66,7 @@ from eval.navigation.run import (
     load_stopwords,
     question_words,
 )
-from eval.navigation.run2_protocol import _git, _now
+from eval.navigation.run2_protocol import _git, _now, _sha256
 from wiki_studio import __version__, api
 from wiki_studio import discovery as wiki_discovery
 from wiki_studio.discovery import (
@@ -185,13 +185,20 @@ def _inside(path: Path, directory: Path) -> bool:
     return path.resolve().is_relative_to(directory.resolve())
 
 
+def _input_file(path: Path) -> Path:
+    """An input the evaluation reads, or a refusal naming the missing file (never a traceback)."""
+    if not path.is_file():
+        raise RunnerError(f"{path} not found")
+    return path
+
+
 def _load_inputs(fixture_dir: Path, shared_dir: Path | None, search_cache: Path) -> _Inputs:
     if _inside(search_cache, fixture_dir) or (shared_dir is not None and _inside(search_cache, shared_dir)):
         raise RunnerError(f"the search cache {search_cache} is inside a frozen evaluation directory (FR-019)")
     questions: list[dict[str, Any]] = json.loads(
-        _shared_file(fixture_dir, shared_dir, "questions.json").read_text(encoding="utf-8")
+        _input_file(_shared_file(fixture_dir, shared_dir, "questions.json")).read_text(encoding="utf-8")
     )
-    gold_by_id = {g["id"]: g for g in json.loads((fixture_dir / "gold.json").read_text(encoding="utf-8"))}
+    gold_by_id = {g["id"]: g for g in json.loads(_input_file(fixture_dir / "gold.json").read_text(encoding="utf-8"))}
     missing = [q["id"] for q in questions if q["id"] not in gold_by_id]
     if missing:
         raise ValueError(f"gold.json has no entry for question(s): {', '.join(missing)}")
@@ -210,7 +217,7 @@ def _load_inputs(fixture_dir: Path, shared_dir: Path | None, search_cache: Path)
     return _Inputs(
         questions=questions,
         gold_by_id=gold_by_id,
-        stopwords=load_stopwords(_shared_file(fixture_dir, shared_dir, "stopwords.txt")),
+        stopwords=load_stopwords(_input_file(_shared_file(fixture_dir, shared_dir, "stopwords.txt"))),
         corpus_dir=corpus_dir,
         paths=paths,
         eligible=len(read_eligible_pages(wiki_dir)),
@@ -333,12 +340,45 @@ def _discordant(per_question: list[dict[str, Any]]) -> dict[str, Any]:
     return {"at_1": split("hit_at_1"), "at_5": split("hit_at_5")}
 
 
+def _heldout_content_hashes() -> frozenset[str]:
+    """The sha256 values the committed held-out manifest records: the questions, the gold and every corpus file.
+
+    Empty when ``HELDOUT_DIR`` has no manifest (a checkout without the set), so
+    nothing is recognised by content then.
+    """
+    manifest = HELDOUT_DIR / MANIFEST_NAME
+    if not manifest.is_file():
+        return frozenset()
+    recorded: dict[str, Any] = json.loads(manifest.read_text(encoding="utf-8"))
+    hashes = {recorded.get("questions_sha256"), recorded.get("gold_sha256")}
+    hashes.update(entry.get("sha256") for entry in recorded.get("corpus_files") or [])
+    return frozenset(h for h in hashes if isinstance(h, str) and h)
+
+
+def _content_files(fixture_dir: Path) -> list[Path]:
+    """The fixture's own questions, gold and corpus files: the inputs that identify the held-out set."""
+    files = [fixture_dir / "questions.json", fixture_dir / "gold.json"]
+    corpus = fixture_dir / "corpus"
+    if corpus.is_dir():
+        files.extend(sorted(p for p in corpus.rglob("*") if p.is_file()))
+    return [f for f in files if f.is_file()]
+
+
 def is_heldout(fixture_dir: Path) -> bool:
-    """The held-out set: its manifest says so, or it is ``heldout/`` itself."""
+    """The held-out set: its manifest says so, it is ``heldout/`` itself, or its content is the held-out set's.
+
+    Content recognition is the trigger that cannot be stripped: a fixture whose
+    questions, gold or any corpus file hashes to a value the committed
+    held-out manifest records is the held-out set whatever its own manifest
+    says, so a copy with the ``set`` field removed still runs under the guards.
+    """
     manifest = fixture_dir / MANIFEST_NAME
     if manifest.is_file() and json.loads(manifest.read_text(encoding="utf-8")).get("set") == SET_HELDOUT:
         return True
-    return fixture_dir.resolve() == HELDOUT_DIR.resolve()
+    if fixture_dir.resolve() == HELDOUT_DIR.resolve():
+        return True
+    known = _heldout_content_hashes()
+    return bool(known) and any(_sha256(path) in known for path in _content_files(fixture_dir))
 
 
 def _ingest_coverage(fixture_dir: Path, answer_in_a_page: int, answerable: int) -> dict[str, Any]:
@@ -759,6 +799,12 @@ def heldout_output(
             f"run: refusing; {TUNED_CONFIG_NAME}'s hash differs from the live ranker_config_hash(); "
             "set DEFAULT_RANKER_CONFIG to the tuned configuration first"
         )
+    chosen_hash = _chosen_hash(run3_dir)
+    if chosen_hash != tuned_hash:
+        raise RunnerError(
+            f"run: refusing; {TUNED_CONFIG_NAME}'s hash {tuned_hash} is not the one {TUNING_NAME} records as "
+            f"chosen ({chosen_hash}); the one run uses the configuration tune chose (FR-021)"
+        )
     try:
         verify_frozen(heldout_dir, manifest)
     except ProtocolError as exc:
@@ -794,6 +840,16 @@ def heldout_output(
     if labelled.exists():
         raise RunnerError(f"run: {labelled.name} exists; choose another label")
     return labelled
+
+
+def _chosen_hash(run3_dir: Path) -> str | None:
+    """The hash ``tune`` recorded as chosen in ``run3/tuning.json``; a refusal when the file is missing."""
+    tuning = run3_dir / TUNING_NAME
+    if not tuning.is_file():
+        raise RunnerError(f"run: refusing; {_label(tuning)} does not exist, so no configuration is tune's choice")
+    chosen = json.loads(tuning.read_text(encoding="utf-8")).get("chosen") or {}
+    recorded = chosen.get("ranker_config_hash")
+    return recorded if isinstance(recorded, str) else None
 
 
 def _attempt_record(heldout_dir: Path, manifest: dict[str, Any]) -> dict[str, Any] | None:

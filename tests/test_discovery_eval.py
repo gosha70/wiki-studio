@@ -343,15 +343,101 @@ class TestHeldOutRunGuards(unittest.TestCase):
     def tearDown(self) -> None:
         self._tmp.cleanup()
 
+    def _write_tuning(self, chosen_hash: str) -> None:
+        """``run3/tuning.json`` as ``tune`` leaves it, reduced to the chosen entry the run checks."""
+        discovery._write_json(self.run3 / discovery.TUNING_NAME, {"chosen": {"ranker_config_hash": chosen_hash}})
+
+    def _freeze_config(self, config: RankerConfig) -> None:
+        """``tune``'s outcome for ``config``: the frozen configuration file and the tuning record that chose it."""
+        discovery._write_json(self.run3 / discovery.TUNED_CONFIG_NAME, discovery.config_document(config))
+        self._write_tuning(ranker_config_hash(config))
+
     def _freeze_live_config(self) -> None:
-        discovery._write_json(
-            self.run3 / discovery.TUNED_CONFIG_NAME, discovery.config_document(discovery._live_config())
-        )
+        self._freeze_config(discovery._live_config())
 
     def _main_run(self, heldout: Path, *extra: str) -> tuple[int, str, str]:
         argv = ["run", "--fixture", str(heldout), "--shared", str(NAVIGATION), *extra]
         with mock.patch.object(discovery, "RUN3_DIR", self.run3):
             return _quiet(discovery.main, argv)
+
+    def _assert_no_attempt(self, heldout: Path) -> None:
+        self.assertFalse((heldout / heldout_protocol.RUN_ATTEMPT_NAME).exists(), "no attempt was consumed")
+        self.assertFalse((heldout / "results.json").exists())
+        self.assertEqual(_manifest(heldout)["state"], heldout_protocol.STATE_FROZEN)
+
+    def test_run_refuses_a_configuration_tune_did_not_choose(self) -> None:
+        """``ranker-config.json`` must be ``tuning.json``'s chosen entry: the configuration came from ``tune``."""
+        heldout = _frozen_heldout(self.root)
+        self._freeze_live_config()
+        self._write_tuning("0" * 64)
+        code, _out, err = self._main_run(heldout)
+        self.assertEqual(code, 1)
+        self.assertIn("run: refusing", err)
+        self.assertIn(discovery.TUNING_NAME, err)
+        self._assert_no_attempt(heldout)
+        (self.run3 / discovery.TUNING_NAME).unlink()
+        code, _out, err = self._main_run(heldout)
+        self.assertEqual(code, 1)
+        self.assertIn("run: refusing", err)
+        self.assertIn(f"{discovery.TUNING_NAME} does not exist", err)
+        self._assert_no_attempt(heldout)
+        self._write_tuning(ranker_config_hash(discovery._live_config()))
+        code, _out, err = self._main_run(heldout)
+        self.assertEqual(code, 0, err)
+        self.assertTrue((heldout / heldout_protocol.RUN_ATTEMPT_NAME).is_file())
+
+    def test_a_copy_without_the_set_field_is_still_the_heldout_set(self) -> None:
+        """Recognition by content: the copy's questions, gold and corpus hash to what the committed manifest records."""
+        heldout = _frozen_heldout(self.root)
+        copy = self.root / "elsewhere" / "fixture"
+        shutil.copytree(heldout, copy)
+        manifest = _manifest(copy)
+        del manifest["set"]
+        (copy / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+        with mock.patch.object(discovery, "HELDOUT_DIR", self.root / "absent"):
+            self.assertEqual(discovery._heldout_content_hashes(), frozenset())
+            self.assertFalse(discovery.is_heldout(copy), "with no committed manifest nothing is recognised")
+        with mock.patch.object(discovery, "HELDOUT_DIR", heldout):
+            self.assertTrue(discovery.is_heldout(copy))
+            self.assertFalse(discovery.is_heldout(RUN2))
+            code, _out, err = self._main_run(copy)
+            self.assertEqual(code, 1, "the held-out guards apply to the copy")
+            self.assertIn("does not exist (tune first", err)
+            self._assert_no_attempt(copy)
+            self._freeze_live_config()
+            code, _out, err = self._main_run(copy)
+            self.assertEqual(code, 0, err)
+        self.assertTrue((copy / heldout_protocol.RUN_ATTEMPT_NAME).is_file(), "the attempt is recorded")
+        self.assertTrue((copy / "results.json").is_file())
+        self.assertEqual(_manifest(copy)["state"], heldout_protocol.STATE_RUN)
+        self.assertEqual(_manifest(heldout)["state"], heldout_protocol.STATE_FROZEN, "the original is untouched")
+
+    def test_a_missing_input_file_is_a_refusal_not_a_traceback(self) -> None:
+        shared = self.root / "shared"
+        shutil.copytree(NAVIGATION / "corpus", shared / "corpus")
+        shutil.copy(NAVIGATION / "questions.json", shared / "questions.json")
+        fixture = self.root / "dev"
+        shutil.copytree(RUN2 / "wiki", fixture / "wiki")
+        shutil.copy(RUN2 / "gold.json", fixture / "gold.json")
+        shutil.copy(RUN2 / "results.json", fixture / "results.json")
+        argv = ["run", "--fixture", str(fixture), "--shared", str(shared), "--config", str(UNTUNED)]
+        code, _out, err = _quiet(discovery.main, argv)
+        self.assertEqual(code, 1)
+        self.assertIn(f"{shared / 'stopwords.txt'} not found", err)
+        shutil.copy(NAVIGATION / "stopwords.txt", shared / "stopwords.txt")
+        (fixture / "gold.json").unlink()
+        code, _out, err = _quiet(discovery.main, argv)
+        self.assertEqual(code, 1)
+        self.assertIn(f"{fixture / 'gold.json'} not found", err)
+        shutil.copy(RUN2 / "gold.json", fixture / "gold.json")
+        (shared / "questions.json").unlink()
+        code, _out, err = _quiet(discovery.main, argv)
+        self.assertEqual(code, 1)
+        self.assertIn(f"{shared / 'questions.json'} not found", err)
+        shutil.copy(NAVIGATION / "questions.json", shared / "questions.json")
+        code, out, err = _quiet(discovery.main, argv)
+        self.assertEqual(code, 0, err)
+        self.assertIn('"navigation"', out)
 
     def test_run_refuses_before_the_freeze(self) -> None:
         heldout = _synthetic_heldout(self.root)
@@ -543,7 +629,7 @@ class TestHeldOutRunGuards(unittest.TestCase):
             self._main_run(heldout)
         other = RankerConfig("unicode61", (1.0, 2.0, 4.0, 1.0), 2, 5)
         with mock.patch.object(wiki_discovery, "DEFAULT_RANKER_CONFIG", other):
-            discovery._write_json(self.run3 / discovery.TUNED_CONFIG_NAME, discovery.config_document(other))
+            self._freeze_config(other)
             code, _out, err = self._main_run(heldout, "--post-hoc", "retuned")
         self.assertEqual(code, 1)
         self.assertIn("not produced under the current", err)

@@ -12,9 +12,9 @@ suite does, and the checker labels each case with what proves it:
 
 | Label | Cases | What the run shows |
 |---|---|---|
-| `proved` | 2, 3, 4 | From the trace's evidence lines: `tools/list` named exactly the eight tools; every `find` stayed within five pages and its `max_pages`, named a ranker and gave every page a sha256; `read_page` returned a sha256 and one `read_page` was refused with exit 7 (the scenario's traversal step). Not shown: the argument schemas, index linkage, the byte budget, that the sha256 is the file's. |
-| `proved-by-end-state` | 5, 6, 9 | The trace's counts plus the end state: the update carried `base_sha256` and the proposal is archived (5); the promote applied paths, was not a dry run, and its receipt is `committed` with `entry_point: mcp`, the update landed from the fixture's revision with no unguarded path (6); `review_state` after the promote reports no approved page, the promote approved none and no approval record exists (9). Not shown: that the wiki stayed unchanged between propose and promote. |
-| `not-provable-from-host-run (protocol suite)` | 7, 8 | The stale-update refusal and `promote` of `../x` are not in the scenario. Counted as skipped, never as passed. |
+| `proved` | 2, 3, 4, 8 | From the trace's evidence lines: `tools/list` named exactly the eight tools; every `find` stayed within five pages and its `max_pages`, named a ranker and gave every page a sha256; `read_page` returned a sha256 and one `read_page` was refused with exit 7 (the scenario's traversal step); a `promote` was refused by the name rule (`ValueError`, exit 1, the scenario's `../x` step), so nothing was applied. Not shown: the argument schemas, index linkage, the byte budget, that the sha256 is the file's, that the refused promote read nothing. |
+| `proved-by-end-state` | 5, 6, 7, 9 | The trace's counts plus the end state: the update carried `base_sha256` and the proposal is archived (5); the promote applied paths, was not a dry run, and its receipt is `committed` with `entry_point: mcp`, the update landed from the fixture's revision with no unguarded path (6); after it, a propose whose update carried `base_sha256` was refused at promote with exit 9 (the scenario's stale-update step), the page in the end state is still what the first promote wrote and every receipt is committed (7); `review_state` after the promote reports no approved page, the promote approved none and no approval record exists (9). Not shown: that the wiki stayed unchanged between propose and promote, that the refused update named the same page. |
+| `not-provable-from-host-run (protocol suite)` | 7, 8 when absent | Case 7 when the trace has no `promote` refused with exit 9, case 8 when it has none refused by the name rule: the host did not reach steps 8-10. Counted as skipped, never as passed. |
 
 A run whose trace has no `read_page` refused with exit 7 fails case 4 with
 "containment is not provable from this run". The verdict line names the
@@ -34,7 +34,7 @@ directory.
 | Entry | What it holds |
 |---|---|
 | `manifest.json` | The keys below. |
-| `trace.jsonl` | The server's `--trace` file, one JSON line per request (`docs/mcp-adapter.md`, Trace). It has no page content, question text, edit content or path; its `tool_names`, `arg_keys`, `result_keys` and per-tool `summary` keys are the checker's evidence. |
+| `trace.jsonl` | The server's `--trace` file, one JSON line per request (`docs/mcp-adapter.md`, Trace). It has no page content, question text, edit content or path, and no tool, method, argument or result name outside the tools' own schemas (those are counted, never copied); its `tool_names`, `arg_keys`, `result_keys` and per-tool `summary` keys are the checker's evidence. |
 | `end-state/` | The fixture project root after the run (the wiki, the proposals directory and its `.applied/` archive), without the derived lock and search-cache files beside the wiki. |
 | `transcript.txt` | Optional. The host's output, kept for people. The checker does not read it. |
 

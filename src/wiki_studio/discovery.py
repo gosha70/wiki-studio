@@ -83,6 +83,8 @@ LOG_NAME = "log.md"
 _NEVER_CANDIDATES = frozenset({INDEX_NAME, LOG_NAME})
 
 _O_NOFOLLOW = getattr(os, "O_NOFOLLOW", 0)
+# A FIFO linked from index.md must not hang the open: with O_NONBLOCK it opens at once and fstat rejects it.
+_O_NONBLOCK = getattr(os, "O_NONBLOCK", 0)
 # What ``open(O_NOFOLLOW)`` raises for a symlink: ELOOP on Linux and macOS, EMLINK on the BSDs.
 _SYMLINK_ERRNOS = frozenset({errno.ELOOP, errno.EMLINK})
 
@@ -235,15 +237,17 @@ def _read_regular(path: Path) -> bytes | None:
 
     The file is opened with ``O_NOFOLLOW`` and its kind judged on the open
     descriptor (as ``review._read_nofollow`` does), so an entry swapped for a
-    symlink after any earlier check is never read. Raises ``OSError`` when the
-    entry is missing or unreadable. Where ``O_NOFOLLOW`` is unavailable
-    (Windows) the open follows a symlink, so the ``lstat`` before it is the
-    weaker, non-atomic check.
+    symlink after any earlier check is never read, and ``O_NONBLOCK`` so a
+    FIFO opens at once instead of blocking until a writer appears (it is then
+    judged non-regular and skipped). Raises ``OSError`` when the entry is
+    missing or unreadable. Where ``O_NOFOLLOW`` is unavailable (Windows) the
+    open follows a symlink, so the ``lstat`` before it is the weaker,
+    non-atomic check.
     """
     if not _O_NOFOLLOW and not stat.S_ISREG(os.lstat(path).st_mode):
         return None
     try:
-        fd = os.open(path, os.O_RDONLY | _O_NOFOLLOW)
+        fd = os.open(path, os.O_RDONLY | _O_NOFOLLOW | _O_NONBLOCK)
     except OSError as exc:
         if exc.errno in _SYMLINK_ERRNOS:
             return None

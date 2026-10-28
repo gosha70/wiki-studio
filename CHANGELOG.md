@@ -146,7 +146,30 @@ version 1. Release C is not declared closed by this entry; see Limitations.
   an interrupted attempt can only be recovered as a labelled post-hoc run, and
   `pin` and `ingest` refuse a dirty tree or a source that differs from the
   pins; `poetry.lock` locks the `mcp` extra and ADR-0003's licence table is
-  read from it.
+  read from it. Discovery and the 0.7.0 selector's page reader open pages
+  with `O_NONBLOCK` and judge the kind on the descriptor, so a FIFO linked
+  from `index.md` is skipped instead of hanging `find`. The held-out set is
+  recognised by content as well as by its manifest field or path (a fixture
+  whose questions, gold or corpus files hash to the committed manifest's
+  values runs under the held-out guards whatever its own manifest says); the
+  one held-out run refuses a `run3/ranker-config.json` that `run3/tuning.json`
+  does not record as chosen, so the configuration is `tune`'s; the held-out
+  pin test pins every tracked file under `wiki/`, `proposals/` and `corpus/`
+  plus `questions.json` and `gold.json`, and never the manifest or the results
+  the run writes; and a missing stop list, questions or gold file is a
+  refusal (exit 1) naming the file, not a traceback.
+- PR #56 review, second pass (0.8.0, before the tag): the trace records only
+  known values: a `tools/call` to a name outside the eight tools and a request
+  method outside the protocol's are traced as `unknown`, argument and result
+  keys outside the tool's schema and `tools/list` names outside the eight are
+  counted in `unknown_arg_keys`, `unknown_result_keys` and
+  `unknown_tool_names` and never copied, and an error summary names the error
+  class from wiki-studio's own set; the conformance suite requires the SDK's
+  unknown-tool error for `promote` in propose-only mode, fails case 1 for
+  every version when the server negotiated none of the tested versions (the
+  suite exited 0 before), and the host scenario gains a stale update and a
+  `promote` of `../x`, from whose refusals `check-host-run` proves cases 7
+  and 8 instead of skipping them.
 
 ### Upgrade notes
 

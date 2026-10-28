@@ -191,13 +191,22 @@ With `--trace PATH`, the server appends one JSON line per request to
 `PATH`:
 
 ```json
-{"ts":"2026-10-27T12:00:00.000Z","method":"tools/call","tool":"find","protocol_version":"2025-06-18","client_name":"claude-code","client_version":"2.1.0","outcome":0,"duration_ms":12,"tool_names":null,"arg_keys":["max_pages","question"],"result_keys":["bytes_loaded","max_bytes","omitted","pages","ranker","ranker_config_hash"],"summary":{"pages":2,"max_pages":5,"ranker":"index-first","has_sha256":true}}
+{"ts":"2026-10-27T12:00:00.000Z","method":"tools/call","tool":"find","protocol_version":"2025-06-18","client_name":"claude-code","client_version":"2.1.0","outcome":0,"duration_ms":12,"tool_names":null,"unknown_tool_names":null,"arg_keys":["max_pages","question"],"unknown_arg_keys":0,"result_keys":["bytes_loaded","fallback_reason","index","ineligible","max_bytes","omitted","pages","question","ranker","ranker_config_hash","warnings"],"unknown_result_keys":0,"summary":{"pages":2,"max_pages":5,"ranker":"index-first","has_sha256":true}}
 ```
 
 - `outcome` is 0, or the error result's `exit_code` (1 for a protocol-level
   error).
 - Page content, question text, edit content and file paths are never
-  traced. The last four keys are the non-content evidence a host-run
+  traced, and no other string the client chooses is copied either:
+  `method` is one of the protocol's request methods and `tool` one of the
+  eight tools, or else the literal `unknown`; `arg_keys` keeps only the
+  names in the tool's input schema, `result_keys` only the tool's own
+  result keys (and an error result's `error`, `exit_code`, `message`), and
+  `tool_names` only the eight. Whatever else a frame carries is counted in
+  `unknown_arg_keys`, `unknown_result_keys` and `unknown_tool_names`
+  (`0` on a clean line). `client_name` and `client_version` are the strings
+  the host sent in `initialize`, as FR-041 asks.
+- The keys from `tool_names` on are the non-content evidence a host-run
   checker needs (`conformance/runs/README.md`): `tool_names` is a
   `tools/list` result's names (null on other lines); `arg_keys` and
   `result_keys` are a `tools/call`'s sorted argument and top-level result
@@ -212,8 +221,10 @@ With `--trace PATH`, the server appends one JSON line per request to
     assignment is checked from the end state, not the trace);
   - `promote`: `applied` (count), `dry_run`, `approved` (count);
   - `review_state`: `states` (count), `approved` (count);
-  - any error result: `{"exit_code": N}`; `lint`, `info` and `findings`:
-    null.
+  - any error result: `{"exit_code": N, "error": <class>}`, the class only
+    when it is one of wiki-studio's own error names, `ValueError` or
+    `InternalError` (null for a protocol-level error); `lint`, `info` and
+    `findings`: null.
 - The file is opened append-only and must lie outside the wiki. A path
   inside the wiki, a symlink (the file is opened without following one, and
   must be a regular file), or one that cannot be opened, is a launch error
@@ -288,7 +299,9 @@ A host run is the evidence the protocol suite cannot give: a real MCP host,
 at a pinned version, doing the fixed scenario in
 `conformance/mcp/scenario.md` (find, read, a `read_page` of `../outside.md`
 that the server must refuse, propose an update carrying the hash, promote,
-`review_state`) against the default-policy fixture with `--trace`.
+`review_state`, then the same update with the now stale hash, whose promote
+the server must refuse with exit 9, and a `promote` of `../x`, which the
+name rule must refuse) against the default-policy fixture with `--trace`.
 
 ```bash
 python -m conformance.mcp.run check-host-run --run conformance/runs/<date>-claude-code-<version>
@@ -306,19 +319,27 @@ checker says so:
   are the suite's) and case 4 (`read_page` returned a sha256, and a
   `read_page` was refused with exit 7: the scenario's traversal step; that
   the sha256 is the file's is the suite's check, and a run without the
-  refusal line fails case 4 as "containment is not provable from this run").
+  refusal line fails case 4 as "containment is not provable from this run")
+  and case 8 (a `promote` refused by the name rule, `ValueError` with exit
+  1, after which nothing was applied; the trace holds no name, and that
+  nothing was read is the suite's check).
 - `proved-by-end-state`: case 5 (the creates and updates counted, every
   update carrying `base_sha256`, the proposal archived, created pages
   carrying a `page_id` in the end state; that the wiki stayed unchanged
   between propose and promote is not provable from a trace), case 6
   (`promote` applied paths and was not a dry run; the receipt is
   `committed` with `entry_point: mcp`, the update landed from the
-  fixture's revision with no unguarded path) and case 9 (`review_state`
-  after the promote reports no approved page, the promote approved none,
-  no approval record exists).
-- `not-provable-from-host-run (protocol suite)`: case 7 (the stale-update
-  refusal) and case 8 (`promote` of `../x`), which the scenario does not
-  exercise. They count as skipped, never as passed.
+  fixture's revision with no unguarded path), case 7 (after the first
+  promote, a propose whose updates all carried `base_sha256` was refused at
+  promote with exit 9, the updated page in the end state is still what the
+  first promote wrote and every receipt is committed; that the refused
+  update named the same page is not in the trace) and case 9
+  (`review_state` after the promote reports no approved page, the promote
+  approved none, no approval record exists).
+- `not-provable-from-host-run (protocol suite)`: case 7 when the trace has
+  no `promote` refused with exit 9, and case 8 when it has none refused by
+  the name rule, that is, when the host did not reach the scenario's steps
+  8-10. They count as skipped, never as passed.
 
 The verdict line names the cases the run proves. `conformance/runs/README.md`
 gives the run directory's layout and the Claude Code

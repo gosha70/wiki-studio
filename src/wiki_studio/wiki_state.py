@@ -19,7 +19,9 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import re
+import stat
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
@@ -144,16 +146,32 @@ def _tokenise(text: str) -> set[str]:
     return {tok for tok in _TOKEN_RE.findall(text.lower()) if tok not in _STOPWORDS}
 
 
+_O_NONBLOCK = getattr(os, "O_NONBLOCK", 0)
+
+
 def _read_text_or_empty(path: Path) -> str:
-    """Return the file contents, or '' if the file is missing, unreadable or not valid UTF-8.
+    """Return the file contents, or '' if the file is missing, unreadable, not a regular file or not valid UTF-8.
 
     A non-UTF-8 page reads as empty here, so no caller selects, checks or crashes on it;
-    the structural linter reports it (0.8.0, FR-003).
+    the structural linter reports it (0.8.0, FR-003). The open is non-blocking and
+    the kind is judged on the descriptor, so a FIFO at a page path reads as empty
+    instead of hanging every reader (the 0.7.0 selector, the health and prose checks).
     """
     try:
-        return path.read_text(encoding="utf-8")
+        fd = os.open(path, os.O_RDONLY | _O_NONBLOCK)
+    except OSError:
+        return ""
+    try:
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            return ""
+        with os.fdopen(fd, "rb") as handle:
+            fd = -1
+            return handle.read().decode("utf-8")
     except (OSError, UnicodeDecodeError):
         return ""
+    finally:
+        if fd >= 0:
+            os.close(fd)
 
 
 def _contained_read_or_empty(wiki_dir: Path, rel: str) -> str:

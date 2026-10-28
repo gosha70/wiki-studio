@@ -13,15 +13,21 @@ one JSON line per request: ``ts``, ``method``, ``tool``, ``protocol_version``,
 checker needs: ``tool_names`` (a ``tools/list`` result's names), ``arg_keys``
 and ``result_keys`` (a ``tools/call``'s argument and result key names) and
 ``summary`` (counts and flags per tool, see :func:`_summary`). Page content,
-question text, edit content and file paths are never traced. Observing the
-wire rather than the SDK's internals keeps the trace independent of the SDK
-version.
+question text, edit content and file paths are never traced, and neither is
+any other string the client chooses: ``method`` and ``tool`` are recorded
+only when they are a known request method and one of the eight tools (else
+``"unknown"``), ``arg_keys``, ``result_keys`` and ``tool_names`` keep only
+the names in the tool's own schema, and whatever else a frame carries is
+counted in ``unknown_tool_names``, ``unknown_arg_keys`` and
+``unknown_result_keys``. Observing the wire rather than the SDK's internals
+keeps the trace independent of the SDK version.
 """
 
 from __future__ import annotations
 
 import contextlib
 import datetime
+import inspect
 import json
 import os
 import select
@@ -31,9 +37,22 @@ import threading
 import time
 from typing import IO, TYPE_CHECKING, Any
 
+from ..errors import IngestError
 from ..paths import path_inside_dir
 from ..review import STATE_APPROVED
-from .config import LaunchError
+from .config import (
+    TOOL_FIND,
+    TOOL_FINDINGS,
+    TOOL_INFO,
+    TOOL_LINT,
+    TOOL_NAMES,
+    TOOL_PROMOTE,
+    TOOL_PROPOSE,
+    TOOL_READ_PAGE,
+    TOOL_REVIEW_STATE,
+    LaunchError,
+)
+from .tools import INTERNAL_ERROR, WikiTools
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -51,15 +70,90 @@ TRACE_KEYS = (
     "outcome",
     "duration_ms",
     "tool_names",
+    "unknown_tool_names",
     "arg_keys",
+    "unknown_arg_keys",
     "result_keys",
+    "unknown_result_keys",
     "summary",
 )
 METHOD_INITIALIZE = "initialize"
 METHOD_TOOLS_LIST = "tools/list"
 METHOD_TOOLS_CALL = "tools/call"
+# The request methods a client may send a server (MCP 2025-06-18); any other method is traced as UNKNOWN.
+KNOWN_METHODS = frozenset(
+    {
+        METHOD_INITIALIZE,
+        METHOD_TOOLS_LIST,
+        METHOD_TOOLS_CALL,
+        "ping",
+        "resources/list",
+        "resources/templates/list",
+        "resources/read",
+        "resources/subscribe",
+        "resources/unsubscribe",
+        "prompts/list",
+        "prompts/get",
+        "completion/complete",
+        "logging/setLevel",
+    }
+)
+# What the trace records in place of a client-chosen method or tool name it does not know (FR-041).
+UNKNOWN = "unknown"
 # The outcome of a failed request that carries no wiki-studio exit code (a protocol error, an SDK refusal).
 OUTCOME_UNCODED_ERROR = 1
+# The keys of an error result (tools.error_payload) and the top-level keys of each tool's result (FR-035).
+ERROR_RESULT_KEYS = frozenset({"error", "exit_code", "message"})
+TOOL_RESULT_KEYS: dict[str, frozenset[str]] = {
+    TOOL_FIND: frozenset(
+        {
+            "question",
+            "index",
+            "pages",
+            "ranker",
+            "fallback_reason",
+            "bytes_loaded",
+            "max_bytes",
+            "ranker_config_hash",
+            "omitted",
+            "ineligible",
+            "warnings",
+        }
+    ),
+    TOOL_READ_PAGE: frozenset({"path", "sha256", "content"}),
+    TOOL_PROPOSE: frozenset({"name", "proposal_dir", "warnings"}),
+    TOOL_PROMOTE: frozenset(
+        {"applied_paths", "archived_dir", "dry_run", "unguarded_paths", "warnings", "approved_paths"}
+    ),
+    TOOL_LINT: frozenset({"violations", "pages_checked", "audit_errors", "health", "prose", "passed"}),
+    TOOL_INFO: frozenset(
+        {"package_version", "schema_contract", "formats", "capabilities", "manifest", "discovery", "adapter"}
+    ),
+    TOOL_FINDINGS: frozenset({"findings_version", "counts", "pages_checked", "findings"}),
+    TOOL_REVIEW_STATE: frozenset({"states"}),
+}
+
+
+def _argument_keys(name: str) -> frozenset[str]:
+    """The argument names of one tool: its method's parameters, from which the SDK builds the input schema."""
+    return frozenset(p for p in inspect.signature(getattr(WikiTools, name)).parameters if p != "self")
+
+
+TOOL_ARG_KEYS: dict[str, frozenset[str]] = {name: _argument_keys(name) for name in TOOL_NAMES}
+
+
+def _error_names() -> frozenset[str]:
+    """The ``error`` values an error result can carry: wiki-studio's error classes, ``ValueError``, InternalError."""
+    names = {INTERNAL_ERROR, ValueError.__name__}
+    pending: list[type[BaseException]] = [IngestError]
+    while pending:
+        cls = pending.pop()
+        names.add(cls.__name__)
+        pending.extend(cls.__subclasses__())
+    return frozenset(names)
+
+
+KNOWN_ERRORS = _error_names()
 _STDIN_FD = 0
 _STDOUT_FD = 1
 _READ_CHUNK = 65536
@@ -70,12 +164,7 @@ _POSIX = os.name == "posix"
 _PUMP_JOIN_FALLBACK_SECONDS = 2.0
 _O_NOFOLLOW = getattr(os, "O_NOFOLLOW", 0)
 _TRACE_MODE = 0o600
-# The tools whose summary the trace computes, and the edit actions propose's summary counts.
-_TOOL_FIND = "find"
-_TOOL_READ_PAGE = "read_page"
-_TOOL_PROPOSE = "propose"
-_TOOL_PROMOTE = "promote"
-_TOOL_REVIEW_STATE = "review_state"
+# The edit actions propose's summary counts.
 _ACTION_CREATE = "create"
 _ACTION_UPDATE = "update"
 _PAGE_ID_LINE = "page_id:"
@@ -146,13 +235,19 @@ def _outcome(message: dict[str, Any], payload: dict[str, Any] | None) -> int:
     return code if isinstance(code, int) and not isinstance(code, bool) else OUTCOME_UNCODED_ERROR
 
 
-def _tool_names(message: dict[str, Any]) -> list[str] | None:
-    """The names a ``tools/list`` result lists, or None when the response carries no list."""
+def _known(names: Any, allowed: frozenset[str]) -> tuple[list[str], int]:
+    """The strings of ``names`` that are in ``allowed``, sorted, and the count of everything else."""
+    known = sorted(n for n in names if isinstance(n, str) and n in allowed)
+    return known, len(list(names)) - len(known)
+
+
+def _tool_names(message: dict[str, Any]) -> tuple[list[str] | None, int | None]:
+    """The eight tools a ``tools/list`` result names and the count of other names; (None, None) without a list."""
     result = message.get("result")
     tools = result.get("tools") if isinstance(result, dict) else None
     if not isinstance(tools, list):
-        return None
-    return sorted(t["name"] for t in tools if isinstance(t, dict) and isinstance(t.get("name"), str))
+        return None, None
+    return _known([t.get("name") for t in tools if isinstance(t, dict)], frozenset(TOOL_NAMES))
 
 
 def _list(value: object) -> list[Any]:
@@ -173,14 +268,17 @@ def _carries_page_id(edit: dict[str, Any]) -> bool:
 def _summary(tool: str | None, arguments: dict[str, Any], payload: dict[str, Any] | None, outcome: int) -> Any:
     """Counts and flags per tool, from the arguments and the result; None for a tool without a summary.
 
-    For an error result the summary is ``{"exit_code": <outcome>}``. Nothing
-    here copies a value out of the arguments or the result except ``find``'s
-    ranker name, which the ``info`` tool reports anyway.
+    For an error result the summary is ``{"exit_code": <outcome>, "error":
+    <class>}`` with the class only when it is one of wiki-studio's own error
+    names (else null). Nothing here copies a value out of the arguments or
+    the result except ``find``'s ranker name, which the ``info`` tool reports
+    anyway.
     """
     if outcome != 0:
-        return {"exit_code": outcome}
+        name = payload.get("error") if payload is not None else None
+        return {"exit_code": outcome, "error": name if isinstance(name, str) and name in KNOWN_ERRORS else None}
     result = payload or {}
-    if tool == _TOOL_FIND:
+    if tool == TOOL_FIND:
         pages = _list(result.get("pages"))
         max_pages = arguments.get("max_pages")
         return {
@@ -189,9 +287,9 @@ def _summary(tool: str | None, arguments: dict[str, Any], payload: dict[str, Any
             "ranker": result.get("ranker") if isinstance(result.get("ranker"), str) else None,
             "has_sha256": all(isinstance(p, dict) and isinstance(p.get("sha256"), str) and p["sha256"] for p in pages),
         }
-    if tool == _TOOL_READ_PAGE:
+    if tool == TOOL_READ_PAGE:
         return {"has_sha256": isinstance(result.get("sha256"), str) and bool(result["sha256"])}
-    if tool == _TOOL_PROPOSE:
+    if tool == TOOL_PROPOSE:
         creates = _edits_of(arguments, _ACTION_CREATE)
         updates = _edits_of(arguments, _ACTION_UPDATE)
         return {
@@ -200,13 +298,13 @@ def _summary(tool: str | None, arguments: dict[str, Any], payload: dict[str, Any
             "with_base_sha256": sum(isinstance(e.get("base_sha256"), str) and bool(e["base_sha256"]) for e in updates),
             "page_id_supplied": sum(_carries_page_id(e) for e in creates),
         }
-    if tool == _TOOL_PROMOTE:
+    if tool == TOOL_PROMOTE:
         return {
             "applied": len(_list(result.get("applied_paths"))),
             "dry_run": bool(result.get("dry_run")),
             "approved": len(_list(result.get("approved_paths"))),
         }
-    if tool == _TOOL_REVIEW_STATE:
+    if tool == TOOL_REVIEW_STATE:
         states = _list(result.get("states"))
         return {
             "states": len(states),
@@ -240,9 +338,12 @@ class WireObserver:
             params = message.get("params")
             if not isinstance(params, dict):
                 params = {}
-            tool = params.get("name") if method == METHOD_TOOLS_CALL and isinstance(params.get("name"), str) else None
+            # A method or tool name the trace does not know is recorded as UNKNOWN, never as the client's string.
+            tool: str | None = None
             arguments: dict[str, Any] | None = None
             if method == METHOD_TOOLS_CALL:
+                name = params.get("name")
+                tool = name if isinstance(name, str) and name in TOOL_NAMES else UNKNOWN
                 arguments = params.get("arguments") if isinstance(params.get("arguments"), dict) else {}
             key = json.dumps(message["id"])
             with self._lock:
@@ -252,7 +353,8 @@ class WireObserver:
                     if isinstance(info, dict):
                         self.client_name = info.get("name") if isinstance(info.get("name"), str) else None
                         self.client_version = info.get("version") if isinstance(info.get("version"), str) else None
-                self._pending[key] = (method, tool, arguments, self._clock())
+                recorded_method = method if method in KNOWN_METHODS else UNKNOWN
+                self._pending[key] = (recorded_method, tool, arguments, self._clock())
 
     def outbound(self, line: bytes) -> None:
         for message in _frames(line):
@@ -271,6 +373,16 @@ class WireObserver:
                 method, tool, arguments, started = pending
                 payload = _payload(message) if arguments is not None else None
                 outcome = _outcome(message, payload)
+                tool_names, unknown_tool_names = _tool_names(message) if method == METHOD_TOOLS_LIST else (None, None)
+                arg_keys: list[str] | None = None
+                unknown_arg_keys: int | None = None
+                result_keys: list[str] | None = None
+                unknown_result_keys: int | None = None
+                if arguments is not None:
+                    arg_keys, unknown_arg_keys = _known(arguments, TOOL_ARG_KEYS.get(tool or "", frozenset()))
+                if payload is not None:
+                    allowed = TOOL_RESULT_KEYS.get(tool or "", frozenset()) | ERROR_RESULT_KEYS
+                    result_keys, unknown_result_keys = _known(payload, allowed)
                 self._write(
                     {
                         "ts": _utc_now(),
@@ -281,9 +393,12 @@ class WireObserver:
                         "client_version": self.client_version,
                         "outcome": outcome,
                         "duration_ms": round((self._clock() - started) * 1000),
-                        "tool_names": _tool_names(message) if method == METHOD_TOOLS_LIST else None,
-                        "arg_keys": None if arguments is None else sorted(arguments),
-                        "result_keys": None if arguments is None or payload is None else sorted(payload),
+                        "tool_names": tool_names,
+                        "unknown_tool_names": unknown_tool_names,
+                        "arg_keys": arg_keys,
+                        "unknown_arg_keys": unknown_arg_keys,
+                        "result_keys": result_keys,
+                        "unknown_result_keys": unknown_result_keys,
                         "summary": None if arguments is None else _summary(tool, arguments, payload, outcome),
                     }
                 )

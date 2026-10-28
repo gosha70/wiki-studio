@@ -26,6 +26,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
 
 from conformance.mcp import run
 from wiki_studio import errors
@@ -41,6 +42,8 @@ HOST_ACTOR = "claude-code-host-run"
 TRAVERSAL_PATH = "../outside.md"
 SCENARIO_QUESTION = "How do we retry outbound calls?"
 SCENARIO_PROPOSAL = "host-run-update"
+STALE_PROPOSAL = "host-run-stale"
+BAD_PROMOTE_NAME = "../x"
 
 
 def server_command() -> str:
@@ -146,11 +149,19 @@ class _Listed:
 
 
 class InProcessSession:
-    """What the SDK's ``ClientSession`` gives the cases, served in process by the adapter's tools."""
+    """What the SDK's ``ClientSession`` gives the cases, served in process by the adapter's tools.
 
-    def __init__(self, tools: WikiTools, extra_tool: str | None = None) -> None:
+    An unregistered tool raises, as the SDK's refusal reads; with
+    ``unknown_tool_as_payload`` it is instead a wiki-studio error result, as
+    a server that ran the name through its own error path would answer.
+    """
+
+    def __init__(
+        self, tools: WikiTools, extra_tool: str | None = None, *, unknown_tool_as_payload: bool = False
+    ) -> None:
         self.tools = tools
         self.extra_tool = extra_tool
+        self.unknown_tool_as_payload = unknown_tool_as_payload
 
     async def list_tools(self) -> _Listed:
         names = list(self.tools.registry())
@@ -160,6 +171,9 @@ class InProcessSession:
 
     async def call_tool(self, name: str, arguments: dict[str, Any]) -> _Dumped:
         method = self.tools.registry().get(name)
+        if method is None and self.unknown_tool_as_payload:
+            payload = error_payload(ValueError(f"unknown tool {name}"))
+            return _Dumped({"content": [{"type": "text", "text": json.dumps(payload)}], "isError": True})
         if method is None:
             raise LookupError(f"unknown tool {name}")
         try:
@@ -177,9 +191,11 @@ class TestCaseLogic(unittest.TestCase):
         self.addCleanup(self._tmp.cleanup)
         self.version_run = run.VersionRun("2025-06-18", ["unused"], Path(self._tmp.name).resolve(), None)
 
-    def serve(self, launch: run.Launch, *flags: str, extra_tool: str | None = None) -> InProcessSession:
+    def serve(
+        self, launch: run.Launch, *flags: str, extra_tool: str | None = None, unknown_tool_as_payload: bool = False
+    ) -> InProcessSession:
         config = parse_launch(["--root", str(launch.root), "--by", run.LAUNCH_ACTOR, *flags], env={})
-        return InProcessSession(WikiTools(config), extra_tool)
+        return InProcessSession(WikiTools(config), extra_tool, unknown_tool_as_payload=unknown_tool_as_payload)
 
     def statuses(self) -> dict[int, str]:
         return {number: result.status for number, result in self.version_run.results.items()}
@@ -210,6 +226,29 @@ class TestCaseLogic(unittest.TestCase):
         asyncio.run(vr._propose_only_cases(only)(self.serve(only)))
         self.assertEqual(vr.results[2].status, run.FAIL)
 
+    def test_only_the_sdks_unknown_tool_error_passes_the_propose_only_check(self) -> None:
+        """A disabled promote must be refused by the SDK (no payload); a wiki-studio error result means it ran."""
+        vr = self.version_run
+        vr.record(2, run.PASS, "surface")
+        only = vr.launch("propose-only", run.VARIANT_DEFAULT, *run.DISABLE_PROMOTE)
+        session = self.serve(only, *run.DISABLE_PROMOTE, unknown_tool_as_payload=True)
+        asyncio.run(vr._propose_only_cases(only)(session))
+        self.assertEqual(vr.results[2].status, run.FAIL)
+        self.assertIn("expected the SDK's unknown-tool error", vr.results[2].detail)
+        sdk = run.ToolCall(is_error=True, payload=None, text="Unknown tool: promote")
+        self.assertTrue(sdk.is_unknown_tool_error())
+        self.assertTrue(
+            run.ToolCall(is_error=True, payload=None, raised="McpError: Unknown tool").is_unknown_tool_error()
+        )
+        ran = run.ToolCall(is_error=True, payload=error_payload(ValueError("unknown tool promote")), text="{}")
+        self.assertFalse(ran.is_unknown_tool_error())
+        self.assertFalse(
+            run.ToolCall(is_error=True, payload=None, text="Error executing tool promote").is_unknown_tool_error()
+        )
+        self.assertFalse(
+            run.ToolCall(is_error=False, payload=None, text="Unknown tool: promote").is_unknown_tool_error()
+        )
+
     def test_a_backend_invocation_fails_case_11(self) -> None:
         vr = self.version_run
         vr.stub_log.write_text("invoked\n", encoding="utf-8")
@@ -231,6 +270,63 @@ class TestCaseLogic(unittest.TestCase):
         asyncio.run(vr.run_case(12, vr.case_clean_stdout))
         self.assertEqual(vr.results[12].status, run.FAIL)
         self.assertFalse(run._answered(vr.base / "missing.stdout"))
+
+
+class TestNegotiation(unittest.TestCase):
+    """Case 1 across the tested versions: a server that negotiates none of them fails, and the suite exits 1."""
+
+    def run_suite_with(self, session: Any) -> tuple[int, str]:
+        """The suite's command line with the SDK session replaced by ``session`` (the server always answers)."""
+        with (
+            patch.object(run, "_require_sdk", lambda: None),
+            patch.object(run, "_session", session),
+            patch.object(run, "_answered", lambda record: True),
+        ):
+            return run_main("--server-cmd", "a-server")
+
+    @staticmethod
+    def case_lines(output: str, number: int) -> dict[str, str]:
+        """Each version's status line for case ``number``, by version."""
+        lines = {}
+        for line in output.splitlines():
+            if f"] {number:02d} {run.CASES[number]}" in line:
+                lines[line.split("[", 1)[1].split("]", 1)[0]] = line
+        return lines
+
+    def test_a_server_refusing_every_version_fails_case_1_and_the_suite_exits_1(self) -> None:
+        async def refuse(launch: run.Launch, version: str, body: Any) -> run.Negotiation:
+            return run.Negotiation(refused="the server offered 1999-01-01")
+
+        code, output = self.run_suite_with(refuse)
+        self.assertEqual(code, run.EXIT_FAIL, output)
+        first = self.case_lines(output, 1)
+        self.assertEqual(set(first), set(run.TESTED_VERSIONS), output)
+        for version, line in first.items():
+            with self.subTest(version=version):
+                self.assertTrue(line.startswith(run.FAIL), line)
+                self.assertIn("negotiated none of", line)
+                self.assertIn("refused cleanly", line)
+
+    def test_a_clean_refusal_passes_case_1_when_another_version_was_negotiated(self) -> None:
+        agreed = run.HANDSHAKE_VERSIONS[0]
+
+        async def one_version(launch: run.Launch, version: str, body: Any) -> run.Negotiation:
+            if version == agreed:
+                return run.Negotiation(negotiated=version)
+            return run.Negotiation(refused=f"the server offered {agreed}")
+
+        code, output = self.run_suite_with(one_version)
+        self.assertEqual(code, run.EXIT_FAIL, output)  # the cases after case 1 were not reached for the agreed version
+        first = self.case_lines(output, 1)
+        self.assertEqual(set(first), set(run.TESTED_VERSIONS), output)
+        for version, line in first.items():
+            with self.subTest(version=version):
+                self.assertTrue(line.startswith(run.PASS), line)
+        self.assertIn("negotiated", first[agreed])
+        self.assertNotIn("negotiated none of", output)
+        for version in run.TESTED_VERSIONS:
+            if version != agreed:
+                self.assertTrue(self.case_lines(output, 2)[version].startswith(run.SKIP), output)
 
 
 # ── check-host-run ───────────────────────────────────────────
@@ -276,8 +372,8 @@ class TestCheckHostRun(unittest.TestCase):
         self.addCleanup(self._tmp.cleanup)
         self.base = Path(self._tmp.name).resolve()
 
-    def record_run(self, variant: str = run.VARIANT_DEFAULT, *, traversal: bool = True) -> Path:
-        """Do the scenario's seven steps in process and record the run directory as the README describes."""
+    def record_run(self, variant: str = run.VARIANT_DEFAULT, *, traversal: bool = True, refusals: bool = True) -> Path:
+        """Do the scenario's ten steps in process (``refusals`` False stops after step 7) and record the run."""
         root = run.copy_fixture(self.base / "work", variant)
         trace = io.StringIO()
         session = HostSession(WikiTools(parse_launch(["--root", str(root), "--by", HOST_ACTOR], env={})), trace)
@@ -292,6 +388,13 @@ class TestCheckHostRun(unittest.TestCase):
         session.call(run.TOOL_PROPOSE, {"edits": [edit], "name": SCENARIO_PROPOSAL, "rationale": "Cap the retries."})
         session.call(run.TOOL_PROMOTE, {"name": SCENARIO_PROPOSAL})
         session.call(run.TOOL_REVIEW_STATE, {"pages": [run.KNOWN_PAGE]})
+        if refusals:
+            # Steps 8-10: the same update with the now stale hash, its refused promote, and a promote of ../x.
+            session.call(run.TOOL_PROPOSE, {"edits": [edit], "name": STALE_PROPOSAL, "rationale": "Stale."})
+            stale = session.call(run.TOOL_PROMOTE, {"name": STALE_PROPOSAL})
+            self.assertEqual(stale.get("exit_code"), run.EXIT_PROMOTE_VALIDATION, stale)
+            bad = session.call(run.TOOL_PROMOTE, {"name": BAD_PROMOTE_NAME})
+            self.assertEqual((bad.get("error"), bad.get("exit_code")), (run.ERROR_VALUE_ERROR, run.EXIT_VALUE_ERROR))
         run_dir = self.base / "run"
         run_dir.mkdir()
         (run_dir / run.RUN_TRACE).write_text(trace.getvalue(), encoding="utf-8")
@@ -325,12 +428,12 @@ class TestCheckHostRun(unittest.TestCase):
         kept = [r for r in map(edit, records) if r is not None]
         trace.write_text("".join(json.dumps(r) + "\n" for r in kept), encoding="utf-8")
 
-    def test_a_scenario_run_proves_cases_2_to_6_and_9_and_the_verdict_names_them(self) -> None:
+    def test_a_scenario_run_proves_cases_2_to_9_and_the_verdict_names_them(self) -> None:
         run_dir = self.record_run()
         results = run.check_host_run(run_dir)
         statuses = {r.number: r.status for r in results}
         proofs = {r.number: r.proof for r in results}
-        self.assertEqual(statuses, {**dict.fromkeys(run.HOST_RUN_CASES, run.PASS), 7: run.SKIP, 8: run.SKIP}, results)
+        self.assertEqual(statuses, dict.fromkeys(run.HOST_RUN_CASES, run.PASS), results)
         self.assertEqual(
             proofs,
             {
@@ -339,23 +442,58 @@ class TestCheckHostRun(unittest.TestCase):
                 4: run.PROOF_TRACE,
                 5: run.PROOF_END_STATE,
                 6: run.PROOF_END_STATE,
-                7: run.PROOF_NONE,
-                8: run.PROOF_NONE,
+                7: run.PROOF_END_STATE,
+                8: run.PROOF_TRACE,
                 9: run.PROOF_END_STATE,
             },
         )
+        details = {r.number: r.detail for r in results}
+        self.assertIn("exit 9", details[7])
+        self.assertIn("name rule", details[8])
+        code, output = run_main("check-host-run", "--run", str(run_dir), "--record")
+        self.assertEqual(code, run.EXIT_PASS, output)
+        self.assertIn("the host run proves case(s) 2, 3, 4, 5, 6, 7, 8, 9", output)
+        self.assertNotIn("not provable from a host run", output)
+        self.assertNotIn(f"[{run.PROOF_NONE}]", output)
+        verdict = json.loads((run_dir / run.RUN_MANIFEST).read_text(encoding="utf-8"))["verdict"]
+        self.assertTrue(verdict["passed"])
+        self.assertEqual(
+            (verdict["proved"], verdict["not_provable"], verdict["failed"]), ([2, 3, 4, 5, 6, 7, 8, 9], [], [])
+        )
+        self.assertEqual(set(verdict["cases"]), {str(n) for n in run.HOST_RUN_CASES})
+        self.assertEqual(verdict["proof"]["8"], run.PROOF_TRACE)
+
+    def test_a_run_without_the_refusal_steps_cannot_prove_cases_7_and_8(self) -> None:
+        run_dir = self.record_run(refusals=False)
+        results = {r.number: r for r in run.check_host_run(run_dir)}
+        self.assertEqual({n: r.status for n, r in results.items() if n in (7, 8)}, {7: run.SKIP, 8: run.SKIP})
+        self.assertEqual((results[7].proof, results[8].proof), (run.PROOF_NONE, run.PROOF_NONE))
+        self.assertIn("exit 9", results[7].detail)
+        self.assertIn("name rule", results[8].detail)
         code, output = run_main("check-host-run", "--run", str(run_dir), "--record")
         self.assertEqual(code, run.EXIT_PASS, output)
         self.assertIn("the host run proves case(s) 2, 3, 4, 5, 6, 9", output)
         self.assertIn("not provable from a host run, the protocol suite's: 7, 8", output)
         self.assertIn(f"[{run.PROOF_NONE}]", output)
         verdict = json.loads((run_dir / run.RUN_MANIFEST).read_text(encoding="utf-8"))["verdict"]
-        self.assertTrue(verdict["passed"])
         self.assertEqual(
             (verdict["proved"], verdict["not_provable"], verdict["failed"]), ([2, 3, 4, 5, 6, 9], [7, 8], [])
         )
-        self.assertEqual(set(verdict["cases"]), {str(n) for n in run.HOST_RUN_CASES})
-        self.assertEqual(verdict["proof"]["7"], run.PROOF_NONE)
+
+    def test_case_7_needs_the_guarded_propose_and_case_8_the_name_rule_error(self) -> None:
+        run_dir = self.record_run()
+        trace = run_dir / run.RUN_TRACE
+        records = [json.loads(line) for line in trace.read_text(encoding="utf-8").splitlines() if line]
+        [r for r in records if r["tool"] == run.TOOL_PROPOSE][-1]["summary"]["with_base_sha256"] = 0
+        for record in records:
+            if record["tool"] == run.TOOL_PROMOTE and record["outcome"] == run.EXIT_VALUE_ERROR:
+                record["summary"]["error"] = None  # an exit-1 promote that is not the name rule's ValueError
+        trace.write_text("".join(json.dumps(r) + "\n" for r in records), encoding="utf-8")
+        results = {r.number: r for r in run.check_host_run(run_dir)}
+        self.assertEqual(results[7].status, run.FAIL)
+        self.assertIn("no base_sha256", results[7].detail)
+        self.assertEqual(results[7].proof, run.PROOF_FAILED)
+        self.assertEqual((results[8].status, results[8].proof), (run.SKIP, run.PROOF_NONE))
 
     def test_the_recorded_trace_carries_the_evidence_keys_and_no_content(self) -> None:
         run_dir = self.record_run()
@@ -363,14 +501,18 @@ class TestCheckHostRun(unittest.TestCase):
         self.assertNotIn("retry outbound", text)
         self.assertNotIn(run.KNOWN_PAGE, text)
         self.assertNotIn(TRAVERSAL_PATH, text)
+        self.assertNotIn(BAD_PROMOTE_NAME, text)
+        self.assertNotIn(STALE_PROPOSAL, text)
         records = [json.loads(line) for line in text.splitlines()]
         self.assertTrue(all(tuple(r) == TRACE_KEYS == run.TRACE_KEYS for r in records), records)
+        for key in ("unknown_tool_names", "unknown_arg_keys", "unknown_result_keys"):
+            self.assertEqual({r[key] for r in records}, {None, 0}, key)
         by_tool = {(r["tool"], r["outcome"]): r for r in records}
         self.assertEqual(by_tool[(None, 0)]["tool_names"], sorted(run.TOOL_NAMES))
         self.assertEqual(by_tool[("find", 0)]["arg_keys"], ["question"])
         self.assertEqual(by_tool[("find", 0)]["summary"]["has_sha256"], True)
         self.assertEqual(by_tool[("read_page", 0)]["summary"], {"has_sha256": True})
-        self.assertEqual(by_tool[("read_page", 7)]["summary"], {"exit_code": 7})
+        self.assertEqual(by_tool[("read_page", 7)]["summary"], {"exit_code": 7, "error": "PathOutsideRootError"})
         self.assertEqual(
             by_tool[("propose", 0)]["summary"],
             {"creates": 0, "updates": 1, "with_base_sha256": 1, "page_id_supplied": 0},
@@ -378,6 +520,9 @@ class TestCheckHostRun(unittest.TestCase):
         promoted = by_tool[("promote", 0)]["summary"]
         self.assertGreaterEqual(promoted.pop("applied"), 1)  # the page, and the index and log lines the promote adds
         self.assertEqual(promoted, {"dry_run": False, "approved": 0})
+        self.assertEqual(by_tool[("promote", 9)]["summary"], {"exit_code": 9, "error": "PromoteValidationError"})
+        self.assertEqual(by_tool[("promote", 1)]["summary"], {"exit_code": 1, "error": "ValueError"})
+        self.assertEqual(by_tool[("promote", 1)]["result_keys"], ["error", "exit_code", "message"])
         self.assertEqual(by_tool[("review_state", 0)]["summary"], {"states": 1, "approved": 0})
         self.assertEqual(by_tool[("promote", 0)]["result_keys"], sorted(by_tool[("promote", 0)]["result_keys"]))
 

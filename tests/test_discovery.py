@@ -382,6 +382,23 @@ class TestEligibility(DiscoveryCase):
         with self.assertRaises(SourceMissingError):
             api.find("retry backoff", self.paths)
 
+    @unittest.skipUnless(hasattr(os, "mkfifo"), "FIFOs are POSIX")
+    def test_a_fifo_linked_from_the_index_is_skipped_instead_of_hanging(self) -> None:
+        """A FIFO at a linked page path opens non-blocking and reads as non-regular under both rankers."""
+        page = self.page("concepts/twin-alpha.md")
+        page.unlink()
+        os.mkfifo(page)
+        for ranker in (discovery.RANKER_INDEX_FIRST, discovery.RANKER_FTS5):
+            with self.subTest(ranker=ranker):
+                selection = discovery.select(self.paths, "retry backoff", ranker=ranker)
+                self.assertIn(
+                    ("concepts/twin-alpha.md", discovery.INELIGIBLE_NOT_REGULAR_FILE),
+                    [(i.path, i.reason) for i in selection.ineligible],
+                )
+                self.assertNotIn("concepts/twin-alpha.md", [p.path for p in selection.pages])
+        found = api.find("retry backoff", self.paths, ranker=discovery.RANKER_INDEX_FIRST)
+        self.assertNotIn("concepts/twin-alpha.md", [p.path for p in found.pages])
+
     def test_two_spellings_of_one_link_load_the_page_once(self) -> None:
         index = self.page("index.md")
         index.write_text(index.read_text(encoding="utf-8") + "- [Twin beta again](./concepts/twin-beta.md)\n")

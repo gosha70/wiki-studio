@@ -19,10 +19,10 @@ Two commands:
     its trace and the fixture's end state, never the transcript. Each case is
     labelled ``proved`` (by the trace's evidence lines),
     ``proved-by-end-state`` (the end state is needed too) or
-    ``not-provable-from-host-run (protocol suite)`` (the scenario does not
-    exercise it; counted as skipped, never as passed), and the verdict names
-    the cases the run proves. ``--record`` writes the verdict into the run's
-    ``manifest.json``.
+    ``not-provable-from-host-run (protocol suite)`` (the trace lacks the
+    scenario step that would show it; counted as skipped, never as passed),
+    and the verdict names the cases the run proves. ``--record`` writes the
+    verdict into the run's ``manifest.json``.
 
 ``python -m conformance.mcp.run tree-hash DIR``
     Prints the tree hash ``check-host-run`` compares with ``end_state_sha256``.
@@ -124,6 +124,11 @@ PAGE_ID_RE = re.compile(r"^page_id: pg-[0-9a-f]{32}$", re.MULTILINE)
 INDEX_LINK_RE = re.compile(r"\]\(([^)\s]+\.md)\)")
 EXIT_PATH_OUTSIDE_ROOT = 7
 EXIT_PROMOTE_VALIDATION = 9
+# A ValueError error result (FR-039's name rule among them) and the error name the trace records for it.
+EXIT_VALUE_ERROR = 1
+ERROR_VALUE_ERROR = "ValueError"
+# How the MCP SDK refuses a call to a tool that is not registered ("Unknown tool: <name>", as an error result).
+UNKNOWN_TOOL_RE = re.compile(r"unknown tool", re.IGNORECASE)
 
 # The launch environment.
 ENV_PREFIX = "WIKI_STUDIO_"
@@ -263,20 +268,39 @@ class CaseResult:
 
 @dataclasses.dataclass
 class ToolCall:
-    """One ``tools/call``: an error result, a raised protocol error, or a result payload."""
+    """One ``tools/call``: an error result, a raised protocol error, or a result payload.
+
+    ``text`` is the result's first text block as sent (the SDK's own errors
+    are plain text, not a JSON object); ``payload`` is that text as a JSON
+    object when it is one, else ``structuredContent``.
+    """
 
     is_error: bool
     payload: dict[str, Any] | None
     raised: str | None = None
+    text: str | None = None
 
     @property
     def exit_code(self) -> int | None:
         return None if self.payload is None else self.payload.get("exit_code")
 
+    @property
+    def refusal(self) -> str:
+        """What the call gave, for a failure message."""
+        return str(self.raised or self.payload or self.text)
+
     def ok(self, what: str) -> dict[str, Any]:
-        check(not self.is_error and self.payload is not None, f"{what} failed: {self.raised or self.payload}")
+        check(not self.is_error and self.payload is not None, f"{what} failed: {self.refusal}")
         assert self.payload is not None
         return self.payload
+
+    def is_unknown_tool_error(self) -> bool:
+        """The SDK's refusal of a tool that is not registered: an error naming an unknown tool, with no payload.
+
+        A wiki-studio error result (``{error, exit_code, message}``) means the
+        tool ran, so it is not this.
+        """
+        return self.is_error and self.payload is None and bool(UNKNOWN_TOOL_RE.search(self.text or self.raised or ""))
 
 
 # ── The SDK session ──────────────────────────────────────────
@@ -329,16 +353,18 @@ async def _call(session: Any, name: str, arguments: dict[str, Any]) -> ToolCall:
         return ToolCall(is_error=True, payload=None, raised=f"{type(exc).__name__}: {exc}")
     data = result.model_dump(by_alias=True, exclude_none=True)
     payload: dict[str, Any] | None = None
+    text: str | None = None
     for block in data.get("content") or []:
         if block.get("type") == "text":
+            text = str(block.get("text", ""))
             with contextlib.suppress(ValueError):
-                parsed = json.loads(block.get("text", ""))
+                parsed = json.loads(text)
                 if isinstance(parsed, dict):
                     payload = parsed
             break
     if payload is None and isinstance(data.get("structuredContent"), dict):
         payload = data["structuredContent"]
-    return ToolCall(is_error=bool(data.get("isError")), payload=payload)
+    return ToolCall(is_error=bool(data.get("isError")), payload=payload, text=text)
 
 
 async def _list_tools(session: Any) -> list[dict[str, Any]]:
@@ -403,6 +429,7 @@ class VersionRun:
         self.trace = trace
         self.results: dict[int, CaseResult] = {}
         self.records: list[Path] = []
+        self.negotiated = False  # whether the server agreed to this version (a clean refusal leaves it False)
         self.stub_log = base / "stub-backend.log"
         self.stub_bin = base / "bin"
         self._install_stub()
@@ -460,6 +487,7 @@ class VersionRun:
                     self.record(number, SKIP, "the server does not speak this version")
             return self.ordered()
         else:
+            self.negotiated = True
             propose_only = self.launch("propose-only", VARIANT_DEFAULT, *DISABLE_PROMOTE)
             second = await self._guarded(propose_only, self._propose_only_cases(propose_only))
             auto = self.launch("auto-approve", VARIANT_AUTO_APPROVE)
@@ -658,7 +686,10 @@ class VersionRun:
                 expected = sorted(name for name in TOOL_NAMES if name != TOOL_PROMOTE)
                 check(names == expected, f"with --disable-tool promote tools/list is {names}")
                 call = await _call(session, TOOL_PROMOTE, {"name": "anything"})
-                check(call.is_error and not (call.payload or {}).get("applied_paths"), "promote was callable")
+                check(
+                    call.is_unknown_tool_error(),
+                    f"promote with --disable-tool promote gave {call.refusal}, expected the SDK's unknown-tool error",
+                )
                 calls: dict[str, dict[str, Any]] = {
                     TOOL_FIND: {"question": FIND_QUESTION},
                     TOOL_READ_PAGE: {"path": KNOWN_PAGE},
@@ -725,13 +756,21 @@ class VersionRun:
 
 
 async def run_suite(server_cmd: list[str], versions: list[str], trace: Path | None) -> list[CaseResult]:
-    results: list[CaseResult] = []
+    """Every case for every version; a server that negotiates none of the versions fails case 1 for each of them."""
+    runs: list[VersionRun] = []
     with tempfile.TemporaryDirectory(prefix="wiki-studio-conformance-") as tmp:
         for version in versions:
             base = Path(tmp).resolve() / version
             base.mkdir()
-            results += await VersionRun(version, server_cmd, base, trace).run()
-    return results
+            version_run = VersionRun(version, server_cmd, base, trace)
+            await version_run.run()
+            runs.append(version_run)
+    if not any(version_run.negotiated for version_run in runs):
+        for version_run in runs:
+            first = version_run.results[1]
+            if first.status == PASS:
+                version_run.record(1, FAIL, f"the server negotiated none of {', '.join(versions)}: {first.detail}")
+    return [result for version_run in runs for result in version_run.ordered()]
 
 
 # ── check-host-run ───────────────────────────────────────────
@@ -759,8 +798,11 @@ TRACE_KEYS = (
     "outcome",
     "duration_ms",
     "tool_names",
+    "unknown_tool_names",
     "arg_keys",
+    "unknown_arg_keys",
     "result_keys",
+    "unknown_result_keys",
     "summary",
 )
 METHOD_LIST = "tools/list"
@@ -799,10 +841,11 @@ def check_host_run(run_dir: Path) -> list[CaseResult]:
     The trace holds no content, so a case is ``proved`` only when its evidence
     lines (``tool_names``, ``summary``, ``outcome``) establish it,
     ``proved-by-end-state`` when the fixture's end state is needed as well, and
-    ``not-provable-from-host-run`` (skipped, never passed) when the scenario
-    does not exercise it: the stale-update refusal (7) and promote-name
-    containment (8) are the protocol suite's. The detail of every case says
-    what the run does not show.
+    ``not-provable-from-host-run`` (skipped, never passed) when the trace
+    lacks the scenario step that would show it: the stale-update refusal (7)
+    needs a ``promote`` refused with exit 9, promote-name containment (8) one
+    refused by the name rule (``ValueError``, exit 1). The detail of every
+    case says what the run does not show.
     """
     manifest = json.loads((run_dir / RUN_MANIFEST).read_text(encoding="utf-8"))
     records = [json.loads(line) for line in (run_dir / RUN_TRACE).read_text(encoding="utf-8").splitlines() if line]
@@ -943,9 +986,19 @@ def check_host_run(run_dir: Path) -> list[CaseResult]:
         check(all(r.get("state") == RECEIPT_COMMITTED for r in receipts), "a receipt is not committed")
         entry_points = {(r.get("promoter") or {}).get("entry_point") for r in receipts}
         check(entry_points == {ENTRY_POINT_MCP}, f"receipt entry points {sorted(map(str, entry_points))}")
-        updated = []
         for receipt in receipts:
             check(not receipt.get("unguarded_paths"), "an update was applied without base_sha256")
+        updated = landed_updates()
+        check(updated, "no fixture page was updated")
+        return (
+            f"applied {applied_count} path(s), not a dry run; {len(receipts)} committed receipt(s), entry_point mcp; "
+            f"guarded update of {sorted(updated)} from the fixture's revision, no unguarded path"
+        )
+
+    def landed_updates() -> list[str]:
+        """The fixture pages the receipts updated: each from the fixture's revision, each still as written."""
+        updated = []
+        for receipt in receipts:
             for write in receipt.get("planned_writes") or []:
                 rel = str(write.get("path", ""))
                 rel = rel[len(WIKI_REL) + 1 :] if rel.startswith(WIKI_REL + "/") else rel
@@ -960,10 +1013,40 @@ def check_host_run(run_dir: Path) -> list[CaseResult]:
                         f"{rel} in the end state is not what the promote wrote",
                     )
                     updated.append(rel)
+        return updated
+
+    def refused_promotes(exit_code: int) -> list[tuple[int, dict[str, Any]]]:
+        return [(i, r) for i, r in calls if r.get("tool") == TOOL_PROMOTE and r.get("outcome") == exit_code]
+
+    def stale_update() -> str:
+        promoted = after("promote")
+        stale = [i for i, _ in refused_promotes(EXIT_PROMOTE_VALIDATION) if i > promoted]
+        check(stale, "no promote was refused with exit 9 after the successful promote")
+        proposes = [
+            r for i, r in calls if promoted < i < stale[0] and r.get("tool") == TOOL_PROPOSE and r.get("outcome") == 0
+        ]
+        check(proposes, "no successful propose between the successful promote and the refused one")
+        updates = 0
+        for summary in map(_summary, proposes):
+            count = _int(summary, "updates")
+            check(count, "the propose before the refused promote carried no update")
+            check(_int(summary, "with_base_sha256") == count, "an update before the refused promote had no base_sha256")
+            updates += count
+        check(all(r.get("state") == RECEIPT_COMMITTED for r in receipts), "a receipt is not committed")
+        updated = landed_updates()
         check(updated, "no fixture page was updated")
         return (
-            f"applied {applied_count} path(s), not a dry run; {len(receipts)} committed receipt(s), entry_point mcp; "
-            f"guarded update of {sorted(updated)} from the fixture's revision, no unguarded path"
+            f"after the first promote, a propose with {updates} update(s) carrying base_sha256 was refused at promote "
+            f"with exit 9; {sorted(updated)} in the end state is still what the first promote wrote and every receipt "
+            "is committed, so the refused promote changed nothing (that it named the same page is not in the trace)"
+        )
+
+    def name_containment() -> str:
+        bad = [r for _, r in refused_promotes(EXIT_VALUE_ERROR) if _summary(r).get("error") == ERROR_VALUE_ERROR]
+        check(bad, "no promote was refused by the name rule (ValueError, exit 1)")
+        return (
+            f"{len(bad)} promote refused by the name rule (ValueError, exit 1; the trace holds no name), so nothing "
+            "was applied; that nothing was read is the protocol suite's"
         )
 
     def not_approved() -> str:
@@ -986,8 +1069,18 @@ def check_host_run(run_dir: Path) -> list[CaseResult]:
     run(4, PROOF_TRACE, read_page)
     run(5, PROOF_END_STATE, propose)
     run(6, PROOF_END_STATE, promote)
-    not_provable(7, "the scenario has no stale update, so the exit-9 refusal is the protocol suite's")
-    not_provable(8, "the scenario promotes no ../x or absolute name, so that refusal is the protocol suite's")
+    if refused_promotes(EXIT_PROMOTE_VALIDATION):
+        run(7, PROOF_END_STATE, stale_update)
+    else:
+        not_provable(
+            7, "no promote was refused with exit 9 (the scenario's stale-update step), so that refusal is the suite's"
+        )
+    if any(_summary(r).get("error") == ERROR_VALUE_ERROR for _, r in refused_promotes(EXIT_VALUE_ERROR)):
+        run(8, PROOF_TRACE, name_containment)
+    else:
+        not_provable(
+            8, "no promote was refused by the name rule (the scenario's ../x step), so that refusal is the suite's"
+        )
     run(9, PROOF_END_STATE, not_approved)
     return sorted(results, key=lambda r: r.number)
 

@@ -7,16 +7,19 @@ their inputs stay byte for byte what was published. Every frozen file is pinned
 here by sha256; the list was taken from ``git ls-files`` at pin time, so an
 untracked file beside them is never pinned. The discovery runner keeps its
 search cache in a temporary directory; a runner pass must leave run 2's tree
-unchanged.
+unchanged. The held-out set pins its frozen inputs the same way and never the
+files its one run writes.
 """
 
 from __future__ import annotations
 
 import contextlib
+import fnmatch
 import hashlib
 import io
 import shutil
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -24,6 +27,7 @@ from eval.navigation import discovery
 from eval.navigation.run2_protocol import _tree_hash
 
 NAVIGATION = Path(__file__).resolve().parents[1] / "eval" / "navigation"
+REPO_ROOT = NAVIGATION.parents[1]
 RUN2 = NAVIGATION / "run2"
 HELDOUT = NAVIGATION / "heldout"
 UNTUNED_CONFIG = NAVIGATION / "run3" / "ranker-config-untuned.json"
@@ -220,9 +224,25 @@ wiki/schema/lint-rules.md=d14d5cf2b86a9776d330c7ba22e1497ba14a2b0e90c716813c8933
 wiki/schema/page-types.md=29be97579d3c6f05604c5772bb283dbc5a740cfe37b445eb95ef96a8e9c71b4f
 """
 
-# ``<path under eval/navigation/heldout>=<sha256>`` for the frozen held-out wiki, its archived proposals
-# and its manifest (FR-026), added by the evidence PR once ``heldout/wiki/`` exists.
+# The held-out set (FR-026, FR-028): every tracked file under these directories and these two files are frozen
+# once ``heldout/wiki/`` exists; the manifest, the results and the attempt marker are written by the one run.
+HELDOUT_FROZEN_DIRS = ("wiki", "proposals", "corpus")
+HELDOUT_FROZEN_FILES = ("questions.json", "gold.json")
+HELDOUT_RUN_WRITES = ("manifest.json", "results.json", "run-attempt.json")
+HELDOUT_POST_HOC_GLOB = "results-post-hoc-*.json"
+
+# ``<path under eval/navigation/heldout>=<sha256>``, pinned from ``git ls-files``: the corpus on 2026-10-28; the
+# wiki, the archived proposals, the questions and the gold are added by the evidence PR once ``heldout/wiki/``
+# exists. Never ``manifest.json``, ``results.json``, ``run-attempt.json`` or ``results-post-hoc-*.json``.
 HELDOUT_PINS = """
+corpus/README.md=a063f0d253be8ff704541b0dc4d56a962ccb5bb3dc725a7a769a457013fa020d
+corpus/apps__demo__README.md=2097b97a736e1adbe1421140148670568c2667fd8d0721b03920bd6c00ddfbbc
+corpus/packages__core__README.md=ed7022f683dde23afa3d51a8aee522ce92941820e0a76081acbf016675a00507
+corpus/packages__maplibre__README.md=3bdc61071ff4e2d4a144ff6567adfcfcbfc0e53b15b4f60e66639852ac4a357e
+corpus/packages__offline-pmtiles__README.md=d917f41c629d43d137bd5f0066bfff2fbfaad59c5a348164f725ad1905e04f1f
+corpus/packages__react__README.md=69b28a42be315d204a680d49984f73557aab61665f75e6de1cb707b18fa0e430
+corpus/packages__recorder-web__README.md=c492f7f3aede097d084bcdef5e2c6845850e4d768b4c2307dd0236f727181950
+corpus/packages__storage-idb__README.md=2687ffd97fddfd116e1298e95066c52947cbe405fda12694759d5288f715196c
 """
 
 
@@ -238,6 +258,41 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _tracked(prefix: str) -> list[str]:
+    """``git ls-files`` under ``prefix`` (a path from the repository root), relative to it: how the pins were taken."""
+    listed = subprocess.run(
+        ["git", "ls-files", "--", prefix], cwd=REPO_ROOT, capture_output=True, text=True, check=True
+    ).stdout.split()
+    return [path.removeprefix(f"{prefix}/") for path in listed]
+
+
+def _is_git_checkout() -> bool:
+    return shutil.which("git") is not None and (REPO_ROOT / ".git").exists()
+
+
+def _written_by_the_run(rel: str) -> bool:
+    return rel in HELDOUT_RUN_WRITES or fnmatch.fnmatch(rel, HELDOUT_POST_HOC_GLOB)
+
+
+def _heldout_pin_problems(root: Path, tracked: list[str], pins: dict[str, str]) -> list[str]:
+    """What is wrong with ``pins`` for the held-out tree at ``root``; empty when every frozen file is pinned unchanged.
+
+    A tracked file under a frozen directory (or one of the two frozen files)
+    without a pin, a pin on a file the run writes, and a pinned file that is
+    missing or no longer hashes to its pin are each one problem.
+    """
+    frozen = {rel for rel in tracked if rel.split("/", 1)[0] in HELDOUT_FROZEN_DIRS or rel in HELDOUT_FROZEN_FILES}
+    problems = [f"{rel} is frozen but not pinned" for rel in sorted(frozen - set(pins))]
+    for rel in sorted(pins):
+        if _written_by_the_run(rel):
+            problems.append(f"{rel} is written by the run and must not be pinned")
+        elif not (root / rel).is_file():
+            problems.append(f"{rel} is pinned but missing")
+        elif _sha256(root / rel) != pins[rel]:
+            problems.append(f"{rel} changed; it is frozen")
+    return problems
+
+
 class TestFrozenRunsArePinned(unittest.TestCase):
     def test_every_pinned_file_is_unchanged(self) -> None:
         for rel, digest in _parse(FROZEN_PINS).items():
@@ -251,16 +306,9 @@ class TestFrozenRunsArePinned(unittest.TestCase):
                 self.assertIn(name, pins)
 
     def test_every_tracked_file_under_a_frozen_directory_is_pinned(self) -> None:
-        if shutil.which("git") is None or not (NAVIGATION.parents[1] / ".git").exists():
+        if not _is_git_checkout():
             self.skipTest("not a git checkout")
-        listed = subprocess.run(
-            ["git", "ls-files", "--", *(f"eval/navigation/{d}" for d in FROZEN_DIRS)],
-            cwd=NAVIGATION.parents[1],
-            capture_output=True,
-            text=True,
-            check=True,
-        ).stdout.split()
-        tracked = {path.removeprefix("eval/navigation/") for path in listed}
+        tracked = {f"{d}/{rel}" for d in FROZEN_DIRS for rel in _tracked(f"eval/navigation/{d}")}
         pinned = {rel for rel in _parse(FROZEN_PINS) if rel.split("/", 1)[0] in FROZEN_DIRS}
         self.assertEqual(tracked, pinned)
 
@@ -292,16 +340,58 @@ class TestRunnerWritesNothingIntoFrozenDirectories(unittest.TestCase):
 
 
 class TestHeldOutPins(unittest.TestCase):
-    def test_the_frozen_heldout_wiki_is_pinned(self) -> None:
-        if not (HELDOUT / "wiki").exists():
-            self.skipTest("heldout/wiki/ does not exist yet (the owner's ingest, FR-025)")
+    def test_every_pinned_heldout_file_is_unchanged(self) -> None:
         pins = _parse(HELDOUT_PINS)
-        self.assertTrue(pins, "heldout/wiki/ exists: pin its files, the archived proposals and the manifest (FR-026)")
-        self.assertTrue(any(rel.startswith("wiki/") for rel in pins), "HELDOUT_PINS pins no heldout/wiki/ file")
-        self.assertIn("manifest.json", pins, "HELDOUT_PINS does not pin heldout/manifest.json")
+        self.assertTrue(pins, "the held-out corpus is committed and pinned")
         for rel, digest in pins.items():
             with self.subTest(path=rel):
+                self.assertFalse(_written_by_the_run(rel), f"HELDOUT_PINS pins {rel}, which the run writes")
                 self.assertEqual(_sha256(HELDOUT / rel), digest, f"eval/navigation/heldout/{rel} changed; it is frozen")
+
+    def test_the_frozen_heldout_set_is_pinned(self) -> None:
+        """Once the wiki exists, every tracked frozen file is pinned and nothing the run writes is (FR-026)."""
+        if not (HELDOUT / "wiki").exists():
+            self.skipTest("heldout/wiki/ does not exist yet (the owner's ingest, FR-025)")
+        if not _is_git_checkout():
+            self.skipTest("not a git checkout")
+        tracked = _tracked("eval/navigation/heldout")
+        self.assertEqual(_heldout_pin_problems(HELDOUT, tracked, _parse(HELDOUT_PINS)), [])
+
+    def test_the_pin_check_on_a_temporary_tree(self) -> None:
+        frozen = (
+            "wiki/index.md",
+            "wiki/concepts/alpha.md",
+            "wiki/.audit/ingest-log.md",
+            "proposals/.applied/2026-10-30-README/plan.json",
+            "corpus/README.md",
+            "questions.json",
+            "gold.json",
+        )
+        written = ("manifest.json", "results.json", "run-attempt.json", "results-post-hoc-rerun-1.json")
+        unpinned = ("protocol.md", "ingest-logs/01-ingest.stdout.txt")  # tracked, neither frozen nor the run's
+        tracked = [*frozen, *written, *unpinned]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for rel in tracked:
+                (root / rel).parent.mkdir(parents=True, exist_ok=True)
+                (root / rel).write_text(rel, encoding="utf-8")
+            pins = {rel: _sha256(root / rel) for rel in frozen}
+            self.assertEqual(_heldout_pin_problems(root, tracked, pins), [])
+            self.assertEqual(
+                _heldout_pin_problems(root, tracked, {}),
+                [f"{rel} is frozen but not pinned" for rel in sorted(frozen)],
+                "an empty table fails once the frozen files exist",
+            )
+            for rel in written:
+                with self.subTest(pinned=rel):
+                    self.assertEqual(
+                        _heldout_pin_problems(root, tracked, {**pins, rel: _sha256(root / rel)}),
+                        [f"{rel} is written by the run and must not be pinned"],
+                    )
+            (root / "wiki/index.md").write_text("edited after the freeze", encoding="utf-8")
+            self.assertEqual(_heldout_pin_problems(root, tracked, pins), ["wiki/index.md changed; it is frozen"])
+            (root / "wiki/index.md").unlink()
+            self.assertEqual(_heldout_pin_problems(root, tracked, pins), ["wiki/index.md is pinned but missing"])
 
 
 if __name__ == "__main__":

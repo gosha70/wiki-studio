@@ -17,6 +17,7 @@ import asyncio
 import contextlib
 import importlib
 import importlib.util
+import inspect
 import io
 import json
 import os
@@ -35,7 +36,17 @@ from wiki_studio import api, errors
 from wiki_studio.mcp_adapter import EXIT_LAUNCH_ERROR, INSTALL_INSTRUCTION, main
 from wiki_studio.mcp_adapter.config import TOOL_NAMES, LaunchError, describe_launch, parse_launch
 from wiki_studio.mcp_adapter.tools import INTERNAL_ERROR, WikiTools, error_payload
-from wiki_studio.mcp_adapter.trace import TRACE_KEYS, WireObserver, open_trace
+from wiki_studio.mcp_adapter.trace import (
+    ERROR_RESULT_KEYS,
+    KNOWN_ERRORS,
+    KNOWN_METHODS,
+    TOOL_ARG_KEYS,
+    TOOL_RESULT_KEYS,
+    TRACE_KEYS,
+    UNKNOWN,
+    WireObserver,
+    open_trace,
+)
 from wiki_studio.paths import ENV_ACTOR, ENV_PROPOSALS_DIR, WikiPaths
 
 HAS_MCP = importlib.util.find_spec("mcp") is not None
@@ -421,6 +432,26 @@ class TestErrorPayload(unittest.TestCase):
 
 
 class TestTrace(FixtureCase):
+    def test_the_known_methods_cover_what_a_real_host_sends(self) -> None:
+        """Every MCP 2025-06-18 client request method is recorded by name; a valid host run never reads as unknown."""
+        required = {"initialize", "tools/list", "tools/call", "ping"}
+        self.assertTrue(required <= KNOWN_METHODS, required - KNOWN_METHODS)
+        self.assertEqual(
+            KNOWN_METHODS,
+            required
+            | {
+                "resources/list",
+                "resources/templates/list",
+                "resources/read",
+                "resources/subscribe",
+                "resources/unsubscribe",
+                "prompts/list",
+                "prompts/get",
+                "completion/complete",
+                "logging/setLevel",
+            },
+        )
+
     def test_a_trace_inside_the_wiki_or_unwritable_is_a_launch_error(self) -> None:
         with self.assertRaisesRegex(LaunchError, "inside the wiki"):
             open_trace(self.wiki / "trace.jsonl", self.paths)
@@ -477,6 +508,78 @@ class TestTrace(FixtureCase):
         self.assertEqual({(r["client_name"], r["client_version"]) for r in lines}, {("probe", "9.1")})
         self.assertEqual([r["duration_ms"] for r in lines], [1000, 1250, 10])
         self.assertEqual(observer.protocol_version, "2025-06-18")
+
+    def test_client_chosen_names_are_never_recorded(self) -> None:
+        """FR-041: a tool name, argument key, method or listed name outside the schema is counted, never copied."""
+        path = self.base / "trace.jsonl"
+        observer = WireObserver(open_trace(path, self.paths))
+        bad_tool, bad_key, bad_method, bad_name = "../../etc/passwd", "/tmp/x", "/etc/shadow", "../evil"
+        find_result = json.dumps({"pages": [], "ranker": "index-first", bad_key: 1})
+        exchanges: list[tuple[dict[str, Any], dict[str, Any]]] = [
+            (
+                {"id": 1, "method": "tools/call", "params": {"name": bad_tool, "arguments": {bad_key: 1}}},
+                {
+                    "id": 1,
+                    "result": {"isError": True, "content": [{"type": "text", "text": f"Unknown tool: {bad_tool}"}]},
+                },
+            ),
+            (
+                {
+                    "id": 2,
+                    "method": "tools/call",
+                    "params": {"name": "find", "arguments": {"question": "q", bad_key: 1}},
+                },
+                {"id": 2, "result": {"content": [{"type": "text", "text": find_result}]}},
+            ),
+            ({"id": 3, "method": "tools/list"}, {"id": 3, "result": {"tools": [{"name": "find"}, {"name": bad_name}]}}),
+            ({"id": 4, "method": bad_method, "params": {}}, {"id": 4, "result": {}}),
+        ]
+        for request, response in exchanges:
+            observer.inbound(json.dumps({"jsonrpc": "2.0", **request}).encode())
+            observer.outbound(json.dumps({"jsonrpc": "2.0", **response}).encode())
+        observer.close()
+        text = path.read_text(encoding="utf-8")
+        for secret in (bad_tool, bad_key, bad_method, bad_name, "passwd", "shadow", "evil", "tmp"):
+            self.assertNotIn(secret, text)
+        lines = [json.loads(line) for line in text.splitlines()]
+        self.assertEqual([tuple(line) for line in lines], [TRACE_KEYS] * 4)
+        unknown, find, listed, other = lines
+        self.assertEqual((unknown["method"], unknown["tool"], unknown["outcome"]), ("tools/call", UNKNOWN, 1))
+        self.assertEqual((unknown["arg_keys"], unknown["unknown_arg_keys"]), ([], 1))
+        self.assertEqual((unknown["result_keys"], unknown["unknown_result_keys"]), (None, None))
+        self.assertEqual(unknown["summary"], {"exit_code": 1, "error": None})
+        self.assertEqual((find["tool"], find["arg_keys"], find["unknown_arg_keys"]), ("find", ["question"], 1))
+        self.assertEqual((find["result_keys"], find["unknown_result_keys"]), (["pages", "ranker"], 1))
+        self.assertEqual((listed["tool_names"], listed["unknown_tool_names"]), (["find"], 1))
+        self.assertEqual(
+            (other["method"], other["tool"], other["arg_keys"], other["tool_names"]), (UNKNOWN, None, None, None)
+        )
+
+    def test_the_known_argument_and_result_keys_are_each_tools_own(self) -> None:
+        """The key sets the trace keeps are exactly the tools' signatures and the keys their results carry."""
+        tools = self.launch("--by", "alice")
+        for name, method in tools.registry().items():
+            with self.subTest(tool=name):
+                self.assertEqual(TOOL_ARG_KEYS[name], frozenset(inspect.signature(method).parameters))
+        results = {
+            "find": tools.find("retry"),
+            "read_page": tools.read_page(RETRY_PAGE),
+            "propose": tools.propose(create_edits("known-keys"), name="k1"),
+            "promote": tools.promote("k1"),
+            "lint": tools.lint(health=True),
+            "info": tools.info(),
+            "findings": tools.findings(),
+            "review_state": tools.review_state(),
+        }
+        self.assertEqual(set(results), set(TOOL_NAMES))
+        for name, result in results.items():
+            with self.subTest(tool=name):
+                self.assertEqual(set(result), set(TOOL_RESULT_KEYS[name]))
+        self.assertEqual(set(error_payload(ValueError("x"))), set(ERROR_RESULT_KEYS))
+        self.assertLessEqual(
+            {"ValueError", INTERNAL_ERROR, "PathOutsideRootError", "PromoteValidationError", "OutputWriteError"},
+            KNOWN_ERRORS,
+        )
 
 
 # ── Through the SDK's client over stdio ──────────────────────
