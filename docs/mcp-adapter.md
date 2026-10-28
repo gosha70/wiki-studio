@@ -341,7 +341,10 @@ checker says so:
   the name rule, that is, when the host did not reach the scenario's steps
   8-10. They count as skipped, never as passed.
 
-The verdict line names the cases the run proves. `conformance/runs/README.md`
+The verdict line names the cases the run proves, and ends with `passed` only
+when every case 2-9 is proved (otherwise `not passed`, naming the unproved
+cases, and the command exits 1): a run that skipped a scenario step is not
+exit evidence. `conformance/runs/README.md`
 gives the run directory's layout and the Claude Code
 (`claude -p --mcp-config`) and Kiro instructions. The owner performs host
 runs outside CI. `docs/compatibility.md` lists what has been run.

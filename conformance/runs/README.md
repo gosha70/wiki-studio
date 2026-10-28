@@ -50,7 +50,7 @@ directory.
 | `protocol_version` | The protocol version the host negotiated, as the trace records it |
 | `scenario_sha256` | sha256 of `conformance/mcp/scenario.md` as used |
 | `end_state_sha256` | `python -m conformance.mcp.run tree-hash <run>/end-state` |
-| `verdict` | Written by `check-host-run --record`: `passed`, each case's status (`cases`) and proof label (`proof`), and the case lists `proved`, `not_provable` and `failed` |
+| `verdict` | Written by `check-host-run --record`: `passed` (true only when every case 2-9 is proved; a run with an unprovable case is not exit evidence, and the command exits 1), each case's status (`cases`) and proof label (`proof`), and the case lists `proved`, `not_provable` and `failed` |
 
 ## Claude Code
 

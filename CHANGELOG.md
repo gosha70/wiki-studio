@@ -169,7 +169,9 @@ version 1. Release C is not declared closed by this entry; see Limitations.
   every version when the server negotiated none of the tested versions (the
   suite exited 0 before), and the host scenario gains a stale update and a
   `promote` of `../x`, from whose refusals `check-host-run` proves cases 7
-  and 8 instead of skipping them.
+  and 8 instead of skipping them; `check-host-run` reports a run as passed,
+  and exits 0, only when every case 2-9 is proved, so a skipped scenario
+  step never yields exit evidence.
 
 ### Upgrade notes
 

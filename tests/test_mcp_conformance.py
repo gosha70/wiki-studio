@@ -454,6 +454,7 @@ class TestCheckHostRun(unittest.TestCase):
         self.assertEqual(code, run.EXIT_PASS, output)
         self.assertIn("the host run proves case(s) 2, 3, 4, 5, 6, 7, 8, 9", output)
         self.assertNotIn("not provable from a host run", output)
+        self.assertIn("; passed", output)
         self.assertNotIn(f"[{run.PROOF_NONE}]", output)
         verdict = json.loads((run_dir / run.RUN_MANIFEST).read_text(encoding="utf-8"))["verdict"]
         self.assertTrue(verdict["passed"])
@@ -471,9 +472,10 @@ class TestCheckHostRun(unittest.TestCase):
         self.assertIn("exit 9", results[7].detail)
         self.assertIn("name rule", results[8].detail)
         code, output = run_main("check-host-run", "--run", str(run_dir), "--record")
-        self.assertEqual(code, run.EXIT_PASS, output)
+        self.assertEqual(code, run.EXIT_FAIL, output)
         self.assertIn("the host run proves case(s) 2, 3, 4, 5, 6, 9", output)
         self.assertIn("not provable from a host run, the protocol suite's: 7, 8", output)
+        self.assertIn("not passed: case(s) 7, 8 unproved", output)
         self.assertIn(f"[{run.PROOF_NONE}]", output)
         verdict = json.loads((run_dir / run.RUN_MANIFEST).read_text(encoding="utf-8"))["verdict"]
         self.assertEqual(

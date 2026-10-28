@@ -1085,13 +1085,22 @@ def check_host_run(run_dir: Path) -> list[CaseResult]:
     return sorted(results, key=lambda r: r.number)
 
 
+# The cases a recorded host run must prove for FR-045's exit evidence: every one of 2..9.
+HOST_RUN_CASES = tuple(range(2, 10))
+
+
 def host_verdict(results: list[CaseResult]) -> dict[str, Any]:
-    """The recorded verdict: which cases the run proves, which it cannot, and which failed."""
+    """The recorded verdict: which cases the run proves, which it cannot, and which failed.
+
+    ``passed`` is true only when every case in :data:`HOST_RUN_CASES` is
+    proved: a run with no failure but an unprovable case (a skipped scenario
+    step) is not exit evidence.
+    """
     proved = [r.number for r in results if r.status == PASS]
     not_provable = [r.number for r in results if r.status == SKIP]
     failed = [r.number for r in results if r.status == FAIL]
     return {
-        "passed": not failed,
+        "passed": not failed and all(number in proved for number in HOST_RUN_CASES),
         "cases": {str(r.number): r.status for r in results},
         "proof": {str(r.number): r.proof for r in results},
         "proved": proved,
@@ -1109,6 +1118,8 @@ def host_verdict_line(verdict: dict[str, Any]) -> str:
         text += f"; not provable from a host run, the protocol suite's: {cases(verdict['not_provable'])}"
     if verdict["failed"]:
         text += f"; failed: {cases(verdict['failed'])}"
+    missing = [n for n in HOST_RUN_CASES if n not in verdict["proved"]]
+    text += "; passed" if verdict["passed"] else f"; not passed: case(s) {cases(missing)} unproved"
     return text
 
 
@@ -1162,7 +1173,7 @@ def _host_main(argv: list[str]) -> int:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         manifest["verdict"] = verdict
         manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
-    return code
+    return code if verdict["passed"] else EXIT_FAIL
 
 
 def _tree_hash_main(argv: list[str]) -> int:
