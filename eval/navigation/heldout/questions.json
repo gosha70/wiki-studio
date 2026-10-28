@@ -1,0 +1,539 @@
+[
+  {
+    "id": "q01",
+    "question": "How many of the tasks listed in specs/tasks.md carry a Done record?",
+    "kind": "single",
+    "source": {
+      "path": "README.md",
+      "heading": "Status"
+    }
+  },
+  {
+    "id": "q02",
+    "question": "Which task is the first in document order to have a Done record?",
+    "kind": "single",
+    "source": {
+      "path": "README.md",
+      "heading": "Status"
+    }
+  },
+  {
+    "id": "q03",
+    "question": "Which file is the entry point for the Claude Code harness?",
+    "kind": "single",
+    "source": {
+      "path": "README.md",
+      "heading": "The governing contract"
+    }
+  },
+  {
+    "id": "q04",
+    "question": "Under which contributor agreement are contributions to MAP-ATLAS accepted?",
+    "kind": "single",
+    "source": {
+      "path": "README.md",
+      "heading": "License"
+    }
+  },
+  {
+    "id": "q05",
+    "question": "Which end-to-end test runs the quick-start example in a real browser?",
+    "kind": "single",
+    "source": {
+      "path": "README.md",
+      "heading": "Quick start"
+    }
+  },
+  {
+    "id": "q06",
+    "question": "What does a fishing journal plug into the engine, according to the consumer table?",
+    "kind": "single",
+    "source": {
+      "path": "README.md",
+      "heading": "MAP-ATLAS"
+    }
+  },
+  {
+    "id": "q07",
+    "question": "Besides watchPosition, which browser API does the web track recorder rely on to keep recording?",
+    "kind": "competing",
+    "source": {
+      "path": "README.md",
+      "heading": "Design at a glance"
+    }
+  },
+  {
+    "id": "q08",
+    "question": "Are bathymetry and elevation datasets licensed per publisher or per product?",
+    "kind": "competing",
+    "source": {
+      "path": "README.md",
+      "heading": "Attribution & data licensing (downstream obligation)"
+    }
+  },
+  {
+    "id": "q09",
+    "question": "In what kind of application shell does a native adapter provide background track recording?",
+    "kind": "competing",
+    "source": {
+      "path": "README.md",
+      "heading": "Design at a glance"
+    }
+  },
+  {
+    "id": "q10",
+    "question": "Which npm script starts the demo after dependencies are installed?",
+    "kind": "single",
+    "source": {
+      "path": "apps__demo__README.md",
+      "heading": "Run it"
+    }
+  },
+  {
+    "id": "q11",
+    "question": "Why does the first run of the demo take about a minute and need the network?",
+    "kind": "single",
+    "source": {
+      "path": "apps__demo__README.md",
+      "heading": "Run it"
+    }
+  },
+  {
+    "id": "q12",
+    "question": "Which elevation model supplies the shaded relief and contour lines in the demo map?",
+    "kind": "single",
+    "source": {
+      "path": "apps__demo__README.md",
+      "heading": "What you should see"
+    }
+  },
+  {
+    "id": "q13",
+    "question": "Why does the demo map show two separate attribution lines in the corner?",
+    "kind": "single",
+    "source": {
+      "path": "apps__demo__README.md",
+      "heading": "What you should see"
+    }
+  },
+  {
+    "id": "q14",
+    "question": "Which two ports does the demo report as already in use when a previous run is still listening?",
+    "kind": "single",
+    "source": {
+      "path": "apps__demo__README.md",
+      "heading": "If something goes wrong"
+    }
+  },
+  {
+    "id": "q15",
+    "question": "Why does serving the demo archives with python3 -m http.server fail?",
+    "kind": "single",
+    "source": {
+      "path": "apps__demo__README.md",
+      "heading": "If something goes wrong"
+    }
+  },
+  {
+    "id": "q16",
+    "question": "Which e2e test boots the built application with its own origin cut?",
+    "kind": "single",
+    "source": {
+      "path": "apps__demo__README.md",
+      "heading": "Offline"
+    }
+  },
+  {
+    "id": "q17",
+    "question": "Into which directory does npm run demo cut the map tiles?",
+    "kind": "single",
+    "source": {
+      "path": "apps__demo__README.md",
+      "heading": "What it is not"
+    }
+  },
+  {
+    "id": "q18",
+    "question": "Does the development runner started by npm run demo register a service worker?",
+    "kind": "single",
+    "source": {
+      "path": "apps__demo__README.md",
+      "heading": "What it is not"
+    }
+  },
+  {
+    "id": "q19",
+    "question": "How many archives does the demo's Download region button copy into IndexedDB?",
+    "kind": "competing",
+    "source": {
+      "path": "apps__demo__README.md",
+      "heading": "Offline"
+    }
+  },
+  {
+    "id": "q20",
+    "question": "Under which subpath does @mapatlas/core export its first-party fakes for testing?",
+    "kind": "single",
+    "source": {
+      "path": "packages__core__README.md",
+      "heading": "A track is data"
+    }
+  },
+  {
+    "id": "q21",
+    "question": "Which function reads back the GeoJSON that trackToGeoJSON produces?",
+    "kind": "single",
+    "source": {
+      "path": "packages__core__README.md",
+      "heading": "A track is data"
+    }
+  },
+  {
+    "id": "q22",
+    "question": "Which six seam interfaces does @mapatlas/core define?",
+    "kind": "single",
+    "source": {
+      "path": "packages__core__README.md",
+      "heading": "`@mapatlas/core`"
+    }
+  },
+  {
+    "id": "q23",
+    "question": "Which @mapatlas package depends on none of the others?",
+    "kind": "competing",
+    "source": {
+      "path": "packages__core__README.md",
+      "heading": "A track is data"
+    }
+  },
+  {
+    "id": "q24",
+    "question": "How are the @mapatlas packages installed if they are not published to a registry?",
+    "kind": "competing",
+    "source": {
+      "path": "packages__core__README.md",
+      "heading": "Install"
+    }
+  },
+  {
+    "id": "q25",
+    "question": "Which exact version of maplibre-gl does @mapatlas/maplibre require as a peer dependency?",
+    "kind": "single",
+    "source": {
+      "path": "packages__maplibre__README.md",
+      "heading": "Install"
+    }
+  },
+  {
+    "id": "q26",
+    "question": "Why is the maplibre-gl peer range pinned to one version instead of a caret range?",
+    "kind": "single",
+    "source": {
+      "path": "packages__maplibre__README.md",
+      "heading": "Install"
+    }
+  },
+  {
+    "id": "q27",
+    "question": "What goes wrong if an application ends up with two copies of MapLibre?",
+    "kind": "single",
+    "source": {
+      "path": "packages__maplibre__README.md",
+      "heading": "Install"
+    }
+  },
+  {
+    "id": "q28",
+    "question": "Why does the renderer package not import the MapLibre stylesheet on your behalf?",
+    "kind": "competing",
+    "source": {
+      "path": "packages__maplibre__README.md",
+      "heading": "Load the stylesheet, and point MapLibre at its worker"
+    }
+  },
+  {
+    "id": "q29",
+    "question": "What does the map look like when MapLibre's worker request returns a 404?",
+    "kind": "single",
+    "source": {
+      "path": "packages__maplibre__README.md",
+      "heading": "Load the stylesheet, and point MapLibre at its worker"
+    }
+  },
+  {
+    "id": "q30",
+    "question": "Which function tells MapLibre where to load its worker from?",
+    "kind": "single",
+    "source": {
+      "path": "packages__maplibre__README.md",
+      "heading": "Load the stylesheet, and point MapLibre at its worker"
+    }
+  },
+  {
+    "id": "q31",
+    "question": "What happens to map marks when the MapLibre stylesheet is not loaded?",
+    "kind": "single",
+    "source": {
+      "path": "packages__maplibre__README.md",
+      "heading": "Load the stylesheet, and point MapLibre at its worker"
+    }
+  },
+  {
+    "id": "q32",
+    "question": "What is the draft-vertex focus ring when --mapatlas-focus-ring-color is left unset?",
+    "kind": "single",
+    "source": {
+      "path": "packages__maplibre__README.md",
+      "heading": "The one style you may need to set"
+    }
+  },
+  {
+    "id": "q33",
+    "question": "Why is the focus ring colour a CSS custom property rather than a fixed blue?",
+    "kind": "single",
+    "source": {
+      "path": "packages__maplibre__README.md",
+      "heading": "The one style you may need to set"
+    }
+  },
+  {
+    "id": "q34",
+    "question": "Which function creates a MapController?",
+    "kind": "single",
+    "source": {
+      "path": "packages__maplibre__README.md",
+      "heading": "Mount a map"
+    }
+  },
+  {
+    "id": "q35",
+    "question": "Which user preference does the renderer's camera motion follow?",
+    "kind": "single",
+    "source": {
+      "path": "packages__maplibre__README.md",
+      "heading": "Mount a map"
+    }
+  },
+  {
+    "id": "q36",
+    "question": "Which error does download() throw when a tile source is not marked offlineLicensed: true?",
+    "kind": "single",
+    "source": {
+      "path": "packages__offline-pmtiles__README.md",
+      "heading": "Download a region"
+    }
+  },
+  {
+    "id": "q37",
+    "question": "Which three capabilities does @mapatlas/offline-pmtiles explicitly leave for consumers to build?",
+    "kind": "single",
+    "source": {
+      "path": "packages__offline-pmtiles__README.md",
+      "heading": "Download a region"
+    }
+  },
+  {
+    "id": "q38",
+    "question": "Where in the browser are downloaded offline regions kept?",
+    "kind": "competing",
+    "source": {
+      "path": "packages__offline-pmtiles__README.md",
+      "heading": "Download a region"
+    }
+  },
+  {
+    "id": "q39",
+    "question": "Which two exported functions serve a stored archive to the renderer?",
+    "kind": "single",
+    "source": {
+      "path": "packages__offline-pmtiles__README.md",
+      "heading": "Download a region"
+    }
+  },
+  {
+    "id": "q40",
+    "question": "What is the filename of the tarball produced by packing @mapatlas/offline-pmtiles?",
+    "kind": "single",
+    "source": {
+      "path": "packages__offline-pmtiles__README.md",
+      "heading": "Install"
+    }
+  },
+  {
+    "id": "q41",
+    "question": "Why does the quick start not install @mapatlas/offline-pmtiles?",
+    "kind": "single",
+    "source": {
+      "path": "packages__offline-pmtiles__README.md",
+      "heading": "Install"
+    }
+  },
+  {
+    "id": "q42",
+    "question": "Which two methods of the region store manage what has already been downloaded?",
+    "kind": "single",
+    "source": {
+      "path": "packages__offline-pmtiles__README.md",
+      "heading": "Download a region"
+    }
+  },
+  {
+    "id": "q43",
+    "question": "Which React versions does @mapatlas/react accept as a peer dependency?",
+    "kind": "single",
+    "source": {
+      "path": "packages__react__README.md",
+      "heading": "Install"
+    }
+  },
+  {
+    "id": "q44",
+    "question": "Which four hooks does @mapatlas/react provide?",
+    "kind": "single",
+    "source": {
+      "path": "packages__react__README.md",
+      "heading": "`@mapatlas/react`"
+    }
+  },
+  {
+    "id": "q45",
+    "question": "What state and functions does useTrackRecorder expose?",
+    "kind": "single",
+    "source": {
+      "path": "packages__react__README.md",
+      "heading": "Draw a map, start a recording"
+    }
+  },
+  {
+    "id": "q46",
+    "question": "Which two packages does @mapatlas/react depend on for drawing and for recording?",
+    "kind": "single",
+    "source": {
+      "path": "packages__react__README.md",
+      "heading": "`@mapatlas/react`"
+    }
+  },
+  {
+    "id": "q47",
+    "question": "When using MapCanvas, who is responsible for loading MapLibre's stylesheet and worker URL?",
+    "kind": "competing",
+    "source": {
+      "path": "packages__react__README.md",
+      "heading": "Draw a map, start a recording"
+    }
+  },
+  {
+    "id": "q48",
+    "question": "What does the web recorder's stop() resolve with?",
+    "kind": "single",
+    "source": {
+      "path": "packages__recorder-web__README.md",
+      "heading": "Record a track"
+    }
+  },
+  {
+    "id": "q49",
+    "question": "Assuming its autosaves succeed, how much recorded data can a mid-trip page reload lose at most when the recorder has a store?",
+    "kind": "single",
+    "source": {
+      "path": "packages__recorder-web__README.md",
+      "heading": "Record a track"
+    }
+  },
+  {
+    "id": "q50",
+    "question": "Can @mapatlas/recorder-web keep recording while the device screen is locked?",
+    "kind": "single",
+    "source": {
+      "path": "packages__recorder-web__README.md",
+      "heading": "Record a track"
+    }
+  },
+  {
+    "id": "q51",
+    "question": "What does the web recorder's start() do before sampling begins?",
+    "kind": "single",
+    "source": {
+      "path": "packages__recorder-web__README.md",
+      "heading": "Record a track"
+    }
+  },
+  {
+    "id": "q52",
+    "question": "Which option names the IndexedDB database that createIdbStorageAdapter opens?",
+    "kind": "single",
+    "source": {
+      "path": "packages__storage-idb__README.md",
+      "heading": "Keep a track"
+    }
+  },
+  {
+    "id": "q53",
+    "question": "When does the IndexedDB storage adapter actually open its database?",
+    "kind": "single",
+    "source": {
+      "path": "packages__storage-idb__README.md",
+      "heading": "Keep a track"
+    }
+  },
+  {
+    "id": "q54",
+    "question": "Does the engine ask the browser for a persistent storage origin on the application's behalf?",
+    "kind": "single",
+    "source": {
+      "path": "packages__storage-idb__README.md",
+      "heading": "Keep a track"
+    }
+  },
+  {
+    "id": "q55",
+    "question": "Which @mapatlas package provides the default persistence?",
+    "kind": "competing",
+    "source": {
+      "path": "packages__storage-idb__README.md",
+      "heading": "`@mapatlas/storage-idb`"
+    }
+  },
+  {
+    "id": "q56",
+    "question": "What is the default value of autosaveMs when a store is given to the web recorder?",
+    "kind": "absent",
+    "source": null
+  },
+  {
+    "id": "q57",
+    "question": "What minimum GPS accuracy in metres must a position have before the web recorder accepts it as a point?",
+    "kind": "absent",
+    "source": null
+  },
+  {
+    "id": "q58",
+    "question": "What are the names of the IndexedDB object stores that hold tracks and events?",
+    "kind": "absent",
+    "source": null
+  },
+  {
+    "id": "q59",
+    "question": "How many photos can be attached to a single event?",
+    "kind": "absent",
+    "source": null
+  },
+  {
+    "id": "q60",
+    "question": "Which Node.js version is required to run the demo?",
+    "kind": "absent",
+    "source": null
+  },
+  {
+    "id": "q61",
+    "question": "Which event does MapController emit when a camera movement finishes?",
+    "kind": "absent",
+    "source": null
+  },
+  {
+    "id": "q62",
+    "question": "How much free storage quota does download() check for before fetching a region?",
+    "kind": "absent",
+    "source": null
+  }
+]
