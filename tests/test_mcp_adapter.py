@@ -434,7 +434,7 @@ class TestErrorPayload(unittest.TestCase):
 class TestTrace(FixtureCase):
     def test_the_known_methods_cover_what_a_real_host_sends(self) -> None:
         """Every MCP 2025-06-18 client request method is recorded by name; a valid host run never reads as unknown."""
-        required = {"initialize", "tools/list", "tools/call", "ping"}
+        required = {"initialize", "server/discover", "subscriptions/listen", "tools/list", "tools/call", "ping"}
         self.assertTrue(required <= KNOWN_METHODS, required - KNOWN_METHODS)
         self.assertEqual(
             KNOWN_METHODS,
@@ -508,6 +508,40 @@ class TestTrace(FixtureCase):
         self.assertEqual({(r["client_name"], r["client_version"]) for r in lines}, {("probe", "9.1")})
         self.assertEqual([r["duration_ms"] for r in lines], [1000, 1250, 10])
         self.assertEqual(observer.protocol_version, "2025-06-18")
+
+    def test_the_modern_envelope_records_the_version_and_the_client(self) -> None:
+        """2026-07-28 has no initialize: server/discover and every request carry the version in params._meta."""
+        path = self.base / "trace.jsonl"
+        observer = WireObserver(open_trace(path, self.paths), clock=lambda: 1.0)
+        meta = {
+            "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+            "io.modelcontextprotocol/clientInfo": {"name": "claude-code", "version": "2.1.312"},
+            "io.modelcontextprotocol/clientCapabilities": {},
+        }
+
+        def ask(id_: int, method: str, meta_: dict[str, Any]) -> None:
+            frame = {"jsonrpc": "2.0", "id": id_, "method": method, "params": {"_meta": meta_}}
+            observer.inbound(json.dumps(frame).encode())
+
+        def answer(id_: int, **body: Any) -> None:
+            observer.outbound(json.dumps({"jsonrpc": "2.0", "id": id_, **body}).encode())
+
+        ask(1, "server/discover", meta)
+        answer(1, result={"supportedVersions": ["2026-07-28"]})
+        ask(2, "prompts/list", meta)
+        answer(2, error={"code": -32601, "message": "no"})
+        ask(3, "tools/list", meta)
+        answer(3, result={"tools": []})
+        # A request proposing another version that the server refuses never changes the negotiated one.
+        ask(4, "ping", {**meta, "io.modelcontextprotocol/protocolVersion": "2099-01-01"})
+        answer(4, error={"code": -32022, "message": "unsupported"})
+        observer.close()
+        lines = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+        self.assertEqual([r["method"] for r in lines], ["server/discover", "prompts/list", "tools/list", "ping"])
+        self.assertEqual([r["protocol_version"] for r in lines], ["2026-07-28"] * 4)
+        self.assertEqual({(r["client_name"], r["client_version"]) for r in lines}, {("claude-code", "2.1.312")})
+        self.assertEqual(observer.protocol_version, "2026-07-28")
+        self.assertNotIn("2099-01-01", path.read_text(encoding="utf-8"))
 
     def test_client_chosen_names_are_never_recorded(self) -> None:
         """FR-041: a tool name, argument key, method or listed name outside the schema is counted, never copied."""

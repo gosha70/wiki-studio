@@ -205,7 +205,11 @@ With `--trace PATH`, the server appends one JSON line per request to
   `tool_names` only the eight. Whatever else a frame carries is counted in
   `unknown_arg_keys`, `unknown_result_keys` and `unknown_tool_names`
   (`0` on a clean line). `client_name` and `client_version` are the strings
-  the host sent in `initialize`, as FR-041 asks.
+  the host sent in `initialize`, as FR-041 asks, or, on the 2026-07-28
+  protocol, which has no `initialize`, the `clientInfo` in each request's
+  `params._meta`; `protocol_version` is the handshake's result or the version
+  a request's `_meta` proposed once the server answered that request
+  (`server/discover` and `subscriptions/listen` are known methods).
 - The keys from `tool_names` on are the non-content evidence a host-run
   checker needs (`conformance/runs/README.md`): `tool_names` is a
   `tools/list` result's names (null on other lines); `arg_keys` and

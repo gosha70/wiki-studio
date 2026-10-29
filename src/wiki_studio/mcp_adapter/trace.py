@@ -81,9 +81,18 @@ METHOD_INITIALIZE = "initialize"
 METHOD_TOOLS_LIST = "tools/list"
 METHOD_TOOLS_CALL = "tools/call"
 # The request methods a client may send a server (MCP 2025-06-18); any other method is traced as UNKNOWN.
+# The 2026-07-28 protocol has no initialize handshake: the client probes ``server/discover`` and then carries the
+# protocol version and its clientInfo in every request's ``params._meta`` (the per-request envelope).
+METHOD_SERVER_DISCOVER = "server/discover"
+METHOD_SUBSCRIPTIONS_LISTEN = "subscriptions/listen"
+META_KEY = "_meta"
+META_PROTOCOL_VERSION = "io.modelcontextprotocol/protocolVersion"
+META_CLIENT_INFO = "io.modelcontextprotocol/clientInfo"
 KNOWN_METHODS = frozenset(
     {
         METHOD_INITIALIZE,
+        METHOD_SERVER_DISCOVER,
+        METHOD_SUBSCRIPTIONS_LISTEN,
         METHOD_TOOLS_LIST,
         METHOD_TOOLS_CALL,
         "ping",
@@ -324,7 +333,7 @@ class WireObserver:
         self._trace = trace
         self._clock = clock
         self._lock = threading.Lock()
-        self._pending: dict[str, tuple[str, str | None, dict[str, Any] | None, float]] = {}
+        self._pending: dict[str, tuple[str, str | None, dict[str, Any] | None, float, str | None]] = {}
         self._initialize_id: str | None = None
         self.protocol_version: str | None = None
         self.client_name: str | None = None
@@ -346,15 +355,20 @@ class WireObserver:
                 tool = name if isinstance(name, str) and name in TOOL_NAMES else UNKNOWN
                 arguments = params.get("arguments") if isinstance(params.get("arguments"), dict) else {}
             key = json.dumps(message["id"])
+            # The per-request envelope (2026-07-28): the version this request proposes and the client's identity.
+            meta = params.get(META_KEY)
+            meta = meta if isinstance(meta, dict) else {}
+            proposed = meta.get(META_PROTOCOL_VERSION)
+            proposed = proposed if isinstance(proposed, str) else None
+            info = params.get("clientInfo") if method == METHOD_INITIALIZE else meta.get(META_CLIENT_INFO)
             with self._lock:
                 if method == METHOD_INITIALIZE:
                     self._initialize_id = key
-                    info = params.get("clientInfo")
-                    if isinstance(info, dict):
-                        self.client_name = info.get("name") if isinstance(info.get("name"), str) else None
-                        self.client_version = info.get("version") if isinstance(info.get("version"), str) else None
+                if isinstance(info, dict):
+                    self.client_name = info.get("name") if isinstance(info.get("name"), str) else None
+                    self.client_version = info.get("version") if isinstance(info.get("version"), str) else None
                 recorded_method = method if method in KNOWN_METHODS else UNKNOWN
-                self._pending[key] = (recorded_method, tool, arguments, self._clock())
+                self._pending[key] = (recorded_method, tool, arguments, self._clock(), proposed)
 
     def outbound(self, line: bytes) -> None:
         for message in _frames(line):
@@ -365,12 +379,15 @@ class WireObserver:
                 pending = self._pending.pop(key, None)
                 if pending is None:
                     continue
+                method, tool, arguments, started, proposed = pending
                 if key == self._initialize_id:
                     result = message.get("result")
                     version = result.get("protocolVersion") if isinstance(result, dict) else None
                     if isinstance(version, str):
                         self.protocol_version = version
-                method, tool, arguments, started = pending
+                elif proposed is not None and "result" in message:
+                    # The server answered a request made under this version, so it is the negotiated one.
+                    self.protocol_version = proposed
                 payload = _payload(message) if arguments is not None else None
                 outcome = _outcome(message, payload)
                 tool_names, unknown_tool_names = _tool_names(message) if method == METHOD_TOOLS_LIST else (None, None)
