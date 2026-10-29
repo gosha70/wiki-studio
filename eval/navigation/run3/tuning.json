@@ -1,0 +1,2649 @@
+{
+  "chosen": {
+    "absent": {
+      "absent_bytes_loaded": 34986.0,
+      "absent_empty": 0.0,
+      "absent_pages_loaded": 5.0,
+      "evaluated": 6
+    },
+    "hit_at_1": 0.6667,
+    "hit_at_5": 0.9524,
+    "ranker_config": {
+      "max_pages": 5,
+      "min_match_tokens": 1,
+      "ranker": "fts5",
+      "ranker_config_hash": "c4b6576a6bc57e3c1b8c7f70ef6bb19b5dcf44d0ea0c30ab7dc0192965a43521",
+      "tokenizer": "porter unicode61",
+      "weights": [
+        4.0,
+        4.0,
+        2.0,
+        1.0
+      ]
+    },
+    "ranker_config_hash": "c4b6576a6bc57e3c1b8c7f70ef6bb19b5dcf44d0ea0c30ab7dc0192965a43521"
+  },
+  "configurations": [
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "9836c80107ccad841eb9811130be5bfbada6bd4390b4f7620df360cb7be23b11",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "9836c80107ccad841eb9811130be5bfbada6bd4390b4f7620df360cb7be23b11"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "f1251a6f40c9362d4623c95e6271ea1141103fd2b862cbfe2423ade44224d601",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "f1251a6f40c9362d4623c95e6271ea1141103fd2b862cbfe2423ade44224d601"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "548580e8461c277126382017e1ee920e5d6f3f368ff21b3e891a28ccdc5c1aef",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          1.0,
+          1.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "548580e8461c277126382017e1ee920e5d6f3f368ff21b3e891a28ccdc5c1aef"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "d2d256b009492ce6cbf35447c36a209f92b054fc3ac856f327bba8e89fdde4f6",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          1.0,
+          1.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "d2d256b009492ce6cbf35447c36a209f92b054fc3ac856f327bba8e89fdde4f6"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "28be246a51948d13ae77fd2d2ffec8ecd2aa1baea88d6f421fb5490efb4e68aa",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          1.0,
+          1.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "28be246a51948d13ae77fd2d2ffec8ecd2aa1baea88d6f421fb5490efb4e68aa"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "0febf448857407d85f7cb64d5e43ff9b7285a601ff7855618b13b62cc81f9a50",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          1.0,
+          1.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "0febf448857407d85f7cb64d5e43ff9b7285a601ff7855618b13b62cc81f9a50"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "047c707adbfbc3e152c50040f372c776c96fecf3534b34081667e927b081b38b",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          1.0,
+          2.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "047c707adbfbc3e152c50040f372c776c96fecf3534b34081667e927b081b38b"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "b62890be5a6526a8a814a025fae527f9dec64c858251a0f176e43d4194a6055a",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          1.0,
+          2.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "b62890be5a6526a8a814a025fae527f9dec64c858251a0f176e43d4194a6055a"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "953f5d806682ff00d7bcf13a71b94e8ba6aa30a3b41753b34c9ecbe8dd0a0132",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          1.0,
+          2.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "953f5d806682ff00d7bcf13a71b94e8ba6aa30a3b41753b34c9ecbe8dd0a0132"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "7cce65e9e1134ee63b73bd19eea6097eefe60b7a24e32c990e3b8c9b0306ebfa",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          1.0,
+          2.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "7cce65e9e1134ee63b73bd19eea6097eefe60b7a24e32c990e3b8c9b0306ebfa"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "babb78f49a6992f68aa5e73ddf453a00f31a6df5251886c08d716a9dbb95b55f",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          1.0,
+          2.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "babb78f49a6992f68aa5e73ddf453a00f31a6df5251886c08d716a9dbb95b55f"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "c50c0eaf89debf7bd317e74c5edc916b7c066dbe4bc4529ae2cf840d2bc70cd2",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          1.0,
+          2.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "c50c0eaf89debf7bd317e74c5edc916b7c066dbe4bc4529ae2cf840d2bc70cd2"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "f449dc50d3b41bf9197f4bc4f4727f68912ff0093856792596fd83b7b9a7fd40",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          1.0,
+          4.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "f449dc50d3b41bf9197f4bc4f4727f68912ff0093856792596fd83b7b9a7fd40"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "ed75b0eb5447beb60f8fc8ad2075226d6e7f8a8199bec81ecff3eb8d2d31a85b",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          1.0,
+          4.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "ed75b0eb5447beb60f8fc8ad2075226d6e7f8a8199bec81ecff3eb8d2d31a85b"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "dcad7d4e43a93e0a689a2351de0c397f0f829064897ff1ebf32fdafcb200ed9a",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          1.0,
+          4.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "dcad7d4e43a93e0a689a2351de0c397f0f829064897ff1ebf32fdafcb200ed9a"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "4ca045d92593e74781864762fd0483f2dad1074c4f83a2af1a70980deb8cf993",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          1.0,
+          4.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "4ca045d92593e74781864762fd0483f2dad1074c4f83a2af1a70980deb8cf993"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "2d3e5640a532bc79ba466bef7d9586583e9d59117c15b725e76fd4190b099f65",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          1.0,
+          4.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "2d3e5640a532bc79ba466bef7d9586583e9d59117c15b725e76fd4190b099f65"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "559b4d9c8b75fd573b68aab07e78a69756ade3bcc6f13b132f921be83e843e6d",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          1.0,
+          4.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "559b4d9c8b75fd573b68aab07e78a69756ade3bcc6f13b132f921be83e843e6d"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "32527d3e0fb4a4d0423eaa6516540f3b31cf6b72ae61bc9248eb176504b1a852",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          2.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "32527d3e0fb4a4d0423eaa6516540f3b31cf6b72ae61bc9248eb176504b1a852"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "5081fec53baaa79ea5840c048c3170e1d2b29b25b753d004429cdc98904a132a",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          2.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "5081fec53baaa79ea5840c048c3170e1d2b29b25b753d004429cdc98904a132a"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "97dbbc644507fba69d0fb23b9fcf5dfe94b7b19eb0cf52c11d59c587d63a85da",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          2.0,
+          1.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "97dbbc644507fba69d0fb23b9fcf5dfe94b7b19eb0cf52c11d59c587d63a85da"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "7544c77a2008e7df723885ada324278898eb0e0c70f253520440d2471b63660c",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          2.0,
+          1.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "7544c77a2008e7df723885ada324278898eb0e0c70f253520440d2471b63660c"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "10cfd4dcf5393d777522612e7e52128ffbc2cfa997bf5b2d51def02c3ea35814",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          2.0,
+          1.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "10cfd4dcf5393d777522612e7e52128ffbc2cfa997bf5b2d51def02c3ea35814"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "fe977edf1811373a0e131216ac056d9454f452bf70f0ecab2fbf6d0687b08a11",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          2.0,
+          1.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "fe977edf1811373a0e131216ac056d9454f452bf70f0ecab2fbf6d0687b08a11"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "f871d988a7a83ef801e5d2fab299133d347245b0cd00c89c63eda52bc0f0a8d9",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          2.0,
+          2.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "f871d988a7a83ef801e5d2fab299133d347245b0cd00c89c63eda52bc0f0a8d9"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "0079628a8f30d79526ce4923de9974555dc35d1cb65a01fed3f899c0089d15ae",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          2.0,
+          2.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "0079628a8f30d79526ce4923de9974555dc35d1cb65a01fed3f899c0089d15ae"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "170188ffe506d636b6057d3899537c34172270d66e7bdc898fa899c7347e7ccf",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          2.0,
+          2.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "170188ffe506d636b6057d3899537c34172270d66e7bdc898fa899c7347e7ccf"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "00d1d8146a174a1d7e6d9b09fb7364005b559d3c54e47fe8b0f264c7c3229532",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          2.0,
+          2.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "00d1d8146a174a1d7e6d9b09fb7364005b559d3c54e47fe8b0f264c7c3229532"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "4897c13421ad80495e30fe97737b26a4fb55b5e4c2b36bfc0d6ba1f2a872044d",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          2.0,
+          2.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "4897c13421ad80495e30fe97737b26a4fb55b5e4c2b36bfc0d6ba1f2a872044d"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "9cb87658320304784a33391a52da952baa17fd96dfa2e15f74b4ec5281d788c3",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          2.0,
+          2.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "9cb87658320304784a33391a52da952baa17fd96dfa2e15f74b4ec5281d788c3"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "d1f41e1742ed5986e9e1afb0928be45645973c9e1d6f4acfb37a8b735e5dd115",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          2.0,
+          4.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "d1f41e1742ed5986e9e1afb0928be45645973c9e1d6f4acfb37a8b735e5dd115"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "b149efcebccb810161d4f36b870f33524002d72e9a4332dc05fd9f2388e7e490",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          2.0,
+          4.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "b149efcebccb810161d4f36b870f33524002d72e9a4332dc05fd9f2388e7e490"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "95ea85bc096da2f8f0e7b442a2285fc71d4a6b77617e127de6f0ccd8aad7d259",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          2.0,
+          4.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "95ea85bc096da2f8f0e7b442a2285fc71d4a6b77617e127de6f0ccd8aad7d259"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "a126afd756e67586ef30487083f35d225cb0f5c468aa83533d6cb1a18ce1ce21",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          2.0,
+          4.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "a126afd756e67586ef30487083f35d225cb0f5c468aa83533d6cb1a18ce1ce21"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "ea4aa1fa70a877428192a01ff28fdfc1611bb7262d3624fc79c28d87f9391c56",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          2.0,
+          4.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "ea4aa1fa70a877428192a01ff28fdfc1611bb7262d3624fc79c28d87f9391c56"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "6cfc848c55c407c07b454eb90522dd1c681089d4af3bd51aae2de7e35492050f",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          2.0,
+          4.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "6cfc848c55c407c07b454eb90522dd1c681089d4af3bd51aae2de7e35492050f"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "cde6c588ff47f37774295d16e7c953a90dea88e38c2057defe2f9ca80c91a3b1",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          4.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "cde6c588ff47f37774295d16e7c953a90dea88e38c2057defe2f9ca80c91a3b1"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "774f7aa8749ae2778f91f317ab6886bf96c5615441d6d35f4618207191b9b6c0",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          4.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "774f7aa8749ae2778f91f317ab6886bf96c5615441d6d35f4618207191b9b6c0"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "21dc9681faedd25f38aed9484bfec3afe6f1b7cbc645ee953cede0acb4238013",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          4.0,
+          1.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "21dc9681faedd25f38aed9484bfec3afe6f1b7cbc645ee953cede0acb4238013"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "49c2fe59bd207e92b696b7e755e0a7fbdba63f95f152947e0839428e24c69d52",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          4.0,
+          1.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "49c2fe59bd207e92b696b7e755e0a7fbdba63f95f152947e0839428e24c69d52"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "ce24c32110c088eca40d688dfaba6f5fbbbec287be05a55b1ee009d160e2f866",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          4.0,
+          1.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "ce24c32110c088eca40d688dfaba6f5fbbbec287be05a55b1ee009d160e2f866"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "aef03ce819a5ef231053254283b03bf07f124f647ef1f651c3ebc4b2171afe4f",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          4.0,
+          1.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "aef03ce819a5ef231053254283b03bf07f124f647ef1f651c3ebc4b2171afe4f"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "011de5acbd43d8ea42ef89dc49a69807a464609b5b3d383b1c6054bac2685ffa",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          4.0,
+          2.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "011de5acbd43d8ea42ef89dc49a69807a464609b5b3d383b1c6054bac2685ffa"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "9db2e6c757a548efdbc732cacab6b8edb5f9db6492f204df54f795ee3a0819fe",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          4.0,
+          2.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "9db2e6c757a548efdbc732cacab6b8edb5f9db6492f204df54f795ee3a0819fe"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "5154241b256a49796f002088824f687531fce80fee2b70ecdee810974a423072",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          4.0,
+          2.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "5154241b256a49796f002088824f687531fce80fee2b70ecdee810974a423072"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "7a1d9c57ce53f65730f013bde06add11d93db5c46ccae11452410dd1619a5c3c",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          4.0,
+          2.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "7a1d9c57ce53f65730f013bde06add11d93db5c46ccae11452410dd1619a5c3c"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "d1eaa1962181f41d6fed91317c586b944a3df0e3d32653743bf42b02205565c6",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          4.0,
+          2.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "d1eaa1962181f41d6fed91317c586b944a3df0e3d32653743bf42b02205565c6"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "3cedea1753123d83ef70b9f18f37809c7a65c8ee06c504ebd131e31d75425709",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          4.0,
+          2.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "3cedea1753123d83ef70b9f18f37809c7a65c8ee06c504ebd131e31d75425709"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "a51ae5aa1dbdfdcbcfa6f953bc957254f55d5aa7579f5b0dc2b3d2234961232d",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          4.0,
+          4.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "a51ae5aa1dbdfdcbcfa6f953bc957254f55d5aa7579f5b0dc2b3d2234961232d"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "33d5ef87ed1eb014d84bb4d858fb00abb5a818b682ff83f5f90bc4a5c89e3ac1",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          4.0,
+          4.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "33d5ef87ed1eb014d84bb4d858fb00abb5a818b682ff83f5f90bc4a5c89e3ac1"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "c4b6576a6bc57e3c1b8c7f70ef6bb19b5dcf44d0ea0c30ab7dc0192965a43521",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          4.0,
+          4.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "c4b6576a6bc57e3c1b8c7f70ef6bb19b5dcf44d0ea0c30ab7dc0192965a43521"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "885e2339cfe10645e13e1dbcb78150165747656a25fef28b0dc50e35673afc58",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          4.0,
+          4.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "885e2339cfe10645e13e1dbcb78150165747656a25fef28b0dc50e35673afc58"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 34986.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "a2f8359bd52af6d6e9fb8b871368bcb5a9a8b19718b3033c05fd6127c10fed8a",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          4.0,
+          4.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "a2f8359bd52af6d6e9fb8b871368bcb5a9a8b19718b3033c05fd6127c10fed8a"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 35923.0,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.6667,
+      "hit_at_5": 0.9524,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "a0da53340ceae7965b70cf981f910b66111b73d5448e496591f28330759b8ef3",
+        "tokenizer": "porter unicode61",
+        "weights": [
+          4.0,
+          4.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "a0da53340ceae7965b70cf981f910b66111b73d5448e496591f28330759b8ef3"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "d29b7a63ecbd5b0fe6564438f32973796c1b75847cc8f6c3f7ec4d5e1adda488",
+        "tokenizer": "unicode61",
+        "weights": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "d29b7a63ecbd5b0fe6564438f32973796c1b75847cc8f6c3f7ec4d5e1adda488"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "2d8211893878410696e737f78c1b4b5b22c76a40304b20363ea4d92f53533446",
+        "tokenizer": "unicode61",
+        "weights": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "2d8211893878410696e737f78c1b4b5b22c76a40304b20363ea4d92f53533446"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "9fdc99324e27e6faeec43fc8e2c4ac876564e21cf7b721b49d3c912d92f5dbfc",
+        "tokenizer": "unicode61",
+        "weights": [
+          1.0,
+          1.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "9fdc99324e27e6faeec43fc8e2c4ac876564e21cf7b721b49d3c912d92f5dbfc"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "7963b46866ee23ca0d2dc0587f217017c8af85477c4761ada79722491ae52c66",
+        "tokenizer": "unicode61",
+        "weights": [
+          1.0,
+          1.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "7963b46866ee23ca0d2dc0587f217017c8af85477c4761ada79722491ae52c66"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "1ebad2835b494e6180e920633b71039f70e952d9777b4847e2ca636133a0b21a",
+        "tokenizer": "unicode61",
+        "weights": [
+          1.0,
+          1.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "1ebad2835b494e6180e920633b71039f70e952d9777b4847e2ca636133a0b21a"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "6448512aacb6bf6f5320d247fb1dba2e793296cab193245820e5a789a0b8cc70",
+        "tokenizer": "unicode61",
+        "weights": [
+          1.0,
+          1.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "6448512aacb6bf6f5320d247fb1dba2e793296cab193245820e5a789a0b8cc70"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "705ad708802436ce0bf744373839b070ecb4f174c910356a7577a84fa83576ee",
+        "tokenizer": "unicode61",
+        "weights": [
+          1.0,
+          2.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "705ad708802436ce0bf744373839b070ecb4f174c910356a7577a84fa83576ee"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "3d2589151bf22bab0d6244ed5b13fa942880dc9b59ecb722aa9cc73f4e682ae6",
+        "tokenizer": "unicode61",
+        "weights": [
+          1.0,
+          2.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "3d2589151bf22bab0d6244ed5b13fa942880dc9b59ecb722aa9cc73f4e682ae6"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "e12a49e9cc6ab8335eb713eba046fcfa0a42765e4a975b988e36ca7c9dcabdef",
+        "tokenizer": "unicode61",
+        "weights": [
+          1.0,
+          2.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "e12a49e9cc6ab8335eb713eba046fcfa0a42765e4a975b988e36ca7c9dcabdef"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "451bb1013c566089cf4a896869a633f5bee838d4cc8f5490011f2fc5ed93a7c6",
+        "tokenizer": "unicode61",
+        "weights": [
+          1.0,
+          2.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "451bb1013c566089cf4a896869a633f5bee838d4cc8f5490011f2fc5ed93a7c6"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "b14a51b60778caabaa8a65d1fc2c53f47f57e3d9e028e362376f88a6c600477a",
+        "tokenizer": "unicode61",
+        "weights": [
+          1.0,
+          2.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "b14a51b60778caabaa8a65d1fc2c53f47f57e3d9e028e362376f88a6c600477a"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "af97933b78685a9f2ecf9a7c6f6b67f211a0f509d6b4f16341ddb1ec47f551d9",
+        "tokenizer": "unicode61",
+        "weights": [
+          1.0,
+          2.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "af97933b78685a9f2ecf9a7c6f6b67f211a0f509d6b4f16341ddb1ec47f551d9"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "8d435d98fe436d9299650a1e783b1b32c8d02f92dcf334d22cf6e1d1d30e4c93",
+        "tokenizer": "unicode61",
+        "weights": [
+          1.0,
+          4.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "8d435d98fe436d9299650a1e783b1b32c8d02f92dcf334d22cf6e1d1d30e4c93"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "ef33356a3f22c78a0dc60ec506c6dd2eb522ce4949be37ecdbbe0ffcc729fe55",
+        "tokenizer": "unicode61",
+        "weights": [
+          1.0,
+          4.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "ef33356a3f22c78a0dc60ec506c6dd2eb522ce4949be37ecdbbe0ffcc729fe55"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "d9645e913d91f466ff2fdc49bc1cf44b63f233a25913139b06da37ef79c83a0d",
+        "tokenizer": "unicode61",
+        "weights": [
+          1.0,
+          4.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "d9645e913d91f466ff2fdc49bc1cf44b63f233a25913139b06da37ef79c83a0d"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "6a7578c5bed29d3a9563abedae66baab80f0b84c7118a9bd3658d663cda3681e",
+        "tokenizer": "unicode61",
+        "weights": [
+          1.0,
+          4.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "6a7578c5bed29d3a9563abedae66baab80f0b84c7118a9bd3658d663cda3681e"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "2e46bc93a7ff700a8e3da34e1ce006c0ca76a5873a2c1df7efb5e62dc089533f",
+        "tokenizer": "unicode61",
+        "weights": [
+          1.0,
+          4.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "2e46bc93a7ff700a8e3da34e1ce006c0ca76a5873a2c1df7efb5e62dc089533f"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "d6fa1852954599a832a2745a55fa00526bc4193b285ab52a2c4e5ead1926ad13",
+        "tokenizer": "unicode61",
+        "weights": [
+          1.0,
+          4.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "d6fa1852954599a832a2745a55fa00526bc4193b285ab52a2c4e5ead1926ad13"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "f5bf73a47522c01954888959ab6805770dee8df811c1ac32d5d79fd77d90b415",
+        "tokenizer": "unicode61",
+        "weights": [
+          2.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "f5bf73a47522c01954888959ab6805770dee8df811c1ac32d5d79fd77d90b415"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "cfa5ed8a6bb7ca5e88b07ff20838b5b78779dfce9431e186c18342949c02e152",
+        "tokenizer": "unicode61",
+        "weights": [
+          2.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "cfa5ed8a6bb7ca5e88b07ff20838b5b78779dfce9431e186c18342949c02e152"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "395acf70119d40eeb7d85a1007dfc494344a7347507ca9967049d3296dc00888",
+        "tokenizer": "unicode61",
+        "weights": [
+          2.0,
+          1.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "395acf70119d40eeb7d85a1007dfc494344a7347507ca9967049d3296dc00888"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "bf9d37335ca5a8ae4f985670a56b7abeed809f27065f8c72c6dcc0104065e23e",
+        "tokenizer": "unicode61",
+        "weights": [
+          2.0,
+          1.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "bf9d37335ca5a8ae4f985670a56b7abeed809f27065f8c72c6dcc0104065e23e"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "d73dcfa15b76de28203d3b1b810c3ba16ef14abf4bfa408c9454cd4b4bf1c577",
+        "tokenizer": "unicode61",
+        "weights": [
+          2.0,
+          1.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "d73dcfa15b76de28203d3b1b810c3ba16ef14abf4bfa408c9454cd4b4bf1c577"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "a9ce9d6ef49de956c4a90ed31cd104f4883da52ebd660eb5c927250d8d891e08",
+        "tokenizer": "unicode61",
+        "weights": [
+          2.0,
+          1.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "a9ce9d6ef49de956c4a90ed31cd104f4883da52ebd660eb5c927250d8d891e08"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "fdfc9516a7563fa668ab5e492e80356f012da548ddc98af0db4e45fa97ecfe35",
+        "tokenizer": "unicode61",
+        "weights": [
+          2.0,
+          2.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "fdfc9516a7563fa668ab5e492e80356f012da548ddc98af0db4e45fa97ecfe35"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "5ef27ec0f4597897a2ad1d2825e03404f91d0fbedd17c3ad68a9496e18de6932",
+        "tokenizer": "unicode61",
+        "weights": [
+          2.0,
+          2.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "5ef27ec0f4597897a2ad1d2825e03404f91d0fbedd17c3ad68a9496e18de6932"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "d8ea8c9497d50fdf805cd29e9e66a1da7f3519c7668a22af589f33f465c97815",
+        "tokenizer": "unicode61",
+        "weights": [
+          2.0,
+          2.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "d8ea8c9497d50fdf805cd29e9e66a1da7f3519c7668a22af589f33f465c97815"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "02118ea21282ccce3efc40065ce23e4b04bf516caf062711ebb6d8513e8927ae",
+        "tokenizer": "unicode61",
+        "weights": [
+          2.0,
+          2.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "02118ea21282ccce3efc40065ce23e4b04bf516caf062711ebb6d8513e8927ae"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "79dae3babbde4d2f4dad02846093c2c616da66281da998bacbaac4e8931ac332",
+        "tokenizer": "unicode61",
+        "weights": [
+          2.0,
+          2.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "79dae3babbde4d2f4dad02846093c2c616da66281da998bacbaac4e8931ac332"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "ef6a483529b5eef7d7895ccc8ffce03526f8d94eb53efd90cfd853be86bea9fd",
+        "tokenizer": "unicode61",
+        "weights": [
+          2.0,
+          2.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "ef6a483529b5eef7d7895ccc8ffce03526f8d94eb53efd90cfd853be86bea9fd"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "c614344e61b35bffb51f0e804419ba062a32e7ae67b0817888b63991e6151830",
+        "tokenizer": "unicode61",
+        "weights": [
+          2.0,
+          4.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "c614344e61b35bffb51f0e804419ba062a32e7ae67b0817888b63991e6151830"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "171093df690280f2dfbf2105ce5fc16c7f3e49b9fde6ea74371ece9f0d0520e9",
+        "tokenizer": "unicode61",
+        "weights": [
+          2.0,
+          4.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "171093df690280f2dfbf2105ce5fc16c7f3e49b9fde6ea74371ece9f0d0520e9"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "8cbe7d84cfe27c66af10032a5fe008814b765c3f2a58f6f753f0696abb0ae879",
+        "tokenizer": "unicode61",
+        "weights": [
+          2.0,
+          4.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "8cbe7d84cfe27c66af10032a5fe008814b765c3f2a58f6f753f0696abb0ae879"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "19a7c3cc71b75045bda410150e8db515b34a8f05b94f3f8692ee71a419975204",
+        "tokenizer": "unicode61",
+        "weights": [
+          2.0,
+          4.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "19a7c3cc71b75045bda410150e8db515b34a8f05b94f3f8692ee71a419975204"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "38c1fe3599acd9851172dba21f82cfa003d0809783993ad14a4aa26a4531c8eb",
+        "tokenizer": "unicode61",
+        "weights": [
+          2.0,
+          4.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "38c1fe3599acd9851172dba21f82cfa003d0809783993ad14a4aa26a4531c8eb"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "0668103f4088b1ea77c46aa2a6b90e2a95bb6b81d94ea32a6bf2e49472069111",
+        "tokenizer": "unicode61",
+        "weights": [
+          2.0,
+          4.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "0668103f4088b1ea77c46aa2a6b90e2a95bb6b81d94ea32a6bf2e49472069111"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "ebe25ece13cc34600b09c2ef37a1788fedb2c97745ceea8c70e13caa40ad8cb2",
+        "tokenizer": "unicode61",
+        "weights": [
+          4.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "ebe25ece13cc34600b09c2ef37a1788fedb2c97745ceea8c70e13caa40ad8cb2"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "3c43b6575de8a586c0edf282e2f62045f5f83440929e1e3300fcc953bca79797",
+        "tokenizer": "unicode61",
+        "weights": [
+          4.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "3c43b6575de8a586c0edf282e2f62045f5f83440929e1e3300fcc953bca79797"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "82b5d61126c58f3c95a9188391e24e8b24a2af1314dc6f1ab4fe5f90ab693b06",
+        "tokenizer": "unicode61",
+        "weights": [
+          4.0,
+          1.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "82b5d61126c58f3c95a9188391e24e8b24a2af1314dc6f1ab4fe5f90ab693b06"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "307dea6d6bdca849f8d4bf7d9fbc98ca61b905564b7251ba6dbfa010fc5459d6",
+        "tokenizer": "unicode61",
+        "weights": [
+          4.0,
+          1.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "307dea6d6bdca849f8d4bf7d9fbc98ca61b905564b7251ba6dbfa010fc5459d6"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "f887adf562f1d6743182fed1b5174906faffb56d00c18fa724054292bce32708",
+        "tokenizer": "unicode61",
+        "weights": [
+          4.0,
+          1.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "f887adf562f1d6743182fed1b5174906faffb56d00c18fa724054292bce32708"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "df9ccad7087de8b5e6c3b2eea248fd0e1f7d54c480e41bdb117f70983f84af40",
+        "tokenizer": "unicode61",
+        "weights": [
+          4.0,
+          1.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "df9ccad7087de8b5e6c3b2eea248fd0e1f7d54c480e41bdb117f70983f84af40"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "54d1130d4abb6fc4428501df912feb3f52a16455fb5d71e2aa269bd67d25aea5",
+        "tokenizer": "unicode61",
+        "weights": [
+          4.0,
+          2.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "54d1130d4abb6fc4428501df912feb3f52a16455fb5d71e2aa269bd67d25aea5"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "8157dd04995c9d922fdcdc3bb7ebf0297ae2ad5360aac61cc84a966f2be4e0f2",
+        "tokenizer": "unicode61",
+        "weights": [
+          4.0,
+          2.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "8157dd04995c9d922fdcdc3bb7ebf0297ae2ad5360aac61cc84a966f2be4e0f2"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "dcc54247464362ccea7618dfa49a4104d03ab06447e97192b9da539b7bd18270",
+        "tokenizer": "unicode61",
+        "weights": [
+          4.0,
+          2.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "dcc54247464362ccea7618dfa49a4104d03ab06447e97192b9da539b7bd18270"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "c8d6354217d49d60890580ee3449f5da70d16800e13591309385a351635ae295",
+        "tokenizer": "unicode61",
+        "weights": [
+          4.0,
+          2.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "c8d6354217d49d60890580ee3449f5da70d16800e13591309385a351635ae295"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "05ed689d66a489b3dd69d275fe761c434b9dd497c8fb4f43c32b4038d09b4a88",
+        "tokenizer": "unicode61",
+        "weights": [
+          4.0,
+          2.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "05ed689d66a489b3dd69d275fe761c434b9dd497c8fb4f43c32b4038d09b4a88"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "7d7023daff9b05d32f98082a7f8252e5c8c1aafb9016e41bfb8d6de1c53cbce3",
+        "tokenizer": "unicode61",
+        "weights": [
+          4.0,
+          2.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "7d7023daff9b05d32f98082a7f8252e5c8c1aafb9016e41bfb8d6de1c53cbce3"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "414d03ee62f89e8795a6ea26ee748fb9c1a480a017c11bb59707a24e04e216bf",
+        "tokenizer": "unicode61",
+        "weights": [
+          4.0,
+          4.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "414d03ee62f89e8795a6ea26ee748fb9c1a480a017c11bb59707a24e04e216bf"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "e461aac34b892b99815782fa6e600cf7ab73ec19b37018886bb9268edc544009",
+        "tokenizer": "unicode61",
+        "weights": [
+          4.0,
+          4.0,
+          1.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "e461aac34b892b99815782fa6e600cf7ab73ec19b37018886bb9268edc544009"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "03bc6c7c7f81942134e7819fdd5ad9046d77e49b569c04861ade89d1c4c9b814",
+        "tokenizer": "unicode61",
+        "weights": [
+          4.0,
+          4.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "03bc6c7c7f81942134e7819fdd5ad9046d77e49b569c04861ade89d1c4c9b814"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "71017b45a1f758d249075d4dc6eecf5183af3fd02b9079204848f4fbe79e5465",
+        "tokenizer": "unicode61",
+        "weights": [
+          4.0,
+          4.0,
+          2.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "71017b45a1f758d249075d4dc6eecf5183af3fd02b9079204848f4fbe79e5465"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 33237.8333,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 5.0,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 1,
+        "ranker": "fts5",
+        "ranker_config_hash": "398bbc4aac37e0d7b3841eb2b928d2bdc245e4496004b53aabc51fde00bb5e9a",
+        "tokenizer": "unicode61",
+        "weights": [
+          4.0,
+          4.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "398bbc4aac37e0d7b3841eb2b928d2bdc245e4496004b53aabc51fde00bb5e9a"
+    },
+    {
+      "absent": {
+        "absent_bytes_loaded": 31617.5,
+        "absent_empty": 0.0,
+        "absent_pages_loaded": 4.5,
+        "evaluated": 6
+      },
+      "hit_at_1": 0.5714,
+      "hit_at_5": 0.9048,
+      "ranker_config": {
+        "max_pages": 5,
+        "min_match_tokens": 2,
+        "ranker": "fts5",
+        "ranker_config_hash": "378526739993e41bfec71ad476d020dcca117f6b98c793d1a84fa3365fd632e7",
+        "tokenizer": "unicode61",
+        "weights": [
+          4.0,
+          4.0,
+          4.0,
+          1.0
+        ]
+      },
+      "ranker_config_hash": "378526739993e41bfec71ad476d020dcca117f6b98c793d1a84fa3365fd632e7"
+    }
+  ],
+  "development_set": "eval/navigation/run2",
+  "grid": {
+    "min_match_tokens": [
+      1,
+      2
+    ],
+    "tokenizer": [
+      "porter unicode61",
+      "unicode61"
+    ],
+    "w_body": 1.0,
+    "w_headings": [
+      1.0,
+      2.0,
+      4.0
+    ],
+    "w_path": [
+      1.0,
+      2.0,
+      4.0
+    ],
+    "w_title": [
+      1.0,
+      2.0,
+      4.0
+    ]
+  },
+  "selection_rule": "highest hit at 1, then highest hit at 5, then fewer pages loaded for absent questions, then the untuned configuration, then grid order",
+  "untuned_ranker_config_hash": "c4b6576a6bc57e3c1b8c7f70ef6bb19b5dcf44d0ea0c30ab7dc0192965a43521"
+}
