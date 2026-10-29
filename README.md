@@ -703,11 +703,15 @@ the development numbers were available during tuning and are not evidence
 for it. The latency was measured on one machine (macOS arm64, Python 3.13,
 five repetitions per question); on a nine- or ten-page wiki the on-disk
 cache saves under a millisecond per warm call over an in-memory build, so
-its value on small wikis is small. Read these numbers with their caveats:
-small sets; questions written by the author's tooling (a separate agent
-session, owner-reviewed); a held-out ingest by one model in one attempt; a
-held-out wiki of exactly ten eligible pages, the D8c floor; no claim of
-superiority over other products.
+its value on small wikis is small. On unanswerable questions `fts5` still
+selects five pages and loads about four times the bytes that
+`index-first` does (23,346 against 5,434 mean bytes on the held-out set);
+`index-first` leaves the selection empty more often. Read these numbers
+with their caveats: small sets; questions written by the author's tooling
+(a separate agent session, owner-reviewed), and question wording close to
+the corpus text favours a lexical ranker such as `fts5`; a held-out ingest
+by one model in one attempt; a held-out wiki of exactly ten eligible
+pages, the D8c floor; no claim of superiority over other products.
 
 ## Development
 
