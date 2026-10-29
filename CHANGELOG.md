@@ -11,12 +11,14 @@ uses [Semantic Versioning](https://semver.org/).
 Discovery and portability, Release C of `docs/roadmap.md` (issue #38). A
 second ranker, FTS5 with bm25 over the same index-linked candidates, runs
 behind the index-first workflow with a byte budget and a rebuildable cache
-outside the wiki. A preregistered held-out measurement will decide the
-default ranker. An optional MCP adapter gives MCP hosts the curation loop
+outside the wiki. A preregistered held-out measurement decided the
+default ranker, `fts5` (hit at 1 0.6792 against `index-first`'s 0.434,
+hit at 5 0.9811 against 0.7547, on 53 held-out gold questions over 10
+eligible pages). An optional MCP adapter gives MCP hosts the curation loop
 with the CLI's boundary, and a conformance suite checks it. Exit codes 0
 and 2..11 are unchanged; the `api` changes are additive with defaults; the
 page schema does not change (ADR-0002 is untouched); the receipt stays
-version 1. Release C is not declared closed by this entry; see Limitations.
+version 1. Release C closes with the 0.8.0 tag; see Limitations.
 
 ### Added
 
@@ -60,8 +62,10 @@ version 1. Release C is not declared closed by this entry; see Limitations.
   is committed before any tuning. The held-out set (`eval/navigation/heldout/`,
   the eight mapatlas READMEs at a pinned commit) and its preregistered
   protocol (`heldout/protocol.md`, enforced by `heldout_protocol.py`) are in
-  place; the held-out run and the basis of the default ranker are pending.
-  Runs 1 and 2 are pinned by sha256 and unchanged.
+  place; the one held-out run (`heldout/results.json`, `run-attempt.json`)
+  is recorded under the configuration frozen before it, and it is the basis
+  of the default ranker (see `fts5` below). Runs 1 and 2 are pinned by
+  sha256 and unchanged.
 - The MCP adapter as an extra (0.8.0, US4). `pip install 'wiki-studio[mcp]'`
   adds the first optional dependency, the official MCP SDK
   (`mcp>=2.3,<3`), and the `wiki-studio-mcp` stdio server.
@@ -222,11 +226,16 @@ version 1. Release C is not declared closed by this entry; see Limitations.
   a host run cannot show. Kiro is documented and not release-blocking.
 - No scope was cut by the build. The circuit breaker's week checkpoints are
   applied by the owner at the build-PR review; a cut would be named here.
-- Release C is not declared closed. It closes only when all three
-  exit-evidence items exist on the 0.8.0 tag: versioned retrieval results
-  on declared fixtures including the held-out run, the cache recovery
-  tests, and one non-memkernel runtime passing the adapter conformance
-  suite in a recorded host run.
+- Release C closes with the 0.8.0 tag. All three exit-evidence items are
+  in this release: versioned retrieval results on declared fixtures
+  including the held-out run (`eval/navigation/run3/`,
+  `eval/navigation/heldout/results.json`, decided by
+  `python -m eval.navigation.discovery decide`), the cache recovery tests
+  (`tests/test_search_index.py`: manual edits, checkouts, renames and
+  deletions rebuild the index), and one non-memkernel runtime passing the
+  adapter conformance suite in a recorded host run
+  (`conformance/runs/2026-10-29-claude-code-2.1.312/`). The discovery
+  evidence is small (above) and the host run is one host at one version.
 
 ## [0.7.0] — 2026-10-27
 
