@@ -37,7 +37,7 @@ from . import __version__, api, discovery
 from .audit_flush import describe_flush
 from .backends import ENV_BACKEND, ENV_BACKEND_DEPRECATED
 from .contract import MANIFEST_PRESENT
-from .discovery import DEFAULT_MAX_CONTEXT_BYTES, ENV_RANKER, RANKER_FTS5, RANKERS, resolve_ranker
+from .discovery import DEFAULT_MAX_CONTEXT_BYTES, DEFAULT_RANKER, ENV_RANKER, RANKER_FTS5, RANKERS, resolve_ranker
 from .errors import (
     BackendInvocationError,
     ContractViolationError,
@@ -155,7 +155,7 @@ def _add_discovery_flags(parser: argparse.ArgumentParser) -> None:
         metavar="{" + ",".join(RANKERS) + "}",
         default=None,
         help=f"How pages are ranked: fts5 (bm25 over title, headings and body) or index-first (word overlap). "
-        f"Overrides {ENV_RANKER}; default index-first. Without FTS5 in this Python's SQLite, fts5 falls back "
+        f"Overrides {ENV_RANKER}; default {DEFAULT_RANKER}. Without FTS5 in this Python's SQLite, fts5 falls back "
         "to index-first with a notice on stderr.",
     )
     parser.add_argument(

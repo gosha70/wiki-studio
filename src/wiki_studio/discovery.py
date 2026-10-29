@@ -45,11 +45,11 @@ if TYPE_CHECKING:
 
     from .paths import WikiPaths
 
-# The two rankers and the default (index-first until the held-out measurement decides, FR-029).
+# The two rankers and the default: fts5, decided by the held-out measurement of 2026-10-29 (FR-029; README, Evidence).
 RANKER_FTS5 = "fts5"
 RANKER_INDEX_FIRST = "index-first"
 RANKERS: tuple[str, ...] = (RANKER_FTS5, RANKER_INDEX_FIRST)
-DEFAULT_RANKER = RANKER_INDEX_FIRST
+DEFAULT_RANKER = RANKER_FTS5
 ENV_RANKER = "WIKI_STUDIO_RANKER"
 
 # Where the resolved ranker came from (``resolve_ranker``).

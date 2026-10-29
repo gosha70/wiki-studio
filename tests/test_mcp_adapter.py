@@ -234,7 +234,7 @@ class TestLaunch(FixtureCase):
         line = describe_launch(self.launch("--by", "alice", "--disable-tool", "promote").config)
         self.assertIn(str(self.wiki), line)
         self.assertIn("actor alice (flag)", line)
-        self.assertIn("ranker index-first (default)", line)
+        self.assertIn("ranker fts5 (default)", line)
         self.assertIn("propose-only mode", line)
         self.assertNotIn("promote,", line)
         self.assertIn("auto_approve_on_promote=true", line)

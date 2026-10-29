@@ -153,7 +153,7 @@ text never reaches FTS5; a question with no token selects nothing.
 `ranker_config_hash` is the sha256 of the configuration's canonical JSON
 (`ranker`, `tokenizer`, `weights`, `min_match_tokens`, `max_pages`; sorted
 keys, no spaces) and is `null` for `index-first`. The ranker is the `--ranker`
-flag, else `WIKI_STUDIO_RANKER`, else the default `index-first`; an unknown
+flag, else `WIKI_STUDIO_RANKER`, else the default `fts5`; an unknown
 name is refused (exit 1).
 
 **Budget.** `max_bytes` (default 65,536) counts the UTF-8 bytes of

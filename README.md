@@ -361,11 +361,11 @@ the wiki). A page is eligible when `index.md` links it inside the wiki (no
 symlink, no `../`), it is a regular file, it is valid UTF-8 and it carries no
 `superseded_by`; `index.md` and `log.md` are never candidates.
 
-Two rankers order the eligible pages. `index-first` (the default) counts the
-question's words in each page's slug, path and first 400 characters, as
-0.7.0 did. `fts5` ranks by bm25 over SQLite FTS5 (path words, title, headings
-and body, weighted 4, 4, 2, 1); ties go to the page listed first in
-`index.md`. If this Python's SQLite has no FTS5, `fts5` falls back to
+Two rankers order the eligible pages. `fts5` (the default, decided by the
+held-out measurement under Evidence) ranks by bm25 over SQLite FTS5 (path
+words, title, headings and body, weighted 4, 4, 2, 1); ties go to the page
+listed first in `index.md`. `index-first` counts the question's words in each
+page's slug, path and first 400 characters, as 0.7.0 did. If this Python's SQLite has no FTS5, `fts5` falls back to
 `index-first`, prints one notice to stderr
 (`find: FTS5 is not available in this Python's SQLite (<reason>); using
 index-first`) and still exits 0; `info` reports whether FTS5 is available.
@@ -377,7 +377,7 @@ page is loaded and a warning goes to stderr.
 
 | Flag | Effect |
 |---|---|
-| `--ranker {fts5,index-first}` | the ranker; overrides `WIKI_STUDIO_RANKER`, which overrides the default `index-first`; an unknown name exits 1 |
+| `--ranker {fts5,index-first}` | the ranker; overrides `WIKI_STUDIO_RANKER`, which overrides the default `fts5`; an unknown name exits 1 |
 | `--max-bytes N` | the byte budget (default 65536); not a positive integer: exit 1 |
 | `--max-pages N` | at most this many pages (default 5) |
 | `--json` | one JSON object: `question`, `index`, `pages` (`path`, `file`, `title`, `sha256`, `bytes`), `ranker`, `fallback_reason`, `bytes_loaded`, `max_bytes`, `ranker_config_hash`, `omitted` (`path`, `bytes`), `ineligible` (`path`, `reason`: `missing`, `not-regular-file`, `not-utf8` or `superseded`), `warnings` |
@@ -429,7 +429,7 @@ redacted fingerprint of it unless `--debug-unsafe-output` is given.
 | `WIKI_STUDIO_WIKI_DIR` | wiki directory |
 | `WIKI_STUDIO_PROPOSALS_DIR` | proposals directory |
 | `WIKI_STUDIO_SOURCE_ROOTS` | `os.pathsep`-separated directories outside the root that local links in pages may reference (see Layout) |
-| `WIKI_STUDIO_RANKER` | the ranker `find` and `query` use when `--ranker` is not given: `fts5` or `index-first` (default `index-first`) |
+| `WIKI_STUDIO_RANKER` | the ranker `find` and `query` use when `--ranker` is not given: `fts5` or `index-first` (default `fts5`) |
 | `WIKI_STUDIO_SEARCH_CACHE` | where the `fts5` ranker keeps its search cache when `--search-cache` is not given (default beside the lock file; never inside the wiki; see Layout) |
 | `WIKI_STUDIO_ACTOR` | who proposes or promotes when `--by` is not given, recorded with source `env` (attribution, not authentication) |
 | `WIKI_STUDIO_BACKEND` | default backend name |
@@ -670,32 +670,43 @@ protocol in `eval/navigation/heldout/protocol.md`: questions committed
 before the ingest, one ingest with no retries, the wiki and the gold frozen
 before tuning, one held-out run under a frozen configuration hash. `fts5`
 becomes the default only if it is no worse than `index-first` at hit at 1
-and at 5 there, with at least 15 gold questions and ten eligible pages;
-until that run exists the default is `index-first`.
+and at 5 there, with at least 15 gold questions and ten eligible pages. That
+run happened on 2026-10-29 (`eval/navigation/heldout/results.json`, one
+attempt, `run-attempt.json`): both floors held and `fts5` was better at both,
+so `fts5` is the default.
 
-| Number | Run 3, development, untuned: `index-first` | Run 3, development, untuned: `fts5` | Run 3, development, tuned | Held-out |
-|---|---|---|---|---|
-| Questions with a gold page / eligible pages | 21 / 9 | 21 / 9 | pending | pending the held-out run |
-| Hit at 1 (random baseline) | 3 of 21, 14.3% (8.5%) | 14 of 21, 66.7% (11.1%) | pending | pending the held-out run |
-| Hit at 5 (random baseline) | 10 of 21, 47.6% (24.9%) | 20 of 21, 95.2% (55.6%) | pending | pending the held-out run |
-| Discordant questions at 1 / at 5 (only this ranker hits) | 1 / 0 | 12 / 10 | pending | pending the held-out run |
-| Competing questions where a distractor outranks gold | 2 of 4 | 0 of 4 | pending | pending the held-out run |
-| Unanswerable questions (6): empty selection / mean pages / mean bytes loaded | 1 of 6 / 4.0 / 25,176 | 0 of 6 / 5.0 / 34,986 | pending | pending the held-out run |
-| Context per question, median bytes / words (35 questions) | 11,664 / 1,454 | 33,323 / 4,279 | pending | pending the held-out run |
-| Ingest coverage | 21 of 29 (inherited from run 2, not re-measured) | same | same | pending the held-out run |
-| `find` latency, median (cold cache / warm cache / in memory, no cache) | — | 3.8 / 2.0 / 2.3 ms | pending | pending the held-out run |
+| Number | Run 3, development, untuned: `index-first` | Run 3, development, untuned: `fts5` | Run 3, development, tuned: `fts5` | Held-out (2026-10-29): `index-first` | Held-out (2026-10-29): `fts5` |
+|---|---|---|---|---|---|
+| Questions with a gold page / eligible pages | 21 / 9 | 21 / 9 | 21 / 9 | 53 / 10 | 53 / 10 |
+| Hit at 1 (random baseline) | 3 of 21, 14.3% (8.5%) | 14 of 21, 66.7% (11.1%) | 14 of 21, 66.7% (11.1%) | 23 of 53, 43.4% (8.1%) | 36 of 53, 67.9% (10.0%) |
+| Hit at 5 (random baseline) | 10 of 21, 47.6% (24.9%) | 20 of 21, 95.2% (55.6%) | 20 of 21, 95.2% (55.6%) | 40 of 53, 75.5% (29.1%) | 52 of 53, 98.1% (49.6%) |
+| Discordant questions at 1 / at 5 (only this ranker hits) | 1 / 0 | 12 / 10 | 12 / 10 | 6 / 1 | 19 / 13 |
+| Competing questions where a distractor outranks gold | 2 of 4 | 0 of 4 | 0 of 4 | 3 of 10 | 4 of 10 |
+| Unanswerable questions: empty selection / mean pages / mean bytes loaded | 1 of 6 / 4.0 / 25,176 | 0 of 6 / 5.0 / 34,986 | 0 of 6 / 5.0 / 34,986 | 2 of 7 / 1.0 / 5,434 | 0 of 7 / 5.0 / 23,346 |
+| Context per question, median bytes / words (35 development, 62 held-out questions) | 11,664 / 1,454 | 33,323 / 4,279 | 33,323 / 4,279 | 11,577 / 1,608 | 23,717 / 3,163 |
+| Ingest coverage | 21 of 29 (inherited from run 2, not re-measured) | same | same | 8 of 8 documents promoted; 53 of 55 answerable questions (96.4%) | same |
+| `find` latency, median (cold cache / warm cache / in memory, no cache) | — | 3.8 / 2.0 / 2.3 ms | 6.7 / 3.1 / 4.2 ms | — | 5.2 / 2.9 / 3.4 ms |
 
 Run 3's `index-first` column reproduces run 2's selector numbers, as it
 must. The `fts5` column is the untuned configuration (`porter unicode61`,
 weights 4, 4, 2, 1, `ranker_config_hash` `c4b6576a…`) on the development
-set; it is not the basis of any default. The latency was measured on one
-machine (macOS arm64, Python 3.13.2, SQLite 3.48.0, five repetitions over
-the 35 questions); on a nine-page wiki the on-disk cache saves about a
-third of a millisecond per warm call over an in-memory build, so its value
-on small wikis is small. The tuned column and the held-out column are filled
-by the evidence PR. Read these numbers with their caveats: small sets;
-questions written by the author's tooling; an ingest by one model in one
-attempt; no claim of superiority over other products.
+set. The tuned column equals it: `tune` evaluated the closed grid of 108
+configurations on the development set, after the held-out set was frozen,
+and chose that same configuration (`eval/navigation/run3/tuning.json`), so
+the frozen configuration is the untuned one. The held-out columns are the
+one run of 2026-10-29 over the frozen mapatlas wiki (62 questions, 53 with a
+gold page, 10 eligible pages; `eval/navigation/heldout/`): `fts5` was no
+worse than `index-first` at hit at 1 and at 5, both floors held, and `fts5`
+became the default. The default-ranker decision rests on that run alone;
+the development numbers were available during tuning and are not evidence
+for it. The latency was measured on one machine (macOS arm64, Python 3.13,
+five repetitions per question); on a nine- or ten-page wiki the on-disk
+cache saves under a millisecond per warm call over an in-memory build, so
+its value on small wikis is small. Read these numbers with their caveats:
+small sets; questions written by the author's tooling (a separate agent
+session, owner-reviewed); a held-out ingest by one model in one attempt; a
+held-out wiki of exactly ten eligible pages, the D8c floor; no claim of
+superiority over other products.
 
 ## Development
 
