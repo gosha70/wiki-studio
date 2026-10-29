@@ -127,6 +127,9 @@ version 1. Release C is not declared closed by this entry; see Limitations.
   the server answers it, so a host that negotiates without an `initialize`
   handshake (Claude Code 2.1.312) no longer reads as `unknown` with no
   version, which failed `check-host-run`'s case 2 on the first recorded run.
+  A client name or version is copied into the trace only when short and
+  plain (up to 64 letters, digits, dots, dashes, plus signs, underscores);
+  anything else is recorded as `unknown`, as a method or tool name is.
 - The held-out ingest's pin check compares the source tree (`src/` and
   `eval/` without the held-out directory) between the pinned commit and HEAD,
   not the commit itself: the protocol commits the pin and the probe before

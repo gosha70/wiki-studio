@@ -509,6 +509,39 @@ class TestTrace(FixtureCase):
         self.assertEqual([r["duration_ms"] for r in lines], [1000, 1250, 10])
         self.assertEqual(observer.protocol_version, "2025-06-18")
 
+    def test_a_client_identity_that_is_not_short_and_plain_is_recorded_as_unknown(self) -> None:
+        """A path as the name or a 5000-character version never reaches the trace; a plain identity still does."""
+        path = self.base / "trace.jsonl"
+        observer = WireObserver(open_trace(path, self.paths), clock=lambda: 1.0)
+        long_version = "9" * 5000
+        bad = {"name": "/etc/passwd", "version": long_version}
+
+        def ask(id_: int, method: str, params: dict[str, Any]) -> None:
+            observer.inbound(json.dumps({"jsonrpc": "2.0", "id": id_, "method": method, "params": params}).encode())
+
+        def answer(id_: int, **body: Any) -> None:
+            observer.outbound(json.dumps({"jsonrpc": "2.0", "id": id_, **body}).encode())
+
+        ask(1, "initialize", {"protocolVersion": "2025-06-18", "clientInfo": bad})
+        answer(1, result={"protocolVersion": "2025-06-18", "capabilities": {}})
+        ask(2, "ping", {"_meta": {"io.modelcontextprotocol/clientInfo": bad}})
+        answer(2, result={})
+        ask(3, "ping", {"_meta": {"io.modelcontextprotocol/clientInfo": {"name": "claude-code", "version": "2.1.312"}}})
+        answer(3, result={})
+        ask(4, "ping", {"_meta": {"io.modelcontextprotocol/clientInfo": {"name": "", "version": "a b"}}})
+        answer(4, result={})
+        observer.close()
+        text = path.read_text(encoding="utf-8")
+        self.assertNotIn("passwd", text)
+        self.assertNotIn(long_version, text)
+        self.assertNotIn("a b", text)
+        lines = [json.loads(line) for line in text.splitlines()]
+        self.assertEqual(
+            [(r["client_name"], r["client_version"]) for r in lines],
+            [("unknown", "unknown"), ("unknown", "unknown"), ("claude-code", "2.1.312"), ("unknown", "unknown")],
+        )
+        self.assertTrue(all(len(line) < 1000 for line in text.splitlines()))
+
     def test_the_modern_envelope_records_the_version_and_the_client(self) -> None:
         """2026-07-28 has no initialize: server/discover and every request carry the version in params._meta."""
         path = self.base / "trace.jsonl"

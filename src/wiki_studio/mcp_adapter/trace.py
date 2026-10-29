@@ -30,6 +30,7 @@ import datetime
 import inspect
 import json
 import os
+import re
 import select
 import stat
 import sys
@@ -109,6 +110,9 @@ KNOWN_METHODS = frozenset(
 )
 # What the trace records in place of a client-chosen method or tool name it does not know (FR-041).
 UNKNOWN = "unknown"
+# A client name or version the trace copies verbatim: short and plain (letters, digits, dots, dashes, plus signs,
+# underscores); anything else the client sends as its identity is recorded as UNKNOWN, like a method or tool name.
+IDENTITY_PATTERN = re.compile(r"[A-Za-z0-9._+-]{1,64}")
 # The outcome of a failed request that carries no wiki-studio exit code (a protocol error, an SDK refusal).
 OUTCOME_UNCODED_ERROR = 1
 # The keys of an error result (tools.error_payload) and the top-level keys of each tool's result (FR-035).
@@ -322,6 +326,13 @@ def _summary(tool: str | None, arguments: dict[str, Any], payload: dict[str, Any
     return None
 
 
+def _identity(value: Any) -> str | None:
+    """A client name or version as the trace records it: the string when short and plain, else UNKNOWN."""
+    if not isinstance(value, str):
+        return None
+    return value if IDENTITY_PATTERN.fullmatch(value) else UNKNOWN
+
+
 class WireObserver:
     """What the frames say: the negotiated protocol version, the client, and the trace lines.
 
@@ -365,8 +376,8 @@ class WireObserver:
                 if method == METHOD_INITIALIZE:
                     self._initialize_id = key
                 if isinstance(info, dict):
-                    self.client_name = info.get("name") if isinstance(info.get("name"), str) else None
-                    self.client_version = info.get("version") if isinstance(info.get("version"), str) else None
+                    self.client_name = _identity(info.get("name"))
+                    self.client_version = _identity(info.get("version"))
                 recorded_method = method if method in KNOWN_METHODS else UNKNOWN
                 self._pending[key] = (recorded_method, tool, arguments, self._clock(), proposed)
 

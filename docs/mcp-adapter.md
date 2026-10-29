@@ -207,7 +207,9 @@ With `--trace PATH`, the server appends one JSON line per request to
   (`0` on a clean line). `client_name` and `client_version` are the strings
   the host sent in `initialize`, as FR-041 asks, or, on the 2026-07-28
   protocol, which has no `initialize`, the `clientInfo` in each request's
-  `params._meta`; `protocol_version` is the handshake's result or the version
+  `params._meta`, copied only when short and plain (up to 64 letters, digits,
+  dots, dashes, plus signs and underscores) and otherwise recorded as
+  `unknown`; `protocol_version` is the handshake's result or the version
   a request's `_meta` proposed once the server answered that request
   (`server/discover` and `subscriptions/listen` are known methods).
 - The keys from `tool_names` on are the non-content evidence a host-run
