@@ -207,11 +207,13 @@ version 1. Release C closes with the 0.8.0 tag; see Limitations.
   cache with one `.gitignore` pattern, `.<wiki-dir-name>.wiki-studio.*`
   (`.wiki.wiki-studio.*` for the default `knowledge/wiki`). To reset the
   search cache, delete the file; the next `fts5` call rebuilds it.
-- No change is needed for `api` callers who pass none of the new keywords:
-  every new parameter is keyword-only with a default.
+- Existing `api` calls keep working: every new parameter is keyword-only
+  with a default. Calls that pass no `ranker` follow the new default ranker
+  (below); pass `ranker="index-first"` to keep 0.7.0's selection.
 - The default ranker changes from `index-first` (the 0.7.0 selector) to
-  `fts5`. To keep 0.7.0's selection, set `WIKI_STUDIO_RANKER=index-first`
-  or pass `--ranker index-first`; under it `find` and `query` select as
+  `fts5`. To keep 0.7.0's selection, set `WIKI_STUDIO_RANKER=index-first`,
+  pass `--ranker index-first` or, in the `api`, `ranker="index-first"`;
+  under it `find` and `query` select as
   0.7.0 did, except that superseded and non-UTF-8 pages are never selected
   and a page that does not fit the 65,536-byte budget is skipped.
 
