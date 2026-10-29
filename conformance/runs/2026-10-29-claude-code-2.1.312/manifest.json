@@ -1,0 +1,47 @@
+{
+  "claude_code_version": "2.1.312 (Claude Code)",
+  "model": "claude-opus-5-5",
+  "wiki_studio_commit": "facfb0916cb8f59790ae57f28fb87fb8df080ee0",
+  "wiki_studio_version": "0.8.0",
+  "mcp_version": "2.3.0",
+  "protocol_version": "2026-07-28",
+  "scenario_sha256": "6e0f36f9e7ccadf1cefa8753b0bf3912a974df53492f55ab67d31bfc23c43669",
+  "end_state_sha256": "b34ec5454c09e102cd484c3b422c79821afb5a16ffbb276e06458226f41d4854",
+  "recorded_at": "2026-10-29T12:42Z",
+  "note": "Attempt 2, after PR #58 taught the trace the 2026-07-28 per-request envelope. Attempt 1 (2026-10-28) is kept as recorded.",
+  "verdict": {
+    "passed": true,
+    "cases": {
+      "2": "PASS",
+      "3": "PASS",
+      "4": "PASS",
+      "5": "PASS",
+      "6": "PASS",
+      "7": "PASS",
+      "8": "PASS",
+      "9": "PASS"
+    },
+    "proof": {
+      "2": "proved",
+      "3": "proved",
+      "4": "proved",
+      "5": "proved-by-end-state",
+      "6": "proved-by-end-state",
+      "7": "proved-by-end-state",
+      "8": "proved",
+      "9": "proved-by-end-state"
+    },
+    "proved": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "not_provable": [],
+    "failed": []
+  }
+}

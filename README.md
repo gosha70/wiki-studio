@@ -558,13 +558,14 @@ results, host configuration and the trace file:
 [`docs/mcp-adapter.md`](docs/mcp-adapter.md); the dependency review and the
 tool contract: `docs/adr/0003-optional-mcp-dependency-and-tool-contract.md`.
 
-**Status: preview.** The adapter's evidence so far is the protocol-level
+**Status: recorded.** The adapter's evidence is the protocol-level
 conformance suite (`python -m conformance.mcp.run --server-cmd
 "wiki-studio-mcp --root {root}"`, twelve cases for each tested protocol
-version, run in CI at the SDK floor and at the newest `mcp<3`). It stops
-being a preview when a recorded Claude Code run passes `check-host-run`
-(`conformance/runs/README.md`); `docs/compatibility.md` lists what has been
-tested.
+version, run in CI at the SDK floor and at the newest `mcp<3`) and one
+recorded Claude Code run that passed `check-host-run`
+(`conformance/runs/2026-10-29-claude-code-2.1.312/`, Claude Code 2.1.312,
+protocol 2026-07-28; `conformance/runs/README.md`). `docs/compatibility.md`
+lists what has been tested.
 
 ## Evidence
 

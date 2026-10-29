@@ -214,10 +214,12 @@ version 1. Release C is not declared closed by this entry; see Limitations.
   session, owner-reviewed); a held-out ingest by one model in one attempt (8
   of 8 documents promoted, 10 eligible pages, exactly D8c's floor). No claim
   of superiority over other products is made.
-- The MCP host run is not recorded yet. Until a recorded Claude Code run
-  passes `check-host-run`, the `mcp` extra is a preview and its evidence is
-  the protocol-level conformance suite in CI. Kiro is documented and not
-  release-blocking.
+- The MCP host run is one host at one version: Claude Code 2.1.312 with
+  claude-opus-5-5 on protocol 2026-07-28, recorded in
+  `conformance/runs/2026-10-29-claude-code-2.1.312/` (`check-host-run`
+  passed, cases 2-9 proved) after a first attempt that failed case 2 and is
+  kept as recorded. The protocol-level suite in CI is the evidence for what
+  a host run cannot show. Kiro is documented and not release-blocking.
 - No scope was cut by the build. The circuit breaker's week checkpoints are
   applied by the owner at the build-PR review; a cut would be named here.
 - Release C is not declared closed. It closes only when all three

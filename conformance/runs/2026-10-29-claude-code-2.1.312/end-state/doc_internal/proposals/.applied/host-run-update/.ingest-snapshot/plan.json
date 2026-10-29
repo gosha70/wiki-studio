@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "source_path": "mcp",
+  "backend": "mcp",
+  "rationale": "Cap outbound-call retries at five attempts so the decision states a bounded retry budget.",
+  "edits": [
+    {
+      "path": "decisions/retry-policy.md",
+      "action": "update",
+      "rationale": "Cap outbound-call retries at five attempts so the decision states a bounded retry budget.",
+      "preview": "preview/decisions/retry-policy.md",
+      "base_sha256": "f736f09dcba9d4c1ef8b70f7e901f4fbbc2b7ff7eaeedc5acc03179e6c560304"
+    }
+  ],
+  "proposer": {
+    "name": "claude-code-host-run",
+    "source": "flag"
+  }
+}

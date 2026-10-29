@@ -31,12 +31,11 @@ things:
 
 | Adapter (wiki-studio) | `mcp` | Protocol version | Host and version | Evidence | Status |
 |---|---|---|---|---|---|
+| 0.8.0 | 2.3.0 | 2026-07-28 | Claude Code 2.1.312, model claude-opus-5-5 | `conformance/runs/2026-10-29-claude-code-2.1.312/` (`check-host-run` passed, cases 2-9 proved; attempt 1 of 2026-10-28 failed case 2 before the trace knew the per-request envelope and is kept as recorded) | tested |
 
-No row is recorded yet. The CI rows are added from the first green
-`mcp-min` and `mcp-latest` runs on `main`. The Claude Code row is added
-from the recorded host run in the 0.8.0 evidence PR. Kiro is documented
-but is not release-blocking. A combination with no green run or recorded
-run is not listed as tested.
+The CI rows are added from the first green `mcp-min` and `mcp-latest`
+runs on `main`. Kiro is documented but is not release-blocking. A
+combination with no green run or recorded run is not listed as tested.
 
 ## Capabilities each side needs
 

@@ -1,0 +1,67 @@
+{
+  "receipt_version": 1,
+  "state": "committed",
+  "proposal": "host-run-update",
+  "submission_digest": "ac50c57d84ae27fa8cbba6aef5c2287de6e6b9797f5970f20eefb856823f08e8",
+  "digest_recipe": 2,
+  "submission_manifest": [
+    {
+      "path": ".ingest-snapshot/plan.json",
+      "sha256": "88e8352b65283f052c24af32c1737fd97ab25af4c269ca14981f7fc2dc4accb5"
+    },
+    {
+      "path": ".ingest-snapshot/preview/decisions/retry-policy.md",
+      "sha256": "6e44163b29e8a1ca4ff32993d82e85949a3266a5a611c311a756ed7efca878d6"
+    },
+    {
+      "path": "plan.json",
+      "sha256": "88e8352b65283f052c24af32c1737fd97ab25af4c269ca14981f7fc2dc4accb5"
+    },
+    {
+      "path": "preview/decisions/retry-policy.md",
+      "sha256": "6e44163b29e8a1ca4ff32993d82e85949a3266a5a611c311a756ed7efca878d6"
+    }
+  ],
+  "plan_sha256": "88e8352b65283f052c24af32c1737fd97ab25af4c269ca14981f7fc2dc4accb5",
+  "wiki_target": {
+    "st_dev": 16777231,
+    "st_ino": 306194668,
+    "path": "/private/tmp/claude-501/-Users-gosha-dev-repo-ai-wiki-ai-wiki/be73e926-1471-4a37-b3dc-d98904f399c3/scratchpad/host-run-2-work/project/knowledge/wiki"
+  },
+  "planned_writes": [
+    {
+      "path": "decisions/retry-policy.md",
+      "pre_sha256": "f736f09dcba9d4c1ef8b70f7e901f4fbbc2b7ff7eaeedc5acc03179e6c560304",
+      "post_sha256": "6e44163b29e8a1ca4ff32993d82e85949a3266a5a611c311a756ed7efca878d6"
+    },
+    {
+      "path": ".audit/proposals/host-run-update/plan.json",
+      "pre_sha256": null,
+      "post_sha256": "88e8352b65283f052c24af32c1737fd97ab25af4c269ca14981f7fc2dc4accb5"
+    },
+    {
+      "path": ".audit/proposals/host-run-update/proposal.md",
+      "pre_sha256": null,
+      "post_sha256": "9e91cb754f47d6a22b4bb2e0311e291c37237c7a7638f34f5d03e097eaca8242"
+    }
+  ],
+  "written_paths": [
+    "decisions/retry-policy.md",
+    ".audit/proposals/host-run-update/plan.json",
+    ".audit/proposals/host-run-update/proposal.md"
+  ],
+  "unguarded_paths": [],
+  "lock_wait_seconds": 6e-06,
+  "started_at": "2026-10-29T12:40:50Z",
+  "committing_at": "2026-10-29T12:40:50Z",
+  "committed_at": "2026-10-29T12:40:50Z",
+  "promoter": {
+    "package": "wiki-studio",
+    "version": "0.8.0",
+    "entry_point": "mcp"
+  },
+  "actor": {
+    "name": "claude-code-host-run",
+    "source": "flag"
+  }
+}
