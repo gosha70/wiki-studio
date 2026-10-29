@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "source_path": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout/corpus/packages__react__README.md",
+  "backend": "claude",
+  "rationale": "Four-question gate passes. The source is the README of @mapatlas/react. It is reusable, because consumers use it to find the React components and hooks. It is citable as a repository file. No existing page covers the React bindings. A new contributor needs to know what the package exports and what it leaves to the consumer. The patch creates one concept page for the package. It also updates map-atlas-engine and harness-neutral-specs-contract with the React-specific facts, and adds an index entry and a log entry.",
+  "edits": [
+    {
+      "path": "concepts/mapatlas-react-package.md",
+      "action": "create",
+      "rationale": "No existing page covers the React bindings. The source defines the package's exports, its dependencies, its peer and its wiring boundary.",
+      "preview": "preview/concepts/mapatlas-react-package.md"
+    },
+    {
+      "path": "concepts/map-atlas-engine.md",
+      "action": "update",
+      "rationale": "The engine overview lists packages. It now records what the React bindings export and depend on, and that they keep the CSS wiring rule. It also links the new page.",
+      "preview": "preview/concepts/map-atlas-engine.md",
+      "base_sha256": "7c72e6207fc5ea928ea7e13f41ef983732b3ab61db91d704cc32a14db635ca9b"
+    },
+    {
+      "path": "concepts/harness-neutral-specs-contract.md",
+      "action": "update",
+      "rationale": "The React README applies the same compiled-example and generated-peers rules. This update adds its example file to the list of evidence and links the new page.",
+      "preview": "preview/concepts/harness-neutral-specs-contract.md",
+      "base_sha256": "e9403b7d6ab9101259ddbc0dd68e7698992178f082baf0739997354610827e27"
+    },
+    {
+      "path": "index.md",
+      "action": "append-index",
+      "rationale": "Makes the new page reachable from the index.",
+      "preview": "preview/index.md"
+    },
+    {
+      "path": "log.md",
+      "action": "append-log",
+      "rationale": "Records this ingest in the append-only log.",
+      "preview": "preview/log.md"
+    }
+  ]
+}

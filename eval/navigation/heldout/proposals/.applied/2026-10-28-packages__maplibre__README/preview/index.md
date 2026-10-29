@@ -1,0 +1,1 @@
+- [@mapatlas/maplibre — the MapLibre GL renderer and its wiring](concepts/mapatlas-maplibre-package.md) — exact-version maplibre-gl peer, worker URL and stylesheet wiring, silent failure modes

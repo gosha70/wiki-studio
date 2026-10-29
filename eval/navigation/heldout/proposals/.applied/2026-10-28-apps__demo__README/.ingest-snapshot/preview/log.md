@@ -1,0 +1,1 @@
+- 2026-10-28 — create mapatlas-demo-app (concept): ingest of apps/demo/README.md, also updating map-data-licensing, mapatlas-offline-pmtiles-package and map-atlas-engine

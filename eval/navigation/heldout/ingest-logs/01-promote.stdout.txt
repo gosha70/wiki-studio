@@ -1,0 +1,8 @@
+applied 7 edit(s) from 2026-10-28-README; archived to /Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout/proposals/.applied/2026-10-28-README.
+  + wiki/concepts/map-atlas-engine.md
+  + wiki/concepts/harness-neutral-specs-contract.md
+  + wiki/concepts/map-data-licensing.md
+  + wiki/index.md
+  + wiki/log.md
+  + wiki/.audit/proposals/2026-10-28-README/plan.json
+  + wiki/.audit/proposals/2026-10-28-README/proposal.md

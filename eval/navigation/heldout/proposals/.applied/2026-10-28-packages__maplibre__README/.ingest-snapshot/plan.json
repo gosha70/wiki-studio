@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "source_path": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout/corpus/packages__maplibre__README.md",
+  "backend": "claude",
+  "rationale": "The source passes the four-question gate. It is reusable: it explains the two consumer wiring steps, the exact-version peer pin and the silent failures each one prevents. It is citable at eval/navigation/heldout/corpus/packages__maplibre__README.md (79de8a1). It does not duplicate an existing page: map-atlas-engine only mentions the stylesheet and worker steps in passing, and no page covers @mapatlas/maplibre. A new contributor wiring the renderer, or debugging a map that never paints, needs it. This patch creates a concept page for the package, the counterpart of mapatlas-core-package. It also updates map-data-licensing with the renderer's licence obligation, harness-neutral-specs-contract with the rule that unchecked features are described only in prose, and map-atlas-engine with a source and a link. It adds an index entry and a log entry.",
+  "edits": [
+    {
+      "path": "concepts/mapatlas-maplibre-package.md",
+      "action": "create",
+      "rationale": "No existing page covers the renderer package. This page records the exact-version peer pin, the single-MapLibre-instance reason, the worker and stylesheet failure modes, the focus-ring property and the mount API.",
+      "preview": "preview/concepts/mapatlas-maplibre-package.md"
+    },
+    {
+      "path": "concepts/map-data-licensing.md",
+      "action": "update",
+      "rationale": "The renderer README restates the licensing obligation from the renderer's side. This edit adds that framing, the new source, the README section pointer and a link to the new page.",
+      "preview": "preview/concepts/map-data-licensing.md",
+      "base_sha256": "ccd8e903b33cdee04fd17aa5aec35720bd0f1c3e4d20affa9514195d173ed291"
+    },
+    {
+      "path": "concepts/harness-neutral-specs-contract.md",
+      "action": "update",
+      "rationale": "The renderer README adds a documentation rule to the contract: a block no gate checks is described in prose and is not presented as something to paste. This edit also records the renderer's compiled example files.",
+      "preview": "preview/concepts/harness-neutral-specs-contract.md",
+      "base_sha256": "f681b18df59abc442b13ddd0e456773a475694a862b76f2bd983f2063c0077e3"
+    },
+    {
+      "path": "concepts/map-atlas-engine.md",
+      "action": "update",
+      "rationale": "The engine page already summarizes the two wiring steps. This edit cites the renderer README as a source and links to the new renderer page, which holds the details.",
+      "preview": "preview/concepts/map-atlas-engine.md",
+      "base_sha256": "09c503e5982647a4913e43c5f70502b64c5ae6b648316a8887d723dd7150f82e"
+    },
+    {
+      "path": "index.md",
+      "action": "append-index",
+      "rationale": "Makes the new page reachable from index.md.",
+      "preview": "preview/index.md"
+    },
+    {
+      "path": "log.md",
+      "action": "append-log",
+      "rationale": "Records the ingest in the append-only log.",
+      "preview": "preview/log.md"
+    }
+  ]
+}

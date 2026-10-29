@@ -1,0 +1,1 @@
+- [@mapatlas/react — the React bindings over the engine's seams](concepts/mapatlas-react-package.md) — MapCanvas, EventComposer, TripReview and the hooks; react >=18 peer; no injected CSS

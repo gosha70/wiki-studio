@@ -1,0 +1,2 @@
+initialised /Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout/wiki: created index.md, log.md
+manifest: created (/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout/wiki/.wiki-studio.json)

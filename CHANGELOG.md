@@ -11,12 +11,14 @@ uses [Semantic Versioning](https://semver.org/).
 Discovery and portability, Release C of `docs/roadmap.md` (issue #38). A
 second ranker, FTS5 with bm25 over the same index-linked candidates, runs
 behind the index-first workflow with a byte budget and a rebuildable cache
-outside the wiki. A preregistered held-out measurement will decide the
-default ranker. An optional MCP adapter gives MCP hosts the curation loop
+outside the wiki. A preregistered held-out measurement decided the
+default ranker, `fts5` (hit at 1 0.6792 against `index-first`'s 0.434,
+hit at 5 0.9811 against 0.7547, on 53 held-out gold questions over 10
+eligible pages). An optional MCP adapter gives MCP hosts the curation loop
 with the CLI's boundary, and a conformance suite checks it. Exit codes 0
 and 2..11 are unchanged; the `api` changes are additive with defaults; the
 page schema does not change (ADR-0002 is untouched); the receipt stays
-version 1. Release C is not declared closed by this entry; see Limitations.
+version 1. Release C closes with the 0.8.0 tag; see Limitations.
 
 ### Added
 
@@ -24,7 +26,7 @@ version 1. Release C is not declared closed by this entry; see Limitations.
   gain `--ranker {fts5,index-first}` (or `WIKI_STUDIO_RANKER`) and
   `--max-bytes N`. `fts5` ranks the eligible index-linked pages by bm25 over
   SQLite FTS5 (path words, title, headings, body), ties by index order;
-  `index-first` is the 0.7.0 selector and stays the default. Without FTS5 in
+  `index-first` is the 0.7.0 selector, still available by flag. Without FTS5 in
   the runtime's SQLite, `fts5` falls back to `index-first` with one stderr
   notice and exit 0. A byte budget (default 65,536) over `index.md` plus the
   pages skips a page that does not fit and tries the next. Superseded,
@@ -60,8 +62,10 @@ version 1. Release C is not declared closed by this entry; see Limitations.
   is committed before any tuning. The held-out set (`eval/navigation/heldout/`,
   the eight mapatlas READMEs at a pinned commit) and its preregistered
   protocol (`heldout/protocol.md`, enforced by `heldout_protocol.py`) are in
-  place; the held-out run and the basis of the default ranker are pending.
-  Runs 1 and 2 are pinned by sha256 and unchanged.
+  place; the one held-out run (`heldout/results.json`, `run-attempt.json`)
+  is recorded under the configuration frozen before it, and it is the basis
+  of the default ranker (see `fts5` below). Runs 1 and 2 are pinned by
+  sha256 and unchanged.
 - The MCP adapter as an extra (0.8.0, US4). `pip install 'wiki-studio[mcp]'`
   adds the first optional dependency, the official MCP SDK
   (`mcp>=2.3,<3`), and the `wiki-studio-mcp` stdio server.
@@ -106,16 +110,19 @@ version 1. Release C is not declared closed by this entry; see Limitations.
   Before, such a page read as empty in `find`, `query` and the health and
   prose checks and could crash `lint --health`.
 - The 0.7.0 page selector is now named the `index-first` ranker. It is
-  unchanged, and it stays the default.
-- The default ranker is `index-first`. Its basis is pending the held-out
-  run: the evidence PR records the held-out measurement and applies the rule
-  of FR-029 (FTS5 becomes the default only if it is no worse than
-  `index-first` at hit at 1 and at hit at 5 on the held-out set, with at
-  least 15 held-out questions with a gold page and at least ten eligible
-  pages), and this entry then states which basis the default rests on. Until
-  then `fts5` is opt-in (`--ranker fts5`, `WIKI_STUDIO_RANKER=fts5`, the MCP
-  server's `--ranker`), untuned, with the development-set result
-  `eval/navigation/run3/results-untuned.json`.
+  unchanged, and it remains available as `--ranker index-first`.
+- The default ranker is `fts5`, on the basis of the held-out measurement
+  (FR-029, decided 2026-10-29 by `python -m eval.navigation.discovery decide`
+  over `eval/navigation/heldout/results.json`): on the held-out set, 53
+  questions with a gold page and 10 eligible pages, so both floors hold,
+  `fts5` scored hit at 1 0.679 against `index-first`'s 0.434 and hit at 5
+  0.981 against 0.755. The development set agrees (run 3: 0.667 / 0.952
+  against 0.143 / 0.476). The frozen configuration is the untuned starting
+  one, `porter unicode61`, weights 4, 4, 2, 1, `min_match_tokens` 1, which
+  `tune` chose over 108 candidates on the development set before the
+  held-out run. `index-first` stays available (`--ranker index-first`,
+  `WIKI_STUDIO_RANKER=index-first`, the MCP server's `--ranker`). The
+  numbers and their caveats are in the README's Evidence section.
 - The receipt's `promoter.entry_point` may now be `mcp` (0.8.0, FR-039), an
   additive value; `receipt_version` stays 1.
 
@@ -206,25 +213,29 @@ version 1. Release C is not declared closed by this entry; see Limitations.
 
 ### Limitations
 
-- The discovery evidence is small: small question sets; questions written
-  by the author's tooling; a held-out ingest by one model in one attempt.
-  No claim of superiority over other products is made.
-- The basis of the default ranker is pending the held-out run (see
-  Changed). The held-out questions, ingest, freeze, tuning and the one
-  held-out run are owner-run steps in the evidence PR
-  (`eval/navigation/heldout/protocol.md`); the build performed none of
-  them.
-- The MCP host run is not recorded yet. Until a recorded Claude Code run
-  passes `check-host-run`, the `mcp` extra is a preview and its evidence is
-  the protocol-level conformance suite in CI. Kiro is documented and not
-  release-blocking.
+- The discovery evidence is small: 21 development and 53 held-out gold
+  questions; questions written by the author's tooling (a separate agent
+  session, owner-reviewed); a held-out ingest by one model in one attempt (8
+  of 8 documents promoted, 10 eligible pages, exactly D8c's floor). No claim
+  of superiority over other products is made.
+- The MCP host run is one host at one version: Claude Code 2.1.312 with
+  claude-opus-5-5 on protocol 2026-07-28, recorded in
+  `conformance/runs/2026-10-29-claude-code-2.1.312/` (`check-host-run`
+  passed, cases 2-9 proved) after a first attempt that failed case 2 and is
+  kept as recorded. The protocol-level suite in CI is the evidence for what
+  a host run cannot show. Kiro is documented and not release-blocking.
 - No scope was cut by the build. The circuit breaker's week checkpoints are
   applied by the owner at the build-PR review; a cut would be named here.
-- Release C is not declared closed. It closes only when all three
-  exit-evidence items exist on the 0.8.0 tag: versioned retrieval results
-  on declared fixtures including the held-out run, the cache recovery
-  tests, and one non-memkernel runtime passing the adapter conformance
-  suite in a recorded host run.
+- Release C closes with the 0.8.0 tag. All three exit-evidence items are
+  in this release: versioned retrieval results on declared fixtures
+  including the held-out run (`eval/navigation/run3/`,
+  `eval/navigation/heldout/results.json`, decided by
+  `python -m eval.navigation.discovery decide`), the cache recovery tests
+  (`tests/test_search_index.py`: manual edits, checkouts, renames and
+  deletions rebuild the index), and one non-memkernel runtime passing the
+  adapter conformance suite in a recorded host run
+  (`conformance/runs/2026-10-29-claude-code-2.1.312/`). The discovery
+  evidence is small (above) and the host run is one host at one version.
 
 ## [0.7.0] — 2026-10-27
 

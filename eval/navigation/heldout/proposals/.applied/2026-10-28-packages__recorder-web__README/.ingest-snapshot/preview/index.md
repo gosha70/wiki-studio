@@ -1,0 +1,1 @@
+- [@mapatlas/recorder-web — the browser's foreground TrackRecorder](concepts/mapatlas-recorder-web-package.md) — Geolocation-based recording, store autosave every autosaveMs, foreground only

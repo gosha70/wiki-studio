@@ -137,8 +137,9 @@ class TestResolveRanker(unittest.TestCase):
         self.assertEqual(resolve_ranker(None, env={}), (discovery.DEFAULT_RANKER, "default"))
         self.assertEqual(resolve_ranker(None, env={ENV_RANKER: "  "}), (discovery.DEFAULT_RANKER, "default"))
 
-    def test_the_shipped_default_is_index_first(self) -> None:
-        self.assertEqual(discovery.DEFAULT_RANKER, RANKER_INDEX_FIRST)
+    def test_the_shipped_default_is_fts5(self) -> None:
+        """Decided by the held-out run (FR-029): fts5 was no worse at hit at 1 and 5 with both floors met."""
+        self.assertEqual(discovery.DEFAULT_RANKER, RANKER_FTS5)
         self.assertEqual(discovery.RANKERS, ("fts5", "index-first"))
 
     def test_an_unknown_name_is_a_value_error_naming_both_rankers(self) -> None:

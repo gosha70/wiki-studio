@@ -1,0 +1,1 @@
+- [@mapatlas/offline-pmtiles — offline map regions over PMTiles archives](concepts/mapatlas-offline-pmtiles-package.md) — region download into a MapAssetStore, the offlineLicensed refusal rule, and the extra install step

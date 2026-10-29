@@ -1,0 +1,67 @@
+{
+  "receipt_version": 1,
+  "state": "committed",
+  "proposal": "host-run-update",
+  "submission_digest": "8a4ba9ce201be520a2b5cb6f59daef654f1543798408937b6ceaae1c6bee050f",
+  "digest_recipe": 2,
+  "submission_manifest": [
+    {
+      "path": ".ingest-snapshot/plan.json",
+      "sha256": "5191a1bcff51e3a4598f0c3f1a3da0a3ca781441c93944bfdee7ec3cc85e098b"
+    },
+    {
+      "path": ".ingest-snapshot/preview/decisions/retry-policy.md",
+      "sha256": "6e44163b29e8a1ca4ff32993d82e85949a3266a5a611c311a756ed7efca878d6"
+    },
+    {
+      "path": "plan.json",
+      "sha256": "5191a1bcff51e3a4598f0c3f1a3da0a3ca781441c93944bfdee7ec3cc85e098b"
+    },
+    {
+      "path": "preview/decisions/retry-policy.md",
+      "sha256": "6e44163b29e8a1ca4ff32993d82e85949a3266a5a611c311a756ed7efca878d6"
+    }
+  ],
+  "plan_sha256": "5191a1bcff51e3a4598f0c3f1a3da0a3ca781441c93944bfdee7ec3cc85e098b",
+  "wiki_target": {
+    "st_dev": 16777231,
+    "st_ino": 303990832,
+    "path": "/private/var/folders/7y/_v47p2q12qq_9gdj_5d9qk4c0000gn/T/tmp.6sWiFYkWEx/project/knowledge/wiki"
+  },
+  "planned_writes": [
+    {
+      "path": "decisions/retry-policy.md",
+      "pre_sha256": "f736f09dcba9d4c1ef8b70f7e901f4fbbc2b7ff7eaeedc5acc03179e6c560304",
+      "post_sha256": "6e44163b29e8a1ca4ff32993d82e85949a3266a5a611c311a756ed7efca878d6"
+    },
+    {
+      "path": ".audit/proposals/host-run-update/plan.json",
+      "pre_sha256": null,
+      "post_sha256": "5191a1bcff51e3a4598f0c3f1a3da0a3ca781441c93944bfdee7ec3cc85e098b"
+    },
+    {
+      "path": ".audit/proposals/host-run-update/proposal.md",
+      "pre_sha256": null,
+      "post_sha256": "920a2bebf1a22d787d7fbd68a352328098f78bd45f7af03df8d51bf60710c8bb"
+    }
+  ],
+  "written_paths": [
+    "decisions/retry-policy.md",
+    ".audit/proposals/host-run-update/plan.json",
+    ".audit/proposals/host-run-update/proposal.md"
+  ],
+  "unguarded_paths": [],
+  "lock_wait_seconds": 6e-06,
+  "started_at": "2026-10-29T01:43:56Z",
+  "committing_at": "2026-10-29T01:43:56Z",
+  "committed_at": "2026-10-29T01:43:56Z",
+  "promoter": {
+    "package": "wiki-studio",
+    "version": "0.8.0",
+    "entry_point": "mcp"
+  },
+  "actor": {
+    "name": "claude-code-host-run",
+    "source": "flag"
+  }
+}

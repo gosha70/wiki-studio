@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "source_path": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout/corpus/packages__recorder-web__README.md",
+  "backend": "claude",
+  "rationale": "Gate passed. The source is reusable because it documents the engine's browser TrackRecorder. It is citable as a corpus file. It is non-duplicative because no page covers @mapatlas/recorder-web; existing pages only name it. It is new-contributor-relevant because it states the foreground-only limit, the autosave guarantee and the store behaviour. I created one concept page for the package. I updated map-atlas-engine and harness-neutral-specs-contract with the new facts and the new source. I added a Related link from mapatlas-react-package, which records through this package. I appended one log entry and one index entry.",
+  "edits": [
+    {
+      "path": "concepts/mapatlas-recorder-web-package.md",
+      "action": "create",
+      "rationale": "No existing page covers @mapatlas/recorder-web. The page records the recorder API, the store and autosave guarantee, and the foreground-only limit.",
+      "preview": "preview/concepts/mapatlas-recorder-web-package.md"
+    },
+    {
+      "path": "concepts/map-atlas-engine.md",
+      "action": "update",
+      "rationale": "The engine overview names @mapatlas/recorder-web as the web TrackRecorder adapter. The source adds that it is foreground only. Added the source, a pointer to the package README and a Related link.",
+      "preview": "preview/concepts/map-atlas-engine.md",
+      "base_sha256": "da5c7a336d8b3a31001db5b0b4b2de9062a58f23ceeb4ae6961af761eb93b799"
+    },
+    {
+      "path": "concepts/harness-neutral-specs-contract.md",
+      "action": "update",
+      "rationale": "The recorder-web README follows the same contract as the other package READMEs: it has a generated peers block and a compiled, unexecuted example, and it points to §0 instead of giving an install command. Added it as another place the contract shows up.",
+      "preview": "preview/concepts/harness-neutral-specs-contract.md",
+      "base_sha256": "b4e595dd6e88a2c549aa62d418c1662c7e19621f045300ddd628b1faa898fcf8"
+    },
+    {
+      "path": "concepts/mapatlas-react-package.md",
+      "action": "update",
+      "rationale": "useTrackRecorder wraps the recorder from @mapatlas/recorder-web. Added only a Related link to the new page. No new facts, so the sources are unchanged.",
+      "preview": "preview/concepts/mapatlas-react-package.md",
+      "base_sha256": "e61a0e204d443f24705444d6848c75e0e05b2c6a41eae2a5964cda20249a0c31"
+    },
+    {
+      "path": "log.md",
+      "action": "append-log",
+      "rationale": "One dated log entry for this ingest.",
+      "preview": "preview/log.md"
+    },
+    {
+      "path": "index.md",
+      "action": "append-index",
+      "rationale": "Makes the new page reachable from index.md.",
+      "preview": "preview/index.md"
+    }
+  ]
+}

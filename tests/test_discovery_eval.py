@@ -798,7 +798,13 @@ class TestHeldOutProtocolOrder(unittest.TestCase):
         # The build ships the sources only; every later state is the owner's (the evidence PR), taken in order.
         manifest = _manifest(HELDOUT)
         visited = [h["state"] for h in manifest["history"]]
-        self.assertEqual(visited, list(heldout_protocol.STATES[: len(visited)]))
+        # The only state that may repeat is `pinned`, once per re-pin (`pin --again` keeps the previous pins in
+        # pins_history); every other state appears once, in the protocol's order.
+        repins = len(manifest.get("pins_history", []))
+        expected: list[str] = []
+        for state in heldout_protocol.STATES:
+            expected.extend([state] * (1 + repins) if state == heldout_protocol.STATE_PINNED else [state])
+        self.assertEqual(visited, expected[: len(visited)])
         self.assertEqual(manifest["state"], visited[-1])
         if not (HELDOUT / "wiki").exists():
             self.assertIn(

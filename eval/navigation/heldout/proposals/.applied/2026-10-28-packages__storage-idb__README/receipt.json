@@ -1,0 +1,137 @@
+{
+  "receipt_version": 1,
+  "state": "committed",
+  "proposal": "2026-10-28-packages__storage-idb__README",
+  "submission_digest": "f0b6957bea2daf7a12fb88c849ee1f22ba18d38ac2a5e8dceee556419b905a69",
+  "digest_recipe": 2,
+  "submission_manifest": [
+    {
+      "path": ".ingest-snapshot/plan.json",
+      "sha256": "55773b60c61034ae2854c4df12327c49916b342889f1fbff18d2ab736b723b64"
+    },
+    {
+      "path": ".ingest-snapshot/preview/concepts/harness-neutral-specs-contract.md",
+      "sha256": "c936212d52dcd4721e26773cd379c78ab52f6de9e9a50fc6cdf26976c8653216"
+    },
+    {
+      "path": ".ingest-snapshot/preview/concepts/map-atlas-engine.md",
+      "sha256": "7e66f086d2aae3dfc86b8ac48e5c60689cb87dd0ab56ecd2b2bff9a62e215ac4"
+    },
+    {
+      "path": ".ingest-snapshot/preview/concepts/mapatlas-core-package.md",
+      "sha256": "a26e0695ea9c06c07e140ad67f1cd8b40aec7035a1871a2b4a5f3ebf47e0a546"
+    },
+    {
+      "path": ".ingest-snapshot/preview/concepts/mapatlas-storage-idb-package.md",
+      "sha256": "66cb8350de871f626badfd6d2107f207f49e035823d17234fa6bdee7466b6c93"
+    },
+    {
+      "path": ".ingest-snapshot/preview/index.md",
+      "sha256": "d1a3ac1b790b4389553390b35fd1818dba08b8f3a4a2a0a286f543779324daa1"
+    },
+    {
+      "path": ".ingest-snapshot/preview/log.md",
+      "sha256": "5a5999e7af06ce0d14351b96e4ec2eceb4e4b38a71b6150a52c72cca55ea102e"
+    },
+    {
+      "path": "plan.json",
+      "sha256": "55773b60c61034ae2854c4df12327c49916b342889f1fbff18d2ab736b723b64"
+    },
+    {
+      "path": "preview/concepts/harness-neutral-specs-contract.md",
+      "sha256": "c936212d52dcd4721e26773cd379c78ab52f6de9e9a50fc6cdf26976c8653216"
+    },
+    {
+      "path": "preview/concepts/map-atlas-engine.md",
+      "sha256": "7e66f086d2aae3dfc86b8ac48e5c60689cb87dd0ab56ecd2b2bff9a62e215ac4"
+    },
+    {
+      "path": "preview/concepts/mapatlas-core-package.md",
+      "sha256": "a26e0695ea9c06c07e140ad67f1cd8b40aec7035a1871a2b4a5f3ebf47e0a546"
+    },
+    {
+      "path": "preview/concepts/mapatlas-storage-idb-package.md",
+      "sha256": "66cb8350de871f626badfd6d2107f207f49e035823d17234fa6bdee7466b6c93"
+    },
+    {
+      "path": "preview/index.md",
+      "sha256": "d1a3ac1b790b4389553390b35fd1818dba08b8f3a4a2a0a286f543779324daa1"
+    },
+    {
+      "path": "preview/log.md",
+      "sha256": "5a5999e7af06ce0d14351b96e4ec2eceb4e4b38a71b6150a52c72cca55ea102e"
+    }
+  ],
+  "plan_sha256": "55773b60c61034ae2854c4df12327c49916b342889f1fbff18d2ab736b723b64",
+  "wiki_target": {
+    "st_dev": 16777231,
+    "st_ino": 303248064,
+    "path": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout/wiki"
+  },
+  "planned_writes": [
+    {
+      "path": "concepts/mapatlas-storage-idb-package.md",
+      "pre_sha256": null,
+      "post_sha256": "66cb8350de871f626badfd6d2107f207f49e035823d17234fa6bdee7466b6c93"
+    },
+    {
+      "path": "concepts/map-atlas-engine.md",
+      "pre_sha256": "7fd061ce11f5eb3f3774d7ba6cb98da5f3b5826e0fe48272f63967fd4f5f7eb3",
+      "post_sha256": "7e66f086d2aae3dfc86b8ac48e5c60689cb87dd0ab56ecd2b2bff9a62e215ac4"
+    },
+    {
+      "path": "concepts/mapatlas-core-package.md",
+      "pre_sha256": "6886362df34aa987f7f95c14a6dd4f58f26091e2661e333d2c46713f3698748e",
+      "post_sha256": "a26e0695ea9c06c07e140ad67f1cd8b40aec7035a1871a2b4a5f3ebf47e0a546"
+    },
+    {
+      "path": "concepts/harness-neutral-specs-contract.md",
+      "pre_sha256": "9afbd7c6ee50516851215340e23e297257adf83ee67b9b933dd68d4add4866f3",
+      "post_sha256": "c936212d52dcd4721e26773cd379c78ab52f6de9e9a50fc6cdf26976c8653216"
+    },
+    {
+      "path": "index.md",
+      "pre_sha256": "0985a5b8c41151e92d4a56a1b69840ea0cb9536c8986016ee0a30e5aefdfeb45",
+      "post_sha256": "6a6cd978255bacaea61974ab82b5b7769cacf812833b342dae99e5c985e2f18b"
+    },
+    {
+      "path": "log.md",
+      "pre_sha256": "863c75063815f859ebab1a035d9e925a83b81f01acee6fcc71e1d884f69e077c",
+      "post_sha256": "59312affc204573bbe487c2e7d2f36be3cad4127a3cc1631d2c1f7ca131b64ec"
+    },
+    {
+      "path": ".audit/proposals/2026-10-28-packages__storage-idb__README/plan.json",
+      "pre_sha256": null,
+      "post_sha256": "55773b60c61034ae2854c4df12327c49916b342889f1fbff18d2ab736b723b64"
+    },
+    {
+      "path": ".audit/proposals/2026-10-28-packages__storage-idb__README/proposal.md",
+      "pre_sha256": null,
+      "post_sha256": "4d09857f0a9625bfe292ac1d37ad6fb85fa611e7bb9645bbdace687fc2c08f47"
+    }
+  ],
+  "written_paths": [
+    "concepts/mapatlas-storage-idb-package.md",
+    "concepts/map-atlas-engine.md",
+    "concepts/mapatlas-core-package.md",
+    "concepts/harness-neutral-specs-contract.md",
+    "index.md",
+    "log.md",
+    ".audit/proposals/2026-10-28-packages__storage-idb__README/plan.json",
+    ".audit/proposals/2026-10-28-packages__storage-idb__README/proposal.md"
+  ],
+  "unguarded_paths": [],
+  "lock_wait_seconds": 1.1e-05,
+  "started_at": "2026-10-28T21:07:47Z",
+  "committing_at": "2026-10-28T21:07:47Z",
+  "committed_at": "2026-10-28T21:07:47Z",
+  "promoter": {
+    "package": "wiki-studio",
+    "version": "0.8.0",
+    "entry_point": "cli"
+  },
+  "actor": {
+    "name": null,
+    "source": "none"
+  }
+}

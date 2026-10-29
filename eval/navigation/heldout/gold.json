@@ -1,0 +1,457 @@
+[
+  {
+    "id": "q01",
+    "gold": null,
+    "distractors": [
+      "concepts/harness-neutral-specs-contract.md"
+    ],
+    "reason": "No page states a count. The nearest, harness-neutral-specs-contract.md (Key ideas), says only that the README status table is generated from specs/tasks.md and counts tasks with a Done record per phase, and that a zero means no Done record; map-atlas-engine.md and the index carry no number either."
+  },
+  {
+    "id": "q02",
+    "gold": null,
+    "distractors": [
+      "concepts/harness-neutral-specs-contract.md"
+    ],
+    "reason": "No page names any task. harness-neutral-specs-contract.md (Key ideas) describes the status table generated from specs/tasks.md and what a Done record is, but names no task; no other page mentions tasks.md at all."
+  },
+  {
+    "id": "q03",
+    "gold": "concepts/harness-neutral-specs-contract.md",
+    "distractors": [],
+    "reason": "Key ideas states: 'CLAUDE.md is the entry point for the Claude Code harness. It points at the same specs/.' The index only says specs/ is the source of truth, so the page is needed."
+  },
+  {
+    "id": "q04",
+    "gold": "concepts/map-atlas-engine.md",
+    "distractors": [],
+    "reason": "'Where this shows up' states: 'Contributions are accepted under the Developer Certificate of Origin (see CONTRIBUTING.md).' The other pages carry only an Apache-2.0 licence line and say nothing about contributions."
+  },
+  {
+    "id": "q05",
+    "gold": "concepts/harness-neutral-specs-contract.md",
+    "distractors": [
+      "concepts/mapatlas-demo-app.md"
+    ],
+    "reason": "Key ideas states: 'e2e/quick-start.e2e.ts runs the quick-start example in a real browser.' mapatlas-demo-app.md names the two other e2e tests (app-offline, app-shell-offline) and could be mistaken for the answer."
+  },
+  {
+    "id": "q06",
+    "gold": "concepts/map-atlas-engine.md",
+    "distractors": [],
+    "reason": "Key ideas states: 'A fishing journal plugs in a fish-species analyzer to log a catch on the water.' The index only says consumers supply the domain."
+  },
+  {
+    "id": "q07",
+    "gold": "concepts/map-atlas-engine.md",
+    "distractors": [
+      "concepts/mapatlas-recorder-web-package.md"
+    ],
+    "reason": "Key ideas states: 'The web adapter uses watchPosition and Wake Lock.' The recorder-web package page says only that it reads GPS through the Geolocation API and never mentions Wake Lock, so it discusses the recorder without stating this fact."
+  },
+  {
+    "id": "q08",
+    "gold": "concepts/map-data-licensing.md",
+    "distractors": [],
+    "reason": "map-data-licensing.md, Key ideas: 'Bathymetry and elevation sources are licensed per product, not per publisher.' The index entry only summarises this ('per-product bathymetry and elevation terms'), so the answer is not index-only and the page is gold."
+  },
+  {
+    "id": "q09",
+    "gold": "concepts/map-atlas-engine.md",
+    "distractors": [
+      "concepts/mapatlas-recorder-web-package.md"
+    ],
+    "reason": "Key ideas states: 'A native TrackRecorder adapter gives background tracking inside a Capacitor or Cordova shell.' The recorder-web page mentions a native background adapter as another implementation but names no shell."
+  },
+  {
+    "id": "q10",
+    "gold": "concepts/mapatlas-demo-app.md",
+    "distractors": [
+      "concepts/map-atlas-engine.md"
+    ],
+    "reason": "Key ideas states: 'A contributor runs npm install and then npm run demo. The command prints one URL to open.' map-atlas-engine.md also says 'npm run demo runs the demo over a self-hosted map' but without the install step, so the demo page is the more direct statement; the index lists 'npm run demo' only as a topic keyword."
+  },
+  {
+    "id": "q11",
+    "gold": "concepts/mapatlas-demo-app.md",
+    "distractors": [],
+    "reason": "Key ideas states: 'The first run cuts the map archives. This needs the network once and takes about a minute.' No other page gives the reason or the duration."
+  },
+  {
+    "id": "q12",
+    "gold": "concepts/mapatlas-demo-app.md",
+    "distractors": [
+      "concepts/map-data-licensing.md"
+    ],
+    "reason": "Key ideas states: 'A Copernicus elevation model supplies shaded relief and brown contour lines above them.' map-data-licensing.md names the Copernicus elevation model only as one of the demo's two licensed sources, not as the source of relief or contours."
+  },
+  {
+    "id": "q13",
+    "gold": "concepts/mapatlas-demo-app.md",
+    "distractors": [
+      "concepts/map-data-licensing.md"
+    ],
+    "reason": "Key ideas states: 'The corner shows two attribution lines, one for each source. The two sources are two derived works under two unrelated licences.' map-data-licensing.md states the same reason ('That is why the demo shows two lines'); the demo page is chosen because the question is about the demo map's corner and that page states it in that context."
+  },
+  {
+    "id": "q14",
+    "gold": "concepts/mapatlas-demo-app.md",
+    "distractors": [],
+    "reason": "Key ideas states: 'The error \"port 5175/5176 is already in use\" means something else is listening, often a previous run.' No other page mentions ports."
+  },
+  {
+    "id": "q15",
+    "gold": "concepts/mapatlas-demo-app.md",
+    "distractors": [
+      "concepts/mapatlas-offline-pmtiles-package.md"
+    ],
+    "reason": "Key ideas states: 'PMTiles is read by range request... npm run demo uses a server that supports range requests. A plain static server such as python3 -m http.server does not.' mapatlas-offline-pmtiles-package.md repeats the same sentence; the demo page is chosen because the question concerns serving the demo archives."
+  },
+  {
+    "id": "q16",
+    "gold": "concepts/mapatlas-demo-app.md",
+    "distractors": [
+      "concepts/mapatlas-offline-pmtiles-package.md"
+    ],
+    "reason": "Key ideas states: 'e2e/app-shell-offline.e2e.ts boots the built application with its own origin cut. It runs on the production bundle.' The offline-pmtiles page names only e2e/app-offline.e2e.ts (archive host cut), which a reader might confuse with it."
+  },
+  {
+    "id": "q17",
+    "gold": "concepts/mapatlas-demo-app.md",
+    "distractors": [
+      "concepts/map-data-licensing.md"
+    ],
+    "reason": "Key ideas states: 'The repository holds no map tiles. npm run demo cuts them into build/fixture/, which git ignores', and 'Where this shows up' repeats that build/fixture/ holds the cut archives. map-data-licensing.md states the same directory in one bullet; the demo page is chosen as the page about the demo."
+  },
+  {
+    "id": "q18",
+    "gold": "concepts/mapatlas-demo-app.md",
+    "distractors": [],
+    "reason": "mapatlas-demo-app.md, Key ideas: 'The development runner deliberately registers no service worker'; the service worker exists in a production build only. The index entry only summarises this ('dev runner has no service worker'), so the answer is not index-only and the page is gold."
+  },
+  {
+    "id": "q19",
+    "gold": "concepts/mapatlas-demo-app.md",
+    "distractors": [
+      "concepts/mapatlas-offline-pmtiles-package.md"
+    ],
+    "reason": "Key ideas states: 'Download region copies the three archives into IndexedDB.' mapatlas-offline-pmtiles-package.md says the same ('The demo app's Download region copies its three archives into IndexedDB'); the demo page is chosen because the question is about the demo's button."
+  },
+  {
+    "id": "q20",
+    "gold": "concepts/mapatlas-core-package.md",
+    "distractors": [],
+    "reason": "Key ideas states: 'The subpath @mapatlas/core/testing exports first-party fakes for every seam.' The index mentions testing fakes but not the subpath."
+  },
+  {
+    "id": "q21",
+    "gold": "concepts/mapatlas-core-package.md",
+    "distractors": [],
+    "reason": "Key ideas states: 'trackToGeoJSON turns a track and its events into portable GeoJSON. geoJSONToTrack reads that form back.'"
+  },
+  {
+    "id": "q22",
+    "gold": "concepts/mapatlas-core-package.md",
+    "distractors": [
+      "concepts/map-atlas-engine.md"
+    ],
+    "reason": "Key ideas states: 'The core defines six seams: TrackRecorder, StorageAdapter, SensorSource, TileSource, MediaAnalyzer and EventPresentation.' map-atlas-engine.md names some seams individually but never the six together; the index says 'the six seams' without naming them."
+  },
+  {
+    "id": "q23",
+    "gold": "concepts/mapatlas-core-package.md",
+    "distractors": [
+      "concepts/map-atlas-engine.md"
+    ],
+    "reason": "Summary states: 'Every other engine package depends on it, and it depends on none of them.' map-atlas-engine.md states the same sentence about @mapatlas/core in Key ideas; the core page is chosen as the page about that package."
+  },
+  {
+    "id": "q24",
+    "gold": "concepts/mapatlas-core-package.md",
+    "distractors": [
+      "concepts/harness-neutral-specs-contract.md",
+      "concepts/mapatlas-offline-pmtiles-package.md",
+      "concepts/mapatlas-react-package.md",
+      "concepts/mapatlas-recorder-web-package.md",
+      "concepts/mapatlas-storage-idb-package.md"
+    ],
+    "reason": "Key ideas states: 'The package is not published to a registry. A contributor builds it from a checkout and installs it as a tarball.' The core page is chosen because the question's source is the core README; the four other package pages repeat the same sentence for their own package, and harness-neutral-specs-contract.md discusses the unpublished packages, npm pack and the quick start without stating the checkout-to-tarball path."
+  },
+  {
+    "id": "q25",
+    "gold": "concepts/mapatlas-maplibre-package.md",
+    "distractors": [],
+    "reason": "Key ideas states: 'The package declares maplibre-gl as a peer dependency at the exact version 6.6.0, not a range such as ^6.6.0.' The index says only 'exact-version maplibre-gl peer'."
+  },
+  {
+    "id": "q26",
+    "gold": "concepts/mapatlas-maplibre-package.md",
+    "distractors": [],
+    "reason": "Key ideas states: 'Every browser test in the repository runs against exactly 6.6.0. A caret range would let a fresh install resolve a 6.x release that no test has exercised.'"
+  },
+  {
+    "id": "q27",
+    "gold": "concepts/mapatlas-maplibre-package.md",
+    "distractors": [],
+    "reason": "Key ideas states: 'addProtocol registers a handler on one MapLibre module instance. With two copies, PMTiles could register on a runtime that does not draw the map. The archive would then silently fail to load.'"
+  },
+  {
+    "id": "q28",
+    "gold": "concepts/mapatlas-maplibre-package.md",
+    "distractors": [
+      "concepts/map-atlas-engine.md",
+      "concepts/mapatlas-react-package.md"
+    ],
+    "reason": "Key ideas states: 'The package does not import maplibre-gl/dist/maplibre-gl.css. Injecting global CSS is the consumer's decision, and it breaks applications that bundle CSS themselves.' map-atlas-engine.md gives a shorter version of the reason ('global CSS is a decision about the consumer's document'); mapatlas-react-package.md says only that it does not inject global CSS, with no reason."
+  },
+  {
+    "id": "q29",
+    "gold": "concepts/mapatlas-maplibre-package.md",
+    "distractors": [],
+    "reason": "Key ideas states: 'A missing worker raises no error. The map is constructed, the style parses and sources emit sourcedata. No tile is ever built, so nothing is painted', and 'If a map shows controls and markers but no map, check the worker URL first.'"
+  },
+  {
+    "id": "q30",
+    "gold": "concepts/mapatlas-maplibre-package.md",
+    "distractors": [],
+    "reason": "Key ideas states: 'A consumer must call setWorkerUrl with the URL of maplibre-gl/dist/maplibre-gl-worker.mjs.' No other page names the function."
+  },
+  {
+    "id": "q31",
+    "gold": "concepts/mapatlas-maplibre-package.md",
+    "distractors": [],
+    "reason": "Key ideas states: 'Without the stylesheet, MapLibre's controls are unstyled. Map marks also lose their absolute positioning and render outside the map.'"
+  },
+  {
+    "id": "q32",
+    "gold": "concepts/mapatlas-maplibre-package.md",
+    "distractors": [
+      "concepts/harness-neutral-specs-contract.md"
+    ],
+    "reason": "Key ideas states: 'The CSS custom property --mapatlas-focus-ring-color sets the ring colour... Unset, the ring is 3px solid #0969da.' harness-neutral-specs-contract.md mentions the property only to say the README describes it in prose."
+  },
+  {
+    "id": "q33",
+    "gold": "concepts/mapatlas-maplibre-package.md",
+    "distractors": [
+      "concepts/harness-neutral-specs-contract.md"
+    ],
+    "reason": "Key ideas states: 'A fixed blue has no guaranteed contrast against satellite imagery. That is why the colour is configurable.' harness-neutral-specs-contract.md mentions the property without the reason."
+  },
+  {
+    "id": "q34",
+    "gold": "concepts/mapatlas-maplibre-package.md",
+    "distractors": [],
+    "reason": "Key ideas states: 'createMapController takes a container element and a list of sources and returns a MapController.' The react page mentions MapController but not how one is created."
+  },
+  {
+    "id": "q35",
+    "gold": "concepts/mapatlas-maplibre-package.md",
+    "distractors": [],
+    "reason": "Key ideas states: 'Camera motion follows prefers-reduced-motion.'"
+  },
+  {
+    "id": "q36",
+    "gold": "concepts/mapatlas-offline-pmtiles-package.md",
+    "distractors": [
+      "concepts/map-data-licensing.md"
+    ],
+    "reason": "Key ideas states: 'download() refuses any source that is not marked offlineLicensed: true. It throws OfflineLicenseError.' map-data-licensing.md states the same error name in its licensing context; the package page is chosen as the page about download()."
+  },
+  {
+    "id": "q37",
+    "gold": "concepts/mapatlas-offline-pmtiles-package.md",
+    "distractors": [],
+    "reason": "Key ideas states in three bullets: 'Eviction-aware re-download is not implemented. A quota UI is not implemented. Download resume is not implemented. A consumer that needs these features builds them on the package's seams.'"
+  },
+  {
+    "id": "q38",
+    "gold": "concepts/mapatlas-offline-pmtiles-package.md",
+    "distractors": [
+      "concepts/mapatlas-storage-idb-package.md",
+      "concepts/mapatlas-demo-app.md"
+    ],
+    "reason": "Key ideas states: 'The README example uses createIdbMapAssetStore from @mapatlas/storage-idb. Downloaded regions are then kept in IndexedDB.' mapatlas-storage-idb-package.md says downloaded map archives live in the browser's own storage via MapAssetStore on IndexedDB, and the demo page says Download region copies archives into IndexedDB; the offline-pmtiles page states it most directly for regions."
+  },
+  {
+    "id": "q39",
+    "gold": "concepts/mapatlas-offline-pmtiles-package.md",
+    "distractors": [],
+    "reason": "Key ideas states: 'installOfflineArchives and createStoredArchiveSource serve a stored archive to the renderer. This package exports both.'"
+  },
+  {
+    "id": "q40",
+    "gold": "concepts/mapatlas-offline-pmtiles-package.md",
+    "distractors": [
+      "concepts/harness-neutral-specs-contract.md"
+    ],
+    "reason": "Key ideas states: 'add \"$TARBALLS\"/mapatlas-offline-pmtiles-0.0.0.tgz to the npm install line in §0.' harness-neutral-specs-contract.md explains that the install sentence names the tarball and follows the version but never gives the filename."
+  },
+  {
+    "id": "q41",
+    "gold": "concepts/mapatlas-offline-pmtiles-package.md",
+    "distractors": [
+      "concepts/harness-neutral-specs-contract.md"
+    ],
+    "reason": "Key ideas states: 'The quick start in specs/api.md §0 does not install this package. The quick start packs only the five packages its example imports.' harness-neutral-specs-contract.md states the same five-packages rule generically without naming offline-pmtiles; the package page ties it to the question."
+  },
+  {
+    "id": "q42",
+    "gold": "concepts/mapatlas-offline-pmtiles-package.md",
+    "distractors": [],
+    "reason": "Key ideas states: 'list() returns the stored regions. delete(id) removes one.'"
+  },
+  {
+    "id": "q43",
+    "gold": "concepts/mapatlas-react-package.md",
+    "distractors": [],
+    "reason": "mapatlas-react-package.md, Key ideas: 'The package declares one peer dependency: react at >=18.' The index entry only summarises this ('react >=18 peer'), so the answer is not index-only and the page is gold."
+  },
+  {
+    "id": "q44",
+    "gold": "concepts/mapatlas-react-package.md",
+    "distractors": [
+      "concepts/map-atlas-engine.md"
+    ],
+    "reason": "Summary states: 'It also exports the hooks useTrackRecorder, useTrackDraft, useEventLog and useOfflineRegions.' map-atlas-engine.md says @mapatlas/react exports 'four hooks' without naming them."
+  },
+  {
+    "id": "q45",
+    "gold": "concepts/mapatlas-react-package.md",
+    "distractors": [],
+    "reason": "Key ideas states: 'useTrackRecorder exposes status, livePoint, start and stop.'"
+  },
+  {
+    "id": "q46",
+    "gold": "concepts/mapatlas-react-package.md",
+    "distractors": [
+      "concepts/map-atlas-engine.md"
+    ],
+    "reason": "Key ideas states: 'The package depends on @mapatlas/maplibre for drawing' and 'depends on @mapatlas/recorder-web for recording.' map-atlas-engine.md states the same ('It draws through @mapatlas/maplibre and records through @mapatlas/recorder-web'); the react page is chosen as the page about that package."
+  },
+  {
+    "id": "q47",
+    "gold": "concepts/mapatlas-react-package.md",
+    "distractors": [
+      "concepts/map-atlas-engine.md",
+      "concepts/mapatlas-maplibre-package.md"
+    ],
+    "reason": "Key ideas states: 'The consumer must load the stylesheet and the worker URL that MapLibre needs. @mapatlas/maplibre's README describes both steps.' map-atlas-engine.md says the consumer must wire both and that the React bindings do not change this rule, and the maplibre page describes the two steps for its own package; the react page states it for MapCanvas specifically."
+  },
+  {
+    "id": "q48",
+    "gold": "concepts/mapatlas-recorder-web-package.md",
+    "distractors": [
+      "concepts/mapatlas-react-package.md"
+    ],
+    "reason": "Key ideas states: 'stop() resolves with the finished Track.' mapatlas-react-package.md mentions that useTrackRecorder exposes stop but not what it resolves with."
+  },
+  {
+    "id": "q49",
+    "gold": "concepts/mapatlas-recorder-web-package.md",
+    "distractors": [],
+    "reason": "Key ideas states: 'A reload mid-trip then loses at most one autosave interval's worth of points. This holds only if the autosaves themselves succeeded.'"
+  },
+  {
+    "id": "q50",
+    "gold": "concepts/mapatlas-recorder-web-package.md",
+    "distractors": [
+      "concepts/map-atlas-engine.md"
+    ],
+    "reason": "Key ideas states: 'The recorder is foreground only. A web page cannot record with the screen locked.' map-atlas-engine.md states the same sentence about @mapatlas/recorder-web; the package page is chosen as the page about it. The index's 'foreground only' implies the answer but does not mention the locked screen."
+  },
+  {
+    "id": "q51",
+    "gold": "concepts/mapatlas-recorder-web-package.md",
+    "distractors": [
+      "concepts/mapatlas-demo-app.md"
+    ],
+    "reason": "Key ideas states: 'start() asks the browser for position permission. Then it begins sampling.' mapatlas-demo-app.md says the browser asks for the user's location when recording starts, which describes the behaviour from the user's side without naming start()."
+  },
+  {
+    "id": "q52",
+    "gold": "concepts/mapatlas-storage-idb-package.md",
+    "distractors": [],
+    "reason": "Key ideas states: 'createIdbStorageAdapter takes a databaseName and returns a StorageAdapter.'"
+  },
+  {
+    "id": "q53",
+    "gold": "concepts/mapatlas-storage-idb-package.md",
+    "distractors": [
+      "concepts/map-atlas-engine.md"
+    ],
+    "reason": "Key ideas states: 'The adapter opens the database lazily on the first call. A consumer can therefore construct the adapter at module load.' map-atlas-engine.md and the index say only 'lazy open' without saying when."
+  },
+  {
+    "id": "q54",
+    "gold": "concepts/mapatlas-storage-idb-package.md",
+    "distractors": [],
+    "reason": "Key ideas states: 'The engine does not ask for a persistent origin on the consumer's behalf. The demo's persistence UX shows how to ask for a persistent origin.'"
+  },
+  {
+    "id": "q55",
+    "gold": "concepts/mapatlas-storage-idb-package.md",
+    "distractors": [
+      "concepts/map-atlas-engine.md",
+      "concepts/mapatlas-recorder-web-package.md"
+    ],
+    "reason": "mapatlas-storage-idb-package.md, Summary: '@mapatlas/storage-idb is MAP-ATLAS's default persistence.' map-atlas-engine.md ('is that default adapter') and mapatlas-recorder-web-package.md ('provides the default one') say so too and are the distractors; the index entry's title only summarises it, so the answer is not index-only and the page is gold."
+  },
+  {
+    "id": "q56",
+    "gold": null,
+    "distractors": [
+      "concepts/mapatlas-recorder-web-package.md"
+    ],
+    "reason": "Absent by design. mapatlas-recorder-web-package.md says the recorder autosaves every autosaveMs milliseconds when a store is given but gives no default; the index says 'store autosave every autosaveMs' with no value; no other page mentions autosaveMs."
+  },
+  {
+    "id": "q57",
+    "gold": null,
+    "distractors": [
+      "concepts/mapatlas-recorder-web-package.md"
+    ],
+    "reason": "Absent by design. mapatlas-recorder-web-package.md says only that the recorder applies the sampling and sensor-merge policies that specs/api.md §2 and §3 specify; no page states an accuracy threshold."
+  },
+  {
+    "id": "q58",
+    "gold": null,
+    "distractors": [
+      "concepts/mapatlas-storage-idb-package.md"
+    ],
+    "reason": "Absent by design. mapatlas-storage-idb-package.md says tracks, events and media live under a database name the consumer chooses, but names no object store; no other page mentions object stores."
+  },
+  {
+    "id": "q59",
+    "gold": null,
+    "distractors": [
+      "concepts/map-atlas-engine.md",
+      "concepts/mapatlas-demo-app.md"
+    ],
+    "reason": "Absent by design. map-atlas-engine.md says a user can attach a comment and photos to an event and the demo page says the demo loop attaches a photo, but no page states a limit."
+  },
+  {
+    "id": "q60",
+    "gold": null,
+    "distractors": [
+      "concepts/mapatlas-demo-app.md"
+    ],
+    "reason": "Absent by design. mapatlas-demo-app.md describes npm install and npm run demo and the first-run network need but names no Node.js version; no other page mentions Node."
+  },
+  {
+    "id": "q61",
+    "gold": null,
+    "distractors": [
+      "concepts/mapatlas-maplibre-package.md"
+    ],
+    "reason": "Absent by design. mapatlas-maplibre-package.md says the MapController contract covers camera, marks, draft geometry and replay and that camera motion follows prefers-reduced-motion, but names no emitted event; no other page names one."
+  },
+  {
+    "id": "q62",
+    "gold": null,
+    "distractors": [
+      "concepts/mapatlas-offline-pmtiles-package.md"
+    ],
+    "reason": "Absent by design. mapatlas-offline-pmtiles-package.md says download() fetches the archive into the asset store and that a quota UI is not implemented, but states no quota check or amount; no other page mentions quota."
+  }
+]

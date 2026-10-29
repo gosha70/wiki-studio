@@ -1,0 +1,1 @@
+- [@mapatlas/core — the framework-agnostic data model and seams](concepts/mapatlas-core-package.md) — tracks as plain data, the six seams, GeoJSON portability and testing fakes

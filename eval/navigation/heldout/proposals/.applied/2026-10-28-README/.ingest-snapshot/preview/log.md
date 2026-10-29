@@ -1,0 +1,1 @@
+- 2026-10-28 — create map-atlas-engine (concept): ingest of the MAP-ATLAS root README

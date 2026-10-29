@@ -1,0 +1,1 @@
+- [MAP-ATLAS — a domain-agnostic field-mapping engine](concepts/map-atlas-engine.md) — places, tracks, events, media and a pluggable analyzer; consumers supply the domain

@@ -1,0 +1,9 @@
+applied 8 edit(s) from 2026-10-28-packages__storage-idb__README; archived to /Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout/proposals/.applied/2026-10-28-packages__storage-idb__README.
+  + wiki/concepts/mapatlas-storage-idb-package.md
+  + wiki/concepts/map-atlas-engine.md
+  + wiki/concepts/mapatlas-core-package.md
+  + wiki/concepts/harness-neutral-specs-contract.md
+  + wiki/index.md
+  + wiki/log.md
+  + wiki/.audit/proposals/2026-10-28-packages__storage-idb__README/plan.json
+  + wiki/.audit/proposals/2026-10-28-packages__storage-idb__README/proposal.md

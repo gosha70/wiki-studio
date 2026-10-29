@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "source_path": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout/corpus/packages__core__README.md",
+  "backend": "claude",
+  "rationale": "The source passes the four-question gate. (1) Reusable: it defines what @mapatlas/core contains, which seams it owns, and the dependency direction between packages. Any future contributor needs that. (2) Citable: the repo file eval/navigation/heldout/corpus/packages__core__README.md at sha 79de8a1. (3) Non-duplicative: the existing pages mention @mapatlas/core only by name. No page covers the core package's data model, seams, portability functions or testing fakes. I create one new concept page for it and update the related pages instead of repeating their content. (4) New-contributor-relevant: a newcomer has to learn the core package boundary before touching any other package. Edits: I create concepts/mapatlas-core-package.md. I update map-atlas-engine to link the new page and to state the dependency direction. I update harness-neutral-specs-contract with the rule that package README code blocks are compiled but not executed, and that packages are not published to a registry. I also append one index entry and one log entry.",
+  "edits": [
+    {
+      "path": "concepts/mapatlas-core-package.md",
+      "action": "create",
+      "rationale": "No existing page covers the core package's data model, seams, portability functions, testing fakes or dependency direction. This new concept page is the one canonical entry for it.",
+      "preview": "preview/concepts/mapatlas-core-package.md"
+    },
+    {
+      "path": "concepts/map-atlas-engine.md",
+      "action": "update",
+      "rationale": "The source refines the engine overview with the core package's role and the dependency direction between packages. The update adds one key idea, one pointer and a link to the new core page. The existing content is unchanged.",
+      "preview": "preview/concepts/map-atlas-engine.md",
+      "base_sha256": "9b9aca5b5e61ad1300647ebf5d20aebbedc60541852cc4ec7d7f7ebb9216d756"
+    },
+    {
+      "path": "concepts/harness-neutral-specs-contract.md",
+      "action": "update",
+      "rationale": "The source extends the checked-documentation contract to package READMEs. Their code blocks are compiled against packed packages but not executed. Their peers lists are generated. They defer install to the quick start because the packages are not published. The update adds these rules to the page that already owns the checked quick start.",
+      "preview": "preview/concepts/harness-neutral-specs-contract.md",
+      "base_sha256": "7110808a3fe91b52dfb46a8cf30e865ce80b8fea27dfa11cbef84d58e98b44d5"
+    },
+    {
+      "path": "index.md",
+      "action": "append-index",
+      "rationale": "This links the new concept page from the index so it is reachable.",
+      "preview": "preview/index.md"
+    },
+    {
+      "path": "log.md",
+      "action": "append-log",
+      "rationale": "This records the ingest in the append-only log.",
+      "preview": "preview/log.md"
+    }
+  ]
+}

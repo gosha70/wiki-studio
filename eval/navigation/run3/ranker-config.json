@@ -1,0 +1,13 @@
+{
+  "max_pages": 5,
+  "min_match_tokens": 1,
+  "ranker": "fts5",
+  "ranker_config_hash": "c4b6576a6bc57e3c1b8c7f70ef6bb19b5dcf44d0ea0c30ab7dc0192965a43521",
+  "tokenizer": "porter unicode61",
+  "weights": [
+    4.0,
+    4.0,
+    2.0,
+    1.0
+  ]
+}

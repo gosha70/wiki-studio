@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "source_path": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout/corpus/apps__demo__README.md",
+  "backend": "claude",
+  "rationale": "Gate passed. (1) Reusable: the source explains how to run the demo and how its two offline layers work. It also says what the demo does not show and how to fix two common failures. A future contributor needs all of this. (2) Citable: the source is the repo file eval/navigation/heldout/corpus/apps__demo__README.md. (3) Non-duplicative: no wiki page covers the demo app, so I create one concept page, mapatlas-demo-app. (4) New-contributor-relevant: `npm run demo` is the first thing a new contributor runs. The source also refines three existing pages, which I update. map-data-licensing gains the demo's two attribution lines and the gitignored build/fixture/ tiles. mapatlas-offline-pmtiles gains the range-request (HTTP Byte Serving) requirement and the e2e check of rendering from a downloaded region. map-atlas-engine gains a pointer to the demo. The index gets one link and the log gets one entry.",
+  "edits": [
+    {
+      "path": "concepts/mapatlas-demo-app.md",
+      "action": "create",
+      "rationale": "No existing page covers the demo app. This page records how to run it, its two independent offline layers, what it does not demonstrate, and how to fix its two common failures.",
+      "preview": "preview/concepts/mapatlas-demo-app.md"
+    },
+    {
+      "path": "concepts/map-data-licensing.md",
+      "action": "update",
+      "rationale": "The demo README shows the licensing rule in practice. It uses two attribution lines for two derived works under unrelated licences, keeps tiles out of git, and cites ADR-0038 for the sources and licences.",
+      "preview": "preview/concepts/map-data-licensing.md",
+      "base_sha256": "73b6b539cfb06f4f6794632337155f694cf8ebf2c9110a8d5be73d33534b416e"
+    },
+    {
+      "path": "concepts/mapatlas-offline-pmtiles-package.md",
+      "action": "update",
+      "rationale": "The demo README adds the range-request requirement for serving PMTiles and the 'HTTP Byte Serving' failure mode. It also adds the e2e check that the map renders from a downloaded region with the archive host cut.",
+      "preview": "preview/concepts/mapatlas-offline-pmtiles-package.md",
+      "base_sha256": "133ef56b0aa392b072fc916a4f151b04c4da3349b4443369864b97b3fe20f93b"
+    },
+    {
+      "path": "concepts/map-atlas-engine.md",
+      "action": "update",
+      "rationale": "The engine overview page lists every package README. It now also points at the demo app, which is built only from the published entry points.",
+      "preview": "preview/concepts/map-atlas-engine.md",
+      "base_sha256": "7e66f086d2aae3dfc86b8ac48e5c60689cb87dd0ab56ecd2b2bff9a62e215ac4"
+    },
+    {
+      "path": "index.md",
+      "action": "append-index",
+      "rationale": "This links the new page from the index so it is reachable.",
+      "preview": "preview/index.md"
+    },
+    {
+      "path": "log.md",
+      "action": "append-log",
+      "rationale": "This is the dated log entry for this ingest.",
+      "preview": "preview/log.md"
+    }
+  ]
+}

@@ -1,0 +1,2984 @@
+{
+  "absent": {
+    "fts5": {
+      "absent_bytes_loaded": 23345.7143,
+      "absent_empty": 0.0,
+      "absent_pages_loaded": 5.0,
+      "evaluated": 7
+    },
+    "index-first": {
+      "absent_bytes_loaded": 5434.1429,
+      "absent_empty": 0.2857,
+      "absent_pages_loaded": 1.0,
+      "evaluated": 7
+    }
+  },
+  "context": {
+    "fts5": {
+      "bytes_median": 23716.5,
+      "bytes_total": 1457402,
+      "questions": 62,
+      "words_median": 3163.0,
+      "words_total": 193143
+    },
+    "index-first": {
+      "bytes_median": 11577.0,
+      "bytes_total": 818758,
+      "questions": 62,
+      "words_median": 1608.0,
+      "words_total": 107137
+    }
+  },
+  "counts": {
+    "absent": 7,
+    "competing": 10,
+    "evaluated": 53,
+    "questions": 62,
+    "single": 45,
+    "with_gold": 53
+  },
+  "discordant": {
+    "at_1": {
+      "fts5_only": [
+        "q07",
+        "q08",
+        "q11",
+        "q12",
+        "q14",
+        "q15",
+        "q17",
+        "q18",
+        "q21",
+        "q26",
+        "q29",
+        "q31",
+        "q32",
+        "q33",
+        "q36",
+        "q45",
+        "q47",
+        "q49",
+        "q54"
+      ],
+      "index_first_only": [
+        "q37",
+        "q41",
+        "q43",
+        "q44",
+        "q50",
+        "q55"
+      ]
+    },
+    "at_5": {
+      "fts5_only": [
+        "q05",
+        "q07",
+        "q08",
+        "q09",
+        "q21",
+        "q26",
+        "q32",
+        "q33",
+        "q34",
+        "q36",
+        "q39",
+        "q42",
+        "q45"
+      ],
+      "index_first_only": [
+        "q24"
+      ]
+    }
+  },
+  "eligible_pages": 10,
+  "fixture": "eval/navigation/heldout",
+  "ingest_coverage": {
+    "answer_in_a_page": 53,
+    "answerable": 55,
+    "basis": "measured",
+    "documents_ingested": 8,
+    "documents_promoted": 8,
+    "rate": 0.9636
+  },
+  "latency": {
+    "cold_cache": {
+      "median_ms": 5.24,
+      "p95_ms": 5.929
+    },
+    "fts5": true,
+    "in_memory_no_cache": {
+      "median_ms": 3.35,
+      "p95_ms": 3.715
+    },
+    "machine": "macOS-26.6.2-arm64-arm-64bit",
+    "processor": "arm64",
+    "python": "3.12.8",
+    "repetitions": 5,
+    "samples_per_path": 310,
+    "sqlite": "3.47.1",
+    "unit": "milliseconds per call",
+    "warm_cache": {
+      "median_ms": 2.856,
+      "p95_ms": 3.236
+    }
+  },
+  "navigation": {
+    "fts5": {
+      "competing_evaluated": 10,
+      "distractor_outranks": 0.4,
+      "eligible_pages": 10,
+      "empty_selection": [],
+      "evaluated": 53,
+      "hit_at_1": 0.6792,
+      "hit_at_5": 0.9811,
+      "hits_at_1": 36,
+      "hits_at_5": 52,
+      "mean_pages_selected": 4.9623,
+      "ran_as": [
+        "fts5"
+      ],
+      "random_hit_at_1": 0.1,
+      "random_hit_at_5": 0.4962
+    },
+    "index-first": {
+      "competing_evaluated": 10,
+      "distractor_outranks": 0.3,
+      "eligible_pages": 10,
+      "empty_selection": [
+        "q08",
+        "q09",
+        "q21",
+        "q26",
+        "q32",
+        "q33",
+        "q34",
+        "q36",
+        "q42",
+        "q45"
+      ],
+      "evaluated": 53,
+      "hit_at_1": 0.434,
+      "hit_at_5": 0.7547,
+      "hits_at_1": 23,
+      "hits_at_5": 40,
+      "mean_pages_selected": 2.9057,
+      "ran_as": [
+        "index-first"
+      ],
+      "random_hit_at_1": 0.0811,
+      "random_hit_at_5": 0.2906
+    }
+  },
+  "parameters": {
+    "max_bytes": 65536,
+    "max_pages": 5,
+    "min_match_tokens": 1,
+    "ranker_config": {
+      "max_pages": 5,
+      "min_match_tokens": 1,
+      "ranker": "fts5",
+      "tokenizer": "porter unicode61",
+      "weights": [
+        4.0,
+        4.0,
+        2.0,
+        1.0
+      ]
+    },
+    "ranker_config_hash": "c4b6576a6bc57e3c1b8c7f70ef6bb19b5dcf44d0ea0c30ab7dc0192965a43521",
+    "sqlite_version": "3.47.1",
+    "tokenizer": "porter unicode61",
+    "weights": [
+      4.0,
+      4.0,
+      2.0,
+      1.0
+    ],
+    "wiki_studio_version": "0.8.0"
+  },
+  "per_question": [
+    {
+      "distractors": [
+        "concepts/harness-neutral-specs-contract.md"
+      ],
+      "excluded_reason": "no_gold",
+      "fts5": {
+        "bytes_loaded": 22884,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": null,
+        "hit_at_5": null,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/mapatlas-storage-idb-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-recorder-web-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3001
+      },
+      "gold": null,
+      "grep_words": null,
+      "id": "q01",
+      "index-first": {
+        "bytes_loaded": 24844,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": null,
+        "hit_at_5": null,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-maplibre-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3209
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [
+        "concepts/harness-neutral-specs-contract.md"
+      ],
+      "excluded_reason": "no_gold",
+      "fts5": {
+        "bytes_loaded": 24717,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": null,
+        "hit_at_5": null,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-demo-app.md",
+          "concepts/mapatlas-storage-idb-package.md",
+          "concepts/mapatlas-core-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3234
+      },
+      "gold": null,
+      "grep_words": null,
+      "id": "q02",
+      "index-first": {
+        "bytes_loaded": 2006,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": null,
+        "hit_at_5": null,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [],
+        "warnings": [],
+        "words_loaded": 225
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 24790,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-demo-app.md",
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-recorder-web-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3252
+      },
+      "gold": "concepts/harness-neutral-specs-contract.md",
+      "grep_words": 751,
+      "id": "q03",
+      "index-first": {
+        "bytes_loaded": 7638,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/harness-neutral-specs-contract.md"
+        ],
+        "warnings": [],
+        "words_loaded": 920
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 22828,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/map-atlas-engine.md",
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-react-package.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/mapatlas-storage-idb-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2864
+      },
+      "gold": "concepts/map-atlas-engine.md",
+      "grep_words": 1006,
+      "id": "q04",
+      "index-first": {
+        "bytes_loaded": 12938,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-demo-app.md"
+        ],
+        "warnings": [],
+        "words_loaded": 1737
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [
+        "concepts/mapatlas-demo-app.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 26509,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-demo-app.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/map-atlas-engine.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3534
+      },
+      "gold": "concepts/harness-neutral-specs-contract.md",
+      "grep_words": 1396,
+      "id": "q05",
+      "index-first": {
+        "bytes_loaded": 4935,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": false,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-recorder-web-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 611
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 25009,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/map-atlas-engine.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/map-data-licensing.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3200
+      },
+      "gold": "concepts/map-atlas-engine.md",
+      "grep_words": 1957,
+      "id": "q06",
+      "index-first": {
+        "bytes_loaded": 11247,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-react-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 1402
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [
+        "concepts/mapatlas-recorder-web-package.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 24245,
+        "distractor_outranks": false,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-storage-idb-package.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-recorder-web-package.md",
+          "concepts/harness-neutral-specs-contract.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3130
+      },
+      "gold": "concepts/map-atlas-engine.md",
+      "grep_words": 2340,
+      "id": "q07",
+      "index-first": {
+        "bytes_loaded": 4935,
+        "distractor_outranks": true,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": false,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-recorder-web-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 611
+      },
+      "kind": "competing"
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 23593,
+        "distractor_outranks": false,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-demo-app.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3136
+      },
+      "gold": "concepts/map-data-licensing.md",
+      "grep_words": 278,
+      "id": "q08",
+      "index-first": {
+        "bytes_loaded": 2006,
+        "distractor_outranks": false,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": false,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [],
+        "warnings": [],
+        "words_loaded": 225
+      },
+      "kind": "competing"
+    },
+    {
+      "distractors": [
+        "concepts/mapatlas-recorder-web-package.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 23582,
+        "distractor_outranks": true,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-recorder-web-package.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-react-package.md",
+          "concepts/mapatlas-demo-app.md",
+          "concepts/mapatlas-maplibre-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3180
+      },
+      "gold": "concepts/map-atlas-engine.md",
+      "grep_words": 2150,
+      "id": "q09",
+      "index-first": {
+        "bytes_loaded": 2006,
+        "distractor_outranks": false,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": false,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [],
+        "warnings": [],
+        "words_loaded": 225
+      },
+      "kind": "competing"
+    },
+    {
+      "distractors": [
+        "concepts/map-atlas-engine.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 26239,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-demo-app.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-storage-idb-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3459
+      },
+      "gold": "concepts/mapatlas-demo-app.md",
+      "grep_words": 834,
+      "id": "q10",
+      "index-first": {
+        "bytes_loaded": 11577,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-demo-app.md"
+        ],
+        "warnings": [],
+        "words_loaded": 1608
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 25492,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-demo-app.md",
+          "concepts/map-data-licensing.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3463
+      },
+      "gold": "concepts/mapatlas-demo-app.md",
+      "grep_words": 2018,
+      "id": "q11",
+      "index-first": {
+        "bytes_loaded": 11577,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-demo-app.md"
+        ],
+        "warnings": [],
+        "words_loaded": 1608
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [
+        "concepts/map-data-licensing.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 23700,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-demo-app.md",
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-storage-idb-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3163
+      },
+      "gold": "concepts/mapatlas-demo-app.md",
+      "grep_words": 1808,
+      "id": "q12",
+      "index-first": {
+        "bytes_loaded": 24135,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-demo-app.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3229
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [
+        "concepts/map-data-licensing.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 25492,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-demo-app.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/map-atlas-engine.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3463
+      },
+      "gold": "concepts/mapatlas-demo-app.md",
+      "grep_words": 2292,
+      "id": "q13",
+      "index-first": {
+        "bytes_loaded": 20844,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-demo-app.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2795
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 23700,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-demo-app.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-storage-idb-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3163
+      },
+      "gold": "concepts/mapatlas-demo-app.md",
+      "grep_words": 1929,
+      "id": "q14",
+      "index-first": {
+        "bytes_loaded": 11577,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-demo-app.md"
+        ],
+        "warnings": [],
+        "words_loaded": 1608
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [
+        "concepts/mapatlas-offline-pmtiles-package.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 22174,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-demo-app.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-storage-idb-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3043
+      },
+      "gold": "concepts/mapatlas-demo-app.md",
+      "grep_words": 1390,
+      "id": "q15",
+      "index-first": {
+        "bytes_loaded": 16225,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-demo-app.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2276
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [
+        "concepts/mapatlas-offline-pmtiles-package.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 23593,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-demo-app.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/mapatlas-core-package.md",
+          "concepts/map-data-licensing.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3136
+      },
+      "gold": "concepts/mapatlas-demo-app.md",
+      "grep_words": 1481,
+      "id": "q16",
+      "index-first": {
+        "bytes_loaded": 6764,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-demo-app.md"
+        ],
+        "warnings": [],
+        "words_loaded": 949
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [
+        "concepts/map-data-licensing.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 24950,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-demo-app.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-maplibre-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3370
+      },
+      "gold": "concepts/mapatlas-demo-app.md",
+      "grep_words": 2706,
+      "id": "q17",
+      "index-first": {
+        "bytes_loaded": 20844,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-demo-app.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2795
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 25328,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-demo-app.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-recorder-web-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3450
+      },
+      "gold": "concepts/mapatlas-demo-app.md",
+      "grep_words": 1939,
+      "id": "q18",
+      "index-first": {
+        "bytes_loaded": 11577,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-demo-app.md"
+        ],
+        "warnings": [],
+        "words_loaded": 1608
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [
+        "concepts/mapatlas-offline-pmtiles-package.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 24713,
+        "distractor_outranks": true,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-storage-idb-package.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-demo-app.md",
+          "concepts/harness-neutral-specs-contract.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3339
+      },
+      "gold": "concepts/mapatlas-demo-app.md",
+      "grep_words": 1747,
+      "id": "q19",
+      "index-first": {
+        "bytes_loaded": 20429,
+        "distractor_outranks": true,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-storage-idb-package.md",
+          "concepts/mapatlas-react-package.md",
+          "concepts/mapatlas-recorder-web-package.md",
+          "concepts/mapatlas-demo-app.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2751
+      },
+      "kind": "competing"
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 23733,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-core-package.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-demo-app.md",
+          "concepts/mapatlas-storage-idb-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3207
+      },
+      "gold": "concepts/mapatlas-core-package.md",
+      "grep_words": 2350,
+      "id": "q20",
+      "index-first": {
+        "bytes_loaded": 26564,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-core-package.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3469
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 20653,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-demo-app.md",
+          "concepts/mapatlas-storage-idb-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-recorder-web-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2796
+      },
+      "gold": "concepts/mapatlas-core-package.md",
+      "grep_words": 357,
+      "id": "q21",
+      "index-first": {
+        "bytes_loaded": 2006,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": false,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [],
+        "warnings": [],
+        "words_loaded": 225
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [
+        "concepts/map-atlas-engine.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 23099,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-core-package.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-recorder-web-package.md",
+          "concepts/mapatlas-react-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2917
+      },
+      "gold": "concepts/mapatlas-core-package.md",
+      "grep_words": 1807,
+      "id": "q22",
+      "index-first": {
+        "bytes_loaded": 26564,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-core-package.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3469
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [
+        "concepts/map-atlas-engine.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 24818,
+        "distractor_outranks": false,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-core-package.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/mapatlas-react-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3199
+      },
+      "gold": "concepts/mapatlas-core-package.md",
+      "grep_words": 1936,
+      "id": "q23",
+      "index-first": {
+        "bytes_loaded": 20754,
+        "distractor_outranks": false,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-react-package.md",
+          "concepts/mapatlas-recorder-web-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2761
+      },
+      "kind": "competing"
+    },
+    {
+      "distractors": [
+        "concepts/harness-neutral-specs-contract.md",
+        "concepts/mapatlas-offline-pmtiles-package.md",
+        "concepts/mapatlas-react-package.md",
+        "concepts/mapatlas-recorder-web-package.md",
+        "concepts/mapatlas-storage-idb-package.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 22010,
+        "distractor_outranks": true,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": false,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-demo-app.md",
+          "concepts/mapatlas-storage-idb-package.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-recorder-web-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3030
+      },
+      "gold": "concepts/mapatlas-core-package.md",
+      "grep_words": 2676,
+      "id": "q24",
+      "index-first": {
+        "bytes_loaded": 22583,
+        "distractor_outranks": false,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-demo-app.md",
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-react-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3099
+      },
+      "kind": "competing"
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 23457,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-react-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3070
+      },
+      "gold": "concepts/mapatlas-maplibre-package.md",
+      "grep_words": 2117,
+      "id": "q25",
+      "index-first": {
+        "bytes_loaded": 24844,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-core-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3209
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 24950,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-demo-app.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/map-data-licensing.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3370
+      },
+      "gold": "concepts/mapatlas-maplibre-package.md",
+      "grep_words": 1289,
+      "id": "q26",
+      "index-first": {
+        "bytes_loaded": 2006,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": false,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [],
+        "warnings": [],
+        "words_loaded": 225
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 25328,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-demo-app.md",
+          "concepts/mapatlas-recorder-web-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3450
+      },
+      "gold": "concepts/mapatlas-maplibre-package.md",
+      "grep_words": 1597,
+      "id": "q27",
+      "index-first": {
+        "bytes_loaded": 21553,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/map-atlas-engine.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-maplibre-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2775
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [
+        "concepts/map-atlas-engine.md",
+        "concepts/mapatlas-react-package.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 21844,
+        "distractor_outranks": false,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-storage-idb-package.md",
+          "concepts/map-data-licensing.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-react-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2837
+      },
+      "gold": "concepts/mapatlas-maplibre-package.md",
+      "grep_words": 2925,
+      "id": "q28",
+      "index-first": {
+        "bytes_loaded": 24844,
+        "distractor_outranks": false,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-core-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3209
+      },
+      "kind": "competing"
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 25492,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-demo-app.md",
+          "concepts/map-data-licensing.md",
+          "concepts/map-atlas-engine.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3463
+      },
+      "gold": "concepts/mapatlas-maplibre-package.md",
+      "grep_words": 2709,
+      "id": "q29",
+      "index-first": {
+        "bytes_loaded": 26366,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/map-atlas-engine.md",
+          "concepts/map-data-licensing.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3434
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 22042,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-storage-idb-package.md",
+          "concepts/mapatlas-react-package.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/map-atlas-engine.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2872
+      },
+      "gold": "concepts/mapatlas-maplibre-package.md",
+      "grep_words": 1071,
+      "id": "q30",
+      "index-first": {
+        "bytes_loaded": 21553,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/map-atlas-engine.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-maplibre-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2775
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 25466,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-react-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-demo-app.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3453
+      },
+      "gold": "concepts/mapatlas-maplibre-package.md",
+      "grep_words": 3073,
+      "id": "q31",
+      "index-first": {
+        "bytes_loaded": 26366,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/map-atlas-engine.md",
+          "concepts/map-data-licensing.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3434
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [
+        "concepts/harness-neutral-specs-contract.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 24950,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-demo-app.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3370
+      },
+      "gold": "concepts/mapatlas-maplibre-package.md",
+      "grep_words": 945,
+      "id": "q32",
+      "index-first": {
+        "bytes_loaded": 2006,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": false,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [],
+        "warnings": [],
+        "words_loaded": 225
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [
+        "concepts/harness-neutral-specs-contract.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 24950,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-demo-app.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3370
+      },
+      "gold": "concepts/mapatlas-maplibre-package.md",
+      "grep_words": 828,
+      "id": "q33",
+      "index-first": {
+        "bytes_loaded": 2006,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": false,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [],
+        "warnings": [],
+        "words_loaded": 225
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 13012,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-react-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 1716
+      },
+      "gold": "concepts/mapatlas-maplibre-package.md",
+      "grep_words": 181,
+      "id": "q34",
+      "index-first": {
+        "bytes_loaded": 2006,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": false,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [],
+        "warnings": [],
+        "words_loaded": 225
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 28031,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/mapatlas-demo-app.md",
+          "concepts/map-atlas-engine.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3759
+      },
+      "gold": "concepts/mapatlas-maplibre-package.md",
+      "grep_words": 1233,
+      "id": "q35",
+      "index-first": {
+        "bytes_loaded": 15506,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-react-package.md",
+          "concepts/mapatlas-recorder-web-package.md",
+          "concepts/mapatlas-storage-idb-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2036
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [
+        "concepts/map-data-licensing.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 25492,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-demo-app.md",
+          "concepts/map-atlas-engine.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3463
+      },
+      "gold": "concepts/mapatlas-offline-pmtiles-package.md",
+      "grep_words": 2169,
+      "id": "q36",
+      "index-first": {
+        "bytes_loaded": 2006,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": false,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [],
+        "warnings": [],
+        "words_loaded": 225
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 20593,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-storage-idb-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-demo-app.md",
+          "concepts/mapatlas-react-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2764
+      },
+      "gold": "concepts/mapatlas-offline-pmtiles-package.md",
+      "grep_words": 2067,
+      "id": "q37",
+      "index-first": {
+        "bytes_loaded": 20918,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-react-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2774
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [
+        "concepts/mapatlas-storage-idb-package.md",
+        "concepts/mapatlas-demo-app.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 23700,
+        "distractor_outranks": false,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-demo-app.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-storage-idb-package.md",
+          "concepts/map-data-licensing.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3163
+      },
+      "gold": "concepts/mapatlas-offline-pmtiles-package.md",
+      "grep_words": 1448,
+      "id": "q38",
+      "index-first": {
+        "bytes_loaded": 9748,
+        "distractor_outranks": false,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-recorder-web-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 1270
+      },
+      "kind": "competing"
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 24109,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-demo-app.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-react-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3219
+      },
+      "gold": "concepts/mapatlas-offline-pmtiles-package.md",
+      "grep_words": 938,
+      "id": "q39",
+      "index-first": {
+        "bytes_loaded": 6654,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": false,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-maplibre-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 893
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [
+        "concepts/harness-neutral-specs-contract.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 21303,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/mapatlas-storage-idb-package.md",
+          "concepts/mapatlas-react-package.md",
+          "concepts/mapatlas-recorder-web-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2722
+      },
+      "gold": "concepts/mapatlas-offline-pmtiles-package.md",
+      "grep_words": 2019,
+      "id": "q40",
+      "index-first": {
+        "bytes_loaded": 20918,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-react-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2774
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [
+        "concepts/harness-neutral-specs-contract.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 23259,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-react-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3035
+      },
+      "gold": "concepts/mapatlas-offline-pmtiles-package.md",
+      "grep_words": 2835,
+      "id": "q41",
+      "index-first": {
+        "bytes_loaded": 20918,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-react-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2774
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 23700,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-demo-app.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/map-data-licensing.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-storage-idb-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3163
+      },
+      "gold": "concepts/mapatlas-offline-pmtiles-package.md",
+      "grep_words": 1323,
+      "id": "q42",
+      "index-first": {
+        "bytes_loaded": 2006,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": false,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [],
+        "warnings": [],
+        "words_loaded": 225
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 26340,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/mapatlas-react-package.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3424
+      },
+      "gold": "concepts/mapatlas-react-package.md",
+      "grep_words": 1990,
+      "id": "q43",
+      "index-first": {
+        "bytes_loaded": 20754,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-react-package.md",
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-recorder-web-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2761
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [
+        "concepts/map-atlas-engine.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 22664,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-react-package.md",
+          "concepts/mapatlas-recorder-web-package.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/mapatlas-storage-idb-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2851
+      },
+      "gold": "concepts/mapatlas-react-package.md",
+      "grep_words": 1806,
+      "id": "q44",
+      "index-first": {
+        "bytes_loaded": 20754,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-react-package.md",
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-recorder-web-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2761
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 18962,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-react-package.md",
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-storage-idb-package.md",
+          "concepts/mapatlas-recorder-web-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2461
+      },
+      "gold": "concepts/mapatlas-react-package.md",
+      "grep_words": 1352,
+      "id": "q45",
+      "index-first": {
+        "bytes_loaded": 2006,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": false,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [],
+        "warnings": [],
+        "words_loaded": 225
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [
+        "concepts/map-atlas-engine.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 23099,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-react-package.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/mapatlas-recorder-web-package.md",
+          "concepts/mapatlas-core-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2917
+      },
+      "gold": "concepts/mapatlas-react-package.md",
+      "grep_words": 2335,
+      "id": "q46",
+      "index-first": {
+        "bytes_loaded": 20754,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-react-package.md",
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-recorder-web-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2761
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [
+        "concepts/map-atlas-engine.md",
+        "concepts/mapatlas-maplibre-package.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 25466,
+        "distractor_outranks": false,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-react-package.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-demo-app.md",
+          "concepts/mapatlas-offline-pmtiles-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3453
+      },
+      "gold": "concepts/mapatlas-react-package.md",
+      "grep_words": 1165,
+      "id": "q47",
+      "index-first": {
+        "bytes_loaded": 24620,
+        "distractor_outranks": true,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/map-atlas-engine.md",
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-react-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3164
+      },
+      "kind": "competing"
+    },
+    {
+      "distractors": [
+        "concepts/mapatlas-react-package.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 22221,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-recorder-web-package.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-demo-app.md",
+          "concepts/mapatlas-react-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3051
+      },
+      "gold": "concepts/mapatlas-recorder-web-package.md",
+      "grep_words": 1795,
+      "id": "q48",
+      "index-first": {
+        "bytes_loaded": 10858,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-recorder-web-package.md",
+          "concepts/mapatlas-react-package.md",
+          "concepts/mapatlas-storage-idb-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 1368
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 23371,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-recorder-web-package.md",
+          "concepts/mapatlas-storage-idb-package.md",
+          "concepts/mapatlas-demo-app.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-maplibre-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3159
+      },
+      "gold": "concepts/mapatlas-recorder-web-package.md",
+      "grep_words": 2091,
+      "id": "q49",
+      "index-first": {
+        "bytes_loaded": 23125,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-recorder-web-package.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/harness-neutral-specs-contract.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2927
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [
+        "concepts/map-atlas-engine.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 24245,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-storage-idb-package.md",
+          "concepts/mapatlas-recorder-web-package.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/harness-neutral-specs-contract.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3130
+      },
+      "gold": "concepts/mapatlas-recorder-web-package.md",
+      "grep_words": 1870,
+      "id": "q50",
+      "index-first": {
+        "bytes_loaded": 20754,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-recorder-web-package.md",
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-react-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2761
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [
+        "concepts/mapatlas-demo-app.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 20323,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-recorder-web-package.md",
+          "concepts/mapatlas-core-package.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-react-package.md",
+          "concepts/mapatlas-storage-idb-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2590
+      },
+      "gold": "concepts/mapatlas-recorder-web-package.md",
+      "grep_words": 2133,
+      "id": "q51",
+      "index-first": {
+        "bytes_loaded": 10858,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-recorder-web-package.md",
+          "concepts/mapatlas-react-package.md",
+          "concepts/mapatlas-storage-idb-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 1368
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 24772,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-storage-idb-package.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-core-package.md",
+          "concepts/harness-neutral-specs-contract.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3169
+      },
+      "gold": "concepts/mapatlas-storage-idb-package.md",
+      "grep_words": 604,
+      "id": "q52",
+      "index-first": {
+        "bytes_loaded": 4862,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-storage-idb-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 593
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [
+        "concepts/map-atlas-engine.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 22014,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-storage-idb-package.md",
+          "concepts/mapatlas-demo-app.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-recorder-web-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2925
+      },
+      "gold": "concepts/mapatlas-storage-idb-package.md",
+      "grep_words": 1438,
+      "id": "q53",
+      "index-first": {
+        "bytes_loaded": 4862,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-storage-idb-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 593
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 20653,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-storage-idb-package.md",
+          "concepts/mapatlas-demo-app.md",
+          "concepts/mapatlas-recorder-web-package.md",
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2796
+      },
+      "gold": "concepts/mapatlas-storage-idb-package.md",
+      "grep_words": 2382,
+      "id": "q54",
+      "index-first": {
+        "bytes_loaded": 17032,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-react-package.md",
+          "concepts/mapatlas-recorder-web-package.md",
+          "concepts/mapatlas-storage-idb-package.md",
+          "concepts/map-atlas-engine.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2156
+      },
+      "kind": "single"
+    },
+    {
+      "distractors": [
+        "concepts/map-atlas-engine.md",
+        "concepts/mapatlas-recorder-web-package.md"
+      ],
+      "excluded_reason": null,
+      "fts5": {
+        "bytes_loaded": 20323,
+        "distractor_outranks": true,
+        "fallback_reason": null,
+        "hit_at_1": false,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-recorder-web-package.md",
+          "concepts/mapatlas-react-package.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-storage-idb-package.md",
+          "concepts/mapatlas-core-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2590
+      },
+      "gold": "concepts/mapatlas-storage-idb-package.md",
+      "grep_words": 1961,
+      "id": "q55",
+      "index-first": {
+        "bytes_loaded": 20681,
+        "distractor_outranks": false,
+        "fallback_reason": null,
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-storage-idb-package.md",
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-react-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2743
+      },
+      "kind": "competing"
+    },
+    {
+      "distractors": [
+        "concepts/mapatlas-recorder-web-package.md"
+      ],
+      "excluded_reason": "absent",
+      "fts5": {
+        "bytes_loaded": 23773,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": null,
+        "hit_at_5": null,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-recorder-web-package.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-demo-app.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3181
+      },
+      "gold": null,
+      "grep_words": null,
+      "id": "q56",
+      "index-first": {
+        "bytes_loaded": 7791,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": null,
+        "hit_at_5": null,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-recorder-web-package.md",
+          "concepts/mapatlas-storage-idb-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 979
+      },
+      "kind": "absent"
+    },
+    {
+      "distractors": [
+        "concepts/mapatlas-recorder-web-package.md"
+      ],
+      "excluded_reason": "absent",
+      "fts5": {
+        "bytes_loaded": 19034,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": null,
+        "hit_at_5": null,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-recorder-web-package.md",
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-react-package.md",
+          "concepts/mapatlas-maplibre-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2501
+      },
+      "gold": null,
+      "grep_words": null,
+      "id": "q57",
+      "index-first": {
+        "bytes_loaded": 4935,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": null,
+        "hit_at_5": null,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-recorder-web-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 611
+      },
+      "kind": "absent"
+    },
+    {
+      "distractors": [
+        "concepts/mapatlas-storage-idb-package.md"
+      ],
+      "excluded_reason": "absent",
+      "fts5": {
+        "bytes_loaded": 24772,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": null,
+        "hit_at_5": null,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/mapatlas-storage-idb-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-core-package.md",
+          "concepts/map-atlas-engine.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3169
+      },
+      "gold": null,
+      "grep_words": null,
+      "id": "q58",
+      "index-first": {
+        "bytes_loaded": 4862,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": null,
+        "hit_at_5": null,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-storage-idb-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 593
+      },
+      "kind": "absent"
+    },
+    {
+      "distractors": [
+        "concepts/map-atlas-engine.md",
+        "concepts/mapatlas-demo-app.md"
+      ],
+      "excluded_reason": "absent",
+      "fts5": {
+        "bytes_loaded": 23898,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": null,
+        "hit_at_5": null,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-demo-app.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/mapatlas-storage-idb-package.md",
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3198
+      },
+      "gold": null,
+      "grep_words": null,
+      "id": "q59",
+      "index-first": {
+        "bytes_loaded": 2006,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": null,
+        "hit_at_5": null,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [],
+        "warnings": [],
+        "words_loaded": 225
+      },
+      "kind": "absent"
+    },
+    {
+      "distractors": [
+        "concepts/mapatlas-demo-app.md"
+      ],
+      "excluded_reason": "absent",
+      "fts5": {
+        "bytes_loaded": 25148,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": null,
+        "hit_at_5": null,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/harness-neutral-specs-contract.md",
+          "concepts/mapatlas-core-package.md",
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-demo-app.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3405
+      },
+      "gold": null,
+      "grep_words": null,
+      "id": "q60",
+      "index-first": {
+        "bytes_loaded": 11577,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": null,
+        "hit_at_5": null,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-demo-app.md"
+        ],
+        "warnings": [],
+        "words_loaded": 1608
+      },
+      "kind": "absent"
+    },
+    {
+      "distractors": [
+        "concepts/mapatlas-maplibre-package.md"
+      ],
+      "excluded_reason": "absent",
+      "fts5": {
+        "bytes_loaded": 20556,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": null,
+        "hit_at_5": null,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-maplibre-package.md",
+          "concepts/mapatlas-recorder-web-package.md",
+          "concepts/mapatlas-react-package.md",
+          "concepts/map-data-licensing.md",
+          "concepts/mapatlas-offline-pmtiles-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 2726
+      },
+      "gold": null,
+      "grep_words": null,
+      "id": "q61",
+      "index-first": {
+        "bytes_loaded": 2006,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": null,
+        "hit_at_5": null,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [],
+        "warnings": [],
+        "words_loaded": 225
+      },
+      "kind": "absent"
+    },
+    {
+      "distractors": [
+        "concepts/mapatlas-offline-pmtiles-package.md"
+      ],
+      "excluded_reason": "absent",
+      "fts5": {
+        "bytes_loaded": 26239,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": null,
+        "hit_at_5": null,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "fts5",
+        "selected": [
+          "concepts/mapatlas-offline-pmtiles-package.md",
+          "concepts/mapatlas-storage-idb-package.md",
+          "concepts/mapatlas-demo-app.md",
+          "concepts/map-atlas-engine.md",
+          "concepts/harness-neutral-specs-contract.md"
+        ],
+        "warnings": [],
+        "words_loaded": 3459
+      },
+      "gold": null,
+      "grep_words": null,
+      "id": "q62",
+      "index-first": {
+        "bytes_loaded": 4862,
+        "distractor_outranks": null,
+        "fallback_reason": null,
+        "hit_at_1": null,
+        "hit_at_5": null,
+        "ineligible": [],
+        "omitted": [],
+        "ran_as": "index-first",
+        "selected": [
+          "concepts/mapatlas-storage-idb-package.md"
+        ],
+        "warnings": [],
+        "words_loaded": 593
+      },
+      "kind": "absent"
+    }
+  ],
+  "run_attempt": {
+    "ranker_config_hash": "c4b6576a6bc57e3c1b8c7f70ef6bb19b5dcf44d0ea0c30ab7dc0192965a43521",
+    "started_at": "2026-10-29T01:35:09.341181+00:00",
+    "wiki_studio_commit": "94197825c92889dfcfa3183cbb6bf87b5c9f3d2c",
+    "wiki_studio_version": "0.8.0"
+  },
+  "unit": "whitespace-separated words (len(text.split())), not model tokens"
+}

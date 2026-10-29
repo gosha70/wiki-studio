@@ -1,0 +1,1 @@
+- 2026-10-28 — create mapatlas-storage-idb-package (concept): ingest of packages/storage-idb/README.md, also updating map-atlas-engine, mapatlas-core-package and harness-neutral-specs-contract

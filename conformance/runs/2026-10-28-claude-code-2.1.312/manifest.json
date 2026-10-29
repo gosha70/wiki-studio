@@ -1,0 +1,48 @@
+{
+  "claude_code_version": "2.1.312 (Claude Code)",
+  "model": "claude-opus-5-5",
+  "wiki_studio_commit": "910e53429fda2ef0a8d0ba856930bfb66de8714b",
+  "wiki_studio_version": "0.8.0",
+  "mcp_version": "2.3.0",
+  "protocol_version": null,
+  "scenario_sha256": "6e0f36f9e7ccadf1cefa8753b0bf3912a974df53492f55ab67d31bfc23c43669",
+  "end_state_sha256": "57a443de54c348e124863faf754cdb980fbd787bd74adba268c781b0f369b1ad",
+  "recorded_at": "2026-10-29T01:43Z",
+  "note": "Attempt 1. Claude Code 2.1.312 negotiated with the 2026-07-28 per-request envelope, which the trace observer did not know, so the trace carries no protocol version.",
+  "verdict": {
+    "passed": false,
+    "cases": {
+      "2": "FAIL",
+      "3": "PASS",
+      "4": "PASS",
+      "5": "PASS",
+      "6": "PASS",
+      "7": "PASS",
+      "8": "PASS",
+      "9": "PASS"
+    },
+    "proof": {
+      "2": "not proved",
+      "3": "proved",
+      "4": "proved",
+      "5": "proved-by-end-state",
+      "6": "proved-by-end-state",
+      "7": "proved-by-end-state",
+      "8": "proved",
+      "9": "proved-by-end-state"
+    },
+    "proved": [
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "not_provable": [],
+    "failed": [
+      2
+    ]
+  }
+}

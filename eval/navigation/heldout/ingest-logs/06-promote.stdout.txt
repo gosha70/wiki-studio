@@ -1,0 +1,9 @@
+applied 8 edit(s) from 2026-10-28-packages__recorder-web__README; archived to /Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout/proposals/.applied/2026-10-28-packages__recorder-web__README.
+  + wiki/concepts/mapatlas-recorder-web-package.md
+  + wiki/concepts/map-atlas-engine.md
+  + wiki/concepts/harness-neutral-specs-contract.md
+  + wiki/concepts/mapatlas-react-package.md
+  + wiki/log.md
+  + wiki/index.md
+  + wiki/.audit/proposals/2026-10-28-packages__recorder-web__README/plan.json
+  + wiki/.audit/proposals/2026-10-28-packages__recorder-web__README/proposal.md

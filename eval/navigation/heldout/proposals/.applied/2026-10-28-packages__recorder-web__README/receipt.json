@@ -1,0 +1,137 @@
+{
+  "receipt_version": 1,
+  "state": "committed",
+  "proposal": "2026-10-28-packages__recorder-web__README",
+  "submission_digest": "36f9b9c6b2151c65263ea4fa2a3930c1881a448714dcda9e39443a3c0c751682",
+  "digest_recipe": 2,
+  "submission_manifest": [
+    {
+      "path": ".ingest-snapshot/plan.json",
+      "sha256": "fb7b68dde46fb67adfaefc3927b79631900378ca62bbc793749b55fd1b86aece"
+    },
+    {
+      "path": ".ingest-snapshot/preview/concepts/harness-neutral-specs-contract.md",
+      "sha256": "9afbd7c6ee50516851215340e23e297257adf83ee67b9b933dd68d4add4866f3"
+    },
+    {
+      "path": ".ingest-snapshot/preview/concepts/map-atlas-engine.md",
+      "sha256": "7fd061ce11f5eb3f3774d7ba6cb98da5f3b5826e0fe48272f63967fd4f5f7eb3"
+    },
+    {
+      "path": ".ingest-snapshot/preview/concepts/mapatlas-react-package.md",
+      "sha256": "f65a43268ab5be6a6a91b7d5b0e112697074cd3c2716c1fac07223928d244f40"
+    },
+    {
+      "path": ".ingest-snapshot/preview/concepts/mapatlas-recorder-web-package.md",
+      "sha256": "30a579af45d27404806daaa97c4159fb9732cddc4012e8481e756b58da1d1731"
+    },
+    {
+      "path": ".ingest-snapshot/preview/index.md",
+      "sha256": "ba6884dbb9f4efc941b043ff02056387f62e08794718e926f989635e2dd587eb"
+    },
+    {
+      "path": ".ingest-snapshot/preview/log.md",
+      "sha256": "9ee3803345434843bde5ae34c15db48d30f12b4e981573326f947b405d2ae1e1"
+    },
+    {
+      "path": "plan.json",
+      "sha256": "fb7b68dde46fb67adfaefc3927b79631900378ca62bbc793749b55fd1b86aece"
+    },
+    {
+      "path": "preview/concepts/harness-neutral-specs-contract.md",
+      "sha256": "9afbd7c6ee50516851215340e23e297257adf83ee67b9b933dd68d4add4866f3"
+    },
+    {
+      "path": "preview/concepts/map-atlas-engine.md",
+      "sha256": "7fd061ce11f5eb3f3774d7ba6cb98da5f3b5826e0fe48272f63967fd4f5f7eb3"
+    },
+    {
+      "path": "preview/concepts/mapatlas-react-package.md",
+      "sha256": "f65a43268ab5be6a6a91b7d5b0e112697074cd3c2716c1fac07223928d244f40"
+    },
+    {
+      "path": "preview/concepts/mapatlas-recorder-web-package.md",
+      "sha256": "30a579af45d27404806daaa97c4159fb9732cddc4012e8481e756b58da1d1731"
+    },
+    {
+      "path": "preview/index.md",
+      "sha256": "ba6884dbb9f4efc941b043ff02056387f62e08794718e926f989635e2dd587eb"
+    },
+    {
+      "path": "preview/log.md",
+      "sha256": "9ee3803345434843bde5ae34c15db48d30f12b4e981573326f947b405d2ae1e1"
+    }
+  ],
+  "plan_sha256": "fb7b68dde46fb67adfaefc3927b79631900378ca62bbc793749b55fd1b86aece",
+  "wiki_target": {
+    "st_dev": 16777231,
+    "st_ino": 303248064,
+    "path": "/Users/gosha/dev/repo/ai-wiki/ai-wiki/eval/navigation/heldout/wiki"
+  },
+  "planned_writes": [
+    {
+      "path": "concepts/mapatlas-recorder-web-package.md",
+      "pre_sha256": null,
+      "post_sha256": "30a579af45d27404806daaa97c4159fb9732cddc4012e8481e756b58da1d1731"
+    },
+    {
+      "path": "concepts/map-atlas-engine.md",
+      "pre_sha256": "da5c7a336d8b3a31001db5b0b4b2de9062a58f23ceeb4ae6961af761eb93b799",
+      "post_sha256": "7fd061ce11f5eb3f3774d7ba6cb98da5f3b5826e0fe48272f63967fd4f5f7eb3"
+    },
+    {
+      "path": "concepts/harness-neutral-specs-contract.md",
+      "pre_sha256": "b4e595dd6e88a2c549aa62d418c1662c7e19621f045300ddd628b1faa898fcf8",
+      "post_sha256": "9afbd7c6ee50516851215340e23e297257adf83ee67b9b933dd68d4add4866f3"
+    },
+    {
+      "path": "concepts/mapatlas-react-package.md",
+      "pre_sha256": "e61a0e204d443f24705444d6848c75e0e05b2c6a41eae2a5964cda20249a0c31",
+      "post_sha256": "f65a43268ab5be6a6a91b7d5b0e112697074cd3c2716c1fac07223928d244f40"
+    },
+    {
+      "path": "log.md",
+      "pre_sha256": "9c60539d2b7af16b11b52161afd4c478a44c60b80a569a23a17f1a7c625416dc",
+      "post_sha256": "863c75063815f859ebab1a035d9e925a83b81f01acee6fcc71e1d884f69e077c"
+    },
+    {
+      "path": "index.md",
+      "pre_sha256": "8eb33161b684ad3ca8e54f3c9add9d49a5bdb9e73f443b2eb152dd815141208a",
+      "post_sha256": "0985a5b8c41151e92d4a56a1b69840ea0cb9536c8986016ee0a30e5aefdfeb45"
+    },
+    {
+      "path": ".audit/proposals/2026-10-28-packages__recorder-web__README/plan.json",
+      "pre_sha256": null,
+      "post_sha256": "fb7b68dde46fb67adfaefc3927b79631900378ca62bbc793749b55fd1b86aece"
+    },
+    {
+      "path": ".audit/proposals/2026-10-28-packages__recorder-web__README/proposal.md",
+      "pre_sha256": null,
+      "post_sha256": "6db58876b2c85fe5777f33ac7cfc73d0c1b4aa4f4b5674fa0f3ba1ca406d3316"
+    }
+  ],
+  "written_paths": [
+    "concepts/mapatlas-recorder-web-package.md",
+    "concepts/map-atlas-engine.md",
+    "concepts/harness-neutral-specs-contract.md",
+    "concepts/mapatlas-react-package.md",
+    "log.md",
+    "index.md",
+    ".audit/proposals/2026-10-28-packages__recorder-web__README/plan.json",
+    ".audit/proposals/2026-10-28-packages__recorder-web__README/proposal.md"
+  ],
+  "unguarded_paths": [],
+  "lock_wait_seconds": 1e-05,
+  "started_at": "2026-10-28T21:06:42Z",
+  "committing_at": "2026-10-28T21:06:42Z",
+  "committed_at": "2026-10-28T21:06:42Z",
+  "promoter": {
+    "package": "wiki-studio",
+    "version": "0.8.0",
+    "entry_point": "cli"
+  },
+  "actor": {
+    "name": null,
+    "source": "none"
+  }
+}

@@ -1,0 +1,16 @@
+All 10 steps ran as expected. The three steps meant to fail (3, 9 and 10) were refused with the right exit codes, and every other step succeeded.
+
+| Step | Call | Result |
+|---|---|---|
+| 1 | `find` "How do we retry outbound calls?" | Returned one page, `decisions/retry-policy.md`, using the `fts5` ranker. |
+| 2 | `read_page decisions/retry-policy.md` | Succeeded. `sha256` = `f736f09d…c560304` |
+| 3 | `read_page ../outside.md` | **Refused as expected:** `PathOutsideRootError`, `exit_code` 7 ("page path must be wiki-relative and stay inside the wiki"). |
+| 4 | Wrote the new page | Kept the frontmatter and all section headings. Only the text under `## Decision` changed, to "Retry outbound calls with exponential backoff, starting at 250 ms, at most five times." |
+| 5 | `propose host-run-update` | Succeeded. Proposal written to `doc_internal/proposals/host-run-update`. |
+| 6 | `promote host-run-update` | Succeeded. Applied `decisions/retry-policy.md` and archived the proposal. `approved_paths` was empty. |
+| 7 | `review_state` | The page's `state` is **`unapproved`** (reason `no_record`). Its new live sha256 is `6e44163b…878d6`. |
+| 8 | `propose host-run-stale` (old base hash) | Succeeded, as expected. |
+| 9 | `promote host-run-stale` | **Refused as expected:** `PromoteValidationError`, `exit_code` 9. The base hash `f736f09d…` didn't match the live hash `6e44163b…`, and nothing was written. |
+| 10 | `promote ../x` | **Refused as expected:** `ValueError`, `exit_code` 1 ("name must be one path component…"). |
+
+Besides the wiki-studio tools, I made one `ToolSearch` call before step 1. It only loads the MCP tool definitions so they can be called; it didn't touch the wiki or any file. I edited no files myself and retried nothing.
