@@ -55,7 +55,7 @@
     }
   ],
   "corpus_bytes": 30554,
-  "state": "wiki-frozen",
+  "state": "frozen",
   "history": [
     {
       "state": "sources",
@@ -80,6 +80,10 @@
     {
       "state": "wiki-frozen",
       "at": "2026-10-28T21:09:41.384505+00:00"
+    },
+    {
+      "state": "frozen",
+      "at": "2026-10-29T01:30:53.129136+00:00"
     }
   ],
   "questions_sha256": "096b55c06ce8c6eb77518df9c9928d63f864cc0ee9144566b890688c64c91325",
@@ -479,5 +483,8 @@
     "model_calls_upper_bound": 8,
     "total_wall_seconds": 468.318,
     "lint_clean": true
-  }
+  },
+  "gold_sha256": "791aa0da35ccef086e3f3a20f83e93c4757f0970f1c9004095a60fd4b37cd8a8",
+  "gold_questions": 53,
+  "eligible_pages": 10
 }
