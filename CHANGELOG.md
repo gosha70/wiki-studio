@@ -6,7 +6,7 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.8.0] — 2026-10-27 (build; tagged after the evidence PR)
+## [0.8.0] — 2026-10-29
 
 Discovery and portability, Release C of `docs/roadmap.md` (issue #38). A
 second ranker, FTS5 with bm25 over the same index-linked candidates, runs
