@@ -55,7 +55,7 @@
     }
   ],
   "corpus_bytes": 30554,
-  "state": "frozen",
+  "state": "run",
   "history": [
     {
       "state": "sources",
@@ -84,6 +84,14 @@
     {
       "state": "frozen",
       "at": "2026-10-29T01:30:53.129136+00:00"
+    },
+    {
+      "state": "run-started",
+      "at": "2026-10-29T01:35:09.352496+00:00"
+    },
+    {
+      "state": "run",
+      "at": "2026-10-29T01:35:13.634794+00:00"
     }
   ],
   "questions_sha256": "096b55c06ce8c6eb77518df9c9928d63f864cc0ee9144566b890688c64c91325",
@@ -486,5 +494,11 @@
   },
   "gold_sha256": "791aa0da35ccef086e3f3a20f83e93c4757f0970f1c9004095a60fd4b37cd8a8",
   "gold_questions": 53,
-  "eligible_pages": 10
+  "eligible_pages": 10,
+  "run_attempt": {
+    "started_at": "2026-10-29T01:35:09.341181+00:00",
+    "ranker_config_hash": "c4b6576a6bc57e3c1b8c7f70ef6bb19b5dcf44d0ea0c30ab7dc0192965a43521",
+    "wiki_studio_version": "0.8.0",
+    "wiki_studio_commit": "94197825c92889dfcfa3183cbb6bf87b5c9f3d2c"
+  }
 }
