@@ -46,7 +46,9 @@ version 1. Release C closes with the 0.8.0 tag; see Limitations.
   eligible pages and diffs them against the cache's content manifest in one
   transaction, so the cached ranking equals a fresh one after any edit,
   checkout, rename or delete. A cache built for another wiki, format or
-  ranker configuration is rebuilt; a corrupt one is removed and rebuilt; one
+  ranker configuration is rebuilt; a corrupt one that is empty or carries
+  the cache's marker is removed and rebuilt, and one without the marker is
+  left in place with a warning (see Fixed); one
   that cannot be used safely (a symlink, an unwritable or read-only
   directory, a lock held past five seconds) makes that call rank in memory
   with one warning, and `find` and `query` still exit 0. The file is created
@@ -206,10 +208,12 @@ version 1. Release C closes with the 0.8.0 tag; see Limitations.
   (`.wiki.wiki-studio.*` for the default `knowledge/wiki`). To reset the
   search cache, delete the file; the next `fts5` call rebuilds it.
 - No change is needed for `api` callers who pass none of the new keywords:
-  every new parameter is keyword-only with a default. Under the default
-  `index-first` ranker `find` and `query` select as 0.7.0 did, except that
-  superseded and non-UTF-8 pages are never selected and a page that does
-  not fit the 65,536-byte budget is skipped.
+  every new parameter is keyword-only with a default.
+- The default ranker changes from `index-first` (the 0.7.0 selector) to
+  `fts5`. To keep 0.7.0's selection, set `WIKI_STUDIO_RANKER=index-first`
+  or pass `--ranker index-first`; under it `find` and `query` select as
+  0.7.0 did, except that superseded and non-UTF-8 pages are never selected
+  and a page that does not fit the 65,536-byte budget is skipped.
 
 ### Limitations
 
