@@ -67,8 +67,12 @@ reproduced defect is a passing regression test through both entry points.
 
 ## Release B: governed curation (joint with memkernel)
 
-Status: Wiki Studio's half shipped in 0.7.0 (2026-10-27); open until
-memkernel #48 lands and the `memkernel-loop` CI job passes.
+Status: closed. Wiki Studio's half shipped in 0.7.0 (2026-10-27);
+memkernel's counterpart (memkernel #48: snapshot removal in memkernel PR
+#55, the governed import in PR #60) is on memkernel `main` at `6fc687e`
+(2026-10-29), and the `memkernel-loop` CI job, pinned to that commit and
+blocking, passes the four loop cases and the retry property on clean
+installs (`docs/compatibility.md` names the run).
 
 Depends on A. Exit evidence: one complete correction loop (retain, export,
 review, import, correct, next-session recall) passes on clean installs with

@@ -90,16 +90,16 @@ jobs:
     # from the coverage job; memkernel is never a dependency of the package or
     # of the default dev group. Blocking since its first green run on main
     # (6d7f886, run 40430238344, recorded in docs/compatibility.md). The four
-    # Release B loop cases run in the separate, non-blocking `memkernel-loop`
-    # job below.
+    # Release B loop cases run in the separate `memkernel-loop` job below.
     name: memkernel integration (compat)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
       # The memkernel revision the harness is tested against: a git ref of
-      # gosha70/memkernel (main at the merge of release/0.5.0rc1, 2026-10-26).
-      # Also listed in docs/compatibility.md.
-      MK_GIT_REF: 641a508a2289b2d20775e6d149a0bb47678d1621
+      # gosha70/memkernel (main at the merge of PR #72, 2026-10-29, after the
+      # governed import of memkernel #48 part 2a, PR #60). Also listed in
+      # docs/compatibility.md.
+      MK_GIT_REF: 6fc687e58e67a128cfefe825728cf06f135631de
       MK_GIT_REPO: https://github.com/gosha70/memkernel.git
     steps:
       - uses: actions/checkout@v5
@@ -123,17 +123,16 @@ jobs:
   memkernel-loop:
     # The four Release B loop cases end to end (0.7.0 FR-004, FR-032): retain,
     # export, review through api.approve, import, correct, next-session recall,
-    # plus the retry property, against the same pinned memkernel. EXPECTED TO
-    # FAIL until memkernel's counterpart (memkernel #48: snapshot removal and an
-    # importer that reads review_state) is merged; non-blocking until then, and
-    # blocking for the 0.7.0 tag only after that merge (FR-039). The cases are
-    # never skipped or marked as expected failures here.
-    name: memkernel Release B loop (expected to fail until memkernel #48)
+    # plus the retry property, against the same pinned memkernel. Blocking since
+    # memkernel's counterpart (memkernel #48: snapshot removal in PR #55 and the
+    # governed import that reads review_state in PR #60) merged and the pin
+    # moved past it (FR-039). The cases are never skipped or marked as expected
+    # failures here.
+    name: memkernel Release B loop
     runs-on: ubuntu-latest
-    continue-on-error: true
     timeout-minutes: 30
     env:
-      MK_GIT_REF: 641a508a2289b2d20775e6d149a0bb47678d1621
+      MK_GIT_REF: 6fc687e58e67a128cfefe825728cf06f135631de
       MK_GIT_REPO: https://github.com/gosha70/memkernel.git
     steps:
       - uses: actions/checkout@v5
