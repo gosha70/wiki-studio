@@ -125,6 +125,13 @@ with Claude Code and Kiro instructions.
 
 ## Release C: standalone usefulness and broader adoption
 
+Status: shipped in 0.8.0 (2026-10-29) and closed with that tag. The three
+exit-evidence items are in the release: the held-out run and the
+`decide` record under `eval/navigation/` (`fts5` became the default
+ranker), the cache recovery tests, and a recorded Claude Code host run
+that passed `check-host-run` (`conformance/runs/`). Kiro is documented
+and was not release-blocking.
+
 Depends on a stable shared API. Exit evidence: versioned retrieval results
 on declared fixtures, cache recovery tests, and one non-memkernel runtime
 passing the adapter conformance suite.
