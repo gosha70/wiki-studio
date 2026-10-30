@@ -2,7 +2,7 @@
 pitch_id: 38-release-b-governed-curation
 title: "Release B, governed curation (wiki-studio side): combined integration gate, versioned contract, identity, approval bound to the revision, superseded_by, model-free findings"
 appetite: 6w
-bet_status: building
+bet_status: shipped
 cycle: "02"
 circuit_breaker: "Core is S1, S2 and S4; they are never cut. If S1 and S2 are not downhill at the end of week 2, cut S6. If S4 is not downhill at the end of week 4, also cut S3's rename identity (page_id); approvals and findings then key by wiki path, 0.7.0 may ship, and Release B stays open until page_id lands. If S5's lint rules are not done at the end of week 5, ship S5 as its ADR, its key and the superseded review state. If memkernel's counterpart is not merged by the end of week 5, ship 0.7.0 with this side only, keep the memkernel limitation in the CHANGELOG and do not declare Release B closed. Never take approval from frontmatter, weaken a gate test, add a dependency, a model call or an exit code, or make WikiLock reentrant to stay on schedule."
 shaped_by: "pitch-shaper (Claude Code) for gosha70"
@@ -862,3 +862,4 @@ decisions and adopted all three. The pitch above follows them.
 | 2026-10-26 | building | Spec review on PR #46, owner decisions: `policy_sha256` covers `approver_required` only, so turning a wiki governed keeps its approvals; the unattended run's caps are raised to 12h and $150 with no milestone pause. |
 | 2026-10-26 | building | Owner decision on the spec review: `review_state` judges a record against the current policy, so relaxing `approver_required` reopens nothing and tightening it reopens only records without a named approver; record paths keep the policy hash. |
 | 2026-10-26 | building | Owner decisions on the PR #46 review: a path-keyed approval is a fact about a path and exact bytes, so identical-byte recreation keeps it and recreation safety comes from a fresh `page_id`; an acknowledged schema change does not reopen approvals; the week checkpoints are manual cycle gates applied at the build-PR review. |
+| 2026-10-30 | shipped | Cycle 02 closed. Shipped: wiki-studio's half in 0.7.0 (2026-10-27, PR #47-#49); memkernel's half in memkernel 0.6.0 (2026-10-30); the Release B loop passes as a blocking CI job against that release (run 41065605919) and `docs/compatibility.md` lists the pair; Release B closed in the roadmap (PR #65). All six scopes done; the hill was not updated during the cycle (auto-build driver), set to done at close. |
