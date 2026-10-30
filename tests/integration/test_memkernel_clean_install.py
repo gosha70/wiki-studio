@@ -195,6 +195,17 @@ class TestMemkernelCleanInstall(unittest.TestCase):
             sorted(m.source for m in wiki_memories()), sorted(exported.written), "a second import adds no memory"
         )
 
+    def test_the_pinned_memkernel_has_no_wiki_snapshot(self) -> None:
+        """The bridge's whole-wiki snapshot (0.7.0 Limitations, memkernel #48 part 1) is gone, not merely unused."""
+        import inspect
+
+        import memkernel.wiki.sync as sync
+
+        self.assertFalse(hasattr(sync, "_WikiSnapshot"), "the snapshot class is still defined")
+        export_source = inspect.getsource(sync.WikiExporter.export).lower()
+        self.assertNotIn("snapshot", export_source, "the export path still takes a snapshot")
+        self.assertNotIn("restore", export_source, "the export path still restores on failure")
+
     def test_memkernel_parses_several_corrections_as_the_line_wiki_studio_keeps(self) -> None:
         """FR-036: the ``corrects`` fixture, parsed by memkernel's page parser, keeps the one scalar line."""
         from memkernel.wiki import parse_page, render_page
