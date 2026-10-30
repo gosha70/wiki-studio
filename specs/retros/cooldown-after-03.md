@@ -23,8 +23,8 @@ shipped the wiki-studio half as 0.7.0 on 2026-10-27 and stayed open under its
 circuit breaker until memkernel's counterpart shipped. memkernel 0.6.0 shipped
 it. The Release B loop CI job went green against it, and Release B closed on
 2026-10-30: PR #63 (pin memkernel `main` past memkernel #48, loop job
-blocking), PR #64 (pin memkernel 0.6.0 from PyPI) and PR #65 (docs, open on
-`docs/release-b-closed`, commit `8c99e34`). No separate report is written for
+blocking), PR #64 (pin memkernel 0.6.0 from PyPI) and PR #65 (docs, merged as
+`4b2db9d` from `docs/release-b-closed`, commit `8c99e34`). No separate report is written for
 cycle 02.
 
 ## Bug fixes shipped
@@ -35,13 +35,13 @@ cycle 02.
 
 ## Polish & follow-ups
 
-Window: `v0.8.0..main` plus open PR #65. These commits are docs and CI pins, not bug fixes.
+Window: `v0.8.0..main`, which includes PR #65. These commits are docs and CI pins, not bug fixes.
 
 - `219fdbc`, `3fce1f0` (PR #61): the 0.8.0 upgrade note states the default-ranker change, including for `api` calls without a ranker. The Added line now matches the cache-marker rule. Area: 38-release-c-discovery-portability.
 - `93718ca` (PR #62): `docs/roadmap.md` records Release C as shipped in 0.8.0. Area: 38-release-c-discovery-portability.
 - `16725d3` (PR #63): CI keeps Release B open until a memkernel release and asserts the snapshot is gone. Area: 38-release-b-governed-curation.
 - `cb706ab` (PR #64): pins memkernel 0.6.0 from PyPI in both clean-install jobs. Area: 38-release-b-governed-curation.
-- `8c99e34` (PR #65, open): docs record that wiki-studio 0.8.0 was tested with memkernel 0.6.0 and that Release B is closed. Area: 38-release-b-governed-curation.
+- `8c99e34` (PR #65, merged as `4b2db9d`): docs record that wiki-studio 0.8.0 was tested with memkernel 0.6.0 and that Release B is closed. Area: 38-release-b-governed-curation.
 
 ## Pitches shaped during cooldown
 
@@ -74,7 +74,7 @@ Smaller open items that are not cycles on their own:
 
 ## Carryover
 
-- [ ] PR #65 (`docs/release-b-closed`) is still open.
+- [x] PR #65 (`docs/release-b-closed`) merged as `4b2db9d`.
 - [ ] memkernel quickstart and the integration measurement (roadmap Evidence and Launch sequence step 2).
 - [ ] Issue #10: evidence that the wiki is cheaper to consult than raw sources.
 - [ ] Issue #54: reusable engineering patterns and duplicate knowledge.
