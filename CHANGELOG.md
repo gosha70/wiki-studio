@@ -17,10 +17,12 @@ uses [Semantic Versioning](https://semver.org/).
   `memkernel-loop` job is blocking from that first re-pin on (0.7.0
   FR-039); it no longer carries `continue-on-error`, and the loop passes
   against the release. The clean-install suite also asserts that the
-  bridge's whole-wiki snapshot is gone from the pinned memkernel. The
-  `docs/compatibility.md` row for the pair, naming the green run on `main`
-  after this re-pin, and Release B's closure (`docs/roadmap.md`, issue #38)
-  follow in the next change.
+  bridge's whole-wiki snapshot is gone from the pinned memkernel.
+  `docs/compatibility.md` lists the pair wiki-studio 0.8.0 + memkernel 0.6.0
+  as tested, naming the green run on `main` (41065605919, 2026-10-30), and
+  Release B is closed (`docs/roadmap.md`; tracker #38). The 0.7.0
+  limitation on memkernel's whole-wiki snapshot is resolved by that row: a
+  tested memkernel release without the snapshot is listed.
 - The two integration suites follow memkernel's governed import: a bridge
   draft is reported under `not_approved` and imported only once a curator
   has made it stable and approved it; a re-import of the same approved
