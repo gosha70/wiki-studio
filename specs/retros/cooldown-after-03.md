@@ -2,7 +2,7 @@
 cooldown_after_cycle: "03"
 started: 2026-10-29
 ended: 2026-10-30
-duration: 1w
+duration: 2d
 ---
 
 <!-- Generated at the end of a cooldown by the cooldown-report agent. -->
@@ -49,8 +49,10 @@ Window: `v0.8.0..main` plus open PR #65. These commits are docs and CI pins, not
 |----------|-------|----------|--------|
 
 No pitch has `bet_status: shaped`. The only pitch not yet shipped is
-`28-plain-technical-english` (2w, shaped 2026-10-20). It has `bet_status: bet`
-for cycle "01", but it was never built. It was not shaped in this cooldown.
+`28-plain-technical-english` (2w, shaped 2026-10-20) shipped in 0.5.0 on
+2026-10-20 (closes #28); its pitch file still read `bet_status: bet` for
+cycle "01" and was corrected to `shipped` in this cooldown. It was not
+shaped in this cooldown.
 
 ## Recommended bets for next cycle
 
@@ -58,8 +60,7 @@ No shaped pitches exist, so no bet is recommended. Candidates to shape, from
 `docs/roadmap.md`, CHANGELOG `[0.8.0]` Limitations and the open issues:
 
 1. **The Release B launch items and the integration measurement.** The roadmap's Launch sequence step 2 names two quickstarts, a compatibility matrix and an obsolete-decision correction demo. The Evidence section names the integration measurement: memkernel alone, memkernel with governed Wiki Studio, and files plus grep. Both were waiting on memkernel #48, which is now shipped. Related issue: #10 (wiki cheaper to consult than raw sources). <!-- author note: priority vs. the other candidates -->
-2. **Re-decide `28-plain-technical-english`.** It was bet for cycle 01 and never built. Either re-bet it or move it back to shaped. <!-- author note -->
-3. **Issue #54.** Govern reusable engineering patterns and assess duplicate knowledge. <!-- author note: not yet scoped -->
+2. **Issue #54.** Govern reusable engineering patterns and assess duplicate knowledge. <!-- author note: not yet scoped -->
 
 Smaller open items that are not cycles on their own:
 
@@ -74,7 +75,6 @@ Smaller open items that are not cycles on their own:
 ## Carryover
 
 - [ ] PR #65 (`docs/release-b-closed`) is still open.
-- [ ] Pitch `28-plain-technical-english` has `bet_status: bet` for cycle 01 but was never built.
 - [ ] memkernel quickstart and the integration measurement (roadmap Evidence and Launch sequence step 2).
 - [ ] Issue #10: evidence that the wiki is cheaper to consult than raw sources.
 - [ ] Issue #54: reusable engineering patterns and duplicate knowledge.

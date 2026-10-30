@@ -944,4 +944,4 @@ chooses a fix session, a cut from the list above, or a hold.
 | 2026-10-27 | shaped (revised) | PR #50 review, third pass. `promote` lints the whole staged wiki, so an existing non-UTF-8 page refuses every promote: S1 says so, carries the 0.8.0 upgrade note with the remedy, and adds the blocked-then-fixed promote test. bet_status unchanged. |
 | 2026-10-27 | bet | Bet for cycle 03. |
 | 2026-10-27 | building | Cycle 03 started; hill chart initialized. |
-| 2026-10-30 | shipped | Cycle 03 closed. Shipped in 0.8.0 (2026-10-29): build PR #56, evidence PR #59 (held-out measurement, fts5 default, Claude Code host run), release fixes PR #58, #60, #61; Release C closed with the tag. All five scopes done; the hill was not updated during the cycle (auto-build driver), set to done at close. |
+| 2026-10-30 | shipped | Cycle 03 closed. Shipped in 0.8.0 (2026-10-29): build PR #56, evidence PR #59 (held-out measurement, fts5 default, Claude Code host run), the pin-check fix PR #57 the evidence run needed, release fixes PR #58, #60, #61; Release C closed with the tag. All five scopes done; the hill was not updated during the cycle (auto-build driver), set to done at close. |
