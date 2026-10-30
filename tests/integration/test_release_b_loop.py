@@ -168,8 +168,11 @@ class TestReleaseBLoop(ReleaseBLoopCase):
         current = [m for m in self.service.list_memories() if getattr(m, "superseded_by", None) is None]
         self.assertFalse(any(WRONG in m.content for m in current), "the wrong memory is not a current answer")
         self.assertTrue(any(RIGHT in m.content for m in current))
-        kept = [m for m in self.service.list_memories() if m.id == wrong.id]
+        # The wrong memory is kept, marked superseded, and hidden from a plain listing.
+        kept = [m for m in self.service.list_memories(include_superseded=True) if m.ref_id == wrong]
         self.assertEqual(len(kept), 1, "its provenance is retained")
+        self.assertIsNotNone(kept[0].superseded_by)
+        self.assertEqual([m for m in self.service.list_memories() if m.ref_id == wrong], [])
 
 
 class TestRetryProperty(ReleaseBLoopCase):

@@ -6,6 +6,29 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- The memkernel pin of the clean-install CI jobs (`memkernel-compat`,
+  `memkernel-loop`) moves from `641a508` (2026-10-26) to memkernel `main` at
+  `6fc687e` (2026-10-29), which carries memkernel #48's counterpart: the
+  snapshot removal (memkernel PR #55) and the governed import that reads
+  `review_state` and honours `corrects` (memkernel PR #60). The
+  `memkernel-loop` job is blocking from this change on (0.7.0 FR-039); it
+  no longer carries `continue-on-error`, and the loop passes against that
+  memkernel commit. The clean-install suite also asserts that the bridge's
+  whole-wiki snapshot is gone from the pinned memkernel. Release B stays
+  open until memkernel publishes a release containing that commit: the
+  exit evidence asks for clean installs of compatible versions, and a
+  `main` commit is not installable from PyPI. The re-pin to that release,
+  the `docs/compatibility.md` row and the closure are one follow-up.
+- The two integration suites follow memkernel's governed import: a bridge
+  draft is reported under `not_approved` and imported only once a curator
+  has made it stable and approved it; a re-import of the same approved
+  revisions reports them `unchanged`; a memory superseded by a correcting
+  page is kept with `superseded_by` set and is hidden from a plain
+  `list_memories()` (`include_superseded=True` shows it). The loop case
+  compared a non-existent `Memory.id`; it compares `ref_id` now.
+
 ## [0.8.0] — 2026-10-29
 
 Discovery and portability, Release C of `docs/roadmap.md` (issue #38). A

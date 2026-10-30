@@ -149,6 +149,18 @@ class TestMemkernelCleanInstall(unittest.TestCase):
         self.assertEqual(self._wiki_tree(), before)
         self.assertEqual(len(self._archives()), 1, "no second submission was proposed or archived")
 
+    def _approve(self, rel: str) -> None:
+        """The curator's review of a bridge draft: a guarded update to ``status: stable``, then ``approve``."""
+        from wiki_studio import api
+        from wiki_studio.paths import WikiPaths
+        from wiki_studio.proposal import PageEdit
+
+        paths = WikiPaths.for_root(self.root, wiki_dir=self.wiki, proposals_dir=self.proposals)
+        page = api.read_page(rel, paths)
+        edit = PageEdit(rel, "update", page.text.replace("status: draft", "status: stable", 1), "reviewed", page.sha256)
+        api.promote(api.propose([edit], paths, name=f"review-{rel.replace('/', '-')}"), paths, by="curator")
+        api.approve([rel], paths, by="curator")
+
     def test_import_indexes_the_exported_pages_once(self) -> None:
         from memkernel.core.models import MemoryTier
         from memkernel.wiki.sync import WikiImporter
@@ -161,17 +173,38 @@ class TestMemkernelCleanInstall(unittest.TestCase):
 
         self.assertEqual(wiki_memories(), [])
         importer = WikiImporter(self.service, self.wiki)
+        # The import is governed: the bridge's drafts are not imported until a curator approves them.
+        drafts = importer.import_pages()
+        self.assertTrue(drafts.governed)
+        self.assertEqual(drafts.imported, [])
+        self.assertEqual(sorted(d["path"] for d in drafts.not_approved), sorted(exported.written))
+        self.assertEqual(wiki_memories(), [])
+        for rel in exported.written:
+            self._approve(rel)
         report = importer.import_pages()
         self.assertEqual(sorted(report.imported), sorted(exported.written))
-        self.assertIn("index.md", report.skipped)
-        self.assertIn("log.md", report.skipped)
         memories = wiki_memories()
         self.assertEqual(sorted(m.source for m in memories), sorted(exported.written))
+        self.assertNotIn("index.md", {m.source for m in memories})
+        self.assertNotIn("log.md", {m.source for m in memories})
+        # A second import of the same approved revisions imports nothing again and reports them unchanged.
         again = importer.import_pages()
-        self.assertEqual(sorted(again.imported), sorted(exported.written))
+        self.assertEqual(again.imported, [])
+        self.assertEqual(sorted(again.unchanged), sorted(exported.written))
         self.assertEqual(
             sorted(m.source for m in wiki_memories()), sorted(exported.written), "a second import adds no memory"
         )
+
+    def test_the_pinned_memkernel_has_no_wiki_snapshot(self) -> None:
+        """The bridge's whole-wiki snapshot (0.7.0 Limitations, memkernel #48 part 1) is gone, not merely unused."""
+        import inspect
+
+        import memkernel.wiki.sync as sync
+
+        self.assertFalse(hasattr(sync, "_WikiSnapshot"), "the snapshot class is still defined")
+        export_source = inspect.getsource(sync.WikiExporter.export).lower()
+        self.assertNotIn("snapshot", export_source, "the export path still takes a snapshot")
+        self.assertNotIn("restore", export_source, "the export path still restores on failure")
 
     def test_memkernel_parses_several_corrections_as_the_line_wiki_studio_keeps(self) -> None:
         """FR-036: the ``corrects`` fixture, parsed by memkernel's page parser, keeps the one scalar line."""
