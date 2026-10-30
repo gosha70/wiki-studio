@@ -1,43 +1,43 @@
 {
   "pitch_id": "38-release-b-governed-curation",
   "cycle": "02",
-  "updated_at": "2026-10-26T02:55:59Z",
+  "updated_at": "2026-10-30T13:48:38Z",
   "scopes": [
     {
       "id": "S1",
       "name": "The combined integration gate",
-      "status": "uphill",
-      "last_updated": "2026-10-26T02:55:59Z"
+      "status": "done",
+      "last_updated": "2026-10-30T13:48:38Z"
     },
     {
       "id": "S2",
       "name": "The versioned knowledge contract",
-      "status": "uphill",
-      "last_updated": "2026-10-26T02:55:59Z"
+      "status": "done",
+      "last_updated": "2026-10-30T13:48:38Z"
     },
     {
       "id": "S3",
       "name": "Identity and attribution",
-      "status": "uphill",
-      "last_updated": "2026-10-26T02:55:59Z"
+      "status": "done",
+      "last_updated": "2026-10-30T13:48:38Z"
     },
     {
       "id": "S4",
       "name": "Approval bound to the revision and the policy",
-      "status": "uphill",
-      "last_updated": "2026-10-26T02:55:59Z"
+      "status": "done",
+      "last_updated": "2026-10-30T13:48:38Z"
     },
     {
       "id": "S5",
       "name": "`superseded_by`",
-      "status": "uphill",
-      "last_updated": "2026-10-26T02:55:59Z"
+      "status": "done",
+      "last_updated": "2026-10-30T13:48:38Z"
     },
     {
       "id": "S6",
       "name": "Findings without a model call",
-      "status": "uphill",
-      "last_updated": "2026-10-26T02:55:59Z"
+      "status": "done",
+      "last_updated": "2026-10-30T13:48:38Z"
     }
   ]
 }

@@ -2,7 +2,7 @@
 pitch_id: 28-plain-technical-english
 title: "Plain technical English for wiki pages: writing rules, glossary term lock, lint --prose, fact preservation"
 appetite: 2w
-bet_status: bet
+bet_status: shipped
 cycle: "01"
 circuit_breaker: "Core is S1-S4 plus S5's citation and identifier checks. If S3 is still uphill at day 5, drop prose checks 3-4. If S5 is not downhill by day 8, drop its numbers-with-units extractor. If S5's citation and identifier checks are not done by day 10, ship 0.5.0 without S1's writing rules and re-pitch A and D together. Never make prose findings block promote, add a dependency, or add an LLM call to stay on schedule."
 shaped_by: "pitch-shaper (Claude Code) for gosha70"
@@ -674,3 +674,4 @@ The owner accepted the recommendations for questions 4-7, with the review refine
 | 2026-10-20 | shaped | Review of c945ea1 (one P2): test contract split. Accepted values must survive the full round trip; unsupported values must be refused on the first read with no terms; no guarantee about unsupported values after memkernel, which can strip the refused syntax. |
 | 2026-10-20 | shaped | External review against the whole post: the visual-artifacts half is out of scope by the origin (issue #28 takes only the STE tip). Recorded as a no-go, with the scope boundary stated in the Problem section and the fenced-code skip noted. No scope change. |
 | 2026-10-20 | shaped → bet | Owner approved the pitch. Cycle 01 (wiki-studio's first); target release 0.5.0. Next: spec and plan in `specs/`. |
+| 2026-10-30 | shipped | Shipped in 0.5.0 on 2026-10-20 (closes #28): writing rules in the prompts, the glossary `avoid:` key, `lint --prose` and the fact-preservation warnings. The pitch file was never updated after the bet; status corrected during the cooldown after cycle 03. |

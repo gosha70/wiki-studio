@@ -2,7 +2,7 @@
 pitch_id: 38-release-c-discovery-portability
 title: "Release C, discovery and portability: FTS5 ranking behind the index-first workflow with a rebuildable cache and a context budget, measured on a held-out set; an optional MCP adapter on the official SDK with a conformance suite"
 appetite: 6w
-bet_status: building
+bet_status: shipped
 cycle: "03"
 circuit_breaker: "Core is the discovery half, S1, S2 and S3: standard library only, measured, and it ships alone if the cycle runs out. End of week 2: if S1 and S2 are not downhill, stop S4 and S5 and shelve the adapter to a follow-up issue. Tuning starts only after the held-out set (ingested wiki, its manifest, questions and gold) is frozen. End of week 3: if it is not frozen, FTS5 ships untuned as an opt-in ranker and index-first stays the default. A held-out ingest that promotes few documents is a finding, not a reason to retry; if fewer than 15 held-out questions end with a gold page, or the frozen held-out wiki has fewer than ten eligible pages, FTS5 also stays opt-in. End of week 4: if S4 is not downhill, shelve S4 and S5; 0.8.0 ships discovery alone, no dependency is added, and Release C stays open. End of week 5: if no host run has passed S5, ship the extra as a preview on the protocol-level suite and keep Release C open. Never add a core dependency, change an exit code, write the cache into the wiki, edit a frozen run, retry or hand-edit the held-out ingest, tune on the held-out set, or put approve or a model-spawning verb on the default MCP surface to stay on schedule."
 shaped_by: "pitch-shaper (Claude Code) for gosha70"
@@ -944,3 +944,4 @@ chooses a fix session, a cut from the list above, or a hold.
 | 2026-10-27 | shaped (revised) | PR #50 review, third pass. `promote` lints the whole staged wiki, so an existing non-UTF-8 page refuses every promote: S1 says so, carries the 0.8.0 upgrade note with the remedy, and adds the blocked-then-fixed promote test. bet_status unchanged. |
 | 2026-10-27 | bet | Bet for cycle 03. |
 | 2026-10-27 | building | Cycle 03 started; hill chart initialized. |
+| 2026-10-30 | shipped | Cycle 03 closed. Shipped in 0.8.0 (2026-10-29): build PR #56, evidence PR #59 (held-out measurement, fts5 default, Claude Code host run), the pin-check fix PR #57 the evidence run needed, release fixes PR #58, #60, #61; Release C closed with the tag. All five scopes done; the hill was not updated during the cycle (auto-build driver), set to done at close. |
