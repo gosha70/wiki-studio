@@ -154,8 +154,10 @@ Planned order:
 
 ## Solution shape
 
-Docs, tests, CI jobs and one example script. No change to the package
-under `src/`, no new exit code, no dependency. memkernel stays out of the
+Docs, tests, CI jobs and one example script. No runtime behaviour or API
+change under `src/` (the version constant in `src/wiki_studio/__init__.py`
+changes with the release, as every release does), no new exit code, no
+dependency. memkernel stays out of the
 package and the default dev group; it is installed only in clean-install
 CI jobs, as today.
 
@@ -199,8 +201,10 @@ S5 needs the others for the release; its #10 part does not.
 
 - **Page.** `docs/quickstart.md` (D3): install (`pip install
   'wiki-studio[mcp]'`), `init`, write a draft directory, `propose --from
-  DIR --promote --by you`, `review_state` (unapproved), `approve --by
-  you`, `review_state` (approved), `find`, `read --json`, a guarded
+  DIR --promote --by you`, the review state read with an executed Python
+  block calling `api.review_state` (there is no CLI verb; the MCP tool
+  and the API are the surfaces), showing `unapproved`, then `approve --by
+  you` and the same block showing `approved`, `find`, `read --json`, a guarded
   update with `.base.json` and the stale-update refusal (exit 9), `lint`,
   `findings`. Then the MCP server: the `wiki-studio-mcp` launch line, the
   `claude mcp add` line, propose-only mode, and links to Kiro's settings
@@ -223,8 +227,15 @@ S5 needs the others for the release; its #10 part does not.
   `wiki_export` (a draft through the gate), the curator's review with the
   wiki-studio CLI (`read --json`, edit, `propose --from` with
   `.base.json`, `--promote`, `approve`), `wiki_import` (governed,
-  approved revisions only), `recall`. What to commit and what to ignore
-  (`.audit/`, the proposals directory, the lock and cache files).
+  approved revisions only), `recall`. The commit policy, stated per path:
+  commit the wiki manifest, the pages, `index.md`, `log.md` and the whole
+  `<wiki>/.audit/` tree (the ingest log and `approvals/`: governed import
+  reads the approval records, so a clone without them sees every page
+  `unapproved`); commit the proposals' `.applied/` archive (plan, preview,
+  receipt: the evidence the demo quotes) or state why it is ignored; ignore
+  only the lock file beside the wiki and the rebuildable search cache. The
+  handoff is executed: the committed tree is copied to a fresh directory
+  and `wiki_import` there imports the same approved revisions.
 - **Check.** memkernel's MCP tools are shown as tool calls. The executed
   blocks use the Python calls those tools make, as the loop test does
   (D9). They run in a clean-install job pinned to memkernel 0.6.0 from
@@ -253,10 +264,20 @@ S5 needs the others for the release; its #10 part does not.
   wheel) runs the script. The script exits non-zero if any assertion
   fails.
 - **Recorded run (D2).** One run committed under
-  `examples/correction-loop/runs/<date>-wiki-studio-<v>-memkernel-0.6.0/`:
-  the transcript, a manifest (versions, commit, Python, embedding model,
-  script sha256, end-state hash) and wall times from install to the first
-  approved revision and to corrected recall. These times are labelled
+  `examples/correction-loop/runs/<date>-wiki-studio-<v>-memkernel-0.6.0/`,
+  bound to the bytes it executed, in this order: (1) the script and its
+  execution protocol are committed first; (2) the run starts from a clean
+  tree at that commit, recorded; (3) the wiki-studio wheel is built from
+  that commit and its sha256 recorded, and the memkernel 0.6.0
+  distribution's sha256 recorded against PyPI; (4) the embedding model's
+  Hugging Face revision is pinned and verified, by default the
+  `1110a243…` revision memkernel's 0.5.0 run disclosed; (5) the run happens
+  once and the transcript and manifest are committed in a separate commit
+  after it. The manifest holds those hashes, the versions, Python, the
+  script sha256 and an end-state hash over the canonical exported state
+  (the wiki tree and the receipts), never over raw Chroma files, whose
+  storage metadata is not deterministic. Wall times from install to the
+  first approved revision and to corrected recall are recorded. These times are labelled
   machine time on a scripted path, not a measure of human adoption (D15).
   A failed attempt is kept, as with host runs.
 - **Page.** `docs/demo-correction-loop.md` tells the story in about one
@@ -270,9 +291,13 @@ S5 needs the others for the release; its #10 part does not.
 into its own preregistration. It does not preregister or run anything.
 
 - **The ceiling, explained** (findings 1 and 2), with the report's
-  numbers. What the published run supports: the `wiki_studio` arm stayed
-  inside the gate (0 ingest or query calls, 0 direct wiki writes); no
-  outcome or cost difference.
+  numbers. What the published run supports, no more: the two diagnostics
+  it records (0 `ingest` or `query` calls; 0 direct `Write` or `Edit`
+  calls under the wiki) and no outcome or cost difference. Those
+  diagnostics do not prove the arm stayed inside the gate: Bash can write
+  files, and the receipts keep payload hashes, not commands or gate
+  records. A gate claim needs the gate's own records checked, which S4
+  lists as a requirement for the composition arm.
 - **Requirements for a task set that can discriminate:**
   - a calibration that shows `bare` fails before any measured run;
   - an obsolete decision in each chain (record X, correct to Y, evaluate),
@@ -317,7 +342,9 @@ into its own preregistration. It does not preregister or run anything.
   wording.
 - **Roadmap.** Launch sequence step 2: the quickstarts, the matrix and
   the demonstration, each with its evidence. The Evidence section points
-  to the design and says no integration measurement has been run.
+  to the design and says that the published 0.5.0 run is at ceiling and
+  that no governed-composition measurement able to discriminate the arms
+  has been run.
 - **Compatibility.** The 0.8.x and 0.6.0 row names the quickstart and
   demo jobs beside the loop jobs.
 - **Issue #10 (D6).** A closing comment: the condition in the issue is
@@ -423,7 +450,8 @@ spec review.
   harness). No memkernel.dev page.
 - No measured run of memkernel's suite, no preregistration and no spend
   in this cycle.
-- No change under `src/` beyond a separate defect fix (D13). No new exit
+- No runtime behaviour or API change under `src/` beyond a separate defect
+  fix (D13); the version constant moves to 0.8.1 with the release. No new exit
   code; 0 and 2..11 keep their meaning, 1 stays fatal lint. `promoter.py`
   stays the single writer. No runtime dependency; memkernel stays a
   CI-only install.
@@ -483,3 +511,4 @@ Answered 2026-11-03; the answers are recorded in D1-D6. Asked as:
 | 2026-11-03 | shaping | Pitch drafted from wiki-studio #10, the cooldown report after cycle 03 (candidate 1), docs/roadmap.md (Evidence; Launch sequence step 2) and the 2026-10-23 product proposal. wiki-studio read at main e1f793f; memkernel read at main a1a5b32 and tag v0.6.0, including eval/lifecycle-suite/report-0.5.0.md. |
 | 2026-11-03 | shaping → shaped | 5 scopes, 2w, 0.8.1 (both to confirm). Core S1-S3 (quickstarts, demonstration); S4 (measurement design) stretch, cut first; S5 closes #10 and releases. 16 decisions; D1-D6 open for the owner with defaults, not yet asked (AskUserQuestion was unavailable to the shaping agent). |
 | 2026-11-03 | shaped (revised) | Owner answered D1-D6: 2w; demo as a blocking CI job plus a recorded run; quickstarts under docs/ linked from the README, and the owner links the composition quickstart from memkernel's README this cycle; the memkernel issue is filed by the build session with S4's design, no approval step; 0.8.1; #10 closed by restatement with a successor issue. |
+| 2026-11-03 | shaped (revised, 2) | PR #68 review, five findings folded in: the quickstart reads review state through an executed `api.review_state` block (no CLI verb exists); the composition quickstart states the commit policy per path (`.audit/` with the approval records committed, only the lock and cache ignored) and executes the handoff; the recorded run is bound to the executed bytes (script committed first, clean tree, wheel and memkernel distribution hashes, embedding revision pinned, run then committed separately, end-state hash over canonical state); the ceiling analysis reports the two diagnostics and no gate claim, and the roadmap says no discriminating governed-composition measurement has run; the no-`src/` rule is "no runtime behaviour or API change", the version constant moves with the release. |
