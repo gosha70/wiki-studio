@@ -43,8 +43,9 @@ PYPI_URL = f"https://pypi.org/pypi/memkernel/{MK_VERSION}/json"
 WALL_TIME_LABEL = "machine time on a scripted path, not a measure of human adoption"
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DEMO = REPO_ROOT / "examples" / "correction-loop" / "demo.py"
-PROTOCOL = REPO_ROOT / "examples" / "correction-loop" / "README.md"
+DEMO_REL = Path("examples") / "correction-loop" / "demo.py"
+RECORD_REL = Path("examples") / "correction-loop" / "record.py"
+PROTOCOL_REL = Path("examples") / "correction-loop" / "README.md"
 END_STATE_TREES = ("knowledge/wiki", "doc_internal/proposals")
 
 
@@ -98,12 +99,16 @@ def _git_output(*arguments: str) -> str:
     ).stdout.strip()
 
 
-def _build_wheel(tmp: Path, poetry: str) -> Path:
-    """The wheel built from ``HEAD`` only: the archive is extracted and built in a temporary directory."""
-    archive = tmp / "head.tar"
+def _extract_commit(tmp: Path, commit: str) -> Path:
+    """The tree of ``commit`` (a full SHA, never the mutable name HEAD), extracted into a temporary directory.
+
+    Everything that produces evidence (the wheel, the demo, the tree hash) runs from this tree, so the
+    manifest's commit and hashes describe the bytes that executed, whatever happens to the working tree.
+    """
+    archive = tmp / "commit.tar"
     _run_or_die(
-        ["git", "-C", str(REPO_ROOT), "archive", "--format=tar", "--output", str(archive), "HEAD"],
-        "git archive HEAD",
+        ["git", "-C", str(REPO_ROOT), "archive", "--format=tar", "--output", str(archive), commit],
+        f"git archive {commit}",
     )
     source = tmp / "source"
     source.mkdir()
@@ -114,7 +119,12 @@ def _build_wheel(tmp: Path, poetry: str) -> Path:
             except TypeError:  # Python < 3.11.4 has no extraction filter
                 tar.extractall(source)
     except (tarfile.TarError, OSError) as exc:
-        raise CannotRunError(f"could not extract the archive of HEAD: {exc}") from exc
+        raise CannotRunError(f"could not extract the archive of {commit}: {exc}") from exc
+    return source
+
+
+def _build_wheel(tmp: Path, poetry: str, source: Path) -> Path:
+    """The wheel built from the extracted commit only (``poetry build`` in that tree)."""
     _run_or_die([poetry, "build", "--output", str(tmp / "dist")], "poetry build", cwd=source)
     wheels = sorted((tmp / "dist").glob("*.whl"))
     if len(wheels) != 1:
@@ -218,7 +228,7 @@ def _embedding_snapshot(python: Path, revision: str) -> Path:
     return snapshot
 
 
-def _run_demo(python: Path, out: Path, tmp: Path, snapshot: Path) -> tuple[int, dict[str, Any] | None]:
+def _run_demo(python: Path, out: Path, tmp: Path, snapshot: Path, source: Path) -> tuple[int, dict[str, Any] | None]:
     """Run the demo once, never retried, with the pinned model and the hub offline."""
     workdir = tmp / "work"
     summary_path = tmp / "summary.json"
@@ -228,8 +238,8 @@ def _run_demo(python: Path, out: Path, tmp: Path, snapshot: Path) -> tuple[int, 
     try:
         with (out / "transcript.txt").open("w", encoding="utf-8") as transcript:
             completed = subprocess.run(
-                [str(python), str(DEMO), "--workdir", str(workdir), "--summary", str(summary_path)],
-                cwd=str(REPO_ROOT),
+                [str(python), str(source / DEMO_REL), "--workdir", str(workdir), "--summary", str(summary_path)],
+                cwd=str(source),
                 env=env,
                 stdout=transcript,
                 stderr=subprocess.STDOUT,
@@ -261,11 +271,12 @@ def _copy_end_state(workdir: Path, out: Path) -> Path:
     return end_state
 
 
-def _tree_hash(end_state: Path) -> str:
+def _tree_hash(end_state: Path, source: Path) -> str:
+    """The end-state hash, computed by the extracted commit's ``conformance.mcp.run`` (standard library only)."""
     completed = _run_or_die(
         [sys.executable, "-m", "conformance.mcp.run", "tree-hash", str(end_state)],
         "tree-hash",
-        cwd=REPO_ROOT,
+        cwd=source,
     )
     return completed.stdout.strip()
 
@@ -293,7 +304,12 @@ def _wall_times(install_started_at: str, summary: dict[str, Any] | None) -> dict
     }
 
 
+def _write_manifest(out: Path, manifest: dict[str, Any]) -> None:
+    (out / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+
 def _record(out: Path, revision: str) -> int:
+    # Preflight: a refusal here is not an attempt and creates nothing.
     started_at = _utc_now()
     if out.exists():
         raise CannotRunError(f"--out {out} already exists; a second attempt is a new directory")
@@ -303,55 +319,73 @@ def _record(out: Path, revision: str) -> int:
     if status.stdout.strip():
         raise CannotRunError(f"the working tree is not clean: {_tail(status.stdout)}")
     head = _git_output("rev-parse", "HEAD")
-    demo_sha256 = _sha256_file(DEMO)
-    record_sha256 = _sha256_file(Path(__file__).resolve())
-    protocol_sha256 = _sha256_file(PROTOCOL)
     poetry = shutil.which("poetry")
     if poetry is None:
         raise CannotRunError("poetry is not on PATH; the wheel must be built from the commit")
 
-    with tempfile.TemporaryDirectory(prefix="wiki-studio-record-") as tmp_name:
-        tmp = Path(tmp_name)
-        wheel = _build_wheel(tmp, poetry)
-        wheel_sha256 = _sha256_file(wheel)
-        memkernel_wheel, memkernel_sha256, published_sha256 = _download_memkernel(tmp)
-        try:
-            out.mkdir(parents=True)
-        except FileExistsError as exc:
-            raise CannotRunError(f"--out {out} already exists; a second attempt is a new directory") from exc
-        install_started_at = _utc_now()
-        python = _install(tmp / "venv", wheel, memkernel_wheel)
-        _environment(python, out)
-        versions = _versions(python)
-        snapshot = _embedding_snapshot(python, revision)
-        exit_code, summary = _run_demo(python, out, tmp, snapshot)
-        end_state = _copy_end_state(tmp / "work", out)
-        manifest = {
-            "git_commit": head,
-            "git_clean": True,
-            "demo_sha256": demo_sha256,
-            "record_sha256": record_sha256,
-            "protocol_sha256": protocol_sha256,
-            "wiki_studio_version": versions.get("wiki_studio"),
-            "wheel_file": wheel.name,
-            "wheel_sha256": wheel_sha256,
-            "memkernel_version": versions.get("memkernel"),
-            "memkernel_file": memkernel_wheel.name,
-            "memkernel_sha256": memkernel_sha256,
-            "memkernel_pypi_sha256": published_sha256,
-            "embedding_model": EMBEDDING_MODEL,
-            "embedding_revision": revision,
-            "python_version": versions.get("python"),
-            "platform": versions.get("platform"),
-            "started_at": started_at,
-            "finished_at": _utc_now(),
-            "exit_code": exit_code,
-            "summary": summary,
-            "end_state_sha256": _tree_hash(end_state),
-            "wall_time_seconds": _wall_times(install_started_at, summary),
-            "wall_time_label": WALL_TIME_LABEL,
-        }
-        (out / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    # The attempt starts here: the run directory exists from now on, and every path out of this
+    # block leaves a manifest.json naming the outcome and, on failure, the stage that failed.
+    try:
+        out.mkdir(parents=True)
+    except FileExistsError as exc:
+        raise CannotRunError(f"--out {out} already exists; a second attempt is a new directory") from exc
+    manifest: dict[str, Any] = {
+        "outcome": "running",
+        "git_commit": head,
+        "git_clean": True,
+        "started_at": started_at,
+        "embedding_model": EMBEDDING_MODEL,
+        "embedding_revision": revision,
+        "wall_time_label": WALL_TIME_LABEL,
+    }
+    stage = "extract"
+    try:
+        with tempfile.TemporaryDirectory(prefix="wiki-studio-record-") as tmp_name:
+            tmp = Path(tmp_name)
+            source = _extract_commit(tmp, head)
+            manifest["demo_sha256"] = _sha256_file(source / DEMO_REL)
+            manifest["record_sha256"] = _sha256_file(source / RECORD_REL)
+            manifest["protocol_sha256"] = _sha256_file(source / PROTOCOL_REL)
+            if _sha256_file(Path(__file__).resolve()) != manifest["record_sha256"]:
+                raise CannotRunError(f"the running record.py differs from the one in commit {head}")
+            stage = "build"
+            wheel = _build_wheel(tmp, poetry, source)
+            manifest["wheel_file"] = wheel.name
+            manifest["wheel_sha256"] = _sha256_file(wheel)
+            stage = "download"
+            memkernel_wheel, memkernel_sha256, published_sha256 = _download_memkernel(tmp)
+            manifest["memkernel_file"] = memkernel_wheel.name
+            manifest["memkernel_sha256"] = memkernel_sha256
+            manifest["memkernel_pypi_sha256"] = published_sha256
+            stage = "install"
+            install_started_at = _utc_now()
+            python = _install(tmp / "venv", wheel, memkernel_wheel)
+            _environment(python, out)
+            versions = _versions(python)
+            manifest["wiki_studio_version"] = versions.get("wiki_studio")
+            manifest["memkernel_version"] = versions.get("memkernel")
+            manifest["python_version"] = versions.get("python")
+            manifest["platform"] = versions.get("platform")
+            stage = "embedding"
+            snapshot = _embedding_snapshot(python, revision)
+            stage = "demo"
+            exit_code, summary = _run_demo(python, out, tmp, snapshot, source)
+            stage = "end-state"
+            end_state = _copy_end_state(tmp / "work", out)
+            manifest["end_state_sha256"] = _tree_hash(end_state, source)
+            manifest["exit_code"] = exit_code
+            manifest["summary"] = summary
+            manifest["wall_time_seconds"] = _wall_times(install_started_at, summary)
+            manifest["outcome"] = "completed"
+            manifest["finished_at"] = _utc_now()
+            _write_manifest(out, manifest)
+    except (CannotRunError, OSError) as exc:
+        manifest["outcome"] = "failed"
+        manifest["failed_stage"] = stage
+        manifest["error"] = str(exc)
+        manifest["finished_at"] = _utc_now()
+        _write_manifest(out, manifest)
+        raise
     return exit_code
 
 
