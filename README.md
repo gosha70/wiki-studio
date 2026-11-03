@@ -23,7 +23,7 @@ The code was extracted from
 pip install wiki-studio          # Python 3.11–3.13, no runtime dependencies
 pip install 'wiki-studio[mcp]'   # optional: the MCP server, wiki-studio-mcp (see MCP)
 wiki-studio --help
-wiki-studio --version           # 0.8.0
+wiki-studio --version           # 0.8.1
 ```
 
 From a checkout: `poetry install`, then `poetry run wiki-studio --help`.
@@ -659,9 +659,35 @@ a finding in their own right. And a derived baseline, computed in
 question at random from the nine index-linked pages would hit at 1 about
 8.5% of the time and within the loaded set about 25%, against the observed
 14.3% and 47.6%. The corpus and the question writer caveats from run 1 apply
-unchanged. Agent-level evidence, an arm in `agent-memory-bench` next to
-memkernel's, is tracked in
-[issue #10](https://github.com/gosha70/wiki-studio/issues/10).
+unchanged.
+
+Agent-level evidence exists as one published run, and it is a ceiling, not a
+claim. memkernel's
+[0.5.0 report](https://github.com/gosha70/memkernel/blob/v0.5.0/eval/lifecycle-suite/report-0.5.0.md)
+included a `wiki_studio` arm — wiki-studio 0.4.1 through the CLI, with no
+curator and no governed import — on the five `lc-wiki` tasks. It passed 25 of
+25 trials, as every arm did, the negative control `bare` included; every
+pairwise effect was +0.0 and the headline is "no gain claimed". The group is
+at ceiling: the exposure prompt tells the agent to record its decision under
+`knowledge/wiki/`, the runner copies that wiki into the second session for
+every arm, and the fixture holds only `index.md`, so an arm that writes a
+file and reads it back passes. No claim follows from that run, and its token
+totals do not compare with the other arms' (4,309,745 on 25 trials against
+about 19-20 million per arm over 100 trials, with no per-group table).
+[`eval/composition/design.md`](eval/composition/design.md) explains the
+ceiling from the report's numbers and states what a task set and a versioned
+governed-composition arm need so the arms can differ; it is design only, not
+evidence for or against any arm. The
+[correction-loop demonstration](docs/demo-correction-loop.md) shows one
+governed chain end to end; its recorded run is pending. The discriminating
+measurement is memkernel's to preregister and run: its design is filed as an
+issue in memkernel, and a successor issue here tracks it. Both are filed
+after this build and before the 0.8.1 pull request merges; their numbers are
+added here when they are filed, and the texts are committed at
+[`eval/composition/successor-issue.md`](eval/composition/successor-issue.md)
+and
+[`eval/composition/issue-10-comment.md`](eval/composition/issue-10-comment.md).
+Issue #10 closes by that restatement.
 
 Run 3 and a held-out set (0.8.0) measure the second ranker, `fts5`, beside
 `index-first` without touching runs 1 and 2: their files are pinned by

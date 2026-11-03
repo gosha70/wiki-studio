@@ -4,7 +4,68 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.8.1]
+
+Release B's launch: the two quickstarts, the obsolete-decision demonstration
+and the design for a discriminating integration measurement. Docs, tests, CI
+jobs and one example; no runtime behaviour, API or page schema change.
+
+### Added
+
+- The standalone quickstart (0.8.1, US1). `docs/quickstart.md` goes from
+  install to an approved page with no model backend: `init`; a draft
+  directory outside the wiki; `propose --from … --promote --by you`; the
+  review state through `api.review_state` before and after `approve`; `find`;
+  `read --json`; a guarded update carrying `.base.json`; the stale-update
+  refusal (exit 9); `lint`; `findings`; and the MCP server's launch line. Its
+  commands are fenced blocks marked `run`, extracted by
+  `tests/helpers/quickstart_blocks.py` and run in order by
+  `tests/test_quickstart.py`, which also runs the MCP conformance suite
+  against the page's launch line and refuses any block that reaches `ingest`,
+  `query` or a backend. A blocking `quickstart` CI job runs it on a clean
+  install of the wheel with the `mcp` extra; README Install links the page.
+- The memkernel composition quickstart (0.8.1, US2).
+  `docs/quickstart-memkernel.md` installs `memkernel[wiki]==0.6.0` beside
+  wiki-studio in one environment and executes the loop: settings, `init`,
+  `retain` and `recall`, the gated export, the curator's `read --json` and
+  correction carrying `corrects`, the guarded `propose --from … --promote`
+  and `approve`, the governed `wiki_import`, the next `recall`, and a handoff
+  that commits, clones and imports exactly the approved revisions. The commit
+  policy is stated path by path and its setup block writes it. A blocking
+  `quickstart-memkernel` CI job runs it against memkernel 0.6.0 from PyPI
+  with the embedding model pinned at revision
+  `1110a243fdf4706b3f48f1d95db1a4f5529b4d41`; README Install and
+  `docs/consumers.md` link the page.
+- The obsolete-decision demonstration (0.8.1, US3).
+  `examples/correction-loop/demo.py` runs session 1, the curator and session 2
+  as three processes on one memkernel store and one wiki: the wrong decision
+  is retained and exported as a draft, corrected through a reviewed proposal
+  carrying `corrects` and approved, then imported; the next session's answer
+  carries the page, its revision and the receipt, and the old record is kept
+  with `superseded_by` set. `record.py` binds a recorded run to the commit,
+  the wheel's sha256, the memkernel distribution's sha256 checked against
+  PyPI, the embedding revision and an end-state hash, and
+  `docs/demo-correction-loop.md` tells the story. A blocking
+  `demo-correction-loop` CI job runs the recorder on every push; the recorded
+  run itself is an owner step in the evidence PR.
+- The measurement design (0.8.1, US4).
+  [`eval/composition/design.md`](../eval/composition/design.md) explains
+  why memkernel's published 0.5.0 run is at ceiling on `lc-wiki` from the
+  report's numbers (every arm 25 of 25, `bare` included; every pairwise effect
+  +0.0), reports the two diagnostics without a gate claim, states what a task
+  set that can discriminate needs, sketches eight tasks in prose, compares the
+  four arms and the curator options and recommends one, requires the gate's
+  own records for every landed page, maps the roadmap's six questions to a
+  measurement or existing evidence, and lists memkernel's dependencies. It
+  preregisters, runs and budgets nothing; `docs/agent-arm/README.md` gains a
+  pointer, and the frozen 0.4.1 arm files are untouched.
+- The issue texts that close #10 (0.8.1, US5).
+  `eval/composition/successor-issue.md` and
+  `eval/composition/issue-10-comment.md` carry the successor issue's body and
+  the restating comment on #10, each linking the design by the permalink
+  placeholder filled at filing. They are filed in one interactive step after
+  the build and before the pull request merges; the build files nothing, and
+  the PR body carries `Closes #10`.
 
 ### Changed
 
@@ -30,6 +91,39 @@ uses [Semantic Versioning](https://semver.org/).
   page is kept with `superseded_by` set and is hidden from a plain
   `list_memories()` (`include_superseded=True` shows it). The loop case
   compared a non-existent `Memory.id` (issue #53); it compares `ref_id` now.
+- README Evidence replaces the stale `agent-memory-bench` sentence with what
+  memkernel's 0.5.0 run shows — a `wiki_studio` arm on `lc-wiki`, 25 of 25 as
+  every arm including `bare`, a ceiling, no claim, token totals not
+  comparable — linked to memkernel's report, the correction-loop
+  demonstration, the design and the successor issue.
+- `docs/roadmap.md`: Launch sequence step 2 names the two quickstarts, the
+  compatibility matrix and the demonstration with their evidence; the
+  Evidence section says the published 0.5.0 run is at ceiling and that no
+  governed-composition measurement able to discriminate the arms has been
+  run; Release B's docs line records the quickstarts.
+- `docs/compatibility.md` gains the 0.8.1 with memkernel 0.6.0 row, naming
+  `memkernel-compat`, `memkernel-loop`, `quickstart-memkernel` and
+  `demo-correction-loop` (and `quickstart` for the standalone path), pending
+  a named green run on `main` (the evidence PR adds the run id).
+- The `memkernel-loop` test module docstring says the job is blocking since
+  the 0.6.0 pin (no test body change); the CI `lint` job checks and
+  format-checks `eval/` and `examples/`; `CLAUDE.md` lists
+  `eval/composition/` in the layout and the two quickstart tests under
+  Commands.
+
+### Notes
+
+- No runtime behaviour, API, exit code, page schema or dependency change.
+  `git diff main -- src/` is the version line only; `promoter.py` is
+  untouched; exit codes 0, 1 and 2..11 keep their meaning; `pyproject.toml`
+  gains no dependency (memkernel, `huggingface_hub` and the embedding model
+  appear only in the clean-install CI jobs and the recorder's virtual
+  environment); ADR-0002 stands and `SECURITY.md` still supports 0.8.x.
+- The memkernel issue carrying the design and this repository's successor
+  issue are filed after the build and before the 0.8.1 pull request merges;
+  their numbers are added to README Evidence, `docs/roadmap.md` and this file
+  when they are filed (the texts are committed under `eval/composition/`).
+  Nothing was filed by the build.
 
 ## [0.8.0] — 2026-10-29
 

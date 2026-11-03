@@ -20,6 +20,8 @@ poetry run wiki-studio --help                        # the CLI
 poetry run wiki-studio-mcp --help                    # the MCP server (the `mcp` extra)
 poetry run python -m conformance.mcp.run --server-cmd "wiki-studio-mcp --root {root}"   # MCP conformance suite
 poetry run python -m eval.navigation.discovery --help    # discovery evaluation runner
+poetry run pytest -q tests/test_quickstart.py           # the standalone quickstart's run blocks + MCP conformance check
+poetry run pytest -q -rs tests/integration/test_quickstart_memkernel.py  # the composition quickstart (needs memkernel 0.6.0)
 poetry build                                     # wheel + sdist
 ```
 
@@ -50,6 +52,7 @@ src/wiki_studio/schema/*.md     page-types, ingest, citation, lint, audit rules,
 tests/                     unittest-style tests run by pytest; fixtures under tests/fixtures/
 conformance/mcp/           adapter-agnostic MCP conformance suite (run.py, fixture/, scenario.md); conformance/runs/ host runs
 eval/navigation/           frozen runs 1-2 (never edited), discovery.py runner, run3/ development set, heldout/ protocol
+eval/composition/          the measurement design for a governed-composition arm (design only; issue texts beside it)
 examples/correction-loop/  the correction-loop demo, its recorder and its protocol (run by the demo-correction-loop job)
 ```
 
