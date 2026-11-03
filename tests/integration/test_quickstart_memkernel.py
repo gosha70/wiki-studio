@@ -20,12 +20,13 @@ from __future__ import annotations
 
 import ast
 import importlib.util
+import os
 import re
 import sys
 import unittest
 from pathlib import Path
 
-from tests.helpers.quickstart_blocks import parse_run_blocks, run_quickstart
+from tests.helpers.quickstart_blocks import child_environment, parse_run_blocks, run_quickstart
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 QUICKSTART = REPO_ROOT / "docs" / "quickstart-memkernel.md"
@@ -86,6 +87,13 @@ class QuickstartMemkernelPageTest(unittest.TestCase):
         assert match is not None
         self.assertEqual(match.group(1).splitlines(), [".wiki.wiki-studio.*", ".memkernel/", ".env"])
 
+    def test_the_block_environment_forwards_the_pinned_model_and_the_cache(self) -> None:
+        """The CI job exports the model pin and the offline flag; every block's process must see them."""
+        env = child_environment()
+        for key in ("MEMKERNEL_EMBEDDING_MODEL", "HF_HUB_OFFLINE", "HOME", "HF_HOME"):
+            if key in os.environ:
+                self.assertEqual(env.get(key), os.environ[key], f"{key} reaches the block")
+
     def test_the_page_names_memkernel_tools_beside_the_executed_blocks(self) -> None:
         markdown = QUICKSTART.read_text(encoding="utf-8")
         for tool in ("retain", "recall", "wiki_export", "wiki_import"):
@@ -98,11 +106,17 @@ class QuickstartMemkernelRunTest(unittest.TestCase):
     """FR-006, FR-007, FR-009: the page's blocks, in order, against the real packages."""
 
     def test_every_run_block_passes_in_page_order(self) -> None:
+        self.assertIn(
+            "MEMKERNEL_EMBEDDING_MODEL",
+            os.environ,
+            "the quickstart-memkernel job pins memkernel's embedding model; without it the page downloads one",
+        )
         results = run_quickstart(QUICKSTART, timeout=BLOCK_TIMEOUT_SECONDS)
-        expected = parse_run_blocks(QUICKSTART.read_text(encoding="utf-8"))
-        self.assertEqual([result.block.index for result in results], [block.index for block in expected])
-        self.assertEqual([result.block.language for result in results].count("python"), 6)
-        self.assertGreaterEqual(len(results), 12)
+        executed = [
+            (result.block.index, result.block.language, result.block.expected_exit, result.block.contains)
+            for result in results
+        ]
+        self.assertEqual(executed, EXPECTED_RUN_BLOCKS, "the executed blocks are the page's run-marked blocks")
 
 
 if __name__ == "__main__":

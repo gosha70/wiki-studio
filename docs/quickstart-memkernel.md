@@ -217,7 +217,7 @@ memkernel_ref = ref_line.split(":", 1)[1].strip()
 content = replace_once(content, "status: draft", f"status: stable\ncorrects: {memkernel_ref}")
 content = replace_once(content, "title: Deploy window", f"title: {right}")
 content = replace_once(content, "# Deploy window", f"# {right}")
-content = replace_once(content, "Deploy window", right)
+content = replace_once(content, "Deploy window", right)  # the Decision section repeats the memory's first line
 content = replace_once(content, wrong, right)
 if "Deploy window" in content or wrong in content:
     raise SystemExit("the correction left the old decision in the page")
@@ -256,8 +256,9 @@ bound to the page's live sha256.
 memkernel's `wiki_import` tool constructs `WikiImporter` with the same wiki
 directory and project root. With wiki-studio installed it is governed: only
 pages whose review state is `approved`, and whose bytes are still the approved
-revision, are imported. The approved page's `corrects:` key supersedes the
-memory it names.
+revision, are imported. The import never writes the page, so `memkernel_ref`
+still names the memory the draft was exported from; `corrects:` names the same
+ref, and the report's `corrections` list records the supersession.
 
 ```python run contains=right-rule-current
 from pathlib import Path
@@ -284,14 +285,18 @@ def keyed(text: str, key: str) -> str:
     return values[0]
 
 
-exported_ref = keyed(page_text, "memkernel_ref")
 wrong_ref = keyed(page_text, "corrects")
-if wrong_ref != exported_ref:
-    raise SystemExit(f"corrects names {wrong_ref}, not the memory the page was exported from ({exported_ref})")
-if {"page": page, "ref_id": wrong_ref} not in report.corrections:
-    raise SystemExit(f"corrects did not supersede the wrong memory: {report.corrections} {report.unresolved}")
 wrong = "Deploy on Fridays after 17:00 UTC."
 right = "Deploy on Tuesdays before noon; never on Fridays."
+if {"page": page, "ref_id": wrong_ref} not in report.corrections:
+    raise SystemExit(f"corrects did not supersede the wrong memory: {report.corrections} {report.unresolved}")
+superseded = [
+    memory for memory in service.list_memories(include_superseded=True) if memory.superseded_by is not None
+]
+if [memory.ref_id for memory in superseded] != [wrong_ref]:
+    raise SystemExit(f"the superseded memories are {[memory.ref_id for memory in superseded]}, not {wrong_ref}")
+if wrong not in superseded[0].content:
+    raise SystemExit("the superseded memory does not carry the wrong rule")
 results = service.recall("When may we deploy?")
 current = [service.get(result.ref_id, touch=False) for result in results]
 if not any(memory is not None and right in memory.content for memory in current):
@@ -367,6 +372,10 @@ def check(condition: bool, name: str) -> None:
 
 original = Path.cwd()
 clone = (original.parent / "teammate").resolve()
+check(
+    (original / "knowledge" / "wiki" / "decisions" / "deploy-window.md").is_file(),
+    "the original project is the cwd",
+)
 check(not (clone / ".env").exists(), "the original .env is not in the clone")
 check(not (clone / ".memkernel").exists(), "memkernel's store is not in the clone")
 check(not (clone / "knowledge" / ".wiki.wiki-studio.lock").exists(), "the wiki lock is not in the clone")
