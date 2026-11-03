@@ -205,6 +205,35 @@ jobs:
       - name: Run the adapter tests and the conformance suite
         run: /tmp/mcp-latest/bin/python -m pytest -q -p no:cacheprovider -rs tests/test_mcp_adapter.py tests/test_mcp_conformance.py
 
+  quickstart:
+    # The standalone quickstart, executed from docs/quickstart.md (0.8.1 US1,
+    # FR-005): the wheel with the mcp extra in a fresh virtual environment and
+    # no model backend. The page is the only source of its commands; its run
+    # blocks and the MCP conformance check run from tests/test_quickstart.py.
+    # Blocking. The import check guarantees the page's conformance check is not
+    # skipped here.
+    name: Standalone quickstart
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - uses: snok/install-poetry@v1
+      - name: Build the wheel
+        run: poetry build
+      - name: Install the wheel with the mcp extra into a fresh virtual environment
+        run: |
+          python -m venv /tmp/quickstart
+          /tmp/quickstart/bin/pip install --quiet --upgrade pip
+          /tmp/quickstart/bin/pip install --quiet "$(ls dist/*.whl)[mcp]" pytest
+          /tmp/quickstart/bin/pip check
+          /tmp/quickstart/bin/python -c "import mcp, wiki_studio.api; print(wiki_studio.api.__file__)"
+      - name: Run the standalone quickstart
+        # The import check above guarantees the conformance check is not skipped here.
+        run: /tmp/quickstart/bin/python -m pytest -q -p no:cacheprovider -rs tests/test_quickstart.py
+
   build-check:
     name: Build Check
     runs-on: ubuntu-latest

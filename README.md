@@ -28,6 +28,10 @@ wiki-studio --version           # 0.8.0
 
 From a checkout: `poetry install`, then `poetry run wiki-studio --help`.
 
+The [standalone quickstart](docs/quickstart.md) goes from an empty directory
+to a reviewed, approved page with no model backend; its executed blocks run
+in the `quickstart` CI job.
+
 ## Layout
 
 With no flags and no variables `wiki-studio` reproduces the original
