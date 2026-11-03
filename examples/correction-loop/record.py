@@ -16,8 +16,11 @@ refuse any other snapshot; run the extracted ``demo.py`` once, with
 writing stdout and stderr to ``transcript.txt``; copy the wiki and proposals
 trees to ``end-state/`` and hash them with the extracted
 ``conformance.mcp.run tree-hash``; write ``manifest.json`` and exit with the
-demo's code. Every attempt writes ``manifest.json``: ``outcome: completed``,
-or ``outcome: failed`` with ``failed_stage`` and the error (exit 2).
+demo's code. Every attempt writes ``manifest.json`` as soon as ``--out`` exists
+(``outcome: running`` with the current ``stage``, rewritten at each stage), and
+ends it as ``outcome: completed`` or ``outcome: failed`` with ``failed_stage``
+and the error, for any exception including an interrupt. A manifest still
+reading ``outcome: running`` means the process was killed in that ``stage``.
 
 ``--out`` must not exist: a second attempt is a new directory, and a failed
 attempt is kept as it is. The protocol is in ``README.md``.
@@ -345,6 +348,16 @@ def _record(out: Path, revision: str) -> int:
         "wall_time_label": WALL_TIME_LABEL,
     }
     stage = "extract"
+
+    def enter(name: str) -> None:
+        # The manifest on disk always names the current stage: a crash or a kill that no handler
+        # sees leaves outcome "running" and the stage it stopped in.
+        nonlocal stage
+        stage = name
+        manifest["stage"] = name
+        _write_manifest(out, manifest)
+
+    enter("extract")
     try:
         with tempfile.TemporaryDirectory(prefix="wiki-studio-record-") as tmp_name:
             tmp = Path(tmp_name)
@@ -354,16 +367,16 @@ def _record(out: Path, revision: str) -> int:
             manifest["protocol_sha256"] = _sha256_file(source / PROTOCOL_REL)
             if _sha256_file(Path(__file__).resolve()) != manifest["record_sha256"]:
                 raise CannotRunError(f"the running record.py differs from the one in commit {head}")
-            stage = "build"
+            enter("build")
             wheel = _build_wheel(tmp, poetry, source)
             manifest["wheel_file"] = wheel.name
             manifest["wheel_sha256"] = _sha256_file(wheel)
-            stage = "download"
+            enter("download")
             memkernel_wheel, memkernel_sha256, published_sha256 = _download_memkernel(tmp)
             manifest["memkernel_file"] = memkernel_wheel.name
             manifest["memkernel_sha256"] = memkernel_sha256
             manifest["memkernel_pypi_sha256"] = published_sha256
-            stage = "install"
+            enter("install")
             install_started_at = _utc_now()
             python = _install(tmp / "venv", wheel, memkernel_wheel)
             _environment(python, out)
@@ -372,23 +385,25 @@ def _record(out: Path, revision: str) -> int:
             manifest["memkernel_version"] = versions.get("memkernel")
             manifest["python_version"] = versions.get("python")
             manifest["platform"] = versions.get("platform")
-            stage = "embedding"
+            enter("embedding")
             snapshot = _embedding_snapshot(python, revision)
-            stage = "demo"
+            enter("demo")
             exit_code, summary = _run_demo(python, out, tmp, snapshot, source)
-            stage = "end-state"
+            enter("end-state")
             end_state = _copy_end_state(tmp / "work", out)
             manifest["end_state_sha256"] = _tree_hash(end_state, source)
             manifest["exit_code"] = exit_code
             manifest["summary"] = summary
             manifest["wall_time_seconds"] = _wall_times(install_started_at, summary)
+            manifest.pop("stage", None)
             manifest["outcome"] = "completed"
             manifest["finished_at"] = _utc_now()
             _write_manifest(out, manifest)
-    except (CannotRunError, OSError) as exc:
+    except BaseException as exc:  # every way out, KeyboardInterrupt and SystemExit included, leaves a manifest
+        manifest.pop("stage", None)
         manifest["outcome"] = "failed"
         manifest["failed_stage"] = stage
-        manifest["error"] = str(exc)
+        manifest["error"] = f"{type(exc).__name__}: {exc}" if str(exc) else type(exc).__name__
         manifest["finished_at"] = _utc_now()
         _write_manifest(out, manifest)
         raise

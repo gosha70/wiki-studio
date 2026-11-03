@@ -65,10 +65,13 @@ by hand for the committed run.
 4. **A failed attempt is kept.** A refusal in the preflight (an existing
    `--out`, an unclean tree, no `poetry`) creates nothing and is not an attempt.
    The attempt starts when the run directory is created, right after the
-   preflight, and every outcome writes `manifest.json`: `outcome: completed`
-   with the demo's exit code, or `outcome: failed` with `failed_stage`
-   (`extract`, `build`, `download`, `install`, `embedding`, `demo`,
-   `end-state`) and the error. A failed run directory is committed as it is. A
+   preflight. `manifest.json` is written at once with `outcome: running` and
+   the current `stage` (`extract`, `build`, `download`, `install`, `embedding`,
+   `demo`, `end-state`), rewritten at each stage, and ends as `outcome:
+   completed` with the demo's exit code or `outcome: failed` with
+   `failed_stage` and the error, for any exception, an interrupt included. A
+   manifest still reading `outcome: running` means the process was killed in
+   that stage. A failed run directory is committed as it is. A
    second attempt is a new directory: `--out` must not exist.
 5. **Commit the run directory alone.** The run directory is committed under
    `examples/correction-loop/runs/<YYYY-MM-DD>-wiki-studio-<version>-memkernel-0.6.0/`
