@@ -439,4 +439,6 @@ of the committed tree imports exactly the approved pages with their approval
 records and receipts. The wiki itself — pages, review state and the audit
 tree — is described in [`knowledge-contract.md`](knowledge-contract.md), and
 the model-free path with no memkernel is in
-[`quickstart.md`](quickstart.md).
+[`quickstart.md`](quickstart.md). The same loop as a scripted demonstration,
+with a recorder that binds the run to the bytes it executed, is in
+[`demo-correction-loop.md`](demo-correction-loop.md).

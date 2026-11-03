@@ -28,9 +28,9 @@ jobs:
       - uses: snok/install-poetry@v1
       - run: poetry install --no-interaction
       - name: Ruff check
-        run: poetry run ruff check src/ tests/ conformance/
+        run: poetry run ruff check src/ tests/ eval/ examples/ conformance/
       - name: Ruff format check
-        run: poetry run ruff format --check src/ tests/ conformance/
+        run: poetry run ruff format --check src/ tests/ eval/ examples/ conformance/
 
   typecheck:
     name: Type Check
@@ -332,6 +332,37 @@ jobs:
       - name: Run the composition quickstart
         # The import check above guarantees the page's run test is not skipped here.
         run: /tmp/quickstart-memkernel/bin/python -m pytest -q -p no:cacheprovider -rs tests/integration/test_quickstart_memkernel.py
+
+  demo-correction-loop:
+    # The correction-loop demonstration, recorded by the same recorder the owner
+    # runs for the committed run (0.8.1 US3, FR-014, FR-015): the wheel built
+    # from HEAD, memkernel 0.6.0 from PyPI checked against the digest PyPI
+    # publishes, the embedding model at its pinned revision, and one scripted
+    # demo run. Blocking; the job's exit code is the recorder's, so a failed
+    # check fails the job.
+    name: Correction-loop demonstration
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      EMBEDDING_REVISION: "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - uses: snok/install-poetry@v1
+      - name: Cache the pinned embedding model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-all-MiniLM-L6-v2-${{ env.EMBEDDING_REVISION }}
+      - name: Record the demonstration
+        run: python examples/correction-loop/record.py --out "$RUNNER_TEMP/demo-run"
+      - name: Print the transcript and the manifest
+        if: always()
+        run: |
+          cat "$RUNNER_TEMP/demo-run/transcript.txt"
+          cat "$RUNNER_TEMP/demo-run/manifest.json"
 
   build-check:
     name: Build Check

@@ -267,4 +267,6 @@ pages are written by hand (or by an agent) and land through
 A governed wiki with a reviewed page, an approval bound to its revision, a
 recorded base revision for the replacement, and a stale update refused. The
 workspace contract behind these commands is in
-[`docs/knowledge-contract.md`](knowledge-contract.md).
+[`docs/knowledge-contract.md`](knowledge-contract.md). The same kind of
+correction through memkernel's governed loop, run as a script and in CI, is
+the [correction-loop demonstration](demo-correction-loop.md).
