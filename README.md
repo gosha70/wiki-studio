@@ -30,7 +30,11 @@ From a checkout: `poetry install`, then `poetry run wiki-studio --help`.
 
 The [standalone quickstart](docs/quickstart.md) goes from an empty directory
 to a reviewed, approved page with no model backend; its executed blocks run
-in the `quickstart` CI job.
+in the `quickstart` CI job. The
+[memkernel composition quickstart](docs/quickstart-memkernel.md) puts the same
+wiki behind memkernel: retain, a gated export, a reviewed correction, a
+governed import and a handoff clone, with executed blocks in the
+`quickstart-memkernel` CI job.
 
 ## Layout
 

@@ -234,6 +234,70 @@ jobs:
         # The import check above guarantees the conformance check is not skipped here.
         run: /tmp/quickstart/bin/python -m pytest -q -p no:cacheprovider -rs tests/test_quickstart.py
 
+  quickstart-memkernel:
+    # The memkernel composition quickstart, executed from
+    # docs/quickstart-memkernel.md (0.8.1 US2, FR-007, FR-010): the wheel and
+    # memkernel==0.6.0 from PyPI in a fresh virtual environment. memkernel's
+    # embedding model is pinned to a snapshot of one revision and the test runs
+    # offline against it, so recall does not depend on a model download at test
+    # time. Blocking. The import check guarantees the page's run test is not
+    # skipped here.
+    name: memkernel composition quickstart
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      MK_VERSION: "0.6.0"
+      EMBEDDING_REVISION: "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - uses: snok/install-poetry@v1
+      - name: Build the wheel
+        run: poetry build
+      - name: Install the wheel, pytest and the pinned memkernel release into a fresh virtual environment
+        run: |
+          python -m venv /tmp/quickstart-memkernel
+          /tmp/quickstart-memkernel/bin/pip install --quiet --upgrade pip
+          /tmp/quickstart-memkernel/bin/pip install --quiet dist/*.whl pytest "memkernel==${MK_VERSION}"
+          /tmp/quickstart-memkernel/bin/pip check
+          /tmp/quickstart-memkernel/bin/python -c "import memkernel.wiki.sync, wiki_studio.api; print(wiki_studio.api.__file__)"
+      - name: Cache the pinned embedding model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-all-MiniLM-L6-v2-${{ env.EMBEDDING_REVISION }}
+      - name: Download the embedding model at the pinned revision
+        # The model is the only model on the page. A failed download or a
+        # snapshot at another revision exits 2: the job cannot run the page,
+        # which is infrastructure, not a failed check.
+        run: |
+          /tmp/quickstart-memkernel/bin/pip install --quiet huggingface_hub
+          /tmp/quickstart-memkernel/bin/python - <<'EOF'
+          import os
+          import sys
+
+          from huggingface_hub import snapshot_download
+
+          revision = os.environ["EMBEDDING_REVISION"]
+          try:
+              path = snapshot_download("sentence-transformers/all-MiniLM-L6-v2", revision=revision)
+          except Exception as exc:
+              print(f"cannot run: the embedding model could not be downloaded: {exc}", file=sys.stderr)
+              raise SystemExit(2)
+          if os.path.basename(path) != revision:
+              print(f"cannot run: snapshot {path} is not revision {revision}", file=sys.stderr)
+              raise SystemExit(2)
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env_file:
+              env_file.write(f"MEMKERNEL_EMBEDDING_MODEL={path}\n")
+              env_file.write("HF_HUB_OFFLINE=1\n")
+          print(path)
+          EOF
+      - name: Run the composition quickstart
+        # The import check above guarantees the page's run test is not skipped here.
+        run: /tmp/quickstart-memkernel/bin/python -m pytest -q -p no:cacheprovider -rs tests/integration/test_quickstart_memkernel.py
+
   build-check:
     name: Build Check
     runs-on: ubuntu-latest

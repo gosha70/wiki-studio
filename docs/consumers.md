@@ -57,6 +57,11 @@ over the packaged copy whenever `<wiki-dir>/schema/` exists).
 
 ## memkernel
 
+The [memkernel composition quickstart](quickstart-memkernel.md) walks the
+whole loop with executed blocks — retain, export through the gate, a reviewed
+correction, a governed import and a handoff clone — against memkernel 0.6.0.
+The recipes below stay as reference.
+
 memkernel's `WikiExporter` writes draft pages in the same schema
 (`status: draft`, the extra keys `memkernel_ref` and `memory_type`, a
 `memkernel://<project>/<ref>` source). Point both tools at the same
