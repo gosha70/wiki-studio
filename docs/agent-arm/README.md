@@ -1,5 +1,10 @@
 # A `wiki_studio` arm for memkernel's lifecycle suite
 
+> **Note (0.8.1).** The arm files in this directory are frozen at wiki-studio
+> 0.4.1 and are not edited. The design for a governed-composition measurement —
+> a new versioned arm, its curator, and a task set that can discriminate the
+> arms — is [`eval/composition/design.md`](../../eval/composition/design.md).
+
 Layer 2 of [issue #10](https://github.com/gosha70/wiki-studio/issues/10): agent-level
 evidence that consulting the wiki helps an agent, measured in an execution-graded
 harness next to a files-plus-grep control. The harness is memkernel's
