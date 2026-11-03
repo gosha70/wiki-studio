@@ -2,7 +2,7 @@
 pitch_id: 10-release-b-launch-and-measurement
 title: "Release B launch and the integration measurement, wiki-studio side: two quickstarts executed on clean installs, a recorded obsolete-decision correction, a design for a governed-composition measurement that can discriminate, and an honest close of issue #10"
 appetite: 2w
-bet_status: bet
+bet_status: building
 cycle: "04"
 circuit_breaker: "Core is S1, S2 and S3: the two quickstarts and the correction demonstration, each executed on a clean install. They ship alone if the cycle runs out. S4, the measurement design, is the stretch and is cut first. End of week 1: if S1-S3 are not downhill, S4 shrinks to the ceiling analysis and the dependency list, filed as one memkernel issue, with no arm or task drafts. The measurement run itself (memkernel's suite, its preregistration and its budget) is not this cycle's exit evidence and does not start here. Issue #10 closes only by restating what the published 0.5.0 run shows (a ceiling, no claim) and naming a successor issue; otherwise it stays open. It never closes on a claim. Never, to save time: change behaviour under src/ or an exit code, add a dependency, edit the frozen 0.4.1 arm files or a frozen run, hand-edit a recorded run, put a model backend on an executed path, write runner or statistics code, or state a gain without a preregistered run."
 shaped_by: "pitch-shaper (Claude Code) for gosha70"
@@ -516,3 +516,4 @@ Answered 2026-11-03; the answers are recorded in D1-D6. Asked as:
 | 2026-11-03 | shaped (revised, 2) | PR #68 review, five findings folded in: the quickstart reads review state through an executed `api.review_state` block (no CLI verb exists); the composition quickstart states the commit policy per path (`.audit/` with the approval records committed, only the lock and cache ignored) and executes the handoff; the recorded run is bound to the executed bytes (script committed first, clean tree, wheel and memkernel distribution hashes, embedding revision pinned, run then committed separately, end-state hash over canonical state); the ceiling analysis reports the two diagnostics and no gate claim, and the roadmap says no discriminating governed-composition measurement has run; the no-`src/` rule is "no runtime behaviour or API change", the version constant moves with the release. |
 | 2026-11-03 | shaped (revised, 3) | PR #68 recheck: the two remaining no-`src/` sentences (appetite rationale, D13) use the same contract as the solution shape and no-gos: no runtime behaviour or API change, the version constant moves with the release. |
 | 2026-11-03 | bet | Bet for cycle 04. |
+| 2026-11-03 | building | Cycle 04 started; hill chart initialized. |
