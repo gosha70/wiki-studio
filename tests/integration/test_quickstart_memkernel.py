@@ -35,10 +35,34 @@ SKIP_REASON = (
 )
 BLOCK_TIMEOUT_SECONDS = 300.0
 ALLOWED_IMPORT_ROOTS = set(sys.stdlib_module_names) | {"memkernel", "wiki_studio"}
+# The page's run markers, in page order: index, language, expected exit, stdout token.
+# A block that gains, loses or changes its marker without this list changing fails here.
+EXPECTED_RUN_BLOCKS = [
+    (1, "bash", 0, None),
+    (2, "bash", 0, None),
+    (3, "python", 0, "wrong-rule-current"),
+    (4, "python", 0, "export-gated"),
+    (5, "bash", 0, None),
+    (6, "python", 0, "correction-drafted"),
+    (7, "bash", 0, None),
+    (8, "bash", 0, None),
+    (9, "bash", 0, None),
+    (10, "python", 0, "right-rule-current"),
+    (11, "bash", 0, None),
+    (12, "python", 0, "handoff-ok"),
+]
 
 
 class QuickstartMemkernelPageTest(unittest.TestCase):
     """FR-006, FR-008: the page's shape, checked without running memkernel."""
+
+    def test_the_page_marks_exactly_the_blocks_this_test_expects(self) -> None:
+        """The executed set is the page's own, and this list makes a marker change visible."""
+        blocks = parse_run_blocks(QUICKSTART.read_text(encoding="utf-8"))
+        self.assertEqual(
+            [(block.index, block.language, block.expected_exit, block.contains) for block in blocks],
+            EXPECTED_RUN_BLOCKS,
+        )
 
     def test_the_python_blocks_import_only_memkernel_wiki_studio_and_the_standard_library(self) -> None:
         blocks = parse_run_blocks(QUICKSTART.read_text(encoding="utf-8"))

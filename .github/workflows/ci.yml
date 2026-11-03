@@ -271,22 +271,35 @@ jobs:
       - name: Download the embedding model at the pinned revision
         # The model is the only model on the page. A failed download or a
         # snapshot at another revision exits 2: the job cannot run the page,
-        # which is infrastructure, not a failed check.
+        # which is infrastructure, not a failed check. The revision is checked
+        # three ways: the hub resolves the pin to itself, the cache catalogues
+        # the downloaded snapshot directory under that commit, and the run
+        # step is offline against it. No check reads the path's basename.
         run: |
           /tmp/quickstart-memkernel/bin/pip install --quiet huggingface_hub
           /tmp/quickstart-memkernel/bin/python - <<'EOF'
           import os
           import sys
+          from pathlib import Path
 
-          from huggingface_hub import snapshot_download
+          from huggingface_hub import HfApi, scan_cache_dir, snapshot_download
 
+          REPO_ID = "sentence-transformers/all-MiniLM-L6-v2"
           revision = os.environ["EMBEDDING_REVISION"]
           try:
-              path = snapshot_download("sentence-transformers/all-MiniLM-L6-v2", revision=revision)
+              path = Path(snapshot_download(REPO_ID, revision=revision)).resolve()
+              upstream_sha = HfApi().model_info(REPO_ID, revision=revision).sha
+              cached_paths = [
+                  Path(cached.snapshot_path).resolve()
+                  for repo in scan_cache_dir().repos
+                  if repo.repo_id == REPO_ID
+                  for cached in repo.revisions
+                  if cached.commit_hash == revision
+              ]
           except Exception as exc:
               print(f"cannot run: the embedding model could not be downloaded: {exc}", file=sys.stderr)
               raise SystemExit(2)
-          if os.path.basename(path) != revision:
+          if upstream_sha != revision or cached_paths != [path]:
               print(f"cannot run: snapshot {path} is not revision {revision}", file=sys.stderr)
               raise SystemExit(2)
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env_file:

@@ -162,8 +162,8 @@ report = WikiExporter(
 ).export()
 if not report.gated or report.gate_error is not None:
     raise SystemExit(f"the export did not pass the gate: {report.gate_error}")
-if len(report.written) != 1:
-    raise SystemExit(f"expected one draft page, wrote {report.written}")
+if report.written != ["decisions/deploy-window.md"]:
+    raise SystemExit(f"expected the decision draft decisions/deploy-window.md, wrote {report.written}")
 print("export-gated")
 print(f"page: {report.written[0]}")
 print(f"submission_digest: {report.submission_digest}")
@@ -199,14 +199,26 @@ read = json.loads(Path("read.json").read_text(encoding="utf-8"))
 content = read["content"]
 wrong = "Deploy on Fridays after 17:00 UTC."
 right = "Deploy on Tuesdays before noon; never on Fridays."
+
+
+def replace_once(text: str, old: str, new: str) -> str:
+    lines = text.splitlines()
+    hits = [index for index, line in enumerate(lines) if line == old]
+    if len(hits) != 1:
+        raise SystemExit(f"expected exactly one line {old!r}, found {len(hits)}")
+    lines[hits[0]] = new
+    return "\n".join(lines) + "\n"
+
+
 if wrong not in content:
     raise SystemExit("the exported draft does not carry the wrong rule")
 ref_line = next(line for line in content.splitlines() if line.startswith("memkernel_ref:"))
 memkernel_ref = ref_line.split(":", 1)[1].strip()
-content = content.replace("status: draft", f"status: stable\ncorrects: {memkernel_ref}", 1)
-content = content.replace("title: Deploy window", f"title: {right}", 1)
-content = content.replace("# Deploy window", f"# {right}", 1)
-content = content.replace("Deploy window", right).replace(wrong, right)
+content = replace_once(content, "status: draft", f"status: stable\ncorrects: {memkernel_ref}")
+content = replace_once(content, "title: Deploy window", f"title: {right}")
+content = replace_once(content, "# Deploy window", f"# {right}")
+content = replace_once(content, "Deploy window", right)
+content = replace_once(content, wrong, right)
 if "Deploy window" in content or wrong in content:
     raise SystemExit("the correction left the old decision in the page")
 draft = Path("drafts/correction/decisions/deploy-window.md")
@@ -263,8 +275,19 @@ if not report.governed:
 if page not in report.imported:
     raise SystemExit(f"the approved page was not imported: {report.not_approved} {report.skipped}")
 page_text = (Path(settings.wiki_dir) / page).read_text(encoding="utf-8")
-ref_line = next(line for line in page_text.splitlines() if line.startswith("memkernel_ref:"))
-wrong_ref = ref_line.split(":", 1)[1].strip()
+
+
+def keyed(text: str, key: str) -> str:
+    values = [line.split(":", 1)[1].strip() for line in text.splitlines() if line.startswith(f"{key}:")]
+    if len(values) != 1:
+        raise SystemExit(f"the page carries {len(values)} {key} lines, expected one")
+    return values[0]
+
+
+exported_ref = keyed(page_text, "memkernel_ref")
+wrong_ref = keyed(page_text, "corrects")
+if wrong_ref != exported_ref:
+    raise SystemExit(f"corrects names {wrong_ref}, not the memory the page was exported from ({exported_ref})")
 if {"page": page, "ref_id": wrong_ref} not in report.corrections:
     raise SystemExit(f"corrects did not supersede the wrong memory: {report.corrections} {report.unresolved}")
 wrong = "Deploy on Fridays after 17:00 UTC."
@@ -301,9 +324,11 @@ reason. Commit the whole tree the executed setup writes:
 | `.memkernel/` | no | memkernel's Chroma store is machine-local; memkernel's README says to ignore it. |
 | `.env` | no | It holds absolute machine paths. |
 
-The lock and the cache share one pattern, `.wiki.wiki-studio.*`, which is what
-the setup block writes into `.gitignore`. `.memkernel/` and `.env` are
-memkernel's own local files, outside wiki-studio's commit policy.
+The lock and the cache share one pattern, `.wiki.wiki-studio.*`, which the
+setup block writes into the project root's `.gitignore`. The pattern has no
+leading slash, so git matches it at any depth, including beside the wiki under
+`knowledge/`. `.memkernel/` and `.env` are memkernel's own local files, outside
+wiki-studio's commit policy.
 
 ## 11. Hand off the committed wiki
 
@@ -349,10 +374,6 @@ check(not (clone / "knowledge" / ".wiki.wiki-studio.search.sqlite").exists(), "t
 approved = [state for state in api.review_state(WikiPaths.for_root(original)) if state.state == "approved"]
 check(bool(approved), "the original has an approved page")
 
-page_text = (clone / "knowledge" / "wiki" / "decisions" / "deploy-window.md").read_text(encoding="utf-8")
-ref_line = next(line for line in page_text.splitlines() if line.startswith("memkernel_ref:"))
-wrong_ref = ref_line.split(":", 1)[1].strip()
-
 (clone / ".env").write_text(
     "\n".join(
         [
@@ -366,7 +387,7 @@ wrong_ref = ref_line.split(":", 1)[1].strip()
     ),
     encoding="utf-8",
 )
-os.chdir(clone)
+os.chdir(clone)  # this block is its own process (the quickstart runner), so the cwd needs no restore
 settings = MemKernelSettings()
 service = build_service(settings)
 report = WikiImporter(service, Path(settings.wiki_dir), project_root=Path(settings.project_root)).import_pages()
