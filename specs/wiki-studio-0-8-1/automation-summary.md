@@ -10,3 +10,6 @@ Review: PASS (see specs/wiki-studio-0-8-1/collaboration/build-review.md).
 
 ### Phase 4 complete — US4: The measurement design (stretch, cut first) (2026-11-03T19:22:29Z)
 Review: PASS (see specs/wiki-studio-0-8-1/collaboration/build-review.md).
+
+### Phase 5 complete — US5: Closing issue #10, the launch docs and release 0.8.1 (2026-11-03T19:33:22Z)
+Review: PASS (see specs/wiki-studio-0-8-1/collaboration/build-review.md).
