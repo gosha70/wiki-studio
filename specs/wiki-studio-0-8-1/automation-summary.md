@@ -13,3 +13,7 @@ Review: PASS (see specs/wiki-studio-0-8-1/collaboration/build-review.md).
 
 ### Phase 5 complete — US5: Closing issue #10, the launch docs and release 0.8.1 (2026-11-03T19:33:22Z)
 Review: PASS (see specs/wiki-studio-0-8-1/collaboration/build-review.md).
+
+## Run complete (2026-11-03T19:33:38Z)
+Profile: pr — branch feature/wiki-studio-0-8-1 pushed to origin; a pull request tracks the work (the driver never merges).
+Review artifacts: specs/wiki-studio-0-8-1/collaboration/.
