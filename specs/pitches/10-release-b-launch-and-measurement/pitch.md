@@ -138,7 +138,8 @@ The work content is small. The wall-clock budget is set by three things:
   answer, but the text needs one review.
 - **The release.** 0.8.1 (D5, confirmed) is cut by the owner.
 
-Why not 4w: nothing here changes `src/`, and the measurement run is
+Why not 4w: nothing here changes runtime behaviour or the API under
+`src/` (only the version constant moves), and the measurement run is
 excluded by the circuit breaker. 4w would only fit if the owner wants the
 composition arm and task drafts built to a level memkernel can adopt
 without changes, as `docs/agent-arm/` was for 0.4.0. That is S4 grown into
@@ -411,7 +412,8 @@ spec review.
   deletion are listed for memkernel 0.7.
 - **D12. No model backend on any executed path.** Only memkernel's local
   embedding model runs.
-- **D13. No `src/` change is planned.** A defect found by a quickstart is
+- **D13. No runtime behaviour or API change under `src/` is planned; the
+  version constant moves with the release.** A defect found by a quickstart is
   fixed as its own change with a regression test, and the scope that
   found it waits for it.
 - **D14. S4 is a design, not a harness.** The preregistration, runner,
@@ -512,3 +514,4 @@ Answered 2026-11-03; the answers are recorded in D1-D6. Asked as:
 | 2026-11-03 | shaping → shaped | 5 scopes, 2w, 0.8.1 (both to confirm). Core S1-S3 (quickstarts, demonstration); S4 (measurement design) stretch, cut first; S5 closes #10 and releases. 16 decisions; D1-D6 open for the owner with defaults, not yet asked (AskUserQuestion was unavailable to the shaping agent). |
 | 2026-11-03 | shaped (revised) | Owner answered D1-D6: 2w; demo as a blocking CI job plus a recorded run; quickstarts under docs/ linked from the README, and the owner links the composition quickstart from memkernel's README this cycle; the memkernel issue is filed by the build session with S4's design, no approval step; 0.8.1; #10 closed by restatement with a successor issue. |
 | 2026-11-03 | shaped (revised, 2) | PR #68 review, five findings folded in: the quickstart reads review state through an executed `api.review_state` block (no CLI verb exists); the composition quickstart states the commit policy per path (`.audit/` with the approval records committed, only the lock and cache ignored) and executes the handoff; the recorded run is bound to the executed bytes (script committed first, clean tree, wheel and memkernel distribution hashes, embedding revision pinned, run then committed separately, end-state hash over canonical state); the ceiling analysis reports the two diagnostics and no gate claim, and the roadmap says no discriminating governed-composition measurement has run; the no-`src/` rule is "no runtime behaviour or API change", the version constant moves with the release. |
+| 2026-11-03 | shaped (revised, 3) | PR #68 recheck: the two remaining no-`src/` sentences (appetite rationale, D13) use the same contract as the solution shape and no-gos: no runtime behaviour or API change, the version constant moves with the release. |
