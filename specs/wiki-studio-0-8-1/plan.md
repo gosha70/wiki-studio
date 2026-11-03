@@ -96,7 +96,7 @@ see FR-007. Eight facts found while re-checking shape the spec:
    (`promoter.py:159`); the `.audit/proposals/<name>/` copy holds `plan.json`,
    `proposal.md` and `curator-delta.md`, not the receipt (762-767). memkernel's
    README says to ignore its default proposals directory
-   `.memkernel/wiki-proposals/` (README 346). So both tools are pointed at
+   `.memkernel/wiki-proposals/` (README 338 at `v0.6.0`). So both tools are pointed at
    wiki-studio's proposals directory and its `.applied/` is committed
    (FR-007, FR-008).
 5. **memkernel has no setting for the embedding revision.** It passes
@@ -113,10 +113,11 @@ see FR-007. Eight facts found while re-checking shape the spec:
 7. **`review_state` has no CLI verb.** `cli.py:984-997`; the quickstart reads
    it through an executed Python block (FR-003), as the pitch's review
    required.
-8. **The lint job and the gate do not cover `examples/`.** CI's `lint` job
+8. **The lint job does not cover `eval/` or `examples/`.** CI's `lint` job
    checks `src/ tests/ conformance/` (`ci.yml:30-33`) and the 0.8.0 gate adds
-   `eval/`; D16 adds `examples/` to the job (FR-017). The gate is the parent's
-   to extend (see Open items).
+   `eval/`; FR-017 adds `eval/` and `examples/` to the job (the project gate in
+   `CLAUDE.md` already includes `eval/`). The gate is the parent's to extend
+   (see Open items).
 
 Close target: issue #10, by the build PR's merge after the build session's
 restating comment names the successor issue (FR-025). No other issue closes.
@@ -155,9 +156,11 @@ restating comment names the successor issue (FR-025). No other issue closes.
   recommendation; memkernel decides and builds. The arm's two hashed files
   are untouched; its README gains one pointer.
 - **ADR-7: #10 closes by restatement with a successor (D4, D6).** The build
-  files the memkernel issue (body: the committed design), opens the
-  successor, comments on #10, and the PR's merge closes #10. It never closes
-  on a claim.
+  writes the texts and files nothing. After the build and before the PR
+  merges, one interactive step files the memkernel issue (body: the
+  committed design, linked by a permalink at its commit), opens the
+  successor, and comments on #10; the PR's merge closes #10. It never
+  closes on a claim.
 - **ADR-8: Evidence review stays apart from code review.** The build PR
   merges once its review passes; the recorded run, the demo page's quotes and
   the compatibility run ids land in one evidence PR before the `v0.8.1` tag
@@ -257,10 +260,11 @@ origin-alignment record is written only after approval, before the build.
   Hugging Face. Mitigation: the session runs them where it can; otherwise it
   reports the skipped run plainly and CI on the PR is the first execution,
   which must be green before merge.
-- **GitHub actions from the build.** Filing issues is outside the working
-  directory. Mitigation: D4 authorises it; the order is fixed (memkernel
-  issue, successor, #10 comment) and the session stops before the first if
-  it cannot reach GitHub.
+- **Public actions from an unattended build.** Filing issues and
+  commenting are public and outside the driver's git ownership.
+  Mitigation: the build only writes the texts; the filing is one
+  interactive step after the build (memkernel issue, successor, #10
+  comment, in that order), before the PR merges.
 - **A claim slipping into the docs.** Mitigation: FR-016's word list, the
   wording checkpoint, and the reviewer.
 - **Review depth.** Each earlier cycle drew several review rounds; a third
@@ -285,13 +289,13 @@ spec and is what the build does unless the review changes it.
 3. **One proposals directory for both tools.** Default: `MEMKERNEL_WIKI_PROPOSALS_DIR` set to wiki-studio's `doc_internal/proposals`, whose `.applied/` is committed (finding 4).
 4. **memkernel's local files.** Default: `.memkernel/` and `.env` are ignored as memkernel's own files, outside wiki-studio's "ignore only the lock and the cache" rule, which covers wiki-studio's paths (FR-008).
 5. **The wrong decision's text.** Default: a neutral first line naming the topic, then the wrong rule; the curator rewrites title, heading and body (finding 3).
-6. **The model in CI.** Default: the real model at the pinned revision, cached; the deterministic embedding only if the review decides so after an unreliable run (FR-007).
+6. **The model in CI.** Settled at review: the real model at the pinned revision, cached; a failed download exits 2, never 1; switching to the deterministic embedding is a spec decision, never a silent fallback (FR-007).
 7. **The recorder.** Default: one standard-library `record.py` used by CI and the recorded run; wheel from `git archive HEAD` with `poetry build`; memkernel via `pip download` checked against PyPI's JSON; wall times measured from the start of the install (FR-014).
-8. **Who performs the recorded run.** Default: the owner, in the evidence PR (finding 6, FR-028).
+8. **Who performs the recorded run.** Settled at review: the owner, in the evidence PR (finding 6, FR-028).
 9. **The end-state hash.** Default: `conformance.mcp.run tree-hash` over a committed `end-state/` holding the wiki and the proposals directory (ADR-5).
 10. **CI layout.** Default: three new blocking jobs on Python 3.11 (`quickstart`, `quickstart-memkernel`, `demo-correction-loop`); `tests/test_quickstart.py` also runs in the default suite.
 11. **The compatibility matrix.** Default: a new 0.8.1 with 0.6.0 row, "pending" until the evidence PR names green run ids; the 0.8.0 row stays as recorded (FR-024).
-12. **How #10 closes.** Default: the build session comments, the build PR's merge closes it (`pr.closes: [10]` in `automation.json`).
-13. **The memkernel issue body.** Default: the committed design text pasted, filed in US5 after US4's commit.
+12. **How #10 closes.** Settled at review: the build writes the comment's text; the interactive step after the build posts it (after the memkernel and successor issues); the build PR's merge closes #10 (`pr.closes: [10]` in `automation.json`).
+13. **The memkernel issue body.** Settled at review: the committed design text, linked by a permalink at its commit, filed in the interactive step after the build, not by US5.
 14. **The gate and `examples/`.** Default: the 0.8.0 gate unchanged; `examples/` is checked by the CI `lint` job and each phase checkpoint. Recommendation for the parent: add `examples/` to the ruff check and format paths of `automation.json`'s test command.
 15. **The CHANGELOG date.** Default: `[0.8.1]` dated when the owner cuts the release.
