@@ -2,16 +2,22 @@
 # SPDX-License-Identifier: Apache-2.0
 """Record one correction-loop run, bound to the bytes it executed (FR-014).
 
-Standard library only. In order: refuse unless the working tree is clean and
-``--out`` does not exist; record ``HEAD``; build the wiki-studio wheel from
-``git archive HEAD`` with ``poetry build``; download memkernel 0.6.0 and check
-its sha256 against the file PyPI publishes; install both into a fresh virtual
-environment and write its ``pip freeze``; download the embedding model at the
-pinned revision and refuse any other snapshot; run ``demo.py`` once, with
+Standard library only. Preflight, which creates nothing: refuse unless the
+working tree is clean, ``--out`` does not exist and ``poetry`` is on PATH;
+record ``HEAD``'s full commit SHA. The attempt then starts by creating
+``--out``: archive that SHA (never the name ``HEAD``) and extract it; hash
+``demo.py``, this recorder and the protocol from the extracted tree and refuse
+if the running recorder differs; build the wiki-studio wheel there with
+``poetry build``; download memkernel 0.6.0 and check its sha256 against the
+file PyPI publishes; install both into a fresh virtual environment and write
+its ``pip freeze``; download the embedding model at the pinned revision and
+refuse any other snapshot; run the extracted ``demo.py`` once, with
 ``MEMKERNEL_EMBEDDING_MODEL`` pointing at the snapshot and ``HF_HUB_OFFLINE=1``,
 writing stdout and stderr to ``transcript.txt``; copy the wiki and proposals
-trees to ``end-state/`` and hash them with ``conformance.mcp.run tree-hash``;
-write ``manifest.json`` and exit with the demo's code.
+trees to ``end-state/`` and hash them with the extracted
+``conformance.mcp.run tree-hash``; write ``manifest.json`` and exit with the
+demo's code. Every attempt writes ``manifest.json``: ``outcome: completed``,
+or ``outcome: failed`` with ``failed_stage`` and the error (exit 2).
 
 ``--out`` must not exist: a second attempt is a new directory, and a failed
 attempt is kept as it is. The protocol is in ``README.md``.

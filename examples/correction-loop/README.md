@@ -48,8 +48,13 @@ by hand for the committed run.
    before any recorded run. The recorded run is an owner-run step in the
    evidence PR, after the commit that carries those bytes.
 2. **Start from a clean tree.** `record.py` refuses (exit 2) unless
-   `git status --porcelain` is empty, and records `HEAD`.
-3. **Run once.** The recorder builds the wheel from `git archive HEAD` in a
+   `git status --porcelain` is empty, and records `HEAD`'s full commit SHA. It
+   then works only from that commit: it archives the SHA (never the name
+   `HEAD`), hashes the demo, the recorder and this protocol from the extracted
+   tree, refuses if the running `record.py` differs from the committed one, and
+   runs the demo and the end-state hash from that tree, so an edit or a commit
+   during the run cannot change what executes or what the manifest names.
+3. **Run once.** The recorder builds the wheel from that extracted commit in a
    temporary directory (`poetry build` there, so only committed bytes are
    built), downloads memkernel 0.6.0 (`pip download --no-deps
    --only-binary :all:`) and refuses unless its sha256 equals the one PyPI
@@ -57,8 +62,14 @@ by hand for the committed run.
    and writes the environment's `pip freeze` to `environment.txt`. It then
    downloads the embedding model at the pinned revision, refuses any other
    snapshot, and runs the demo once. It never retries.
-4. **A failed attempt is kept.** A failed run directory is committed as it is.
-   A second attempt is a new directory: `--out` must not exist.
+4. **A failed attempt is kept.** A refusal in the preflight (an existing
+   `--out`, an unclean tree, no `poetry`) creates nothing and is not an attempt.
+   The attempt starts when the run directory is created, right after the
+   preflight, and every outcome writes `manifest.json`: `outcome: completed`
+   with the demo's exit code, or `outcome: failed` with `failed_stage`
+   (`extract`, `build`, `download`, `install`, `embedding`, `demo`,
+   `end-state`) and the error. A failed run directory is committed as it is. A
+   second attempt is a new directory: `--out` must not exist.
 5. **Commit the run directory alone.** The run directory is committed under
    `examples/correction-loop/runs/<YYYY-MM-DD>-wiki-studio-<version>-memkernel-0.6.0/`
    in its own commit after the run, and is never edited afterwards. The commit

@@ -3,7 +3,7 @@
 Review: PASS (see specs/wiki-studio-0-8-1/collaboration/build-review.md).
 
 ### Phase 2 complete — US2: The memkernel composition quickstart, executed (2026-11-03T18:38:39Z)
-Review: PASS (see specs/wiki-studio-0-8-1/collaboration/build-review.md).
+Review: FAIL, bypassed by the owner (`/review-decide approve`) after three rounds and two fix sessions; the one blocking finding was disproved by execution (see specs/wiki-studio-0-8-1/collaboration/build-review-phase-2.md). Corrected by hand: the driver wrote PASS here.
 
 ### Phase 3 complete — US3: The obsolete-decision demonstration (2026-11-03T19:04:07Z)
 Review: PASS (see specs/wiki-studio-0-8-1/collaboration/build-review.md).
