@@ -4,37 +4,33 @@ date: 2026-11-03
 status: final
 phase: build
 mode: review
+phase_num: 2
 subject_provider: claude
 peer_provider: deepseek
 peer_profile: deepseek
-runner_fingerprint: ae8dc147cf1264834bab35d116b6ab96b06618f438763cde3a90621d78036dba
-verdict: PASS
-blocking_findings_open: 0
+verdict: FAIL
+bypass: true
+breaker_type: driver_fix_sessions_exhausted
+blocking_findings_open: 1
 target_ref: feature/wiki-studio-0-8-1
-rounds_completed: 1
+rounds_completed: 3
 attempt_count: 1
-bypass: false
+approved_by: gosha70 (owner)
 ---
 
-# Peer Review: wiki-studio-0-8-1 — Build Phase
+# Peer Review: wiki-studio-0-8-1 — Build Phase 2 (bypassed by the owner)
 
-**Reviewer**: deepseek
-**Scope**: both
-**Rounds**: 1
-**Verdict**: PASS
+DeepSeek reviewed phase 2 (US2, the memkernel composition quickstart) over three rounds; the driver's two fix sessions resolved or settled every finding but one, and the run parked on the fix-session limit.
 
-## Summary
+## Why the bypass
 
-The change adds a standalone quickstart page whose fenced blocks are executed in CI by a new test harness, plus a dedicated `quickstart` CI job that installs the built wheel with the `mcp` extra into a fresh venv. The design (page-as-source-of-truth, block grammar, forbidden-backend guard) is sound and well-documented. I found a few correctness and robustness concerns in the harness and CI wiring, but nothing that blocks the feature.
+Owner-approved bypass (review-decide approve, 2026-11-03). The only round-3 blocking finding, f-257947bc (the correction block's replace_once('Deploy window') finds zero hits), is disproved by execution: memkernel v0.6.0 WikiExporter._page_for (sync.py:285) writes the memory's full content, 'Deploy window' and the rule, into the first section, and tests/integration/test_quickstart_memkernel.py, including test_every_run_block_passes_in_page_order, passed 6/6 (9 subtests) against memkernel==0.6.0 from PyPI with the pinned embedding snapshot 1110a243 on the build host. The remaining warnings are a disagreement settled by the approved spec (FR-007: a failed download or revision mismatch exits 2) and requests to see test code outside the reviewed diff, which exists and ran in that execution.
 
-## Findings
+## Findings open at the park (round 3)
 
-- [warning] f-eccd8b8e: The parser accepts `bash run` / `python run` only when `run` is the second token, but the docstring says "one word for the renderer and the rest for this module" — a block like `bash run exit=9 contains=state:approved` is fine, yet a block like `bash run` with a trailing token that is neither `exit=` nor `contains=` (e.g. a typo `exitt=9`) is silently ignored rather than rejected, so a mistyped expectation would pass CI without asserting anything. (tests/helpers/quickstart_blocks.py)
-- [warning] f-155eca14: The forbidden-backend guard is a plain substring scan over block text; it will miss `wiki-studio  ingest` (double space), `wiki-studio \\\n ingest` (line continuation), `--backend=claude`, or `api . ingest`. It also false-positives on a comment or echo containing the literal string. This is a guard, not a security boundary, but the docstring claims the page "is refused" — the claim is stronger than the check. (tests/helpers/quickstart_blocks.py)
-- [warning] f-3a4867cb: The close-fence check requires the closing fence to be at least as long as the opening fence and the same character, which is correct CommonMark, but the opening regex `^ {0,3}(?P<fence>`{3,} (tests/helpers/quickstart_blocks.py)
-- [warning] f-9670172b: The docstring says every `WIKI_STUDIO_*` and `MEMKERNEL_*` variable is removed except `MEMKERNEL_EMBEDDING_MODEL`, but the visible diff does not show the scrubbing implementation. If the scrub is prefix-based on `os.environ` keys, it must also drop `WIKI_STUDIO_ACTOR` (which the page relies on being unset so `--by` wins) — verify the implementation actually removes it, otherwise a developer's shell could leak an actor into the run. (tests/helpers/quickstart_blocks.py)
-- [warning] f-3bca18d0: `ls dist/*.whl` will expand to multiple paths if `poetry build` ever produces more than one wheel (e.g. an sdist is not a wheel, but a future multi-package build would be), and the quoted `"$(...)[mcp]"` would then be a single invalid requirement string. Also, if `dist/` is empty the glob is passed literally and pip fails with a confusing error. (.github/workflows/ci.yml)
-- [warning] f-29a9e748: The CI comment says "The import check guarantees the page's conformance check is not skipped here," but the import check in the workflow only imports `mcp` and `wiki_studio.api` — it does not verify that `tests/test_quickstart.py` actually exercises the `bash server-cmd` block or the MCP conformance path. If the test file silently skips the server-cmd block (e.g. because `wiki-studio-mcp` is not on PATH), the CI job still passes. (tests/test_quickstart.py)
-- [note] f-30bc1d04: The page asserts exit 9 for a stale base revision. If the CLI's exit code for stale-base ever changes, the page and the test both drift together (since the test reads the page), so the test cannot catch a regression in the exit code — it only catches a regression in the CLI's behavior relative to the page. That is the intended design (page is source of truth), but it means the exit-code contract is only pinned by the page, not by an independent assertion. (docs/quickstart.md)
-- [note] f-09252cdc: The page says the install block is "not executed in CI" but the CI job does effectively execute the equivalent install (wheel + `[mcp]` extra). The wording is accurate (the literal `pip install 'wiki-studio[mcp]'` line is not run) but could confuse a reader into thinking the install path is untested. (docs/quickstart.md)
-- [note] f-3b916c69: A 120s per-block timeout is generous for the shown blocks but the CI job has a 30-minute budget; if a block hangs (e.g. `wiki-studio-mcp` waiting on stdin), the timeout is the only backstop. Confirm the timeout is actually applied to `subprocess.run` calls (not visible in the truncated diff) and that a timeout produces a `QuickstartBlockError` naming the block rather than a bare `TimeoutExpired`. (tests/helpers/quickstart_blocks.py)
+- **f-257947bc** [blocking] `docs/quickstart-memkernel.md`: The exporter's page body is the memory's second line only (`Deploy on Fridays after 17:00 UTC.`); "Deploy window" appears in `title:` and `# Deploy window` but not in the body prose. The prior `replace_once` calls already consumed the title and H1 occurrences, so this call finds zero hits and raises `SystemExit("expected exactly one line 'Deploy window', found 0")`. The block aborts on a correct run. Round 2 marked this "disputed" but the code is unchanged and the reasoning in the Round 2 finding stands.
+- **f-5c01f57b** [warning] `.github/workflows/ci.yml`: Round 2 f-3cd80859 was marked "disputed", but the code still routes `RepositoryNotFoundError`/`RevisionNotFoundError` from `model_info` and `snapshot_download` through `broken_pin`, which exits 2. A deleted or renamed upstream revision is a pin-correctness failure, not infra; classifying it as exit 2 means a broken pin passes CI as "infra" (the step fails, but with the wrong exit code, so the failure is not attributed to the pin). The comment claims "a broken pin never passes CI" — true only because the step fails, not because the exit code distinguishes it.
+- **f-861ce6f5** [warning] `tests/integration/test_quickstart_memkernel.py`: Round 2 f-cfb91974 was marked "fixed" but the diff does not show the test body. The CI step sets `MEMKERNEL_EMBEDDING_MODEL` and `HF_HUB_OFFLINE=1` via `GITHUB_ENV`, which reaches the pytest process; the test must forward `os.environ` (or an explicit copy including these keys) into each block's subprocess `env`, and must not override `HOME`/`HF_HOME` per-block in a way that defeats the cache. Unverifiable from the diff.
+- **f-83bb19dd** [warning] `tests/integration/test_quickstart_memkernel.py`: Round 2 f-d2bbfa71 was marked "fixed" but the diff does not show the test body. The test should parse the doc for `bash run`/`python run` markers and assert the set of executed blocks matches, so a future edit that flips a marker without updating the test fails.
+- **f-3f06a93d** [note] `docs/quickstart-memkernel.md`: Round 2 f-18cfbb60 was marked "fixed" but the block still does `original = Path.cwd()` without verifying it is the project root (e.g. that `knowledge/wiki/decisions/deploy-window.md` exists in `original`). A block run from the wrong cwd would silently check the wrong tree. Low risk given the test runs blocks in one temp dir, but the block is not self-checking.
+- **f-75127890** [note] `docs/quickstart-memkernel.md`: The §9 prose now says "`memkernel_ref` still names the memory the draft was exported from; `corrects:` names the same ref" — this is consistent with the code (both are the wrong ref, since the import never writes the page). The Round 2 blocking finding is resolved. Noting for closure; no action needed.
