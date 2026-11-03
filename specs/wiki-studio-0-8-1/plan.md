@@ -3,7 +3,7 @@ spec_mode: full
 feature_id: wiki-studio-0-8-1
 risk_category: feature
 justification: "No runtime code changes, but the release is the roadmap's Launch sequence step 2 and closes issue #10: two quickstarts whose commands are extracted from the pages and executed on clean installs (one against memkernel 0.6.0 from PyPI with a pinned embedding model), a stated and executed commit policy, an example script with a recorder that binds a recorded run to the exact bytes it executed, three new blocking CI jobs, a measurement design for memkernel, and GitHub issue texts written by the build and filed in one interactive step after it; a full spec pins the run-block grammar, the commit policy path by path, the recorded run's binding order, the claim wording, the frozen files and the cut order before an unattended build."
-status: draft
+status: approved
 date: 2026-11-03
 collaboration_mode: single
 origin:
