@@ -152,7 +152,7 @@ constant moves.
 ### US5: Closing issue #10, the launch docs and release 0.8.1 (Priority: MEDIUM)
 
 **Given** the published 0.5.0 run, the design (or what of it ships), and green runs of the new jobs
-**When** the build updates the README, the roadmap, the compatibility matrix and the CHANGELOG, files the memkernel issue (D4) and the successor issue, and comments on #10
+**When** the build updates the README, the roadmap, the compatibility matrix and the CHANGELOG and writes the memkernel issue's text (D4), the successor issue's text and the #10 comment, which one interactive step after the build files in that order before the PR merges (FR-025)
 **Then** README Evidence restates what 0.5.0 shows (a ceiling, no claim, tokens not comparable) with links to the demo and the design; the roadmap says the 0.5.0 run is at ceiling and no governed-composition measurement able to discriminate the arms has been run; #10 carries the restating comment and closes with a successor issue that links the memkernel issue (D6); and 0.8.1 is prepared with exit codes, the API and the page schema unchanged
 
 ## Requirements
