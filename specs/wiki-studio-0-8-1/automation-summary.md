@@ -17,3 +17,5 @@ Review: PASS (see specs/wiki-studio-0-8-1/collaboration/build-review.md).
 ## Run complete (2026-11-03T19:33:38Z)
 Profile: pr — branch feature/wiki-studio-0-8-1 pushed to origin; a pull request tracks the work (the driver never merges).
 Review artifacts: specs/wiki-studio-0-8-1/collaboration/.
+
+Outcome: PR #74 opened (https://github.com/gosha70/wiki-studio/pull/74); merge: not in this profile (pr).
