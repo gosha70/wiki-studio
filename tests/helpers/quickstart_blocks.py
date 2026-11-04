@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import os
 import re
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -44,6 +45,7 @@ _SERVER_COMMAND_INFO = ("bash", "server-cmd")
 _FORBIDDEN_IN_RUN_BLOCKS = ("wiki-studio ingest", "wiki-studio query", "--backend", "api.ingest", "api.query")
 _OPEN_FENCE = re.compile(r"^ {0,3}(?P<fence>`{3,}|~{3,})(?P<info>.*)$")
 _CLOSE_FENCE = re.compile(r"^ {0,3}(?P<fence>`{3,}|~{3,})\s*$")
+_PIP_INSTALL_LINE = re.compile(r"^\s*(?:\S*/)?pip\s+install\s")
 
 
 class QuickstartPageError(ValueError):
@@ -205,6 +207,22 @@ def server_command(markdown: str) -> str:
     if len(commands) != 1:
         raise QuickstartPageError(f"the page must have exactly one 'bash server-cmd' block, found {len(commands)}")
     return commands[0]
+
+
+def pip_install_commands(markdown: str) -> list[list[str]]:
+    """The arguments of every ``pip install`` line in the page's bash blocks, run or not, in page order.
+
+    ``pip`` may be given by a path (``~/.venvs/x/bin/pip``). CI resolves each list with
+    ``pip install --dry-run``, so an install line that cannot be installed as written fails there.
+    """
+    commands: list[list[str]] = []
+    for block in parse_fenced_blocks(markdown):
+        if block.info.split()[:1] != ["bash"]:
+            continue
+        for line in block.text.splitlines():
+            if _PIP_INSTALL_LINE.match(line):
+                commands.append(shlex.split(line, comments=True)[2:])
+    return commands
 
 
 def child_environment() -> dict[str, str]:
