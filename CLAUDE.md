@@ -68,10 +68,12 @@ examples/correction-loop/  the correction-loop demo, its recorder and its protoc
 - Defaults reproduce `code-copilot-team`'s layout (`knowledge/wiki`, `doc_internal/proposals`) so its wrapper is `exec wiki-studio "$@"`; every path is overridable by flag and `WIKI_STUDIO_*` environment variable.
 - The page schema (frontmatter keys, page types, directories) is a published contract shared with memkernel's `WikiExporter`/`WikiImporter`; changing it needs a decision record in `docs/adr/`.
 - Coverage ≥ 80 percent; CLI tests call `wiki_studio.cli.main(argv)` in-process except one subprocess smoke test.
+- A command a user-facing page shows is checked even when CI does not run it: "not executed in CI" is a label, not an exemption. Every `pip install` line in README.md, docs/quickstart.md, docs/mcp-adapter.md and docs/quickstart-memkernel.md is resolved as written (`pip install --dry-run`) by the `quickstart-memkernel` job; a new page with install lines joins that job's list. Other shown commands get the cheapest real check that applies (`--help` for a CLI line, a parse for a config block).
 
 ## Working rules
 
 - Read `specs/<feature-id>/spec.md` and `plan.md` before changing behaviour; keep each change to one phase of `tasks.md`; do not edit `specs/` except artifacts the phase owns.
 - Do not commit, push, or change branches inside an auto-build session; the driver owns git.
+- A pull request merges only with the `reviewed` label, added after the external review of its current head (check the reviewer's verdict names the head commit the gate logs); a new commit removes it. `.github/workflows/review-gate.yml` runs main's copy (`pull_request_target`) and sets the commit status "External review on record" on the head.
 - Update `CHANGELOG.md` under `[Unreleased]` for user-visible changes; bump `pyproject.toml` and `src/wiki_studio/__init__.py` together.
 - Report test failures and skipped steps plainly; never skip or weaken a test to get green.
