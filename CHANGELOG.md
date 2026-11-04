@@ -4,6 +4,24 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- The composition quickstart's install line could not be installed.
+  `docs/quickstart-memkernel.md` in 0.8.1 put `memkernel[wiki]==0.6.0` and
+  `wiki-studio[mcp]==0.8.1` in one `pip install`. pip refuses that pair
+  (`ResolutionImpossible`): memkernel 0.6.0 requires `mcp>=1.25,<2` and the
+  `mcp` extra requires `mcp>=2.3,<3`. CI never ran the line; its job installs
+  the wheel without the extra. The page now installs memkernel with base
+  wiki-studio, installs `wiki-studio[mcp]` in a second environment for
+  `wiki-studio-mcp`, and registers that server by its absolute path.
+  `docs/compatibility.md` states the constraint. The `quickstart-memkernel`
+  job now resolves every `pip install` line on the page as written with
+  `pip install --dry-run` (`tests/helpers/quickstart_blocks.py`,
+  `pip_install_commands`), and a page test pins the two lines. Reported from
+  the memkernel.dev page update.
+
 ## [0.8.1] — 2026-11-04
 
 Release B's launch: the two quickstarts, the obsolete-decision demonstration

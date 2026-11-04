@@ -29,6 +29,7 @@ from tests.helpers.quickstart_blocks import (
     child_environment,
     parse_fenced_blocks,
     parse_run_blocks,
+    pip_install_commands,
     run_quickstart,
     server_command,
 )
@@ -175,6 +176,21 @@ class RunBlockGrammarTest(_PageCase):
                 page = self.write_page(f"```bash run\n{line}\n```\n")
                 with self.assertRaises(QuickstartPageError):
                     parse_run_blocks(page.read_text(encoding="utf-8"))
+
+
+class PipInstallCommandsTest(unittest.TestCase):
+    """The page's install lines, read for CI's dry-run resolution."""
+
+    def test_install_lines_in_bash_blocks_are_read_in_page_order(self) -> None:
+        page = (
+            "```bash\npip install 'a[x]==1' b\npython -c 'import a'\n```\n"
+            "```json\npip install not-a-command\n```\n"
+            "```bash run\n~/.venvs/v/bin/pip install 'c[y]==2'  # a comment\n```\n"
+        )
+        self.assertEqual(pip_install_commands(page), [["a[x]==1", "b"], ["c[y]==2"]])
+
+    def test_a_page_without_install_lines_has_none(self) -> None:
+        self.assertEqual(pip_install_commands("```bash run\nwiki-studio init\n```\n"), [])
 
 
 class ServerCommandTest(_PageCase):

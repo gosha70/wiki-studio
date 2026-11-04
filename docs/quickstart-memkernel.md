@@ -18,16 +18,29 @@ it (the loop test drives the same calls the same way).
 
 ## Install
 
-Python 3.11–3.13. memkernel's `wiki` extra installs the wiki-studio floor the
-gate needs; wiki-studio's `mcp` extra adds the MCP server `wiki-studio-mcp`.
+Python 3.11–3.13. Install memkernel with its `wiki` extra and base
+wiki-studio into one environment. The `wiki` extra installs the wiki-studio
+floor the gate needs, and wiki-studio's CLI is the curator's tool. The bridge
+does not use wiki-studio's MCP server.
 
 ```bash
-pip install 'memkernel[wiki]==0.6.0' 'wiki-studio[mcp]==0.8.1'
+pip install 'memkernel[wiki]==0.6.0' 'wiki-studio==0.8.1'
 python -c "import memkernel.wiki.sync, wiki_studio.api"
 ```
 
-Not executed in CI: the `quickstart-memkernel` job installs the built wheel and
-`memkernel==0.6.0` from PyPI into a fresh virtual environment. memkernel loads
+wiki-studio's MCP server, `wiki-studio-mcp`, needs its `mcp` extra in a
+second environment. memkernel 0.6.0 requires `mcp>=1.25,<2` and the extra
+requires `mcp>=2.3,<3`, so pip cannot install both into one environment. Both
+environments work on the same wiki on disk.
+
+```bash
+python -m venv ~/.venvs/wiki-studio-mcp
+~/.venvs/wiki-studio-mcp/bin/pip install 'wiki-studio[mcp]==0.8.1'
+```
+
+Not executed in CI: the `quickstart-memkernel` job resolves both `pip install`
+lines as written with `pip install --dry-run`, then installs the built wheel
+and `memkernel==0.6.0` from PyPI into a fresh virtual environment. memkernel loads
 `all-MiniLM-L6-v2` (about 90 MB) on the first `build_service()`; the job
 downloads the model once at revision
 `1110a243fdf4706b3f48f1d95db1a4f5529b4d41` and runs the page with
@@ -55,15 +68,15 @@ and approval stay with the curator's CLI.
       }
     },
     "wiki-studio": {
-      "command": "wiki-studio-mcp",
+      "command": "/Users/you/.venvs/wiki-studio-mcp/bin/wiki-studio-mcp",
       "args": ["--root", "/path/to/project", "--disable-tool", "promote"]
     }
   }
 }
 ```
 
-Use an absolute `command` for memkernel: a host does not necessarily see the
-`PATH` your shell profile sets.
+Use an absolute `command` for both servers. Each runs from its own environment,
+and a host does not necessarily see the `PATH` your shell profile sets.
 
 Not executed in CI: Kiro reads the same two entries from
 `.kiro/settings/mcp.json`; memkernel's
