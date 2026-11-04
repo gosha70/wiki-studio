@@ -6,9 +6,23 @@ name: Release to PyPI
 # One-time setup: on pypi.org add a pending publisher for project `wiki-studio`,
 # owner `gosha70`, repository `wiki-studio`, workflow `release.yml`, environment
 # `pypi`; in this repository create the `pypi` environment.
-# Each release: bump `version` in pyproject.toml and `src/wiki_studio/__init__.py`,
-# update CHANGELOG.md, merge, then
-#   git tag -a vX.Y.Z -m "wiki-studio X.Y.Z" && git push origin vX.Y.Z
+# Each release:
+#   1. Bump `version` in pyproject.toml and `src/wiki_studio/__init__.py` together, and
+#      any `==X.Y.Z` pins on docs/quickstart-memkernel.md (CI resolves them against the
+#      built wheel). Date the CHANGELOG heading with the UTC date of the tag. Merge.
+#   2. Check main's CI is green on the exact commit to be tagged, then
+#        git tag -a vX.Y.Z -m "wiki-studio X.Y.Z" <commit> && git push origin vX.Y.Z
+#   3. When this workflow passes, download its `dist` artifact
+#      (`gh run download <run id>`) and compare each file's sha256 with PyPI's
+#      (https://pypi.org/pypi/wiki-studio/X.Y.Z/json, `.urls[].digests.sha256`).
+#   4. Write the release notes: the project page link, one paragraph, then the
+#      CHANGELOG's [X.Y.Z] section verbatim, with every relative link rewritten to
+#      https://github.com/gosha70/wiki-studio/blob/vX.Y.Z/<path> (a relative link
+#      does not resolve on a release page).
+#   5. gh release create vX.Y.Z --verify-tag --latest --title "wiki-studio X.Y.Z" \
+#        --notes-file <notes> <dist>/wiki_studio-X.Y.Z-py3-none-any.whl <dist>/wiki_studio-X.Y.Z.tar.gz
+#   6. Download both files back from the release page and check their sha256
+#      against PyPI's again.
 
 on:
   push:

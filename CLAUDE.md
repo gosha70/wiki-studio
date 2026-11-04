@@ -68,6 +68,7 @@ examples/correction-loop/  the correction-loop demo, its recorder and its protoc
 - Defaults reproduce `code-copilot-team`'s layout (`knowledge/wiki`, `doc_internal/proposals`) so its wrapper is `exec wiki-studio "$@"`; every path is overridable by flag and `WIKI_STUDIO_*` environment variable.
 - The page schema (frontmatter keys, page types, directories) is a published contract shared with memkernel's `WikiExporter`/`WikiImporter`; changing it needs a decision record in `docs/adr/`.
 - Coverage ≥ 80 percent; CLI tests call `wiki_studio.cli.main(argv)` in-process except one subprocess smoke test.
+- A command a user-facing page shows is checked even when CI does not run it: "not executed in CI" is a label, not an exemption. Every `pip install` line in README.md, docs/quickstart.md, docs/mcp-adapter.md and docs/quickstart-memkernel.md is resolved as written (`pip install --dry-run`) by the `quickstart-memkernel` job; a new page with install lines joins that job's list. Other shown commands get the cheapest real check that applies (`--help` for a CLI line, a parse for a config block).
 
 ## Working rules
 

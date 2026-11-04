@@ -256,10 +256,11 @@ jobs:
       - uses: snok/install-poetry@v1
       - name: Build the wheel
         run: poetry build
-      - name: Resolve the page's pip install lines as written
-        # Each install line on docs/quickstart-memkernel.md, run or not, resolved by pip
+      - name: Resolve the docs' pip install lines as written
+        # Each install line the user-facing pages show, run or not, resolved by pip
         # against PyPI and the built wheel. A line pip cannot install as written (such
-        # as memkernel 0.6.0, which requires mcp<2, beside wiki-studio[mcp]) fails here.
+        # as memkernel 0.6.0, which requires mcp<2, beside wiki-studio[mcp]) fails here,
+        # and so does a listed page with no install line the helper can read.
         run: |
           python -m venv /tmp/resolve-install
           /tmp/resolve-install/bin/pip install --quiet --upgrade pip
@@ -270,13 +271,15 @@ jobs:
 
           from tests.helpers.quickstart_blocks import pip_install_commands
 
-          commands = pip_install_commands(Path("docs/quickstart-memkernel.md").read_text(encoding="utf-8"))
-          if not commands:
-              sys.exit("docs/quickstart-memkernel.md has no pip install line")
-          for args in commands:
-              print("resolving: pip install", *args, flush=True)
-              pip = ["/tmp/resolve-install/bin/pip", "install", "--dry-run", "--quiet", "--find-links", "dist/"]
-              subprocess.run([*pip, *args], check=True)
+          PAGES = ["README.md", "docs/quickstart.md", "docs/mcp-adapter.md", "docs/quickstart-memkernel.md"]
+          pip = ["/tmp/resolve-install/bin/pip", "install", "--dry-run", "--quiet", "--find-links", "dist/"]
+          for page in PAGES:
+              commands = pip_install_commands(Path(page).read_text(encoding="utf-8"))
+              if not commands:
+                  sys.exit(f"{page} has no pip install line")
+              for args in commands:
+                  print(f"{page}: resolving: pip install", *args, flush=True)
+                  subprocess.run([*pip, *args], check=True)
           EOF
       - name: Install the wheel, pytest and the pinned memkernel release into a fresh virtual environment
         run: |
