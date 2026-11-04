@@ -2,7 +2,7 @@
 pitch_id: 10-release-b-launch-and-measurement
 title: "Release B launch and the integration measurement, wiki-studio side: two quickstarts executed on clean installs, a recorded obsolete-decision correction, a design for a governed-composition measurement that can discriminate, and an honest close of issue #10"
 appetite: 2w
-bet_status: building
+bet_status: shipped
 cycle: "04"
 circuit_breaker: "Core is S1, S2 and S3: the two quickstarts and the correction demonstration, each executed on a clean install. They ship alone if the cycle runs out. S4, the measurement design, is the stretch and is cut first. End of week 1: if S1-S3 are not downhill, S4 shrinks to the ceiling analysis and the dependency list, filed as one memkernel issue, with no arm or task drafts. The measurement run itself (memkernel's suite, its preregistration and its budget) is not this cycle's exit evidence and does not start here. Issue #10 closes only by restating what the published 0.5.0 run shows (a ceiling, no claim) and naming a successor issue; otherwise it stays open. It never closes on a claim. Never, to save time: change behaviour under src/ or an exit code, add a dependency, edit the frozen 0.4.1 arm files or a frozen run, hand-edit a recorded run, put a model backend on an executed path, write runner or statistics code, or state a gain without a preregistered run."
 shaped_by: "pitch-shaper (Claude Code) for gosha70"
@@ -517,3 +517,4 @@ Answered 2026-11-03; the answers are recorded in D1-D6. Asked as:
 | 2026-11-03 | shaped (revised, 3) | PR #68 recheck: the two remaining no-`src/` sentences (appetite rationale, D13) use the same contract as the solution shape and no-gos: no runtime behaviour or API change, the version constant moves with the release. |
 | 2026-11-03 | bet | Bet for cycle 04. |
 | 2026-11-03 | building | Cycle 04 started; hill chart initialized. |
+| 2026-11-04 | shipped | Cycle 04 closed. Shipped in 0.8.1 (2026-11-04, tag on 44e50a0): build PR #74 (#10 closed by restatement; successor #75, memkernel #90), evidence PR #76 (the recorded correction-loop run, the demo quotes, the tested compatibility row), PR #77 (CHANGELOG dated). All five scopes done, S4 stretch included; the hill was not updated during the cycle (auto-build driver), set to done at close. |

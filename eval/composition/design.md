@@ -3,7 +3,9 @@
 **Status: design only.** This document states what a measurement able to
 discriminate the arms would need and what memkernel's published 0.5.0 run
 shows. It preregisters, runs and budgets nothing, and it is not evidence for
-or against any arm. Written 2026-11-03 for wiki-studio 0.8.1.
+or against any arm. Written 2026-11-03 for wiki-studio 0.8.1. Updated
+2026-11-04, after it was filed as memkernel #90: §4's adoption row names the
+recorded run, committed since; nothing else changed.
 
 The comparison it works toward is the one in
 [`docs/roadmap.md`](../../docs/roadmap.md#evidence): agent, model, task set
@@ -322,7 +324,7 @@ supporting data, never a substitute for these records.
 | Can changes be explained | Counted from the end state with `review_state` and `findings`: the receipts, approval records, `.audit/` and page sources of §3.4 for every accepted revision. No new code; `docs/demo-correction-loop.md` shows the records exist for one chain. |
 | Does failure recovery work | The loop test's retry property — a promote interrupted after its commit resolves from its receipt, and export or import run twice creates no duplicates — plus the Release A regression tests under controlled faults. Not an agent run ([`test_release_b_loop.py`](../../tests/integration/test_release_b_loop.py)). |
 | What does curation cost | memkernel's token receipts, which need the per-group table of §5; the receipts and approval records give queue age (a receipt's `committed_at` to the approval record's `timestamp`) and the proposer, promoter and approver. Wall times are machine time on the measured path. |
-| Can others adopt it | The demonstration's machine times now (the `demo-correction-loop` job, and the recorded run once the evidence PR commits it), labeled as machine time, in [`docs/demo-correction-loop.md`](../../docs/demo-correction-loop.md); a pilot (the roadmap's Launch sequence step 3) for people. |
+| Can others adopt it | The demonstration's machine times now (the `demo-correction-loop` job, and the recorded run committed at `examples/correction-loop/runs/2026-11-04-wiki-studio-0.8.1-memkernel-0.6.0/`), labeled as machine time, in [`docs/demo-correction-loop.md`](../../docs/demo-correction-loop.md); a pilot (the roadmap's Launch sequence step 3) for people. |
 
 ## 5. Dependencies on memkernel
 
