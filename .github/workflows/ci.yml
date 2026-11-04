@@ -256,6 +256,28 @@ jobs:
       - uses: snok/install-poetry@v1
       - name: Build the wheel
         run: poetry build
+      - name: Resolve the page's pip install lines as written
+        # Each install line on docs/quickstart-memkernel.md, run or not, resolved by pip
+        # against PyPI and the built wheel. A line pip cannot install as written (such
+        # as memkernel 0.6.0, which requires mcp<2, beside wiki-studio[mcp]) fails here.
+        run: |
+          python -m venv /tmp/resolve-install
+          /tmp/resolve-install/bin/pip install --quiet --upgrade pip
+          python - <<'EOF'
+          import subprocess
+          import sys
+          from pathlib import Path
+
+          from tests.helpers.quickstart_blocks import pip_install_commands
+
+          commands = pip_install_commands(Path("docs/quickstart-memkernel.md").read_text(encoding="utf-8"))
+          if not commands:
+              sys.exit("docs/quickstart-memkernel.md has no pip install line")
+          for args in commands:
+              print("resolving: pip install", *args, flush=True)
+              pip = ["/tmp/resolve-install/bin/pip", "install", "--dry-run", "--quiet", "--find-links", "dist/"]
+              subprocess.run([*pip, *args], check=True)
+          EOF
       - name: Install the wheel, pytest and the pinned memkernel release into a fresh virtual environment
         run: |
           python -m venv /tmp/quickstart-memkernel

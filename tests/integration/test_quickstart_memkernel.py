@@ -26,7 +26,7 @@ import sys
 import unittest
 from pathlib import Path
 
-from tests.helpers.quickstart_blocks import child_environment, parse_run_blocks, run_quickstart
+from tests.helpers.quickstart_blocks import child_environment, parse_run_blocks, pip_install_commands, run_quickstart
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 QUICKSTART = REPO_ROOT / "docs" / "quickstart-memkernel.md"
@@ -51,6 +51,12 @@ EXPECTED_RUN_BLOCKS = [
     (10, "python", 0, "right-rule-current"),
     (11, "bash", 0, None),
     (12, "python", 0, "handoff-ok"),
+]
+# The page's install lines: memkernel with base wiki-studio, then the MCP extra in its own
+# environment (memkernel 0.6.0 requires mcp<2, the extra mcp>=2.3). CI resolves each one.
+EXPECTED_INSTALL_COMMANDS = [
+    ["memkernel[wiki]==0.6.0", "wiki-studio==0.8.1"],
+    ["wiki-studio[mcp]==0.8.1"],
 ]
 
 
@@ -78,6 +84,16 @@ class QuickstartMemkernelPageTest(unittest.TestCase):
                     elif isinstance(node, ast.ImportFrom) and node.module:
                         roots.add(node.module.split(".")[0])
                 self.assertLessEqual(roots, ALLOWED_IMPORT_ROOTS, f"block {block.index} imports {sorted(roots)}")
+
+    def test_the_page_installs_the_mcp_extra_apart_from_memkernel(self) -> None:
+        commands = pip_install_commands(QUICKSTART.read_text(encoding="utf-8"))
+        self.assertEqual(commands, EXPECTED_INSTALL_COMMANDS)
+        for args in commands:
+            with self.subTest(command=args):
+                together = any(arg.startswith("memkernel") for arg in args) and any(
+                    arg.startswith("wiki-studio[mcp]") for arg in args
+                )
+                self.assertFalse(together, "memkernel 0.6.0 and wiki-studio[mcp] cannot resolve in one environment")
 
     def test_the_setup_block_writes_the_stated_gitignore(self) -> None:
         blocks = parse_run_blocks(QUICKSTART.read_text(encoding="utf-8"))
