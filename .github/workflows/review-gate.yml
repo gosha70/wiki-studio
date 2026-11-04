@@ -1,0 +1,51 @@
+# Copyright (c) 2026 EGOGE
+# SPDX-License-Identifier: Apache-2.0
+name: Review gate
+
+# A pull request merges only after the external review of its head commit is on
+# record. The owner adds the `reviewed` label once the reviewer has passed the
+# current head; any new commit removes the label, so the check fails again until
+# the new head is reviewed and labelled. Branch protection on `main` requires the
+# check "External review on record".
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: review-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review-gate:
+    name: External review on record
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR: ${{ github.event.pull_request.number }}
+      ACTION: ${{ github.event.action }}
+      HEAD: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: A new commit drops the review label
+        if: github.event.action == 'synchronize'
+        run: |
+          if gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json labels --jq '.labels[].name' | grep -qx reviewed; then
+            gh pr edit "$PR" --repo "$GITHUB_REPOSITORY" --remove-label reviewed
+            echo "Removed 'reviewed': head $HEAD has not been reviewed."
+          fi
+      - name: Require the review label on this head
+        run: |
+          if [ "$ACTION" = "synchronize" ]; then
+            echo "Head $HEAD is new; add the 'reviewed' label after its external review." >&2
+            exit 1
+          fi
+          if gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json labels --jq '.labels[].name' | grep -qx reviewed; then
+            echo "External review on record for head $HEAD."
+          else
+            echo "No 'reviewed' label: add it after the external review of head $HEAD." >&2
+            exit 1
+          fi
