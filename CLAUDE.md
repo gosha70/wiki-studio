@@ -74,6 +74,6 @@ examples/correction-loop/  the correction-loop demo, its recorder and its protoc
 
 - Read `specs/<feature-id>/spec.md` and `plan.md` before changing behaviour; keep each change to one phase of `tasks.md`; do not edit `specs/` except artifacts the phase owns.
 - Do not commit, push, or change branches inside an auto-build session; the driver owns git.
-- A pull request merges only with the `reviewed` label, added after the external review of its current head; a new commit removes it (`.github/workflows/review-gate.yml`, check "External review on record").
+- A pull request merges only with the `reviewed` label, added after the external review of its current head (check the reviewer's verdict names the head commit the gate logs); a new commit removes it. `.github/workflows/review-gate.yml` runs main's copy (`pull_request_target`) and sets the commit status "External review on record" on the head.
 - Update `CHANGELOG.md` under `[Unreleased]` for user-visible changes; bump `pyproject.toml` and `src/wiki_studio/__init__.py` together.
 - Report test failures and skipped steps plainly; never skip or weaken a test to get green.
