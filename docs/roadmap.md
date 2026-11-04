@@ -209,8 +209,8 @@ run. The design is filed as [memkernel #90](https://github.com/gosha70/memkernel
    short demonstration of an obsolete decision corrected through a reviewed
    proposal and absent from the next session,
    [`docs/demo-correction-loop.md`](demo-correction-loop.md), run by the
-   `demo-correction-loop` CI job and once as a recorded run (pending, in the
-   evidence PR).
+   `demo-correction-loop` CI job and once as a recorded run, committed at
+   `examples/correction-loop/runs/2026-11-04-wiki-studio-0.8.1-memkernel-0.6.0/`.
 3. Pilot: three teams, one correction loop each, repeated across sessions.
    A validation target, not evidence of demand.
 4. After C: conformance fixtures, measured results, the adapter in

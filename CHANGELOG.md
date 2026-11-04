@@ -103,8 +103,8 @@ jobs and one example; no runtime behaviour, API or page schema change.
   run; Release B's docs line records the quickstarts.
 - `docs/compatibility.md` gains the 0.8.1 with memkernel 0.6.0 row, naming
   `memkernel-compat`, `memkernel-loop`, `quickstart-memkernel` and
-  `demo-correction-loop` (and `quickstart` for the standalone path), pending
-  a named green run on `main` (the evidence PR adds the run id).
+  `demo-correction-loop` (and `quickstart` for the standalone path), tested
+  green on `main` at `a0bd609` in CI run 41756738221 (named by the evidence PR).
 - The `memkernel-loop` test module docstring says the job is blocking since
   the 0.6.0 pin (no test body change); the CI `lint` job checks and
   format-checks `eval/` and `examples/`; `CLAUDE.md` lists

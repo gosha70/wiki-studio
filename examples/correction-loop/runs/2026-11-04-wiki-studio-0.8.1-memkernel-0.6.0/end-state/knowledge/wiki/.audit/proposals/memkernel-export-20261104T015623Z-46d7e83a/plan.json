@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "source_path": "memkernel wiki_export",
+  "backend": "memkernel",
+  "rationale": "",
+  "edits": [
+    {
+      "path": "decisions/deploy-window.md",
+      "action": "create",
+      "rationale": "memkernel export",
+      "preview": "preview/decisions/deploy-window.md"
+    },
+    {
+      "path": "index.md",
+      "action": "append-index",
+      "rationale": "memkernel export",
+      "preview": "preview/index.md"
+    },
+    {
+      "path": "log.md",
+      "action": "append-log",
+      "rationale": "memkernel export",
+      "preview": "preview/log.md"
+    }
+  ],
+  "proposer": {
+    "name": null,
+    "source": "none"
+  }
+}

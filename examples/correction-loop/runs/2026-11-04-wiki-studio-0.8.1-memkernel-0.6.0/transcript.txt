@@ -1,0 +1,88 @@
+W1103 20:56:11.227000 7318 /private/var/folders/7y/_v47p2q12qq_9gdj_5d9qk4c0000gn/T/wiki-studio-record-i_el1gku/venv/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 6231.89it/s]
+/var/folders/7y/_v47p2q12qq_9gdj_5d9qk4c0000gn/T/wiki-studio-record-i_el1gku/venv/lib/python3.12/site-packages/memkernel/retrieval/embeddings.py:21: FutureWarning: The `get_sentence_embedding_dimension` method has been renamed to `get_embedding_dimension`.
+  raw_dim = self._model.get_sentence_embedding_dimension()
+demo: running session-1
+W1103 20:56:19.585000 11272 /private/var/folders/7y/_v47p2q12qq_9gdj_5d9qk4c0000gn/T/wiki-studio-record-i_el1gku/venv/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
+ok: wiki-initialised
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 36040.15it/s]
+/var/folders/7y/_v47p2q12qq_9gdj_5d9qk4c0000gn/T/wiki-studio-record-i_el1gku/venv/lib/python3.12/site-packages/memkernel/retrieval/embeddings.py:21: FutureWarning: The `get_sentence_embedding_dimension` method has been renamed to `get_embedding_dimension`.
+  raw_dim = self._model.get_sentence_embedding_dimension()
+ok: wrong-decision-retained
+ok: wrong-rule-current
+ok: export-gated
+ok: one-draft-page
+ok: submission-digest-recorded
+ok: page-is-a-draft
+ok: page-names-the-wrong-memory
+ref_id: 83706b22-97c0-440b-a282-3c34a58b8c72
+page: decisions/deploy-window.md
+submission_digest: b8b6c899cb3cdbc057dbe0226aea29acccd5157a6f080e1a5359dc9ee13ca226
+demo: running curator
+ok: read-json-exit-0
+ok: page-names-the-wrong-memory
+ok: page-names-the-session-1-memory
+ok: correction-drafted
+ok: rule-replaced-in-title-heading-body
+ok: propose-and-promote-exit-0
+ok: approve-exit-0
+ok: receipt-archived
+ok: receipt-is-committed
+ok: receipt-names-the-curator
+ok: receipt-has-its-values
+ok: page-approved
+ok: approval-record-found
+ok: approval-record-names-the-curator
+ok: approval-record-has-a-timestamp
+ok: approval-bound-to-the-page
+receipt: proposal=2026-11-03-205624-correction submission_digest=0a3cf9737e3b2481d1d81f9c9c1af9d787570ad78919dc7bb4dd97f187bcb2eb actor=curator started_at=2026-11-04T01:56:24Z committed_at=2026-11-04T01:56:24Z
+approval: approver=curator timestamp=2026-11-04T01:56:24.793112Z
+demo: running session-2
+W1103 20:56:28.158000 12764 /private/var/folders/7y/_v47p2q12qq_9gdj_5d9qk4c0000gn/T/wiki-studio-record-i_el1gku/venv/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 11555.79it/s]
+/var/folders/7y/_v47p2q12qq_9gdj_5d9qk4c0000gn/T/wiki-studio-record-i_el1gku/venv/lib/python3.12/site-packages/memkernel/retrieval/embeddings.py:21: FutureWarning: The `get_sentence_embedding_dimension` method has been renamed to `get_embedding_dimension`.
+  raw_dim = self._model.get_sentence_embedding_dimension()
+ok: import-governed
+ok: one-page-imported
+ok: correction-recorded
+ok: right-answer-current
+ok: answer-is-the-page
+ok: page-approved
+ok: page-sha-beside-the-approved-sha
+ok: wrong-rule-not-current
+ok: old-record-kept
+ok: old-record-superseded-by-the-page
+ok: receipt-archived
+ok: receipt-values-visible
+ok: approval-record-found
+ok: approver-and-timestamp-visible
+answer: Deploy on Tuesdays before noon; never on Fridays.
+
+# Deploy on Tuesdays before noon; never on Fridays.
+
+## Decision
+
+Deploy on Tuesdays before noon; never on Fridays.
+
+Deploy on Tuesdays before noon; never on Fridays.
+
+## Context
+
+_Not recorded in memory — curate before marking this page stable._
+
+## Alternatives considered
+
+_Not recorded in memory — curate before marking this page stable._
+
+## Consequences
+
+_Not recorded in memory — curate before marking this page stable._
+page: decisions/deploy-window.md
+page_sha: 5ae74db850f60ffcd31a47d550cb72d29d3c98ce117e715a97a75336ee40b2d9
+approved_sha256: 5ae74db850f60ffcd31a47d550cb72d29d3c98ce117e715a97a75336ee40b2d9 (equal)
+submission_digest: 0a3cf9737e3b2481d1d81f9c9c1af9d787570ad78919dc7bb4dd97f187bcb2eb
+committed_at: 2026-11-04T01:56:24Z
+approver: curator
+timestamp: 2026-11-04T01:56:24.793112Z
+old record: 83706b22-97c0-440b-a282-3c34a58b8c72 superseded_by 40c9e325-511b-4d64-ab22-498067ee0090
+demo: every check passed

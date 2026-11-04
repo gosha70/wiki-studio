@@ -679,7 +679,8 @@ ceiling from the report's numbers and states what a task set and a versioned
 governed-composition arm need so the arms can differ; it is design only, not
 evidence for or against any arm. The
 [correction-loop demonstration](docs/demo-correction-loop.md) shows one
-governed chain end to end; its recorded run is pending. The discriminating
+governed chain end to end, and its recorded run is committed at
+`examples/correction-loop/runs/2026-11-04-wiki-studio-0.8.1-memkernel-0.6.0/`. The discriminating
 measurement is memkernel's to preregister and run: its design is filed as
 [memkernel #90](https://github.com/gosha70/memkernel/issues/90), and the successor issue [#75](https://github.com/gosha70/wiki-studio/issues/75) tracks it here. The texts are committed
 at

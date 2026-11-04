@@ -1,0 +1,95 @@
+{
+  "receipt_version": 1,
+  "state": "committed",
+  "proposal": "memkernel-export-20261104T015623Z-46d7e83a",
+  "submission_digest": "b8b6c899cb3cdbc057dbe0226aea29acccd5157a6f080e1a5359dc9ee13ca226",
+  "digest_recipe": 2,
+  "submission_manifest": [
+    {
+      "path": ".ingest-snapshot/plan.json",
+      "sha256": "683465f02132f49a9183f55ffc8ed94a4688d008510cfbe8383a3e217fac497a"
+    },
+    {
+      "path": ".ingest-snapshot/preview/decisions/deploy-window.md",
+      "sha256": "49f87b0f14adce88b79f0ec6bae2659c626d62a4c43a355bd2b5219dbb3c8ef5"
+    },
+    {
+      "path": ".ingest-snapshot/preview/index.md",
+      "sha256": "cb07de3042d100ac90409df446b277383d98cf426036a6c9d4ede4f04b5c348a"
+    },
+    {
+      "path": ".ingest-snapshot/preview/log.md",
+      "sha256": "098dee6e0c843805206e16ca40cf88d96d0a665fc400aca61b6d4e4f179f6ba2"
+    },
+    {
+      "path": "plan.json",
+      "sha256": "683465f02132f49a9183f55ffc8ed94a4688d008510cfbe8383a3e217fac497a"
+    },
+    {
+      "path": "preview/decisions/deploy-window.md",
+      "sha256": "49f87b0f14adce88b79f0ec6bae2659c626d62a4c43a355bd2b5219dbb3c8ef5"
+    },
+    {
+      "path": "preview/index.md",
+      "sha256": "cb07de3042d100ac90409df446b277383d98cf426036a6c9d4ede4f04b5c348a"
+    },
+    {
+      "path": "preview/log.md",
+      "sha256": "098dee6e0c843805206e16ca40cf88d96d0a665fc400aca61b6d4e4f179f6ba2"
+    }
+  ],
+  "plan_sha256": "683465f02132f49a9183f55ffc8ed94a4688d008510cfbe8383a3e217fac497a",
+  "wiki_target": {
+    "st_dev": 16777231,
+    "st_ino": 321893667,
+    "path": "/private/var/folders/7y/_v47p2q12qq_9gdj_5d9qk4c0000gn/T/wiki-studio-record-i_el1gku/work/knowledge/wiki"
+  },
+  "planned_writes": [
+    {
+      "path": "decisions/deploy-window.md",
+      "pre_sha256": null,
+      "post_sha256": "49f87b0f14adce88b79f0ec6bae2659c626d62a4c43a355bd2b5219dbb3c8ef5"
+    },
+    {
+      "path": "index.md",
+      "pre_sha256": "f6066a00a8385fc86495215a8b3d93d243dfd587a0583200491f7654b9d2420d",
+      "post_sha256": "337705afa05f62fec539d06e0308ee1587b3353d05220b0cf4d7f5256f625869"
+    },
+    {
+      "path": "log.md",
+      "pre_sha256": "d27e070382ee220fcd8194561ead1dafc22fd639e3dff97ffca4c857b34b38da",
+      "post_sha256": "3763ea40961b5c2a4b181a616203607bca40112f28b75e962df20d8f0e77f7d6"
+    },
+    {
+      "path": ".audit/proposals/memkernel-export-20261104T015623Z-46d7e83a/plan.json",
+      "pre_sha256": null,
+      "post_sha256": "683465f02132f49a9183f55ffc8ed94a4688d008510cfbe8383a3e217fac497a"
+    },
+    {
+      "path": ".audit/proposals/memkernel-export-20261104T015623Z-46d7e83a/proposal.md",
+      "pre_sha256": null,
+      "post_sha256": "1cf2519e77b0bae656a6fa0d2a8317b6f05a2c36a3bcb92f4d944b0b10408c35"
+    }
+  ],
+  "written_paths": [
+    "decisions/deploy-window.md",
+    "index.md",
+    "log.md",
+    ".audit/proposals/memkernel-export-20261104T015623Z-46d7e83a/plan.json",
+    ".audit/proposals/memkernel-export-20261104T015623Z-46d7e83a/proposal.md"
+  ],
+  "unguarded_paths": [],
+  "lock_wait_seconds": 6e-06,
+  "started_at": "2026-11-04T01:56:23Z",
+  "committing_at": "2026-11-04T01:56:23Z",
+  "committed_at": "2026-11-04T01:56:23Z",
+  "promoter": {
+    "package": "wiki-studio",
+    "version": "0.8.1",
+    "entry_point": "api"
+  },
+  "actor": {
+    "name": null,
+    "source": "none"
+  }
+}

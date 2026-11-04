@@ -1,0 +1,67 @@
+{
+  "receipt_version": 1,
+  "state": "committed",
+  "proposal": "2026-11-03-205624-correction",
+  "submission_digest": "0a3cf9737e3b2481d1d81f9c9c1af9d787570ad78919dc7bb4dd97f187bcb2eb",
+  "digest_recipe": 2,
+  "submission_manifest": [
+    {
+      "path": ".ingest-snapshot/plan.json",
+      "sha256": "1319f0a98a6846a096968b3f2784cf44281e4d36c33b0abedf996d838bc133a4"
+    },
+    {
+      "path": ".ingest-snapshot/preview/decisions/deploy-window.md",
+      "sha256": "5ae74db850f60ffcd31a47d550cb72d29d3c98ce117e715a97a75336ee40b2d9"
+    },
+    {
+      "path": "plan.json",
+      "sha256": "1319f0a98a6846a096968b3f2784cf44281e4d36c33b0abedf996d838bc133a4"
+    },
+    {
+      "path": "preview/decisions/deploy-window.md",
+      "sha256": "5ae74db850f60ffcd31a47d550cb72d29d3c98ce117e715a97a75336ee40b2d9"
+    }
+  ],
+  "plan_sha256": "1319f0a98a6846a096968b3f2784cf44281e4d36c33b0abedf996d838bc133a4",
+  "wiki_target": {
+    "st_dev": 16777231,
+    "st_ino": 321893667,
+    "path": "/private/var/folders/7y/_v47p2q12qq_9gdj_5d9qk4c0000gn/T/wiki-studio-record-i_el1gku/work/knowledge/wiki"
+  },
+  "planned_writes": [
+    {
+      "path": "decisions/deploy-window.md",
+      "pre_sha256": "49f87b0f14adce88b79f0ec6bae2659c626d62a4c43a355bd2b5219dbb3c8ef5",
+      "post_sha256": "5ae74db850f60ffcd31a47d550cb72d29d3c98ce117e715a97a75336ee40b2d9"
+    },
+    {
+      "path": ".audit/proposals/2026-11-03-205624-correction/plan.json",
+      "pre_sha256": null,
+      "post_sha256": "1319f0a98a6846a096968b3f2784cf44281e4d36c33b0abedf996d838bc133a4"
+    },
+    {
+      "path": ".audit/proposals/2026-11-03-205624-correction/proposal.md",
+      "pre_sha256": null,
+      "post_sha256": "e1a9f6b76342f31bb7b06263156c38c8353d9969b5d23f1caa07929dac548023"
+    }
+  ],
+  "written_paths": [
+    "decisions/deploy-window.md",
+    ".audit/proposals/2026-11-03-205624-correction/plan.json",
+    ".audit/proposals/2026-11-03-205624-correction/proposal.md"
+  ],
+  "unguarded_paths": [],
+  "lock_wait_seconds": 5e-06,
+  "started_at": "2026-11-04T01:56:24Z",
+  "committing_at": "2026-11-04T01:56:24Z",
+  "committed_at": "2026-11-04T01:56:24Z",
+  "promoter": {
+    "package": "wiki-studio",
+    "version": "0.8.1",
+    "entry_point": "cli"
+  },
+  "actor": {
+    "name": "curator",
+    "source": "flag"
+  }
+}
