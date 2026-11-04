@@ -28,9 +28,9 @@ jobs:
       - uses: snok/install-poetry@v1
       - run: poetry install --no-interaction
       - name: Ruff check
-        run: poetry run ruff check src/ tests/ conformance/
+        run: poetry run ruff check src/ tests/ eval/ examples/ conformance/
       - name: Ruff format check
-        run: poetry run ruff format --check src/ tests/ conformance/
+        run: poetry run ruff format --check src/ tests/ eval/ examples/ conformance/
 
   typecheck:
     name: Type Check
@@ -204,6 +204,165 @@ jobs:
           /tmp/mcp-latest/bin/python -c "import importlib.metadata as m; print('mcp', m.version('mcp'))"
       - name: Run the adapter tests and the conformance suite
         run: /tmp/mcp-latest/bin/python -m pytest -q -p no:cacheprovider -rs tests/test_mcp_adapter.py tests/test_mcp_conformance.py
+
+  quickstart:
+    # The standalone quickstart, executed from docs/quickstart.md (0.8.1 US1,
+    # FR-005): the wheel with the mcp extra in a fresh virtual environment and
+    # no model backend. The page is the only source of its commands; its run
+    # blocks and the MCP conformance check run from tests/test_quickstart.py.
+    # Blocking. The import check guarantees the page's conformance check is not
+    # skipped here.
+    name: Standalone quickstart
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - uses: snok/install-poetry@v1
+      - name: Build the wheel
+        run: poetry build
+      - name: Install the wheel with the mcp extra into a fresh virtual environment
+        run: |
+          python -m venv /tmp/quickstart
+          /tmp/quickstart/bin/pip install --quiet --upgrade pip
+          /tmp/quickstart/bin/pip install --quiet "$(ls dist/*.whl)[mcp]" pytest
+          /tmp/quickstart/bin/pip check
+          /tmp/quickstart/bin/python -c "import mcp, wiki_studio.api; print(wiki_studio.api.__file__)"
+      - name: Run the standalone quickstart
+        # The import check above guarantees the conformance check is not skipped here.
+        run: /tmp/quickstart/bin/python -m pytest -q -p no:cacheprovider -rs tests/test_quickstart.py
+
+  quickstart-memkernel:
+    # The memkernel composition quickstart, executed from
+    # docs/quickstart-memkernel.md (0.8.1 US2, FR-007, FR-010): the wheel and
+    # memkernel==0.6.0 from PyPI in a fresh virtual environment. memkernel's
+    # embedding model is pinned to a snapshot of one revision and the test runs
+    # offline against it, so recall does not depend on a model download at test
+    # time. Blocking. The import check guarantees the page's run test is not
+    # skipped here.
+    name: memkernel composition quickstart
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      MK_VERSION: "0.6.0"
+      EMBEDDING_REVISION: "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - uses: snok/install-poetry@v1
+      - name: Build the wheel
+        run: poetry build
+      - name: Install the wheel, pytest and the pinned memkernel release into a fresh virtual environment
+        run: |
+          python -m venv /tmp/quickstart-memkernel
+          /tmp/quickstart-memkernel/bin/pip install --quiet --upgrade pip
+          /tmp/quickstart-memkernel/bin/pip install --quiet dist/*.whl pytest "memkernel==${MK_VERSION}"
+          /tmp/quickstart-memkernel/bin/pip check
+          /tmp/quickstart-memkernel/bin/python -c "import memkernel.wiki.sync, wiki_studio.api; print(wiki_studio.api.__file__)"
+      - name: Cache the pinned embedding model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-all-MiniLM-L6-v2-${{ env.EMBEDDING_REVISION }}
+      - name: Download the embedding model at the pinned revision
+        # The model is the only model on the page. The revision is checked by
+        # commit hash in the hub's answer and in the cache catalogue; no check
+        # compares the snapshot path. A pin that no longer resolves, or that
+        # resolves to another commit, is named as a broken pin in the output,
+        # but every download failure exits 2: FR-007 classes a failed download
+        # or a revision mismatch as "cannot run", never 1. The step still
+        # fails, so a broken pin never passes CI.
+        run: |
+          /tmp/quickstart-memkernel/bin/pip install --quiet huggingface_hub
+          /tmp/quickstart-memkernel/bin/python - <<'EOF'
+          import os
+          import sys
+          from pathlib import Path
+
+          from huggingface_hub import HfApi, scan_cache_dir, snapshot_download
+          from huggingface_hub.errors import HfHubHTTPError, RepositoryNotFoundError, RevisionNotFoundError
+
+          REPO_ID = "sentence-transformers/all-MiniLM-L6-v2"
+          revision = os.environ["EMBEDDING_REVISION"]
+
+
+          def broken_pin(message: str) -> None:
+              # FR-007: a failed download or a revision mismatch is "cannot run" (exit 2, never 1);
+              # the message still names the pin as the cause, so the failure is not read as an outage.
+              print(f"cannot run: the pin is broken: {message}", file=sys.stderr)
+              raise SystemExit(2)
+
+
+          def cannot_run(message: str) -> None:
+              print(f"cannot run: {message}", file=sys.stderr)
+              raise SystemExit(2)
+
+
+          try:
+              upstream_sha = HfApi().model_info(REPO_ID, revision=revision).sha
+          except (RepositoryNotFoundError, RevisionNotFoundError) as exc:
+              broken_pin(f"{REPO_ID}@{revision} does not resolve upstream: {exc}")
+          except (HfHubHTTPError, OSError) as exc:
+              cannot_run(f"the hub could not be reached: {exc}")
+          if upstream_sha != revision:
+              broken_pin(f"{REPO_ID}@{revision} resolves to {upstream_sha}")
+          try:
+              path = Path(snapshot_download(REPO_ID, revision=revision)).resolve()
+          except (RepositoryNotFoundError, RevisionNotFoundError) as exc:
+              broken_pin(f"{REPO_ID}@{revision} does not resolve upstream: {exc}")
+          except (HfHubHTTPError, OSError) as exc:
+              cannot_run(f"the embedding model could not be downloaded: {exc}")
+          cached_hashes = {
+              cached.commit_hash
+              for repo in scan_cache_dir().repos
+              if repo.repo_id == REPO_ID
+              for cached in repo.revisions
+          }
+          if revision not in cached_hashes:
+              cannot_run(f"the cache does not catalogue revision {revision}")
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env_file:
+              env_file.write(f"MEMKERNEL_EMBEDDING_MODEL={path}\n")
+              env_file.write("HF_HUB_OFFLINE=1\n")
+          print(path)
+          EOF
+      - name: Run the composition quickstart
+        # The import check above guarantees the page's run test is not skipped here.
+        run: /tmp/quickstart-memkernel/bin/python -m pytest -q -p no:cacheprovider -rs tests/integration/test_quickstart_memkernel.py
+
+  demo-correction-loop:
+    # The correction-loop demonstration, recorded by the same recorder the owner
+    # runs for the committed run (0.8.1 US3, FR-014, FR-015): the wheel built
+    # from HEAD, memkernel 0.6.0 from PyPI checked against the digest PyPI
+    # publishes, the embedding model at its pinned revision, and one scripted
+    # demo run. Blocking; the job's exit code is the recorder's, so a failed
+    # check fails the job.
+    name: Correction-loop demonstration
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      EMBEDDING_REVISION: "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - uses: snok/install-poetry@v1
+      - name: Cache the pinned embedding model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-all-MiniLM-L6-v2-${{ env.EMBEDDING_REVISION }}
+      - name: Record the demonstration
+        run: python examples/correction-loop/record.py --out "$RUNNER_TEMP/demo-run"
+      - name: Print the transcript and the manifest
+        if: always()
+        run: |
+          cat "$RUNNER_TEMP/demo-run/transcript.txt"
+          cat "$RUNNER_TEMP/demo-run/manifest.json"
 
   build-check:
     name: Build Check

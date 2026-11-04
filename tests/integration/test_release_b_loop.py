@@ -9,11 +9,10 @@ its receipt, and an export or import run twice creates no duplicate pages,
 records or memories.
 
 These run only in the ``memkernel-loop`` clean-install job, never skipped or
-marked as expected failures there. That job is labelled expected to fail and
-stays non-blocking until memkernel's counterpart (memkernel #48: snapshot
-removal and an importer that reads ``review_state``) is merged; locally the
-suite is skipped when memkernel is not installed. memkernel's
-``MemoryService`` is the real one, never mocked.
+marked as expected failures there. That job is blocking since the memkernel
+0.6.0 pin (memkernel #48's counterpart: snapshot removal and an importer that
+reads ``review_state``); locally the suite is skipped when memkernel is not
+installed. memkernel's ``MemoryService`` is the real one, never mocked.
 """
 
 from __future__ import annotations

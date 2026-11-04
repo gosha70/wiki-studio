@@ -125,8 +125,12 @@ memkernel:
 - The outer whole-wiki snapshot and rollback coordinated with the wiki lock
   or removed.
 
-Docs: two tested quickstarts, standalone and memkernel composition, each
-with Claude Code and Kiro instructions.
+Docs: two tested quickstarts, standalone ([`docs/quickstart.md`](quickstart.md))
+and memkernel composition
+([`docs/quickstart-memkernel.md`](quickstart-memkernel.md)), each with Claude
+Code and Kiro instructions, shipped in wiki-studio 0.8.1 and executed in the
+`quickstart` and `quickstart-memkernel` CI jobs; the correction-loop
+demonstration is [`docs/demo-correction-loop.md`](demo-correction-loop.md).
 
 ## Release C: standalone usefulness and broader adoption
 
@@ -178,14 +182,35 @@ runs. Uncertainty, negative controls, failures and version identifiers are
 reported. Safety regressions block releases; accuracy or cost superiority
 needs evidence, not a small-fixture percentage.
 
+The published integration evidence so far is memkernel's 0.5.0 run. Its
+`wiki_studio` arm (wiki-studio 0.4.1 through the CLI) passed 25 of 25 trials
+on the five `lc-wiki` tasks, as every arm did, `bare` included; every
+pairwise effect in the group was +0.0. The group is at ceiling — the runner
+copies the wiki into the second session for every arm — so it supports no
+comparison between the arms, and its token totals do not compare across
+groups. [`eval/composition/design.md`](../eval/composition/design.md)
+explains the ceiling with the report's numbers and states what a task set, a
+versioned composition arm and a curator policy need so that `bare` fails and
+the arms can differ. No governed-composition measurement able to discriminate
+the arms has been run; that measurement is memkernel's to preregister and
+run. The design is filed as [memkernel #90](https://github.com/gosha70/memkernel/issues/90) and this repository's successor issue is
+[#75](https://github.com/gosha70/wiki-studio/issues/75); the successor issue's text is committed under `eval/composition/`.
+
 ## Launch sequence
 
 1. After A: the patch and its exact guarantees; a credited advisory for the
    escape findings per `SECURITY.md`; one public issue per other defect,
    closed by the release.
-2. After B: the two quickstarts, the compatibility matrix, and a short
-   demonstration of an obsolete decision corrected through a reviewed
-   proposal and absent from the next session.
+2. After B (shipped in 0.8.1): the two tested quickstarts,
+   [`docs/quickstart.md`](quickstart.md) and
+   [`docs/quickstart-memkernel.md`](quickstart-memkernel.md), whose executed
+   blocks run in the `quickstart` and `quickstart-memkernel` CI jobs; the
+   compatibility matrix at [`docs/compatibility.md`](compatibility.md); and a
+   short demonstration of an obsolete decision corrected through a reviewed
+   proposal and absent from the next session,
+   [`docs/demo-correction-loop.md`](demo-correction-loop.md), run by the
+   `demo-correction-loop` CI job and once as a recorded run (pending, in the
+   evidence PR).
 3. Pilot: three teams, one correction loop each, repeated across sessions.
    A validation target, not evidence of demand.
 4. After C: conformance fixtures, measured results, the adapter in
