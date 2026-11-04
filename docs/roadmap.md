@@ -193,10 +193,8 @@ explains the ceiling with the report's numbers and states what a task set, a
 versioned composition arm and a curator policy need so that `bare` fails and
 the arms can differ. No governed-composition measurement able to discriminate
 the arms has been run; that measurement is memkernel's to preregister and
-run. The memkernel issue carrying the design and this repository's successor
-issue are filed after this build and before the 0.8.1 pull request merges;
-their numbers are added here when they are filed, and the successor issue's
-text is committed under `eval/composition/`.
+run. The design is filed as [memkernel #90](https://github.com/gosha70/memkernel/issues/90) and this repository's successor issue is
+[#75](https://github.com/gosha70/wiki-studio/issues/75); the successor issue's text is committed under `eval/composition/`.
 
 ## Launch sequence
 

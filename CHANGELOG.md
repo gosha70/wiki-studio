@@ -119,11 +119,10 @@ jobs and one example; no runtime behaviour, API or page schema change.
   gains no dependency (memkernel, `huggingface_hub` and the embedding model
   appear only in the clean-install CI jobs and the recorder's virtual
   environment); ADR-0002 stands and `SECURITY.md` still supports 0.8.x.
-- The memkernel issue carrying the design and this repository's successor
-  issue are filed after the build and before the 0.8.1 pull request merges;
-  their numbers are added to README Evidence, `docs/roadmap.md` and this file
-  when they are filed (the texts are committed under `eval/composition/`).
-  Nothing was filed by the build.
+- The design is filed as memkernel #90 and this repository's successor issue
+  is #75, both in one interactive step after the build and before the 0.8.1
+  pull request merges, with the restating comment on #10; the texts are
+  committed under `eval/composition/`. Nothing was filed by the build.
 
 ## [0.8.0] — 2026-10-29
 

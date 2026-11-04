@@ -680,10 +680,9 @@ governed-composition arm need so the arms can differ; it is design only, not
 evidence for or against any arm. The
 [correction-loop demonstration](docs/demo-correction-loop.md) shows one
 governed chain end to end; its recorded run is pending. The discriminating
-measurement is memkernel's to preregister and run: its design is filed as an
-issue in memkernel, and a successor issue here tracks it. Both are filed
-after this build and before the 0.8.1 pull request merges; their numbers are
-added here when they are filed, and the texts are committed at
+measurement is memkernel's to preregister and run: its design is filed as
+[memkernel #90](https://github.com/gosha70/memkernel/issues/90), and the successor issue [#75](https://github.com/gosha70/wiki-studio/issues/75) tracks it here. The texts are committed
+at
 [`eval/composition/successor-issue.md`](eval/composition/successor-issue.md)
 and
 [`eval/composition/issue-10-comment.md`](eval/composition/issue-10-comment.md).
