@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "source_path": "drafts/correction",
+  "backend": "cli",
+  "rationale": "",
+  "edits": [
+    {
+      "path": "decisions/deploy-window.md",
+      "action": "update",
+      "rationale": "written by the agent in correction",
+      "preview": "preview/decisions/deploy-window.md",
+      "base_sha256": "49f87b0f14adce88b79f0ec6bae2659c626d62a4c43a355bd2b5219dbb3c8ef5"
+    }
+  ],
+  "proposer": {
+    "name": "curator",
+    "source": "flag"
+  }
+}

@@ -1,0 +1,273 @@
+{
+  "outcome": "completed",
+  "git_commit": "a0bd6093144c5b9933568546c1dcccdf18f3ec0c",
+  "git_clean": true,
+  "started_at": "2026-11-04T01:54:18Z",
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "embedding_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+  "wall_time_label": "machine time on a scripted path, not a measure of human adoption",
+  "demo_sha256": "b1393726250522ab6f75607e27dc340015543ea1f43692876b929801f66de313",
+  "record_sha256": "e5c74723a7421915531fcac0f52b92c0545584c64642547196bd0d8c51d5c5f2",
+  "protocol_sha256": "d427582722b30a898d2cb7f65933d6738549e98b040b3addf1ea0bf10f28fa09",
+  "wheel_file": "wiki_studio-0.8.1-py3-none-any.whl",
+  "wheel_sha256": "2eaf7e1f12cd33254422a7966d3dbe59a03de61f9d767542375db0137267c5e6",
+  "memkernel_file": "memkernel-0.6.0-py3-none-any.whl",
+  "memkernel_sha256": "11fb369921cf0f802d0112e0e559f4e8ce87dbba8068798493d6cb8938262f4a",
+  "memkernel_pypi_sha256": "11fb369921cf0f802d0112e0e559f4e8ce87dbba8068798493d6cb8938262f4a",
+  "wiki_studio_version": "0.8.1",
+  "memkernel_version": "0.6.0",
+  "python_version": "3.12.8",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "end_state_sha256": "315cf068e711ccfe841ab65c50d6e5cdd8b8d89b63bef31eb16a33922c987332",
+  "exit_code": 0,
+  "summary": {
+    "demo": "correction-loop",
+    "wiki_studio_version": "0.8.1",
+    "memkernel_version": "0.6.0",
+    "python_version": "3.12.8",
+    "page": "decisions/deploy-window.md",
+    "page_sha": "5ae74db850f60ffcd31a47d550cb72d29d3c98ce117e715a97a75336ee40b2d9",
+    "approved_sha256": "5ae74db850f60ffcd31a47d550cb72d29d3c98ce117e715a97a75336ee40b2d9",
+    "submission_digest": "0a3cf9737e3b2481d1d81f9c9c1af9d787570ad78919dc7bb4dd97f187bcb2eb",
+    "committed_at": "2026-11-04T01:56:24Z",
+    "approver": "curator",
+    "timestamp": "2026-11-04T01:56:24.793112Z",
+    "approval_completed_at": "2026-11-04T01:56:24.793112Z",
+    "corrected_recall_at": "2026-11-04T01:56:29Z",
+    "checks": [
+      {
+        "step": "session-1",
+        "name": "wiki-initialised",
+        "ok": true,
+        "detail": "/var/folders/7y/_v47p2q12qq_9gdj_5d9qk4c0000gn/T/wiki-studio-record-i_el1gku/work/knowledge/wiki"
+      },
+      {
+        "step": "session-1",
+        "name": "wrong-decision-retained",
+        "ok": true,
+        "detail": "83706b22-97c0-440b-a282-3c34a58b8c72"
+      },
+      {
+        "step": "session-1",
+        "name": "wrong-rule-current",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "step": "session-1",
+        "name": "export-gated",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "step": "session-1",
+        "name": "one-draft-page",
+        "ok": true,
+        "detail": "decisions/deploy-window.md"
+      },
+      {
+        "step": "session-1",
+        "name": "submission-digest-recorded",
+        "ok": true,
+        "detail": "b8b6c899cb3cdbc057dbe0226aea29acccd5157a6f080e1a5359dc9ee13ca226"
+      },
+      {
+        "step": "session-1",
+        "name": "page-is-a-draft",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "step": "session-1",
+        "name": "page-names-the-wrong-memory",
+        "ok": true,
+        "detail": "83706b22-97c0-440b-a282-3c34a58b8c72"
+      },
+      {
+        "step": "curator",
+        "name": "read-json-exit-0",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "step": "curator",
+        "name": "page-names-the-wrong-memory",
+        "ok": true,
+        "detail": "83706b22-97c0-440b-a282-3c34a58b8c72"
+      },
+      {
+        "step": "curator",
+        "name": "page-names-the-session-1-memory",
+        "ok": true,
+        "detail": "83706b22-97c0-440b-a282-3c34a58b8c72"
+      },
+      {
+        "step": "curator",
+        "name": "correction-drafted",
+        "ok": true,
+        "detail": "83706b22-97c0-440b-a282-3c34a58b8c72"
+      },
+      {
+        "step": "curator",
+        "name": "rule-replaced-in-title-heading-body",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "step": "curator",
+        "name": "propose-and-promote-exit-0",
+        "ok": true,
+        "detail": "00gn/T/wiki-studio-record-i_el1gku/work/doc_internal/proposals/2026-11-03-205624-correction update decisions/deploy-window.md applied 3 edit(s); archived to /var/folders/7y/_v47p2q12qq_9gdj_5d9qk4c0000gn/T/wiki-studio-record-i_el1gku/work/doc_internal/proposals/.applied/2026-11-03-205624-correction."
+      },
+      {
+        "step": "curator",
+        "name": "approve-exit-0",
+        "ok": true,
+        "detail": "approved: knowledge/wiki/.audit/approvals/path/940012e2ca0c1860b9781c272f46712eaac4641b7ce6d5b62d8022ae5ce1405a/5ae74db850f60ffcd31a47d550cb72d29d3c98ce117e715a97a75336ee40b2d9/2259307d3440dd23c4b738948efdd0fbe94dc532334ad4fcd36a437e48e7f780/approved.json"
+      },
+      {
+        "step": "curator",
+        "name": "receipt-archived",
+        "ok": true,
+        "detail": "/var/folders/7y/_v47p2q12qq_9gdj_5d9qk4c0000gn/T/wiki-studio-record-i_el1gku/work/doc_internal/proposals"
+      },
+      {
+        "step": "curator",
+        "name": "receipt-is-committed",
+        "ok": true,
+        "detail": "committed"
+      },
+      {
+        "step": "curator",
+        "name": "receipt-names-the-curator",
+        "ok": true,
+        "detail": "{'name': 'curator', 'source': 'flag'}"
+      },
+      {
+        "step": "curator",
+        "name": "receipt-has-its-values",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "step": "curator",
+        "name": "page-approved",
+        "ok": true,
+        "detail": "approved: record_matches_live"
+      },
+      {
+        "step": "curator",
+        "name": "approval-record-found",
+        "ok": true,
+        "detail": ".audit/approvals/path/940012e2ca0c1860b9781c272f46712eaac4641b7ce6d5b62d8022ae5ce1405a/5ae74db850f60ffcd31a47d550cb72d29d3c98ce117e715a97a75336ee40b2d9/2259307d3440dd23c4b738948efdd0fbe94dc532334ad4fcd36a437e48e7f780/approved.json"
+      },
+      {
+        "step": "curator",
+        "name": "approval-record-names-the-curator",
+        "ok": true,
+        "detail": "{'name': 'curator', 'source': 'flag'}"
+      },
+      {
+        "step": "curator",
+        "name": "approval-record-has-a-timestamp",
+        "ok": true,
+        "detail": "2026-11-04T01:56:24.793112Z"
+      },
+      {
+        "step": "curator",
+        "name": "approval-bound-to-the-page",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "step": "session-2",
+        "name": "import-governed",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "step": "session-2",
+        "name": "one-page-imported",
+        "ok": true,
+        "detail": "decisions/deploy-window.md"
+      },
+      {
+        "step": "session-2",
+        "name": "correction-recorded",
+        "ok": true,
+        "detail": "[{'page': 'decisions/deploy-window.md', 'ref_id': '83706b22-97c0-440b-a282-3c34a58b8c72'}]"
+      },
+      {
+        "step": "session-2",
+        "name": "right-answer-current",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "step": "session-2",
+        "name": "answer-is-the-page",
+        "ok": true,
+        "detail": "decisions/deploy-window.md"
+      },
+      {
+        "step": "session-2",
+        "name": "page-approved",
+        "ok": true,
+        "detail": "approved: record_matches_live"
+      },
+      {
+        "step": "session-2",
+        "name": "page-sha-beside-the-approved-sha",
+        "ok": true,
+        "detail": "5ae74db850f60ffcd31a47d550cb72d29d3c98ce117e715a97a75336ee40b2d9"
+      },
+      {
+        "step": "session-2",
+        "name": "wrong-rule-not-current",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "step": "session-2",
+        "name": "old-record-kept",
+        "ok": true,
+        "detail": "['83706b22-97c0-440b-a282-3c34a58b8c72']"
+      },
+      {
+        "step": "session-2",
+        "name": "old-record-superseded-by-the-page",
+        "ok": true,
+        "detail": "40c9e325-511b-4d64-ab22-498067ee0090"
+      },
+      {
+        "step": "session-2",
+        "name": "receipt-archived",
+        "ok": true,
+        "detail": "/var/folders/7y/_v47p2q12qq_9gdj_5d9qk4c0000gn/T/wiki-studio-record-i_el1gku/work/doc_internal/proposals"
+      },
+      {
+        "step": "session-2",
+        "name": "receipt-values-visible",
+        "ok": true,
+        "detail": "2026-11-03-205624-correction"
+      },
+      {
+        "step": "session-2",
+        "name": "approval-record-found",
+        "ok": true,
+        "detail": ".audit/approvals/path/940012e2ca0c1860b9781c272f46712eaac4641b7ce6d5b62d8022ae5ce1405a/5ae74db850f60ffcd31a47d550cb72d29d3c98ce117e715a97a75336ee40b2d9/2259307d3440dd23c4b738948efdd0fbe94dc532334ad4fcd36a437e48e7f780/approved.json"
+      },
+      {
+        "step": "session-2",
+        "name": "approver-and-timestamp-visible",
+        "ok": true,
+        "detail": "{'name': 'curator', 'source': 'flag'}"
+      }
+    ]
+  },
+  "wall_time_seconds": {
+    "install_to_first_approved_revision": 124.8,
+    "install_to_corrected_recall": 129.0
+  },
+  "finished_at": "2026-11-04T01:56:30Z"
+}

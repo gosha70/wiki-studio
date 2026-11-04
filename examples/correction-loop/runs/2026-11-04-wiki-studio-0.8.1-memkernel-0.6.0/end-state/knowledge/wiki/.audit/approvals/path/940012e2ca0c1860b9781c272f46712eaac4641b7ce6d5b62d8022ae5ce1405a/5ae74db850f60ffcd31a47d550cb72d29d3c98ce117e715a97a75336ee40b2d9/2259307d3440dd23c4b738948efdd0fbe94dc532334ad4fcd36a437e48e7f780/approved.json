@@ -1,0 +1,26 @@
+{
+  "approval_version": 1,
+  "wiki_id": "95db3b21-179d-4d31-ac81-f7ee4137cdcb",
+  "page_key": "decisions/deploy-window.md",
+  "path": "decisions/deploy-window.md",
+  "sha256": "5ae74db850f60ffcd31a47d550cb72d29d3c98ce117e715a97a75336ee40b2d9",
+  "policy_sha256": "2259307d3440dd23c4b738948efdd0fbe94dc532334ad4fcd36a437e48e7f780",
+  "decision": "approved",
+  "proposal": {
+    "name": "2026-11-03-205624-correction",
+    "submission_digest": "0a3cf9737e3b2481d1d81f9c9c1af9d787570ad78919dc7bb4dd97f187bcb2eb"
+  },
+  "proposer": {
+    "name": "curator",
+    "source": "flag"
+  },
+  "approver": {
+    "name": "curator",
+    "source": "flag"
+  },
+  "promoter": {
+    "name": "curator",
+    "source": "flag"
+  },
+  "timestamp": "2026-11-04T01:56:24.793112Z"
+}

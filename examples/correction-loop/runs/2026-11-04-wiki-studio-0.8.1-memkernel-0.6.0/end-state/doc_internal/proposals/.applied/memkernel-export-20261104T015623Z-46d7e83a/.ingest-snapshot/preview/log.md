@@ -1,0 +1,1 @@
+- 2026-11-04 — created `deploy-window` (decision): compiled from memkernel 83706b22-97c0-440b-a282-3c34a58b8c72
