@@ -12,6 +12,7 @@ from tests.test_approve import ApprovalCase, page_text
 from wiki_studio import api
 from wiki_studio.errors import BackendNotFoundError
 from wiki_studio.findings import FINDING_KINDS
+from wiki_studio.proposal import PageEdit
 
 _GLOSSARY = (
     "---\npage_type: glossary\nslug: origin-gate\ntitle: Origin Gate\nstatus: stable\nlast_reviewed: 2026-10-16\n"
@@ -38,6 +39,27 @@ class FindingsCase(ApprovalCase):
         api.approve([changed], self.paths)
         old = self.create("old", body="Gamma replaced this.", extra=f"superseded_by: {gamma}\n")
         self.create("delta", body="Gamma again.")
+        # One matched callout pair, one one-sided callout and one dangling callout
+        # (0.9.0): the three conflict kinds are produced here too.
+        pair = [
+            PageEdit(
+                "decisions/pair-left.md",
+                "create",
+                page_text("pair-left", body="Left.\n\n> [!conflict] [the other page](pair-right.md)"),
+                "why",
+            ),
+            PageEdit(
+                "decisions/pair-right.md",
+                "create",
+                page_text("pair-right", body="Right.\n\n> [!conflict] [the other page](pair-left.md)"),
+                "why",
+            ),
+            PageEdit("index.md", "append-index", "- [pair-left](decisions/pair-left.md)", "why"),
+            PageEdit("index.md", "append-index", "- [pair-right](decisions/pair-right.md)", "why"),
+        ]
+        api.promote(api.propose(pair, self.paths, name="pair"), self.paths)
+        self.create("one-sided", body="One side.\n\n> [!conflict] [the other page](pair-left.md)")
+        self.create("dangling", body="Bad target.\n\n> [!conflict] [itself](dangling.md)")
         (self.wiki / "glossary").mkdir()
         (self.wiki / "glossary" / "origin-gate.md").write_text(_GLOSSARY, encoding="utf-8")
         self.set_policy(approver_required=True)
