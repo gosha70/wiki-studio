@@ -3,7 +3,7 @@ spec_mode: full
 feature_id: wiki-studio-0-9-0
 risk_category: feature
 justification: "A new body convention on the page contract shared with memkernel (decision record required by CLAUDE.md), three new kinds in the model-free findings contract a host reads at session start, a line-based scan whose edge cases (dangling reasons, repeats, the marker-line link, fenced code, superseded targets, scoping) each need a pinned behaviour and a fixture, a resolution rule checked part by part through the promote gate, a copied memkernel parser pinned to a tag, and a release; a full spec pins the form, the kinds, the descriptions, the order, the invariants that must not move and the cut order before an unattended build."
-status: draft
+status: approved
 date: 2026-11-06
 collaboration_mode: single
 origin:
