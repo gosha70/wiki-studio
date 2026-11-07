@@ -159,7 +159,11 @@ approximate:
   whether cited file SHAs still match `HEAD`. (A future curator
   pass — or follow-up automation — is the right place for this.)
 - **Cross-page contradictions.** Whether two pages say opposite
-  things.
+  things. The linter still does not detect them. A disagreement marked
+  with the conflict callout pair of
+  [`citation-rules.md`](citation-rules.md#when-sources-disagree) is
+  reported by `wiki-studio findings` as `open-conflict`,
+  `conflict-one-sided` or `conflict-dangling`.
 - **Spelling, link text quality, formatting niceties.**
 
 ## Exit behavior
