@@ -7,3 +7,6 @@ Review: PASS (see specs/wiki-studio-0-9-0/collaboration/build-review.md).
 
 ### Phase 3 complete — US3: Surfaces and the reference docs (2026-11-07T20:01:05Z)
 Review: PASS (see specs/wiki-studio-0-9-0/collaboration/build-review.md).
+
+### Phase 4 complete — US4: Approval and memkernel import unaffected (2026-11-07T20:12:59Z)
+Review: PASS (see specs/wiki-studio-0-9-0/collaboration/build-review.md).
