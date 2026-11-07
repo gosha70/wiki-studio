@@ -4,11 +4,11 @@
 - Date: 2026-11-07
 - Issue: [#71](https://github.com/gosha70/wiki-studio/issues/71)
 - Feature: `specs/wiki-studio-0-9-0/` (FR-001, FR-002, FR-004, FR-007, FR-020)
-- Implementation: released in 0.9.0. The three `findings` kinds are built by
-  `src/wiki_studio/conflicts.py` and `findings.py` (US2 of `tasks.md`), and
-  the round-trip test by `tests/test_conflict_memkernel_roundtrip.py` (US4).
-  The build adds them on the feature branch before release. This record states
-  the decision they implement.
+- Implementation: planned for 0.9.0. The three `findings` kinds will be built
+  by `src/wiki_studio/conflicts.py` and `findings.py` (US2 of `tasks.md`), and
+  the round-trip test by `tests/test_conflict_memkernel_roundtrip.py` (US4),
+  on the feature branch before release. This record states the decision they
+  implement.
 
 ## Context
 
@@ -112,7 +112,7 @@ The receipt, the archived plan and `log.md` keep the history.
 ## memkernel round trip, as observed
 
 From memkernel's code (`memkernel/wiki/pages.py` and `memkernel/wiki/sync.py`
-at tag `v0.6.0`; `memkernel/wiki/curation.py` on main, the 0.7 work):
+at tag `v0.6.0`; `memkernel/wiki/curation.py` at tag `v0.7.0`):
 
 - **Import keeps the callout.** Governed import retains
   `f"{page.title}\n\n{page.body}"` as the memory's content (`_retain_page`),

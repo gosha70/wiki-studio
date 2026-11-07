@@ -52,9 +52,10 @@ For every promotion or update:
      [`citation-rules.md`](citation-rules.md#when-sources-disagree).
      For a page outside this wiki, see Escalation below. Resolve it
      later by that section's resolution rule. Write each callout as a
-     top-level blockquote that starts the line. A callout inside a list
-     item, on a lazy-continuation line or in a nested quote is not
-     read, and nothing reports it.
+     top-level blockquote that starts the line, outside any list. A
+     marker after a list bullet, on a lazy-continuation line or in a
+     nested quote is not read, and nothing reports it; a blockquote
+     indented under a list item is read as if it started the line.
 6. **Write.** Use the template from `page-types.md`. Keep prose tight:
    follow the writing rules in
    [`ingest-rules.md`](ingest-rules.md#writing-rules).

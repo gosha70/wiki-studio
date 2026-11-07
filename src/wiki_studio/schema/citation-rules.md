@@ -131,8 +131,10 @@ after a space is title text. Obsidian does not fold `[!conflict] -` and
 shows the `-` in the title, so write `[!conflict]-` to fold. The first `.md`
 link on the marker line names the other page, whatever it points at, so put
 no other `.md` link before it. It is a relative wiki-page link, resolved
-from the page's directory like every intra-wiki link. If that first link is
-a URL, the callout is `conflict-dangling`. If it is an `open-questions/`
+from the page's directory like every intra-wiki link. A link whose target
+does not end in `.md`, such as a web page, is skipped. If that first `.md`
+link is a web address (`https://…/b.md`), it points outside the wiki and
+the callout is `conflict-dangling`. If it is an `open-questions/`
 entry, that entry is the other page: it is a content page, so the callout
 is `conflict-one-sided` unless the entry carries a callout back. Link an
 `open-questions/` entry on a sources line instead.
@@ -271,11 +273,13 @@ curator's to follow.
 **Known limits.** The scan is line-based, not a CommonMark parser:
 
 - The marker must start a line, after at most three spaces and the `>`.
-- A callout inside a list item, a lazy-continuation blockquote, a nested
-  quote or an HTML block is not recognised. One in a list item, on a
-  lazy-continuation line or in a nested quote is not read, and no finding
-  reports it. The scan does not know HTML blocks, so a marker line inside
-  one is read like any other line.
+- A callout on a lazy-continuation line or in a nested quote is not
+  recognised, and no finding reports it. A marker after a list bullet
+  (`- > [!conflict] …`) is not read either. A blockquote indented up to
+  three spaces under a list item is read as if it started the line; one
+  indented four or more spaces is not read.
+- The scan does not know HTML blocks, so a marker line inside one is read
+  like any other line.
 - A `.md` link that is not on the marker line is never the other page. A
   link to a source document on a sources line does not change which page
   the callout names.
