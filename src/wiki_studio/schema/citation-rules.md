@@ -126,9 +126,11 @@ form a recorded disagreement between two pages takes
 **The marker line.** A blockquote line of the form
 `> [!conflict] Disagrees with [<title>](<relative path to the other page>.md)`.
 The marker `[!conflict]` is case-insensitive and may carry Obsidian's fold
-sign, `+` or `-`, right after it (`[!conflict]-`). The first `.md` link on
-the marker line names the other page. It is a relative wiki-page link,
-resolved from the page's directory like every intra-wiki link.
+sign, `+` or `-`, right after it with no space (`[!conflict]-`); a sign
+after a space is title text. The first `.md` link on the marker line names
+the other page, whatever it points at, so put no other `.md` link before
+it. It is a relative wiki-page link, resolved from the page's directory
+like every intra-wiki link.
 
 **The sources lines.** The next `>` lines read
 `> This page: <the entries this page's sources: cites, as written there>. That page: <the entries the other page cites>.`
@@ -146,10 +148,13 @@ plain blockquote.
 **What is checked.** `wiki-studio findings` reads the marker line and its
 first `.md` link, nothing else. A matched pair is reported as
 `open-conflict`. A callout whose marker line has no `.md` link, or names a
-page outside the wiki, a missing page, a page that is not a content page,
-the page itself or a superseded page, is reported as `conflict-dangling`.
-The structural linter and `approve` have no callout rule: a page with an
-open conflict passes lint and can be approved.
+page outside the wiki, a missing page, a page that is not a content page
+(the root `index.md`, `log.md`, or a file under `schema/`, `scripts/` or
+`.audit/`), the page itself or a superseded page, is reported as
+`conflict-dangling`. An `open-questions/` entry is a content page. A
+callout on a page that carries `superseded_by` is not read. The
+structural linter and `approve` have no callout rule: a page with an open
+conflict passes lint and can be approved.
 
 **The example.** Two complete pages cite different sources for one claim,
 and each names the other. The first page is `concepts/retry-budget.md`
@@ -236,8 +241,8 @@ There is no resolved mark. Resolve it in one promoted patch-set that:
    claim, and may rewrite that page's claim;
 3. appends one `log.md` line of exactly this form, where `<slug>` and
    `<page-type>` are the page that keeps the claim and `<source>` is the
-   deciding `sources:` entry as written (`issue: 12`, `pr: 22`,
-   `path: ...` or `url: ...`):
+   deciding `sources:` entry as written, without the list dash
+   (`issue: 12`, `pr: 22`, `path: ...` or `url: ...`):
    `- YYYY-MM-DD — resolve <slug> (<page-type>): conflict with <other-slug>, decided by <source>`.
 
 For the example, if issue 31 settles the budget at 5 retries, the patch-set
@@ -246,15 +251,20 @@ rewrites its claim, and appends
 `- 2026-11-07 — resolve retry-budget (concept): conflict with retry-policy, decided by issue: 31`.
 
 The receipt, the archived plan and `log.md` keep the history. The two
-updates usually produce `fact_warnings` (the removed callout text drops
-backticked identifiers and numbers); they are expected and advisory. No
-check reads history, so the rule is the curator's to follow.
+updates may produce `fact_warnings` when the removed text held backticked
+identifiers or numbers with a unit (`docs/patch-set-format.md`,
+`edits[].fact_warnings`); here they are expected, advisory, and never
+block promote. No check reads history, so the rule is the curator's to
+follow.
 
 **Known limits.** The scan is line-based, not a CommonMark parser:
 
 - The marker must start a line, after at most three spaces and the `>`.
 - A callout inside a list item, a lazy-continuation blockquote, a nested
-  quote or an HTML block is not recognised.
+  quote or an HTML block is not recognised. One in a list item, on a
+  lazy-continuation line or in a nested quote is not read, and no finding
+  reports it. The scan does not know HTML blocks, so a marker line inside
+  one is read like any other line.
 - A `.md` link that is not on the marker line is never the other page. A
   link to a source document on a sources line does not change which page
   the callout names.

@@ -47,8 +47,8 @@ carry a blockquote callout naming the other:
 > This page: issue: 12. That page: pr: 22.
 ```
 
-- The marker is `[!conflict]`, case-insensitive, optionally followed by
-  Obsidian's fold sign `+` or `-`. It starts a line after at most three
+- The marker is `[!conflict]`, case-insensitive, optionally followed with
+  no space by Obsidian's fold sign `+` or `-`. It starts a line after at most three
   spaces and the `>`.
 - The first `.md` link on the marker line names the other page. It is a
   relative wiki-page link resolved from the page's directory, as every
@@ -72,9 +72,11 @@ The receipt, the archived plan and `log.md` keep the history.
 - `conflict-one-sided`: a callout names a content page that carries no
   callout naming it back.
 - `conflict-dangling`: a callout names no wiki page, a page outside the
-  wiki, a missing page, a page that is not a content page, the page itself,
-  or a page that carries `superseded_by`. A superseded page's own callouts
-  are not read.
+  wiki, a missing page, a page that is not a content page (outside the
+  default review set: the root `index.md`, `log.md`, `schema/`, `scripts/`,
+  `.audit/`), the page itself, or a page that carries `superseded_by`. A
+  superseded page's own callouts are not read. An `open-questions/` entry
+  is a content page.
 
 **What does not move.**
 
@@ -148,4 +150,5 @@ cycle.
   code-copilot-team's, does not describe the form until it syncs from the
   packaged copy.
 - `open-questions/` stays the form for a gap across more than two pages or
-  with no sources yet. A callout may link such an entry.
+  with no sources yet. A callout may link such an entry on a sources line;
+  the marker line's link stays the other page.

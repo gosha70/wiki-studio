@@ -131,4 +131,6 @@ A disagreement between two pages whose sources conflict takes the
 conflict callout pair of
 [`citation-rules.md`](citation-rules.md#when-sources-disagree), not an
 `open-questions/` entry. Keep `open-questions/` for a gap that spans more
-than two pages or has no sources yet. A callout may link such an entry.
+than two pages or has no sources yet, and for a disagreement with a page
+outside this wiki. A callout may link such an entry on a sources line; the
+marker line's link stays the other page.
