@@ -4,6 +4,11 @@
 - Date: 2026-11-07
 - Issue: [#71](https://github.com/gosha70/wiki-studio/issues/71)
 - Feature: `specs/wiki-studio-0-9-0/` (FR-001, FR-002, FR-004, FR-007, FR-020)
+- Implementation: released in 0.9.0. The three `findings` kinds are built by
+  `src/wiki_studio/conflicts.py` and `findings.py` (US2 of `tasks.md`), and
+  the round-trip test by `tests/test_conflict_memkernel_roundtrip.py` (US4).
+  The build adds them on the feature branch before release. This record states
+  the decision they implement.
 
 ## Context
 
@@ -72,11 +77,10 @@ The receipt, the archived plan and `log.md` keep the history.
 - `conflict-one-sided`: a callout names a content page that carries no
   callout naming it back.
 - `conflict-dangling`: a callout names no wiki page, a page outside the
-  wiki, a missing page, a page that is not a content page (outside the
-  default review set: the root `index.md`, `log.md`, `schema/`, `scripts/`,
-  `.audit/`), the page itself, or a page that carries `superseded_by`. A
-  superseded page's own callouts are not read. An `open-questions/` entry
-  is a content page.
+  wiki, a missing page, a page that is not a content page (as defined in
+  `citation-rules.md`, "When sources disagree"), the page itself, or a page
+  that carries `superseded_by`. A superseded page's own callouts are not
+  read.
 
 **What does not move.**
 
@@ -124,9 +128,11 @@ at tag `v0.6.0`; `memkernel/wiki/curation.py` on main, the 0.7 work):
   `CURATION_KIND_ORDER` after the known ones (`_rank`) and does not refuse
   it. memkernel 0.6.0 does not call `findings`.
 
-`tests/test_conflict_memkernel_roundtrip.py` checks the parse and render in
-this repository. It copies memkernel's `pages.py` functions at tag `v0.6.0`
-as fixtures, citing their source lines.
+These observations come from reading that code. The parse and render
+observation also gets a test in this repository:
+`tests/test_conflict_memkernel_roundtrip.py` (FR-020, added in US4 of this
+feature). It copies memkernel's `pages.py` functions at tag `v0.6.0` as
+fixtures, citing their source lines.
 
 ## Requirement on memkernel
 
@@ -138,7 +144,8 @@ and re-renders an existing wiki page passes the body through unchanged.
 Open a memkernel issue to decide where `open-conflict`, `conflict-one-sided`
 and `conflict-dangling` rank in the curation report's `CURATION_KIND_ORDER`.
 Until then they rank after the known kinds. This is not assumed done in this
-cycle.
+cycle. Tracking: no memkernel issue is open yet. The owner opens it, because
+the build does not file issues in other repositories, and links it here.
 
 ## Consequences
 
@@ -150,5 +157,6 @@ cycle.
   code-copilot-team's, does not describe the form until it syncs from the
   packaged copy.
 - `open-questions/` stays the form for a gap across more than two pages or
-  with no sources yet. A callout may link such an entry on a sources line;
-  the marker line's link stays the other page.
+  with no sources yet. A callout may link such an entry on a sources line.
+  An entry linked first on the marker line is read as the other page, like
+  any content page, and is usually reported `conflict-one-sided`.

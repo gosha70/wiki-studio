@@ -127,10 +127,20 @@ form a recorded disagreement between two pages takes
 `> [!conflict] Disagrees with [<title>](<relative path to the other page>.md)`.
 The marker `[!conflict]` is case-insensitive and may carry Obsidian's fold
 sign, `+` or `-`, right after it with no space (`[!conflict]-`); a sign
-after a space is title text. The first `.md` link on the marker line names
-the other page, whatever it points at, so put no other `.md` link before
-it. It is a relative wiki-page link, resolved from the page's directory
-like every intra-wiki link.
+after a space is title text. Obsidian does not fold `[!conflict] -` and
+shows the `-` in the title, so write `[!conflict]-` to fold. The first `.md`
+link on the marker line names the other page, whatever it points at, so put
+no other `.md` link before it. It is a relative wiki-page link, resolved
+from the page's directory like every intra-wiki link. If that first link is
+a URL, the callout is `conflict-dangling`. If it is an `open-questions/`
+entry, that entry is the other page: it is a content page, so the callout
+is `conflict-one-sided` unless the entry carries a callout back. Link an
+`open-questions/` entry on a sources line instead.
+
+**Content pages.** A content page is any page the structural linter lists
+except the root `index.md` and `log.md`. The linter does not list files
+under `schema/`, `scripts/` or `.audit/`. `open-questions/` entries are
+content pages. This is the default review set of `approve` and `findings`.
 
 **The sources lines.** The next `>` lines read
 `> This page: <the entries this page's sources: cites, as written there>. That page: <the entries the other page cites>.`
@@ -149,10 +159,9 @@ plain blockquote.
 first `.md` link, nothing else. A matched pair is reported as
 `open-conflict`. A callout whose marker line has no `.md` link, or names a
 page outside the wiki, a missing page, a page that is not a content page
-(the root `index.md`, `log.md`, or a file under `schema/`, `scripts/` or
-`.audit/`), the page itself or a superseded page, is reported as
-`conflict-dangling`. An `open-questions/` entry is a content page. A
-callout on a page that carries `superseded_by` is not read. The
+(see "Content pages" above), the page itself or a superseded page, is
+reported as `conflict-dangling`. A callout on a page that carries
+`superseded_by` is not read. The
 structural linter and `approve` have no callout rule: a page with an open
 conflict passes lint and can be approved.
 
@@ -250,12 +259,14 @@ removes both callouts, adds `issue: 31` to `retry-budget`'s `sources:`,
 rewrites its claim, and appends
 `- 2026-11-07 — resolve retry-budget (concept): conflict with retry-policy, decided by issue: 31`.
 
-The receipt, the archived plan and `log.md` keep the history. The two
-updates may produce `fact_warnings` when the removed text held backticked
-identifiers or numbers with a unit (`docs/patch-set-format.md`,
-`edits[].fact_warnings`); here they are expected, advisory, and never
-block promote. No check reads history, so the rule is the curator's to
-follow.
+The receipt, the archived plan and `log.md` keep the history. The log
+line is free text. Nothing parses it, so write a source entry that holds a
+comma or a colon as it is, without quotes. The two updates may produce
+`fact_warnings` when the removed or rewritten text held `path:` citations,
+backticked identifiers or numbers with a unit (`docs/patch-set-format.md`,
+`edits[].fact_warnings`). If they appear, they are expected and advisory,
+and they never block promote. No check reads history, so the rule is the
+curator's to follow.
 
 **Known limits.** The scan is line-based, not a CommonMark parser:
 
