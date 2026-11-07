@@ -348,7 +348,10 @@ class TestTools(FixtureCase):
 
     def test_findings_and_review_state_shapes(self) -> None:
         tools = self.launch()
-        self.assertIn("findings", tools.findings())
+        findings = tools.findings()
+        self.assertIn("findings", findings)
+        for kind in ("open-conflict", "conflict-one-sided", "conflict-dangling"):
+            self.assertIn(kind, findings["counts"])
         states = tools.review_state()["states"]
         self.assertEqual({s["path"] for s in states}, {RETRY_PAGE, "decisions/cache-policy.md"})
         self.assertEqual(

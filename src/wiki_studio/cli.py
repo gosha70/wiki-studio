@@ -410,14 +410,20 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     )
 
     # ── findings ───────────────────────────────────────────────
+    findings_help = (
+        "Report what needs a curator's attention without calling a model: counts by kind, then each finding. "
+        "Kinds: stale-claim, weak-orphan, missing-cross-link, avoid-format (the health checks without a backend), "
+        "unapproved, approval-stale, approval-policy-changed (review state), superseded-still-indexed, "
+        "no-page-id, and the conflict kinds open-conflict (two pages each carry a callout naming the other), "
+        "conflict-one-sided (a callout names a page that carries none back) and conflict-dangling "
+        "(a callout names no wiki page, or one that cannot be its other page). Read-only; takes no lock; "
+        "exits 0 on a completed run whatever it finds (lint --health --strict is the CI gate)."
+    )
     p_findings = sub.add_parser(
         "findings",
         parents=[common],
-        help="Report what needs a curator's attention without calling a model: counts by kind, then each finding. "
-        "Kinds: stale-claim, weak-orphan, missing-cross-link, avoid-format (the health checks without a backend), "
-        "unapproved, approval-stale, approval-policy-changed (review state), superseded-still-indexed and "
-        "no-page-id. Read-only; takes no lock; exits 0 on a completed run whatever it finds "
-        "(lint --health --strict is the CI gate).",
+        help=findings_help,
+        description=findings_help,
     )
     p_findings.add_argument(
         "--json",

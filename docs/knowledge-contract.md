@@ -398,6 +398,10 @@ report curation debt at session start without reading the findings.
 `severity`, `pages` (wiki-relative) and `description`, the shape memkernel's
 `HealthItem` mirrors. Key order carries no meaning: read keys by name.
 
+Kinds may be added within `findings_version: 1`: `counts` names every kind
+this build reports, so a consumer reads kinds by name and treats an unknown
+kind as a warning it does not classify.
+
 | Kind | Severity | When |
 |---|---|---|
 | `stale-claim` | `warning` | A cited `path:` source no longer exists. |
@@ -409,9 +413,13 @@ report curation debt at session start without reading the findings.
 | `approval-policy-changed` | `warning` | Review state `policy-changed`. |
 | `superseded-still-indexed` | `warning` | `index.md` links a page that carries `superseded_by`. |
 | `no-page-id` | `warning` | A content page has no `page_id`. |
+| `open-conflict` | `warning` | Two pages each carry a `> [!conflict]` callout naming the other (`citation-rules.md`, When sources disagree); one finding per pair. |
+| `conflict-one-sided` | `warning` | A callout names a page that carries no callout naming it back. |
+| `conflict-dangling` | `warning` | A callout names no wiki page, a page outside the wiki, a missing page, a page that is not a content page, the page itself, or a superseded page. |
 
 The health checks run without a backend, so `contradiction` never appears;
-run `lint --health --backend NAME` for it.
+run `lint --health --backend NAME` for it. A disagreement a curator has
+recorded is reported by the three conflict kinds.
 
 ## Reserved edits
 
