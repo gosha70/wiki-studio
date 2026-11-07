@@ -23,7 +23,7 @@ The code was extracted from
 pip install wiki-studio          # Python 3.11–3.13, no runtime dependencies
 pip install 'wiki-studio[mcp]'   # optional: the MCP server, wiki-studio-mcp (see MCP)
 wiki-studio --help
-wiki-studio --version           # 0.8.1
+wiki-studio --version           # 0.9.0
 ```
 
 From a checkout: `poetry install`, then `poetry run wiki-studio --help`.
