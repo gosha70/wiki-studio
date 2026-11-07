@@ -328,9 +328,11 @@ class TestScopeAndSurfaces(ConflictCase):
         )
         self.create("order-one-sided", body="One.\n\n" + callout("quiet.md"))
         dangling = self.create("order-dangling", body="Bad.\n\n" + callout("order-dangling.md"))
-        kinds = [kind for kind, _ in _conflict_findings(api.findings(self.paths))]
+        result = api.findings(self.paths)
+        kinds = [kind for kind, _ in _conflict_findings(result)]
         self.assertEqual(kinds, ["open-conflict", "conflict-one-sided", "conflict-dangling"])
-        self.assertEqual(_findings_for(api.findings(self.paths), dangling)[-1].kind, "conflict-dangling")
+        self.assertEqual({kind: result.counts[kind] for kind in CONFLICT_KINDS}, dict.fromkeys(CONFLICT_KINDS, 1))
+        self.assertEqual(_findings_for(result, dangling)[-1].kind, "conflict-dangling")
 
     def test_no_backend_is_reached_with_a_callout_fixture(self) -> None:
         self.create_pair()

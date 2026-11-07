@@ -422,7 +422,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     p_findings = sub.add_parser(
         "findings",
         parents=[common],
-        help=findings_help,
+        help="Report what needs a curator's attention without calling a model.",
         description=findings_help,
     )
     p_findings.add_argument(

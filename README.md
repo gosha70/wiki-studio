@@ -256,7 +256,7 @@ and the conflict kinds `open-conflict` (two pages each mark a conflict with
 the other), `conflict-one-sided` (a callout names a page that carries none
 back) and `conflict-dangling` (a callout names no wiki page, or one that
 cannot be its other page), written in the form of
-[`citation-rules.md`'s "When sources disagree"](src/wiki_studio/schema/citation-rules.md#when-sources-disagree).
+[`citation-rules.md`'s "When sources disagree"](https://github.com/gosha70/wiki-studio/blob/main/src/wiki_studio/schema/citation-rules.md#when-sources-disagree).
 It takes no backend, reads only, takes no lock, and exits 0 on a
 completed run whatever it finds; `lint --health --strict` stays the CI gate.
 The JSON format is in `docs/knowledge-contract.md`.

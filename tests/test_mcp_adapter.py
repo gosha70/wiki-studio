@@ -351,12 +351,45 @@ class TestTools(FixtureCase):
         findings = tools.findings()
         self.assertIn("findings", findings)
         for kind in ("open-conflict", "conflict-one-sided", "conflict-dangling"):
-            self.assertIn(kind, findings["counts"])
+            self.assertEqual(findings["counts"].get(kind), 0, kind)
         states = tools.review_state()["states"]
         self.assertEqual({s["path"] for s in states}, {RETRY_PAGE, "decisions/cache-policy.md"})
         self.assertEqual(
             set(states[0]),
             {"path", "page_key", "state", "reason", "live_sha256", "approved_sha256", "record_path", "warnings"},
+        )
+
+    def test_findings_reports_each_conflict_kind(self) -> None:
+        tools = self.launch()
+        pair_left, pair_right = "decisions/pair-left.md", "decisions/pair-right.md"
+        one_sided, dangling = "decisions/one-sided.md", "decisions/dangling.md"
+
+        def conflict(target: str) -> str:
+            return f"Disagreement.\n\n> [!conflict] [the other page]({target})"
+
+        pages = (pair_left, pair_right, one_sided, dangling)
+        edits = [
+            {"path": pair_left, "action": "create", "content": new_page("pair-left", conflict("pair-right.md"))},
+            {"path": pair_right, "action": "create", "content": new_page("pair-right", conflict("pair-left.md"))},
+            {"path": one_sided, "action": "create", "content": new_page("one-sided", conflict("pair-left.md"))},
+            {"path": dangling, "action": "create", "content": new_page("dangling", conflict("dangling.md"))},
+            *[
+                {"path": "index.md", "action": "append-index", "content": f"- [{Path(rel).stem}]({rel})"}
+                for rel in pages
+            ],
+        ]
+        tools.propose(edits, name="conflicts")
+        tools.promote("conflicts")
+        findings = tools.findings(list(pages))
+        kinds = ("open-conflict", "conflict-one-sided", "conflict-dangling")
+        self.assertEqual({kind: findings["counts"][kind] for kind in kinds}, dict.fromkeys(kinds, 1))
+        self.assertEqual(
+            [(finding["kind"], finding["pages"]) for finding in findings["findings"] if finding["kind"] in kinds],
+            [
+                ("open-conflict", [pair_left, pair_right]),
+                ("conflict-one-sided", [one_sided, pair_left]),
+                ("conflict-dangling", [dangling]),
+            ],
         )
 
 
