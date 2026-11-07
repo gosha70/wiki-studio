@@ -10,3 +10,6 @@ Review: PASS (see specs/wiki-studio-0-9-0/collaboration/build-review.md).
 
 ### Phase 4 complete — US4: Approval and memkernel import unaffected (2026-11-07T20:12:59Z)
 Review: PASS (see specs/wiki-studio-0-9-0/collaboration/build-review.md).
+
+### Phase 5 complete — US5: Release 0.9.0 (2026-11-07T20:30:10Z)
+Review: PASS (see specs/wiki-studio-0-9-0/collaboration/build-review.md).
