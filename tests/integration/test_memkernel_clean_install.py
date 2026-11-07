@@ -195,6 +195,49 @@ class TestMemkernelCleanInstall(unittest.TestCase):
             sorted(m.source for m in wiki_memories()), sorted(exported.written), "a second import adds no memory"
         )
 
+    def _add_callout_pair(self) -> tuple[str, str]:
+        """Mark two exported drafts as a conflict pair through the gate; returns both paths (FR-021)."""
+        from wiki_studio import api
+        from wiki_studio.paths import WikiPaths
+        from wiki_studio.proposal import PageEdit
+
+        paths = WikiPaths.for_root(self.root, wiki_dir=self.wiki, proposals_dir=self.proposals)
+        left = "decisions/use-postgres-for-the-user-db.md"
+        right = "concepts/all-services-log-json-to-stdout-never-write-log-files.md"
+        targets = {
+            left: "../concepts/all-services-log-json-to-stdout-never-write-log-files.md",
+            right: "../decisions/use-postgres-for-the-user-db.md",
+        }
+        edits = []
+        for rel in (left, right):
+            page = api.read_page(rel, paths)
+            callout = (
+                f"> [!conflict] Disagrees with [the other page]({targets[rel]})\n"
+                "> This page: pr: 22. That page: issue: 12."
+            )
+            text = page.text.rstrip("\n") + "\n\n" + callout + "\n"
+            edits.append(PageEdit(rel, "update", text, "mark the recorded conflict", page.sha256))
+        api.promote(api.propose(edits, paths, name="conflict-pair"), paths)
+        return left, right
+
+    def test_an_approved_callout_pair_reaches_the_imported_memory(self) -> None:
+        """A callout is page body, so governed import keeps it in the memory's content (FR-021)."""
+        from memkernel.core.models import MemoryTier
+        from memkernel.wiki.sync import WikiImporter
+
+        exported = self._export()
+        self.assertTrue(exported.gated)
+        left, right = self._add_callout_pair()
+        self._approve(left)
+        self._approve(right)
+        report = WikiImporter(self.service, self.wiki).import_pages()
+        self.assertEqual(sorted(report.imported), sorted([left, right]))
+        memories = {m.source: m for m in self.service.list_memories(tier=MemoryTier.LONG_TERM) if "wiki" in m.tags}
+        self.assertEqual(sorted(memories), sorted([left, right]))
+        for rel in (left, right):
+            self.assertIn("> [!conflict] Disagrees with [the other page](", memories[rel].content)
+            self.assertIn("> This page: pr: 22. That page: issue: 12.", memories[rel].content)
+
     def test_the_pinned_memkernel_has_no_wiki_snapshot(self) -> None:
         """The bridge's whole-wiki snapshot (0.7.0 Limitations, memkernel #48 part 1) is gone, not merely unused."""
         import inspect

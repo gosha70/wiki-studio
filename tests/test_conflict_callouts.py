@@ -504,5 +504,41 @@ class TestResolutionRule(ConflictCase):
         self.assertEqual(_conflict_findings(api.findings(self.paths)), [("conflict-one-sided", (right, left))])
 
 
+class TestApprovalThroughTheGate(ConflictCase):
+    """FR-019: a callout pair is not a lint or approval rule; the kinds live in ``findings`` only."""
+
+    def test_a_matched_pair_lints_clean_and_both_pages_approve(self) -> None:
+        left, right = self.create_pair()
+        approved = api.approve([left, right], self.paths, by="alice")
+        self.assertEqual(len(approved.published), 2)
+        for rel in (left, right):
+            self.assertEqual(self.state(rel).state, "approved")
+
+        lint = api.lint(self.paths, health=True, strict=True)
+        self.assertEqual((lint.violations, lint.audit_errors), ((), ()))
+        self.assertIsNotNone(lint.health)
+        assert lint.health is not None
+        self.assertEqual([finding.kind for finding in lint.health.findings], [])
+        self.assertTrue(lint.passed)
+        for argv in (("lint",), ("lint", "--health", "--strict")):
+            result = self.cli(*argv)
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+        self.assertEqual(_conflict_findings(api.findings(self.paths)), [("open-conflict", (left, right))])
+
+    def test_a_marker_line_without_a_page_link_promotes_and_is_dangling(self) -> None:
+        self.create("solo-target")
+        rel = self.create(
+            "no-link-marker",
+            body="A bad marker.\n\n> [!conflict] This page disagrees.\n> [the other page](solo-target.md)",
+        )
+        self.assertTrue((self.wiki / rel).is_file(), "the page did not promote")
+        lint = self.cli("lint")
+        self.assertEqual(lint.returncode, 0, lint.stderr)
+        (finding,) = _dangling(api.findings(self.paths))
+        self.assertEqual(finding.pages, (rel,))
+        self.assertIn("names no wiki page", finding.description)
+
+
 if __name__ == "__main__":
     unittest.main()
