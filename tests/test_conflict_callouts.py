@@ -48,6 +48,8 @@ EXPECTED_FIXTURE_FINDINGS = [
         ("decisions/superseded-caller.md",),
         "names decisions/old-target.md, which is superseded by decisions/new-target.md",
     ),
+    ("conflict-dangling", ("decisions/two-no-link.md",), "names no wiki page"),
+    ("conflict-dangling", ("decisions/two-no-link.md",), "names no wiki page"),
 ]
 
 
@@ -107,6 +109,16 @@ class TestFixtureWiki(unittest.TestCase):
             if reason:
                 self.assertIn(reason, finding.description)
                 self.assertRegex(finding.description, r"^line \d+: ")
+
+    def test_each_marker_line_without_a_link_is_reported(self) -> None:
+        # Two link-less marker lines are not a repeat of one target (#90).
+        callouts = scan_callouts(self.paths)["decisions/two-no-link.md"]
+        self.assertEqual([c.raw_target for c in callouts], [None, None])
+        found = [f for f in conflict_findings(self.paths) if f.pages == ("decisions/two-no-link.md",)]
+        self.assertEqual(
+            [f.description for f in found],
+            [f"line {c.line}: conflict callout names no wiki page" for c in callouts],
+        )
 
     def test_the_scan_reads_the_marker_line_of_each_page_once(self) -> None:
         callouts = scan_callouts(self.paths)

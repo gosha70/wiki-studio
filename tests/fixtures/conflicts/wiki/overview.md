@@ -31,6 +31,7 @@ Every page the conflict scan reads.
 - [old-target](decisions/old-target.md)
 - [new-target](decisions/new-target.md)
 - [no-link](decisions/no-link.md)
+- [two-no-link](decisions/two-no-link.md)
 - [source-line-a](decisions/source-line-a.md)
 - [source-line-b](decisions/source-line-b.md)
 - [titled-link](decisions/titled-link.md)
