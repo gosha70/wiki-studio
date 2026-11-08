@@ -24,7 +24,7 @@ floor the gate needs, and wiki-studio's CLI is the curator's tool. The bridge
 does not use wiki-studio's MCP server.
 
 ```bash
-pip install 'memkernel[wiki]==0.6.0' 'wiki-studio==0.8.1'
+pip install 'memkernel[wiki]==0.6.0' 'wiki-studio==0.9.0'
 python -c "import memkernel.wiki.sync, wiki_studio.api"
 ```
 
@@ -35,7 +35,7 @@ environments work on the same wiki on disk.
 
 ```bash
 python -m venv ~/.venvs/wiki-studio-mcp
-~/.venvs/wiki-studio-mcp/bin/pip install 'wiki-studio[mcp]==0.8.1'
+~/.venvs/wiki-studio-mcp/bin/pip install 'wiki-studio[mcp]==0.9.0'
 ```
 
 Not executed in CI: the `quickstart-memkernel` job resolves both `pip install`

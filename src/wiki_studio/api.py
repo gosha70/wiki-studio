@@ -837,7 +837,11 @@ def findings(paths: WikiPaths, *, pages: list[str] | None = None) -> FindingsRes
     (``stale-claim``, ``weak-orphan``, ``missing-cross-link``,
     ``avoid-format``), the review kinds from :func:`review_state`
     (``unapproved``, ``approval-stale``, ``approval-policy-changed``),
-    ``superseded-still-indexed`` and ``no-page-id``. Reads only, takes no
+    ``superseded-still-indexed``, ``no-page-id``, and the conflict kinds
+    ``open-conflict`` (two pages each carry a conflict callout naming the
+    other), ``conflict-one-sided`` (a callout names a page that carries none
+    back) and ``conflict-dangling`` (a callout names no wiki page, or one
+    that cannot be its other page). Reads only, takes no
     lock. ``pages=None`` covers the whole wiki; an explicit list scopes every
     kind to those pages (``PathOutsideRootError`` / ``SourceMissingError`` as
     ``read_page``). A completed run is a result whatever it finds;

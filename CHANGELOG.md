@@ -6,6 +6,26 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.0]
+
+### Added
+
+- Conflict callouts (0.9.0, US1). Two wiki pages whose cited sources disagree
+  on one claim carry the same optional body convention: a blockquote marker
+  line `> [!conflict] Disagrees with [<title>](<page>.md)` linking the other
+  page, then the sources lines each side cites. `citation-rules.md` ("When
+  sources disagree") gives the form, an example pair, the resolution rule
+  (both callouts removed in one patch-set, the deciding source added to
+  `sources:`, one `log.md` line) and the scan's known limits;
+  `WIKI_MAINTAINER.md` marks a two-page disagreement with the pair. ADR-0004
+  records the decision: a body convention, not a frontmatter key;
+  `schema.version` stays 2 and `findings_version` stays 1.
+- Three model-free kinds in `findings` (0.9.0, US2): `open-conflict` (two
+  pages each carry a callout naming the other), `conflict-one-sided` (a
+  callout names a page that carries none back) and `conflict-dangling` (a
+  callout names no wiki page, or one that cannot be its other page), each
+  severity `warning`.
+
 ### Fixed
 
 - The composition quickstart's install line could not be installed.
@@ -21,6 +41,12 @@ uses [Semantic Versioning](https://semver.org/).
   `pip install --dry-run` (`tests/helpers/quickstart_blocks.py`,
   `pip_install_commands`), and a page test pins the two lines. Reported from
   the memkernel.dev page update.
+
+### Notes
+
+- No frontmatter key; `schema.version` 2 and `findings_version` 1 unchanged;
+  no new verb, flag, exit code, MCP tool, capability or dependency; no
+  structural-lint or `approve` rule about callouts; no prompt code change.
 
 ## [0.8.1] — 2026-11-04
 

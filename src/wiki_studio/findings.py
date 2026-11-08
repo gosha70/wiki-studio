@@ -11,7 +11,11 @@ One read-only pass over the wiki that a host can run at session start:
   and ``approval-policy-changed``;
 * ``superseded-still-indexed``: ``index.md`` links a page that carries
   ``superseded_by``;
-* ``no-page-id``: a content page without a ``page_id``.
+* ``no-page-id``: a content page without a ``page_id``;
+* the conflict kinds of ``conflicts``: ``open-conflict`` (two pages each
+  carry a conflict callout naming the other), ``conflict-one-sided``
+  (a callout names a page that carries none back) and ``conflict-dangling``
+  (a callout names no wiki page, or one that cannot be its other page).
 
 Nothing here takes a backend or resolves one, takes the wiki lock or writes.
 The result is versioned (``findings_version``) and leads with ``counts`` by
@@ -24,6 +28,7 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any
 
+from .conflicts import conflict_findings
 from .contract import FINDINGS_FORMAT_VERSION
 from .health_lint import _intra_wiki_links_from, lint_health
 from .lint import INDEX_NAME
@@ -58,6 +63,9 @@ KIND_APPROVAL_STALE = "approval-stale"
 KIND_APPROVAL_POLICY_CHANGED = "approval-policy-changed"
 KIND_SUPERSEDED_STILL_INDEXED = "superseded-still-indexed"
 KIND_NO_PAGE_ID = "no-page-id"
+KIND_OPEN_CONFLICT = "open-conflict"
+KIND_CONFLICT_ONE_SIDED = "conflict-one-sided"
+KIND_CONFLICT_DANGLING = "conflict-dangling"
 # Every kind this build can report, in the order a run lists them; ``counts`` names each one.
 FINDING_KINDS: tuple[str, ...] = (
     KIND_STALE_CLAIM,
@@ -69,6 +77,9 @@ FINDING_KINDS: tuple[str, ...] = (
     KIND_APPROVAL_POLICY_CHANGED,
     KIND_SUPERSEDED_STILL_INDEXED,
     KIND_NO_PAGE_ID,
+    KIND_OPEN_CONFLICT,
+    KIND_CONFLICT_ONE_SIDED,
+    KIND_CONFLICT_DANGLING,
 )
 
 # The review state each review kind reports.
@@ -199,6 +210,13 @@ def findings(paths: WikiPaths, *, pages: list[str] | None = None) -> FindingsRes
             found.append(Finding(f.kind, f.severity, scoped, f.description))
     found.extend(_review_findings(states))
     found.extend(_page_findings(paths, canonical))
+    # The conflict scan reads the whole review set whatever the scope, so a
+    # scoped run still sees the page that answers back; the same scope rule as
+    # the health findings keeps it and lists only its in-scope pages.
+    for conflict in conflict_findings(paths):
+        scoped = tuple(page for page in conflict.pages if page in in_scope)
+        if scoped:
+            found.append(Finding(conflict.kind, conflict.severity, scoped, conflict.description))
     counts = dict.fromkeys(FINDING_KINDS, 0)
     for finding in found:
         counts[finding.kind] += 1

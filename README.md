@@ -23,7 +23,7 @@ The code was extracted from
 pip install wiki-studio          # Python 3.11–3.13, no runtime dependencies
 pip install 'wiki-studio[mcp]'   # optional: the MCP server, wiki-studio-mcp (see MCP)
 wiki-studio --help
-wiki-studio --version           # 0.8.1
+wiki-studio --version           # 0.9.0
 ```
 
 From a checkout: `poetry install`, then `poetry run wiki-studio --help`.
@@ -251,8 +251,13 @@ Reports what needs a curator's attention without calling a model: counts by
 kind, then each finding. The kinds are the health checks that need no backend
 (`stale-claim`, `weak-orphan`, `missing-cross-link`, `avoid-format`), the
 review kinds `unapproved`, `approval-stale` and `approval-policy-changed`,
-`superseded-still-indexed` (`index.md` links a superseded page) and
-`no-page-id`. It takes no backend, reads only, takes no lock, and exits 0 on a
+`superseded-still-indexed` (`index.md` links a superseded page), `no-page-id`,
+and the conflict kinds `open-conflict` (two pages each mark a conflict with
+the other), `conflict-one-sided` (a callout names a page that carries none
+back) and `conflict-dangling` (a callout names no wiki page, or one that
+cannot be its other page), written in the form of
+[`citation-rules.md`'s "When sources disagree"](https://github.com/gosha70/wiki-studio/blob/main/src/wiki_studio/schema/citation-rules.md#when-sources-disagree).
+It takes no backend, reads only, takes no lock, and exits 0 on a
 completed run whatever it finds; `lint --health --strict` stays the CI gate.
 The JSON format is in `docs/knowledge-contract.md`.
 
