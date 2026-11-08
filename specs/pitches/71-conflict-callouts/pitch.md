@@ -2,7 +2,7 @@
 pitch_id: 71-conflict-callouts
 title: "Conflict callouts: a fixed on-page form for a disagreement between sources, and a model-free finding that reports open, one-sided and dangling ones"
 appetite: 2w
-bet_status: building
+bet_status: shipped
 cycle: "05"
 circuit_breaker: "Core is S1, S2 and the wiki-studio half of S4: the documented callout form with ADR-0004, the model-free findings for matched, one-sided and dangling callouts, and the tests that an open conflict still approves and that memkernel's page parser keeps the callout. They ship alone if the cycle runs out. End of week 1: if S2 is not downhill, D6 shrinks to the cases structural lint does not catch and that need no read of the target's frontmatter (a callout that names no wiki page, a non-page target, the page itself), dropping the superseded case, and the live memkernel import case in S4 is cut in favour of the copied-parser test, stated in the CHANGELOG. End of week 2: S3's docs ship as far as they are true; nothing ships that describes an unbuilt kind. Never, to save time: put a model or a backend on any path from findings, approve or review_state; add a structural-lint or approve rule that refuses a page because it carries a callout; add a frontmatter key, a runtime dependency, an exit code or a new MCP tool; bump schema.version or findings_version without a decision record; edit memkernel; weaken or skip a test."
 shaped_by: "pitch-shaper (Claude Code) for gosha70"
@@ -509,3 +509,4 @@ itself, a superseded target and a callout with no page link; D7
 | 2026-11-05 | shaped (revised before the PR) | The four points the reviewer named ahead of review, settled in the text: `conflict-dangling`'s overlap with lint's fatal broken-link rule stated (D6) and the circuit-breaker fallback moved to the cases lint passes; the copied memkernel parser pinned by file, line ranges and tag `v0.6.0` (S4); "curators write callouts, ingest is not asked to" (D9); one check per part of the resolution rule, with `fact_warnings` expected (S2). |
 | 2026-11-05 | bet | Bet for cycle 05. |
 | 2026-11-05 | building | Cycle 05 started; hill chart initialized. |
+| 2026-11-08 | shipped | Cycle 05 closed. Shipped in 0.9.0 (2026-11-08, tag on b66b3be): build PR #89 (closed #71), release PR #91 (CHANGELOG dated, compatibility row Tested on main run 42440785170), PR #92 (ADR-0004 links memkernel #111). All five scopes done; the driver parked after S1 on a review breaker, the owner amended the link rule in the spec (2f64036, 2aed4b5) and resumed with a retry; hand PR #88 was closed. The hill was not updated during the cycle (auto-build driver), set to done at close. Follow-ups: #90, memkernel #111. |
