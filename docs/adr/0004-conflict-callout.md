@@ -4,11 +4,10 @@
 - Date: 2026-11-07
 - Issue: [#71](https://github.com/gosha70/wiki-studio/issues/71)
 - Feature: `specs/wiki-studio-0-9-0/` (FR-001, FR-002, FR-004, FR-007, FR-020)
-- Implementation: planned for 0.9.0. The three `findings` kinds will be built
-  by `src/wiki_studio/conflicts.py` and `findings.py` (US2 of `tasks.md`), and
-  the round-trip test by `tests/test_conflict_memkernel_roundtrip.py` (US4),
-  on the feature branch before release. This record states the decision they
-  implement.
+- Implementation: 0.9.0. The three `findings` kinds are built by
+  `src/wiki_studio/conflicts.py` and `findings.py`, and the parse and render
+  round trip is tested by `tests/test_conflict_memkernel_roundtrip.py`. This
+  record states the decision they implement.
 
 ## Context
 
@@ -129,10 +128,9 @@ at tag `v0.6.0`; `memkernel/wiki/curation.py` at tag `v0.7.0`):
   it. memkernel 0.6.0 does not call `findings`.
 
 These observations come from reading that code. The parse and render
-observation also gets a test in this repository:
-`tests/test_conflict_memkernel_roundtrip.py` (FR-020, added in US4 of this
-feature). It copies memkernel's `pages.py` functions at tag `v0.6.0` as
-fixtures, citing their source lines.
+observation also has a test in this repository:
+`tests/test_conflict_memkernel_roundtrip.py` (FR-020). It copies memkernel's
+`pages.py` functions at tag `v0.6.0` as fixtures, citing their source lines.
 
 ## Requirement on memkernel
 

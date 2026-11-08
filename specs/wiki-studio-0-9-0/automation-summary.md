@@ -18,4 +18,9 @@ Review: PASS (see specs/wiki-studio-0-9-0/collaboration/build-review.md).
 Profile: pr — branch feature/wiki-studio-0-9-0 pushed to origin; a pull request tracks the work (the driver never merges).
 Review artifacts: specs/wiki-studio-0-9-0/collaboration/.
 
-Outcome: PR #88 updated (https://github.com/gosha70/wiki-studio/pull/88); merge: not in this profile (pr).
+Outcome: PR #89 opened by hand (https://github.com/gosha70/wiki-studio/pull/89); merge: not in this profile (pr).
+
+Correction: the driver reported "PR #88 updated". #88 had been opened by hand
+during the phase 1 park and closed before the resume; the driver edited the
+closed PR's body instead of opening a new one (gosha70/code-copilot-team#427),
+so #89 was opened with `automation.json`'s title and `Closes #71`.
