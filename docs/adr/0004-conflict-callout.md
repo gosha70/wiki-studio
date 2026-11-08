@@ -139,11 +139,11 @@ and re-renders an existing wiki page passes the body through unchanged.
 
 ## Follow-up for memkernel
 
-Open a memkernel issue to decide where `open-conflict`, `conflict-one-sided`
-and `conflict-dangling` rank in the curation report's `CURATION_KIND_ORDER`.
+memkernel decides where `open-conflict`, `conflict-one-sided` and
+`conflict-dangling` rank in the curation report's `CURATION_KIND_ORDER`.
 Until then they rank after the known kinds. This is not assumed done in this
-cycle. Tracking: no memkernel issue is open yet. The owner opens it, because
-the build does not file issues in other repositories, and links it here.
+cycle. Tracking: [memkernel #111](https://github.com/gosha70/memkernel/issues/111),
+opened 2026-11-08.
 
 ## Consequences
 
