@@ -139,11 +139,12 @@ and re-renders an existing wiki page passes the body through unchanged.
 
 ## Follow-up for memkernel
 
-memkernel decides where `open-conflict`, `conflict-one-sided` and
-`conflict-dangling` rank in the curation report's `CURATION_KIND_ORDER`.
-Until then they rank after the known kinds. This is not assumed done in this
-cycle. Tracking: [memkernel #111](https://github.com/gosha70/memkernel/issues/111),
-opened 2026-11-08.
+Done in [memkernel #111](https://github.com/gosha70/memkernel/issues/111)
+(closed 2026-11-08; [#113](https://github.com/gosha70/memkernel/pull/113)):
+`open-conflict`, `conflict-one-sided` and `conflict-dangling` rank right after
+the review kinds and before `stale-claim` in the curation report's
+`CURATION_KIND_ORDER`. memkernel releases up to 0.8.0 rank them after the known
+kinds, by name.
 
 ## Consequences
 
