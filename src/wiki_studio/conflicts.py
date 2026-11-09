@@ -167,7 +167,8 @@ def _dangling_reason(
 def conflict_findings(paths: WikiPaths) -> list[Finding]:
     """The three conflict kinds for the whole review set, in a deterministic order (FR-007).
 
-    Each page's repeated callout to the same other page counts once. A dangling
+    Each page's repeated callout to the same other page counts once; a marker
+    line that names no page repeats nothing, so each one is reported. A dangling
     callout never pairs. Findings are listed ``open-conflict`` (by pages),
     ``conflict-one-sided`` (by pages) and ``conflict-dangling`` (by page, then
     line); the caller applies the ``findings`` page scope.
@@ -189,10 +190,11 @@ def conflict_findings(paths: WikiPaths) -> list[Finding]:
         kept: list[Callout] = []
         resolved_targets: set[str] = set()
         for callout in callouts[page]:
-            key = ("resolved", callout.resolved) if callout.resolved is not None else ("raw", callout.raw_target)
-            if key in seen:
-                continue
-            seen.add(key)
+            if callout.raw_target is not None:
+                key = ("resolved", callout.resolved) if callout.resolved is not None else ("raw", callout.raw_target)
+                if key in seen:
+                    continue
+                seen.add(key)
             kept.append(callout)
             if callout.resolved is not None:
                 resolved_targets.add(callout.resolved)

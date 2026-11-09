@@ -6,6 +6,12 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- `findings` reports every `> [!conflict]` marker line that names no wiki
+  page. A page with two such lines got one `conflict-dangling` instead of two,
+  because the repeat check treated "no link" as one repeated target (#90).
+
 ## [0.9.0] — 2026-11-08
 
 ### Added
