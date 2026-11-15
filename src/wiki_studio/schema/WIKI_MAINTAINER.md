@@ -183,7 +183,10 @@ For every new page or update:
       `  + <wiki-label>/<path>`, without the label. Never the
       wiki-root `index.md` or `log.md`, or anything under `.audit/`;
       a nested `index.md` (for example `concepts/index.md`) is a
-      content page and is approved like any other.
+      content page and is approved like any other. Skip a changed page
+      that is `status: draft` or carries `superseded_by`, and report it:
+      `approve` always refuses those, and you never edit a page's
+      frontmatter to get an approval through.
     - For each page, in this order: run
       `wiki-studio read <page> --json` and take its `sha256`, inspect
       the content (it is the page you drafted and promoted, and
@@ -193,12 +196,10 @@ For every new page or update:
       approved. Approve one page at a time: `--revision` takes exactly
       one page (exit 4 otherwise).
     - If `approve` refuses because the live page differs from
-      `<sha256>`, another writer replaced it after promote: re-read it
-      and compare the content with the draft you promoted. Approve the
-      new revision only if its content is still what you drafted and
-      inspected; otherwise report the page and stop. Never approve a
-      revision whose content you did not author in this turn, and
-      never approve without `--revision`.
+      `<sha256>`, another writer replaced it after promote. Do not
+      approve it: report the page and stop. An approval under your name
+      would vouch for bytes someone else wrote. Never approve without
+      `--revision`.
     - `approve` refuses (exit 9, nothing written): a `status: draft`
       page, a page carrying `superseded_by`, a page with a
       structural-lint violation, a `--revision` that is not the live
@@ -211,7 +212,7 @@ For every new page or update:
       (5) run the read and approve commands above through the CLI when
       you have a shell: `wiki-studio read <page> --json`, then
       `wiki-studio approve <page> --revision <sha256> --by <agent-name>`.
-      Only `without a shell` do you stop and report the promoted pages
+      Only without a shell do you stop and report the promoted pages
       awaiting approval.
     - A person may re-review a page later through `review_state` or
       `findings`.

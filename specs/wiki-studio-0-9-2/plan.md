@@ -185,6 +185,13 @@ Each is recorded so the origin-alignment record at approval can cite it.
 9. **Six version places, not three**: README's comment and the two test
    pins join the pitch's list, as PR #97 did (FR-023).
 
+10. **Amended after the #103 review (2026-11-15).** FR-003(d): a changed
+   page that is `status: draft` or carries `superseded_by` is skipped and
+   reported, not approved, since `approve` always refuses it. FR-003(f),
+   owner's decision: when the live page differs from `<sha256>`, the agent
+   does not approve it and reports the page and stops, which narrows the
+   earlier re-read-and-approve rule.
+
 The origin block above is unchanged: these are decisions on the derived
 artifacts, recorded here, not a change to the origin.
 
