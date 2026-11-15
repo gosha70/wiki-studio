@@ -63,9 +63,11 @@ For every new page or update:
    [`ingest-rules.md`](ingest-rules.md#writing-rules); prefer concrete
    examples over abstract claims. For an update, start from the live
    text that `wiki-studio read <path> --json` prints and record its
-   `sha256` for that page in `<dir>/.base.json`. Set `status:` per
-   `page-types.md`; a page left `draft` cannot be approved (see the
-   approve step).
+   `sha256` for that page in `<dir>/.base.json`, a JSON object mapping
+   each wiki-relative page path to the sha256 `read` printed for it
+   (for example `{"concepts/retry-backoff.md": "<sha256>"}`). Set
+   `status:` per `page-types.md`; a page left `draft` cannot be
+   approved (see the approve step).
 7. **Link.** Put the line that links the page from the wiki's index
    in `<dir>/index.md`, under the correct section. A page that is not
    reachable from `index.md` is invisible.
@@ -74,37 +76,48 @@ For every new page or update:
    `<dir>/log.md`.
 9. **Who approves.** Decide this before you propose, because the
    `--promote` choice at step 10 depends on it. Approval is reserved
-   for a person when the project's instructions say a person approves
-   wiki pages or tell you not to run `wiki-studio approve` — for
-   example, "A person approves wiki pages here; do not run `wiki-studio approve`." —
-   or when the host runs you propose-only (the launch names
-   `--disable-tool promote`, so the `promote` tool is missing). Then
-   run `wiki-studio info --json` (through MCP the `info` tool returns
-   the same object) and read
-   `manifest.policy.auto_approve_on_promote`; a wiki with no manifest
+   for a person in either of two cases. First, the project's
+   instructions say a person approves wiki pages or tell you not to
+   run `wiki-studio approve`; a host can use exactly this line:
+
+   > A person approves wiki pages here; do not run `wiki-studio approve`.
+
+   Second, the host runs you propose-only: the launch names
+   `--disable-tool promote`, so the `promote` tool is missing, and a
+   `promote` call that fails because the tool is unavailable means the
+   same — treat the run as propose-only. Then run
+   `wiki-studio info --json` (through MCP the `info` tool returns the
+   same object) and read
+   `manifest.policy.auto_approve_on_promote`. A wiki with no manifest
    (`manifest.state` is `missing`) has no policy and never approves on
-   promote. Follow the one outcome that fits:
+   promote, so for the outcomes below it counts as a policy that does
+   not approve on promote. Follow the earliest outcome that fits; the
+   conditions are exclusive:
    1. Propose-only mode, or the project's instructions leave promotion
       to a person: stop after propose and report the proposal directory
       for a person to promote and approve.
-   2. Approval is reserved by the project's instructions and the policy
-      approves on promote: stop after propose and report the proposal
-      directory for a person to promote and approve, because promote
-      would approve the pages at once.
-   3. Approval is reserved by the project's instructions and the policy
-      does not approve on promote: promote (step 11) and lint
-      (step 12), then stop before approve and report the promoted pages
-      awaiting a person.
+   2. Promotion is yours to run, approval is reserved by the project's
+      instructions and the policy approves on promote: stop after
+      propose and report the proposal directory for a person to promote
+      and approve, because promote would approve the pages at once.
+   3. Promotion is yours to run, approval is reserved by the project's
+      instructions and the policy does not approve on promote — a
+      missing manifest included: promote (step 11) and lint (step 12),
+      then stop before approve and report the promoted pages awaiting a
+      person.
    4. Approval is not reserved and the policy approves on promote:
       promote and lint; promote approves the pages it writes under the
       wiki lock (`wiki-studio promote` prints
       `approved <wiki-label>/<path>`, the MCP tool lists them in
       `approved_paths`), so skip step 13.
    5. Approval is not reserved and the policy does not approve on
-      promote: promote, lint and approve (step 13) — the default.
+      promote: promote, lint and approve (step 13) — the default. On a
+      wiki with no manifest, approve exits 4 (step 13): stop after lint
+      and report the promoted pages instead.
 10. **Propose.** `<agent-name>` is your own name, one that identifies
     you as an agent (for example `claude-code`), never a person's name
-    and never a name copied from a quickstart (`--by you`); setting
+    and never the placeholder name a quickstart shows — `--by you`
+    there means you substitute your own name. Setting
     `WIKI_STUDIO_ACTOR` to that name is the alternative. Use the same
     name on propose, promote and approve so the records show one name;
     it is attribution, not authentication. Run
@@ -112,24 +125,37 @@ For every new page or update:
     step 9 allows it and the host allows promoting at once,
     `wiki-studio propose --from <dir> --promote --by <agent-name>`.
     The first line of output is the proposal directory, then one
-    `  <action> <path>` line per edit. Through MCP the `propose` and
-    `promote` tools take the place of the propose and promote commands
-    under the same rule: the tools take no `by`, and the records carry
-    the actor the server was launched with.
+    `  <action> <path>` line per edit — `  create <path>` and
+    `  update <path>` for content pages, `  append-index <path>` and
+    `  append-log <path>` for the root index and log. With `--promote`
+    the run promotes at once: a summary line that begins
+    `applied <n> edit(s)` and the `approved` lines of step 11 follow
+    the action lines. Through MCP the `propose` and `promote` tools
+    take the place of the propose and promote commands under the same
+    rule: the tools take no `by`, and the records carry the actor the
+    server was launched with.
 11. **Promote.** Only when step 9 allows it: review the proposal
     directory, then run
     `wiki-studio promote <proposal-dir> --by <agent-name>`, unless
     step 10 already applied it with `--promote`. `promote` lints the
-    staged tree and is the only writer into the wiki.
-12. **Lint.** Run `wiki-studio lint`. If it fails, fix the violation;
-    do not silence it.
+    staged tree before it writes and is the only writer into the wiki.
+    Its output is a summary line that begins `applied <n> edit(s)`,
+    then one `  + <wiki-label>/<path>` line per written page, then one
+    `  approved <wiki-label>/<path>` line per page the policy approved
+    at once (outcome 4); a run with nothing to apply prints `no-op: …`
+    instead.
+12. **Lint.** Run `wiki-studio lint` on the live wiki. Step 11 already
+    linted the staged tree; this run checks the wiki after the write —
+    run both. If it fails, fix the violation; do not silence it.
 13. **Approve.** Applies in outcome (5) of step 9 only.
     - Which pages: each changed content page, meaning the pages of the
       patch-set's `create` and `update` edits. `propose` prints them as
       `  create <path>` and `  update <path>`; after
       `wiki-studio promote` they are the paths it prints as
-      `  + <wiki-label>/<path>`, without the label. Never the root
-      `index.md`, `log.md` or anything under `.audit/`.
+      `  + <wiki-label>/<path>`, without the label. Never the
+      wiki-root `index.md` or `log.md`, or anything under `.audit/`;
+      a nested `index.md` (for example `concepts/index.md`) is a
+      content page and is approved like any other.
     - For each page, in this order: run
       `wiki-studio read <page> --json` and take its `sha256`, inspect
       the content (it is the page you drafted and promoted, and
@@ -139,15 +165,20 @@ For every new page or update:
       approved. Approve one page at a time: `--revision` takes exactly
       one page (exit 4 otherwise).
     - If `approve` refuses because the live page differs from
-      `<sha256>`, another writer replaced it after promote: re-read and
-      re-inspect, approve the new revision only if it still holds, and
-      otherwise report it. Never approve without `--revision`.
+      `<sha256>`, another writer replaced it after promote: re-read it
+      and compare the content with the draft you promoted. Approve the
+      new revision only if its content is still what you drafted and
+      inspected; otherwise report the page and stop. Never approve a
+      revision whose content you did not author in this turn, and
+      never approve without `--revision`.
     - `approve` refuses (exit 9, nothing written): a `status: draft`
       page, a page carrying `superseded_by`, a page with a
       structural-lint violation, a `--revision` that is not the live
       one, and a missing approver when the policy requires one. On a
-      wiki with no manifest it exits 4, and `wiki-studio init` is a
-      person's call: report the pages instead.
+      wiki with no manifest it exits 4 as well: `wiki-studio init` is
+      a person's call — report the pages instead. Exit 4 covers both
+      this and a multi-page `--revision`; the message on stderr names
+      which.
     - **Through MCP.** The server has no approve tool, so in outcome
       (5) run the read and approve commands above through the CLI when
       you have a shell: `wiki-studio read <page> --json`, then
