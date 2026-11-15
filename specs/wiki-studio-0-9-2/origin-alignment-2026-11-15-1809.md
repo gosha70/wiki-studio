@@ -22,8 +22,27 @@ departure 10, and the persona's step 13):
   narrower rule, because an approval under the agent's name would vouch for
   bytes another writer produced.
 
+- **Auto-approval is checked, not assumed (outcome 4).** The re-review of
+  9481865 found that outcome (4) skipped approval entirely on an
+  auto-approving wiki. But auto-approval runs after the promotion commits,
+  under a second lock, and is best effort. A lock timeout, a failed record
+  write or another writer can leave a page unapproved while promote still
+  succeeds; promote says so in a warning, and `approved_paths` omits the
+  page. The owner chose "report and stop" (2026-11-15). Every eligible
+  page must appear in promote's approved list: an eligible page is a
+  changed content page that is not `status: draft` and carries no
+  `superseded_by`. If one is missing, the agent reports it with promote's
+  warning and stops, and never approves it itself. Self-approval stays on
+  outcome (5) only.
+- **The plan's stale direction is replaced.** Departure 2 in plan.md no
+  longer says "re-read and re-inspect" after a changed revision.
+- **The three rules are pinned.** `tests/test_maintainer_persona.py` gains
+  `TestTheApprovalSafeguards`. Against the persona at 4fd532b, all three
+  tests fail.
+
 This narrows the approval step and adds no scope: no new verb, flag, test
-module, page schema or doc page.
+module, page schema or doc page (the new tests extend the existing
+persona module).
 
 Verdict: aligned
 Confidence: high

@@ -378,6 +378,44 @@ class TestTheApprovalRuleComesFirst(unittest.TestCase):
         self.assertLess(approve[0], bullet.index("without a shell"))
 
 
+class TestTheApprovalSafeguards(unittest.TestCase):
+    """FR-003 (d), (f) and outcome (4), amended after the #103 review."""
+
+    def test_draft_and_superseded_pages_are_skipped_not_forced(self) -> None:
+        step = loop_step("**Approve.**")
+        approve = first_command(step, "approve")
+        assert approve is not None
+        skip = step.index("Skip a changed page")
+        for marker in ("`status: draft`", "`superseded_by`", "report it", "never edit a page's"):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, step[skip:])
+        self.assertLess(skip, approve[0])
+
+    def test_a_changed_revision_is_reported_never_approved(self) -> None:
+        step = loop_step("**Approve.**")
+        bullet = step[step.index("If `approve` refuses because the live page differs") :]
+        bullet = bullet[: bullet.index("\n    - ")]
+        self.assertIn("Do not\n      approve it: report the page and stop.", bullet)
+        self.assertNotIn("Approve the", bullet)
+        self.assertNotIn("still what you drafted", bullet)
+
+    def test_auto_approval_is_checked_against_every_eligible_page(self) -> None:
+        step = loop_step("**Who approves.**")
+        outcome = step[step.index("4. Approval is not reserved and the policy approves on promote") :]
+        outcome = outcome[: outcome.index("\n   5. ")]
+        for marker in (
+            "`approved <wiki-label>/<path>`",
+            "`approved_paths`",
+            "every eligible page",
+            "report each missing page",
+            "and stop",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, outcome)
+        self.assertLess(outcome.index("every eligible page"), outcome.index("skip step 13"))
+        self.assertLess(outcome.index("report each missing page"), outcome.index("skip step 13"))
+
+
 class TestTheReservationLineInTheDocs(unittest.TestCase):
     """FR-021: README and docs/mcp-adapter.md quote R verbatim, as the persona does."""
 

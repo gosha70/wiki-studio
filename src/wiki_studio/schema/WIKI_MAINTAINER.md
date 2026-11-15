@@ -135,9 +135,16 @@ For every new page or update:
       person.
    4. Approval is not reserved and the policy approves on promote:
       promote and lint; promote approves the pages it writes under the
-      wiki lock (`wiki-studio promote` prints
+      wiki lock (`wiki-studio promote` and `propose --promote` print
       `approved <wiki-label>/<path>`, the MCP tool lists them in
-      `approved_paths`), so skip step 13.
+      `approved_paths`). Auto-approval is best effort: a lock timeout,
+      a failed record write or another writer can leave a page
+      unapproved while promote still succeeds, with a warning. So check
+      the approved list: every eligible page (each changed content page
+      of step 13 that is not `status: draft` and carries no
+      `superseded_by`) must appear in it. If one is missing, do not
+      approve it yourself: report each missing page with promote's
+      warning, and stop. When every eligible page appears, skip step 13.
    5. Approval is not reserved and the policy does not approve on
       promote: promote, lint and approve (step 13) — the default. On a
       wiki with no manifest, approve exits 4 (step 13): stop after lint
