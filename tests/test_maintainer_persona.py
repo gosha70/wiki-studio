@@ -20,11 +20,13 @@ import re
 import shlex
 import unittest
 from importlib import resources
+from pathlib import Path
 
 from wiki_studio.cli import _build_arg_parser
 from wiki_studio.mcp_adapter.config import TOOL_NAMES, build_parser
 
 PERSONA = resources.files("wiki_studio").joinpath("schema", "WIKI_MAINTAINER.md").read_text(encoding="utf-8")
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 # FR-004's copyable line, quoted verbatim in the persona's "Who approves" step.
 RESERVATION_LINE = "A person approves wiki pages here; do not run `wiki-studio approve`."
@@ -374,6 +376,15 @@ class TestTheApprovalRuleComesFirst(unittest.TestCase):
         assert approve is not None
         self.assertIn("without a shell", bullet)
         self.assertLess(approve[0], bullet.index("without a shell"))
+
+
+class TestTheReservationLineInTheDocs(unittest.TestCase):
+    """FR-021: README and docs/mcp-adapter.md quote R verbatim, as the persona does."""
+
+    def test_the_reservation_line_appears_verbatim_in_both_pages(self) -> None:
+        for page in (REPO_ROOT / "README.md", REPO_ROOT / "docs" / "mcp-adapter.md"):
+            with self.subTest(page=str(page.relative_to(REPO_ROOT))):
+                self.assertIn(RESERVATION_LINE, page.read_text(encoding="utf-8"))
 
 
 class TestTheMemoryBoundary(unittest.TestCase):
