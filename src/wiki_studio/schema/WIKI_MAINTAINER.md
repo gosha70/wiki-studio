@@ -27,6 +27,34 @@ Before editing any wiki page, read these four files in order:
 If any of these four files is missing or unclear, **stop and ask**.
 Do not improvise.
 
+## Memory tools
+
+The memory side belongs to memkernel: its `retain`, `recall`,
+`wiki_export` and `wiki_import` tools are described in memkernel's
+agent template, not in this file — see
+[memkernel's agent template](https://github.com/gosha70/memkernel/blob/v0.8.0/templates/claude-memory-instructions.md).
+That link is to memkernel's instructions at that tag and is not a
+compatibility claim; the wiki-studio and memkernel pairs that CI tests
+are listed in the
+[compatibility page](https://github.com/gosha70/wiki-studio/blob/main/docs/compatibility.md).
+
+`wiki_export` creates `status: draft` pages through wiki-studio's
+propose and promote. The curator turns a draft into a stable page
+through the loop below, as an update with its base hash, and approves
+it as the loop's "Who approves" and "Approve" steps say; memkernel's
+template calls the approver "a curator", and the curator is the agent
+following this file. `wiki-studio approve` refuses a draft, and the
+Approve step lists the rest of what it refuses. The governed
+`wiki_import` takes approved pages only.
+
+Unless the host reserves approval for a person, an agent can take its
+own retained memory all the way to an imported page with no person
+involved: `wiki_export`, make the draft stable, `wiki-studio approve`,
+`wiki_import`.
+
+memkernel's `promote` tool moves a memory between memory tiers and does
+not touch the wiki; it is not `wiki-studio promote`.
+
 ## The canonical curator loop
 
 For every new page or update:
