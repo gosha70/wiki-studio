@@ -3,7 +3,7 @@ spec_mode: full
 feature_id: wiki-studio-0-9-2
 risk_category: feature
 justification: "Guidance text an agent loads to curate a wiki shared with memkernel, where the open question is who approves (a cross-repository contract memkernel's governed import depends on), an approve step that must yield to the host in a fixed order, one test module whose checks must fail on a wrong flag and not only a wrong verb, two doc sentences that tell hosts how to keep approval with a person, and a release; a full spec pins the persona's required elements and the markers the checks read, the check grammar, the invariants that must not move, the per-phase truth rule and the cut order before an unattended build."
-status: draft
+status: approved
 date: 2026-11-15
 collaboration_mode: single
 origin:

@@ -1,6 +1,6 @@
 # Tasks: wiki-studio 0.9.2 — one set of instructions
 
-<!-- status: draft -->
+<!-- status: approved -->
 <!-- One `## US<n>:` group = one auto-build phase. [US#]/FR tags trace to spec.md. US<n> is pitch scope S<n>. -->
 <!-- Read first: CLAUDE.md, spec.md, plan.md, specs/pitches/69-one-set-of-instructions/pitch.md, src/wiki_studio/schema/WIKI_MAINTAINER.md, src/wiki_studio/cli.py (_build_arg_parser 176-539). -->
 <!-- Run per phase: poetry run ruff check src/ tests/ eval/ examples/ conformance/ && poetry run ruff format --check src/ tests/ eval/ examples/ conformance/ && poetry run mypy src/ && poetry run pytest -q -p no:cacheprovider --cov=wiki_studio --cov-fail-under=92 -->
