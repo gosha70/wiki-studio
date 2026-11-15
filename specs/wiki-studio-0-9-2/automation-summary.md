@@ -10,3 +10,7 @@ Review: PASS (see specs/wiki-studio-0-9-2/collaboration/build-review.md).
 
 ### Phase 4 complete — US4: Docs, release 0.9.2 and closure (2026-11-15T15:35:55Z)
 Review: PASS (see specs/wiki-studio-0-9-2/collaboration/build-review.md).
+
+## Run complete (2026-11-15T15:35:57Z)
+Profile: pr — branch feature/wiki-studio-0-9-2 pushed to origin; a pull request tracks the work (the driver never merges).
+Review artifacts: specs/wiki-studio-0-9-2/collaboration/.
