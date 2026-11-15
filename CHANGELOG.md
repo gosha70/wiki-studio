@@ -6,7 +6,7 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.9.1]
+## [0.9.1] — 2026-11-15
 
 A patch release: one `findings` fix. No API, page schema, CLI or MCP change.
 
