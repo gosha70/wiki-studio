@@ -4,7 +4,7 @@ title: "One set of instructions: the curator persona describes the propose, prom
 appetite: 2w
 bet_status: shaped
 cycle: ""
-circuit_breaker: "Core is S1, S2 and the persona-only checks of S3: the curator loop on the propose, promote and approve path with real wiki-studio commands, the short memory-boundary section that links memkernel's template, and the tests that every wiki-studio command the persona shows is a real verb and that the persona restates no memkernel memory step. They ship alone if the cycle runs out. End of week 1: if S1 is not downhill, S2 shrinks to the link with no steps (D4's alternative, as a cut; S1's approve step with --by and its CLI-first order stays, and so does S2's sentence that an agent can take its own memory to an imported page with no person involved), and the copied memkernel line in S3 is cut in favour of the persona-only checks, stated in the CHANGELOG. End of week 2: S4 ships what is true; if the release cannot be cut, the change waits under [Unreleased] for the next release and #69 stays open until a release carries it. Never, to save time: change behaviour under src/wiki_studio/ other than the persona, a CLI verb, an exit code or an MCP tool; change the page schema (frontmatter keys, page types, directories); add a runtime dependency or a network fetch to a test; edit memkernel, code-copilot-team or the frozen eval copy of the persona; restate memkernel's retain, recall or consolidate steps in the persona; drop --by from the approve step, or add code that refuses, flags or reports self-approval in cycle 06 (D3); weaken or skip a test."
+circuit_breaker: "Core is S1, S2 and the persona-only checks of S3: the curator loop on the propose, promote and approve path with real wiki-studio commands, the short memory-boundary section that links memkernel's template, and the tests that every wiki-studio command the persona shows is a real verb and that the persona restates no memkernel memory step. They ship alone if the cycle runs out. End of week 1: if S1 is not downhill, S2 shrinks to the link with no steps (D4's alternative, as a cut; S1's approve step stays, with the reservation condition first, then --by and the CLI-first order, as do --by on propose and promote and S4's correction of the two doc sentences, and so does S2's sentence that an agent can take its own memory to an imported page with no person involved), and the copied memkernel line in S3 is cut in favour of the persona-only checks, stated in the CHANGELOG. End of week 2: S4 ships what is true; if the release cannot be cut, the change waits under [Unreleased] for the next release and #69 stays open until a release carries it. Never, to save time: change behaviour under src/wiki_studio/ other than the persona, a CLI verb, an exit code or an MCP tool; change the page schema (frontmatter keys, page types, directories); add a runtime dependency or a network fetch to a test; edit memkernel, code-copilot-team or the frozen eval copy of the persona; restate memkernel's retain, recall or consolidate steps in the persona; drop --by from the propose, promote or approve step, or the reservation condition; leave docs/mcp-adapter.md 178-180 or README 566 uncorrected; add code that refuses, flags or reports self-approval in cycle 06 (D3); weaken or skip a test."
 shaped_by: "pitch-shaper (Claude Code) for gosha70"
 shaped_date: 2026-11-14
 ---
@@ -145,6 +145,25 @@ was read, read-only, at tag `v0.8.0` (tag object `fe1e11a`, commit
     counterpart, but it names no wiki-studio PR, because none exists
     yet. The acceptance line "each names the other's resolving PR"
     therefore needs one action after this build merges (D9).
+13. **Two docs promise hosts that a person approves.** Found by the
+    external review of PR #99 (head `c86a967`). `docs/mcp-adapter.md`
+    lines 178-180: "On such a wiki an agent's promote approves its own
+    proposal; that is the host's configured policy. Use
+    `--disable-tool promote`, or a wiki without the policy, when a
+    person must approve." README line 566: "`--disable-tool promote`
+    is propose-only mode: proposals wait for a person to promote and
+    approve them." If an agent with a shell always approves through
+    the CLI, as D3 first read, both sentences become false. "A wiki
+    without the policy" would no longer keep approval for a person, and
+    a host would have no documented way to reserve approval for a
+    person. D3 now yields to the host, and S4 corrects both sentences.
+14. **`--by` on every writing verb.** `wiki-studio propose --by NAME`
+    records `plan.json`'s `proposer`, and with `--promote` the
+    receipt's `actor`. `promote --by NAME` records the receipt's
+    `actor`. `approve --by NAME` records the approver (README,
+    "Attribution" and "approve"). MCP tools take no `by`: the records
+    carry the actor fixed when the server is launched
+    (`docs/mcp-adapter.md` lines 170-172).
 
 ## Appetite
 
@@ -184,7 +203,8 @@ dependency. No change to the prompts, the fingerprint, the linter or
 memkernel templates (0.8.0, done)          WIKI_MAINTAINER.md (this pitch)
   memory: retain, recall, consolidate,       curation: gate, classify, slug, cite,
           promote(ref_id), checkpoints  ───►           draft, propose, promote, lint,
-  wiki:   wiki_export → review →          link           approve --by <agent's own name>
+  wiki:   wiki_export → review →          link           approve --by <agent name>, unless
+                                                     the host reserves approval
           wiki-studio approve → wiki_import  ◄─── "Memory tools": owned by memkernel,
   "curation: follow WIKI_MAINTAINER.md"              link to its template; export makes
                                                      drafts, approve, import takes approved
@@ -198,8 +218,11 @@ directory's `index.md` and `log.md`. For an update, it records the base
 hash from `wiki-studio read --json` in `.base.json`. Then it runs
 `wiki-studio propose --from <dir>`. Promotion is either `--promote` or a
 reviewed `wiki-studio promote <proposal-dir>`, and the host decides
-which. The agent runs `wiki-studio lint`. Then the agent approves its
-own page with `wiki-studio approve <page> --by <its own name>` (D3).
+which. The agent runs `wiki-studio lint`. Then, unless the project's
+instructions or propose-only mode reserve approval for a person, the
+agent approves its own page with
+`wiki-studio approve <page> --by <its own name>` (D3). It passes the
+same agent name with `--by` on propose and promote.
 The persona calls the curating agent the curator. Every command shown
 is a real wiki-studio verb.
 
@@ -229,23 +252,35 @@ S4 needs the other three.
   writing rules (keep both links). *Link* and *Log* become lines in
   `<dir>/index.md` and `<dir>/log.md`. The log line keeps its fixed
   form (`- YYYY-MM-DD — <verb> <slug> (<page-type>): <one-line why>`).
-  *Propose* runs `wiki-studio propose --from <dir>`, with `.base.json`
-  for an update. *Promote* is `--promote` or `wiki-studio promote`, as
-  the host allows. In MCP propose-only mode it is a person's step
+  *Propose* runs `wiki-studio propose --from <dir> --by <its own name>`,
+  with `.base.json` for an update. *Promote* is `--promote` or
+  `wiki-studio promote <proposal-dir> --by <its own name>`, as the host
+  allows. In MCP propose-only mode it is a person's step
   (finding 7). *Lint* runs `wiki-studio lint`. *Stop* is unchanged.
   The numbering may grow. Steps 1-5 and the conflict sub-rule do not
   change.
-- **Approve (D3).** After promote and lint, the agent approves its own
-  page: `wiki-studio approve <page> --by <its own name>`, or with
-  `WIKI_STUDIO_ACTOR` set to that name. It names itself honestly, so
+- **One name on every record (D3).** The agent passes its own name
+  with `--by` on `propose`, `promote` and `approve`, or sets
+  `WIKI_STUDIO_ACTOR` to it, so the records show the same name
+  proposed, promoted and approved (finding 14). The name identifies it
+  as an agent, for example `claude-code`, never a person's name.
+  Through MCP the tools take no `by`, and the records carry the
+  server's launch actor.
+- **Approve (D3).** The step first states when approval is reserved
+  for a person: the project's instructions say a person approves, or
+  the host runs the agent propose-only (`--disable-tool promote`).
+  Then the agent stops after propose or promote and reports the pages
+  awaiting a person. Otherwise, after promote and lint, the agent
+  approves its own page: `wiki-studio approve <page> --by <its own name>`.
+  Self-approval is the persona's default. It names itself honestly, so
   the approval record shows that an agent approved the page. The step
   says what `approve` refuses (a draft, a superseded page, a page with
   a structural violation, a changed revision, a missing approver when
   the policy requires one). Where the policy sets
   `auto_approve_on_promote`, promote already approved the page and the
-  step is skipped. The MCP adapter has no approve tool, so an agent
-  that reaches wiki-studio through MCP follows a fixed order. If it
-  has a shell, it runs the CLI,
+  step is skipped. The MCP adapter has no approve tool, so where
+  approval is not reserved, an agent that reaches wiki-studio through
+  MCP follows a fixed order. If it has a shell, it runs the CLI,
   `wiki-studio approve <page> --by <its own name>`. Only without a
   shell does it stop and report the promoted pages awaiting approval.
   A person may still re-review a page through
@@ -276,10 +311,10 @@ S4 needs the other three.
   nothing memkernel's line contradicts. It adds one fact memkernel's
   line leaves out: `approve` refuses a draft (finding 6).
 - **The consequence, in one sentence (D3).** The section says plainly
-  that an agent can take its own retained memory all the way to an
-  imported page with no person involved: export, make the draft
-  stable, approve, import. The sentence uses tool names only, no call
-  syntax.
+  that, unless the host reserves approval for a person, an agent can
+  take its own retained memory all the way to an imported page with no
+  person involved: export, make the draft stable, approve, import. The
+  sentence uses tool names only, no call syntax.
 - **`promote`.** One sentence: memkernel's `promote(ref_id=…)` moves a
   memory between tiers and does not touch the wiki.
 - **What the section never holds:** `retain(`, `recall(`,
@@ -296,9 +331,15 @@ template tells users to, so the test reads the bytes that users get.
   persona names a verb that `wiki_studio.cli` accepts (checked against
   the parser, in process). The persona contains no `lint-wiki`. This is
   the repository rule that a shown command gets the cheapest real check.
-  The loop's `wiki-studio approve` line carries `--by`, so the curator
-  is told to name itself (D3). The persona names the CLI before the
-  stop-and-report fallback for an agent without the approve tool.
+  The loop's `wiki-studio propose`, `wiki-studio promote` and
+  `wiki-studio approve` lines each carry `--by`, so the curator is told
+  to name itself on every record (D3). The persona names the CLI before
+  the stop-and-report fallback for an agent without the approve tool.
+- **The reservation condition (core).** The approve step names both
+  ways a host reserves approval for a person (the project's
+  instructions, and `--disable-tool promote`), and it names them before
+  the self-approval command. The check matches those two markers and
+  their position, not a sentence.
 - **No memory restatement (core).** The persona contains none of
   `retain(`, `recall(`, `consolidate(`, `checkpoint=` or
   `promote(ref_id`. It names `retain`, `recall`, `wiki_export` and
@@ -331,6 +372,14 @@ template tells users to, so the test reads the bytes that users get.
   only. The persona is read by agents from the package (finding 9). One
   sentence says the persona owns curation and memkernel's template owns
   memory, with both links.
+- **How a host reserves approval (D3, finding 13).**
+  `docs/mcp-adapter.md` lines 178-180 and README line 566 are corrected
+  to say how a host reserves approval for a person: by the project's
+  instructions, or by propose-only mode (`--disable-tool promote`).
+  The curator persona respects both. A wiki without
+  `auto_approve_on_promote` is no longer given as a way to keep
+  approval for a person, because an agent following the persona
+  approves through the CLI.
 - **CHANGELOG `[Unreleased]`, Changed:** the persona's curator loop
   follows propose, promote and approve with `wiki-studio` commands, its
   lint step uses `wiki-studio lint`, and it has a "Memory tools" section
@@ -339,8 +388,11 @@ template tells users to, so the test reads the bytes that users get.
   `src/wiki_studio/__init__.py` together, with the
   `==X.Y.Z` pins in `docs/quickstart-memkernel.md`. The CHANGELOG
   heading gets the tag date. The steps are in the header of
-  `release.yml`. `docs/compatibility.md` gets no row, because the
-  memkernel pin and the integration jobs do not change.
+  `release.yml`.
+- **`docs/compatibility.md`.** A 0.9.2 row with memkernel 0.6.0,
+  naming the green main run of the five memkernel and quickstart jobs,
+  as 0.9.1's row does. The page states that a pair it does not list is
+  not claimed as compatible, so every release gets a row.
 - **Closure (D9).** The build PR closes #69 and names memkernel #104
   and #109 as the counterpart's resolving PRs. After the merge, the
   owner comments on memkernel #86 with the build PR's number. The pitch
@@ -366,17 +418,26 @@ template tells users to, so the test reads the bytes that users get.
   copy belongs to that repository (D7 names the follow-up).
 - **Turning the persona into a manual.** The loop could restate every
   `propose` and `promote` flag, the receipt protocol and the approval
-  policy. *Workaround:* the persona names the verb and the one flag
-  each step needs. It links the README and `docs/quickstart.md` by
+  policy. *Workaround:* the persona names the verb and the flags each
+  step needs (`--from`, `--by`). It links the README and `docs/quickstart.md` by
   absolute GitHub URL for the details, as the README links
   `citation-rules.md`. Relative links would not resolve from the
   installed package.
-- **Approval under the wrong name.** An agent that follows a quickstart
-  copies `--by you` or `--by curator`, and the record names a person
-  who never saw the page. *Workaround:* the approve step tells the
-  agent to pass its own name (D3), and S3 checks that the step carries
-  `--by`. The name is attribution, not authentication, and the persona
+- **Records under the wrong name.** An agent that follows a quickstart
+  copies `--by you` or `--by curator`, and a record names a person who
+  never saw the page. *Workaround:* the propose, promote and approve
+  steps tell the agent to pass its own agent name, such as
+  `claude-code` (D3), and S3 checks that each of the three lines
+  carries `--by`. The name is attribution, not authentication, and the persona
   says so.
+- **Detecting a reservation in code.** It is tempting to have
+  wiki-studio find out whether a project reserves approval, by a
+  manifest key, an `info` field or a refusal in `approve`.
+  *Workaround:* none of that in cycle 06. The persona names the two
+  signals the agent reads (the project's instructions, and
+  propose-only mode, where the `promote` tool is missing), and the
+  docs tell hosts to use them (S4). The no-go on self-approval code
+  stands.
 - **Testing prose order too tightly.** A test that matches whole
   sentences breaks on every wording round. *Workaround:* S3 checks verb
   names, forbidden tokens and the relative order of three markers, not
@@ -435,7 +496,21 @@ code, and are listed so the spec does not reopen them.
   templates would then point at a loop the persona does not contain
   (finding 2).
 - **D3. Who runs `approve` (decided by the owner, 2026-11-14: NOT the
-  default).** Owner, 2026-11-14: **the agent approves its own page.**
+  default; revised after review the same day).** Owner, 2026-11-14,
+  after the review of PR #99 (finding 13): **the persona yields to the
+  host.** The agent approves its own page unless the project's
+  instructions reserve approval for a person, or the host runs it
+  propose-only (`--disable-tool promote`). Then it stops after propose
+  or promote and reports the pages awaiting a person. Self-approval
+  stays the persona's default. S4 corrects `docs/mcp-adapter.md` lines
+  178-180 and README line 566 so they say how a host reserves approval.
+  Owner, 2026-11-14: the agent passes its own name with `--by` on
+  `propose` and `promote` as well as `approve`. The name identifies it
+  as an agent (for example `claude-code`), never a person's name, so
+  the records show the same name proposed, promoted and approved
+  (finding 14).
+  The first answer, which the yield now qualifies: Owner, 2026-11-14:
+  **the agent approves its own page.**
   After propose, promote and lint, the agent runs
   `wiki-studio approve <page> --by <its own name>`, or runs it with
   `WIKI_STUDIO_ACTOR` set to that name. It names itself honestly, so
@@ -447,7 +522,8 @@ code, and are listed so the spec does not reopen them.
   wiki-studio through MCP uses the CLI
   (`wiki-studio approve <page> --by <its own name>`) when it has a
   shell. Only otherwise does it stop and report the promoted pages
-  awaiting approval. The persona defines the curating agent as the
+  awaiting approval. That order applies only where approval is not
+  reserved. The persona defines the curating agent as the
   curator. The code allows this: `api.approve` takes `by` as
   attribution, not authentication, and refuses a draft, a superseded
   page, a structural-lint violation, a changed revision and a missing
@@ -455,8 +531,9 @@ code, and are listed so the spec does not reopen them.
   self-approval (finding 7).
   *The consequence, recorded plainly:* memkernel's governed import then
   takes pages that an agent approved, and each approval record names
-  that agent as the approver. Owner, 2026-11-14: say it plainly. An
-  agent can take its own retained memory all the way to an imported
+  that agent as the approver. Owner, 2026-11-14: say it plainly. Unless
+  the host reserves approval for a person, an agent can take its own
+  retained memory all the way to an imported
   page with no person involved: export, make the draft stable,
   approve, import. The persona's "Memory tools" section carries the
   same sentence (S2).
@@ -533,8 +610,8 @@ code, and are listed so the spec does not reopen them.
   evidence of a past run (finding 10).
 - **D13. No memkernel change (settled).** memkernel #86 is closed. Its
   template and test already describe and guard its side (findings 1,
-  2). The memkernel pin in CI (0.6.0) and `docs/compatibility.md` do not
-  change.
+  2). The memkernel pin in CI (0.6.0) does not change.
+  `docs/compatibility.md` gains a 0.9.2 row with that pin (S4).
 - **D14. "Promote" means `wiki-studio promote` in the persona
   (settled).** Finding 8. The wording changes in S1, and the one-line
   explanation of memkernel's `promote` is in S2.
@@ -548,9 +625,11 @@ restated. They ship alone if the cycle runs out. The triggers, in
 order:
 
 1. **End of week 1.** If S1 is not downhill, S2 shrinks to the link with
-   no steps (D4's alternative, as a cut). The approve step of S1, with
-   `--by` and the CLI-first order for an agent without the approve
-   tool, stays in either case. So does S2's sentence that an agent can
+   no steps (D4's alternative, as a cut). S1's approve step stays in
+   either case: the reservation condition first, then `--by` and the
+   CLI-first order for an agent without the approve tool. So do
+   `--by` on propose and promote, and S4's correction of the two doc
+   sentences. So does S2's sentence that an agent can
    take its own memory to an imported page with no person involved. The copied memkernel line in S3 is cut,
    and the persona-only checks are the evidence. The CHANGELOG says so.
 2. **End of week 2.** S4 ships what is true. If the release cannot be
@@ -561,8 +640,10 @@ order:
    the page schema; add a runtime dependency or a network fetch in a
    test; edit memkernel, code-copilot-team or the frozen eval copy;
    restate memkernel's memory steps in the persona; drop `--by` from
-   the approve step, or add code that refuses, flags or reports
-   self-approval in cycle 06 (D3); weaken or skip a test.
+   the propose, promote or approve step, or the reservation condition;
+   leave the two doc sentences of finding 13 uncorrected; add code
+   that refuses, flags or reports self-approval in cycle 06 (D3);
+   weaken or skip a test.
 
 "Exhausted" means two working weeks have passed. A third review round
 on one scope is not exhaustion. It is an escalation to the owner, who
@@ -580,7 +661,12 @@ uses the CLI when it has a shell, and only otherwise stops and reports;
 the persona and D3 each say plainly that an agent can take its own
 memory to an imported page with no person involved; and the
 self-approval no-go holds for cycle 06 only, with a possible separate
-issue later, not filed. D4 name the four
+issue later, not filed. After the review of PR #99 (same day): the
+persona yields to the host. The agent approves its own page unless the
+project's instructions reserve approval for a person or the host runs it
+propose-only, and S4 corrects `docs/mcp-adapter.md` 178-180 and README
+566 to say so. The agent passes one agent name (for example
+`claude-code`) with `--by` on propose, promote and approve. D4 name the four
 tools, link the template, one paragraph in memkernel's order with the
 draft-to-stable rule; D5 a copied memkernel line pinned to `v0.8.0`
 plus the persona-only checks; D6 link the template at tag `v0.8.0`; D7
@@ -596,3 +682,4 @@ and #109, then the owner comments on memkernel #86; D10 fix the README
 | 2026-11-14 | shaping | Pitch drafted from wiki-studio #69 (no comments) and cooldown-after-05 (the owner's next pick). wiki-studio read at main 829e688 (0.9.1); memkernel read at tag v0.8.0 (tag fe1e11a, commit 700d31f), including its templates, `test_template_wiki_workflow.py` and `sync.py` export; code-copilot-team read at 00d49c0. The packaged persona path command from memkernel's template was run here and resolves. |
 | 2026-11-14 | shaping → shaped | 4 scopes, 2w, work content 4-6h (a small batch). Core: S1 (the loop on propose, promote and approve), S2 (memory boundary), S3's persona-only checks. Cut first: the copied memkernel line, then S2's steps. 14 decisions; D1-D10 open for the owner with defaults, not yet asked (AskUserQuestion was unavailable to the shaping agent). |
 | 2026-11-14 | shaped (decided) | Owner answered D1-D10 in the main session. Nine defaults; D3 against the default: the agent approves its own page with `wiki-studio approve <page> --by <its own name>` (or `WIKI_STUDIO_ACTOR`), an MCP-only agent stops and reports or uses the CLI, and the persona defines the curating agent as the curator. `api.approve` (`src/wiki_studio/api.py` 786-807) rechecked: `by` is attribution, and nothing refuses self-approval. memkernel v0.8.0 rechecked: line 46 gives the order but not who approves, and line 172 ("a curator approved") holds with the agent as curator. Updated: finding 7, Appetite, Solution shape, S1 (approve step), S2, S3 (`--by` check; order check scoped to "Memory tools"), a rabbit hole, a no-go, the circuit breaker. Same day, the owner settled three D3 follow-ups: an agent reaching wiki-studio through MCP uses the CLI approve when it has a shell, and only otherwise stops and reports; the persona's "Memory tools" section and D3 each say plainly that an agent can take its own retained memory to an imported page with no person involved; the self-approval no-go holds for cycle 06 only, and a self-approval findings kind may be a separate issue later (not filed). Updated: D3, S1, S2, S3 (the restatement and order checks allow that sentence; CLI-first order), the no-go, the circuit breaker, the questions section. |
+| 2026-11-14 | shaped (revised after review) | External review of PR #99 (head c86a967) found that D3 as written made `docs/mcp-adapter.md` 178-180 and README 566 false and left hosts no documented way to reserve approval for a person (finding 13). Owner, same day: the persona yields to the host. The agent approves unless project instructions reserve approval or the host runs it propose-only, and then it stops and reports. S4 corrects both sentences. The agent passes one agent name with `--by` on propose, promote and approve (finding 14). Fix: S4 adds a 0.9.2 row to `docs/compatibility.md` naming the green main run, as 0.9.1's row does; D13 corrected. Updated: findings 13-14, S1, S2, S3 (reservation-condition check; `--by` on three lines), S4, D3, D13, rabbit holes, the circuit breaker (body and frontmatter), the questions section. |
