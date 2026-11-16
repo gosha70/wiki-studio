@@ -23,7 +23,7 @@ The code was extracted from
 pip install wiki-studio          # Python 3.11–3.13, no runtime dependencies
 pip install 'wiki-studio[mcp]'   # optional: the MCP server, wiki-studio-mcp (see MCP)
 wiki-studio --help
-wiki-studio --version           # 0.9.1
+wiki-studio --version           # 0.9.2
 ```
 
 From a checkout: `poetry install`, then `poetry run wiki-studio --help`.
@@ -454,9 +454,20 @@ redacted fingerprint of it unless `--debug-unsafe-output` is given.
 The page schema (`page-types.md`, `ingest-rules.md`, `citation-rules.md`,
 `lint-rules.md`, `audit-rules.md`, `WIKI_MAINTAINER.md`) ships inside the
 package and is what the prompts and the linter follow. A project may carry
-its own copy under `<wiki-dir>/schema/`; when that directory exists it is
-used instead of the packaged one. The schema is a published contract
-shared with memkernel's `WikiExporter` and `WikiImporter`; changing
+its own copy of any of the three prompt documents (`ingest-rules.md`,
+`page-types.md`, `citation-rules.md`) under `<wiki-dir>/schema/`; each copy
+present is used instead of the packaged one and is fingerprinted
+([`docs/knowledge-contract.md`](docs/knowledge-contract.md)); wiki-studio
+reads no project copy of the other three, and agents read the curator
+persona from the package. The
+[curator persona](https://github.com/gosha70/wiki-studio/blob/main/src/wiki_studio/schema/WIKI_MAINTAINER.md)
+owns curation (page types, citations, the propose, promote, lint and
+approve loop) and
+[memkernel's agent template](https://github.com/gosha70/memkernel/blob/v0.8.0/templates/claude-memory-instructions.md)
+owns memory; the template link points to instructions, not a compatibility
+claim: CI tests this release with memkernel 0.6.0
+([`docs/compatibility.md`](docs/compatibility.md)). The schema is a published
+contract shared with memkernel's `WikiExporter` and `WikiImporter`; changing
 frontmatter keys, page types or directory names needs a decision record
 in `docs/adr/`. Since 0.5.0 a glossary page may carry one optional key,
 `avoid:`, one line of comma-separated terms the wiki should not use for
@@ -564,6 +575,16 @@ wiki, the actor (`--by`) and the default ranker are fixed at launch; no tool
 takes a root, directory, backend or actor, and `approve`, `ingest`, `query`,
 `audit-flush` and `init` are not exposed. `--disable-tool promote` is
 propose-only mode: proposals wait for a person to promote and approve them.
+An agent that follows the curator persona approves the pages it changed
+through the CLI, at the revision it read, unless the host reserves approval
+for a person, by propose-only mode or by its project's instructions, for
+example the line
+
+> A person approves wiki pages here; do not run `wiki-studio approve`.
+
+Under such instructions, on a wiki whose policy approves on promote, the
+persona stops after propose.
+
 Errors are `{error, exit_code, message}` with the exit codes above. Without
 the extra, `wiki-studio-mcp` prints the install instruction and exits 2; the
 base install still imports nothing outside the standard library. Flags,

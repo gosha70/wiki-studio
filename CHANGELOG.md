@@ -6,6 +6,35 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.2]
+
+A guidance release: the curator persona holds the propose, promote, lint and
+approve loop with `wiki-studio` commands, and memkernel's agent template
+keeps memory.
+
+### Changed
+
+- The curator persona's loop follows propose, promote, lint and approve with
+  `wiki-studio` commands, and every writing verb carries `--by <agent-name>`.
+  The agent approves each changed page with `--revision` at the bytes it read
+  and inspected, unless the project's instructions or propose-only mode
+  reserve approval for a person; under such instructions, on a wiki whose
+  policy approves on promote, it stops after propose. Its lint step and
+  "Bypass the linter" use `wiki-studio lint`.
+- A "Memory tools" section leaves memory to memkernel's agent template
+  (linked at `v0.8.0`) and states the export, approve, import order (#69,
+  the counterpart of memkernel #86, resolved by memkernel #104 and #109).
+- README "Schema" says which documents a project copy replaces, and that
+  the curator persona owns curation while memkernel's template owns memory.
+- README and `docs/mcp-adapter.md` say how a host reserves approval for a
+  person: propose-only mode or the project's instructions.
+
+### Notes
+
+- No API, verb, flag, exit code, MCP tool, capability, page-schema, prompt,
+  fingerprint or dependency change; the frozen eval copy of the persona is
+  unchanged.
+
 ## [0.9.1] — 2026-11-15
 
 A patch release: one `findings` fix. No API, page schema, CLI or MCP change.

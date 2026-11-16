@@ -176,8 +176,17 @@ result shapes above are defined here.
   `approved_paths`. One warning names the policy and states that these pages
   were approved by policy as part of this promotion, attributed to the
   server's actor. **On such a wiki an agent's promote approves its own
-  proposal; that is the host's configured policy.** Use `--disable-tool
-  promote`, or a wiki without the policy, when a person must approve.
+  proposal; that is the host's configured policy.** A host reserves approval
+  for a person in one of two ways, and the curator persona
+  (`WIKI_MAINTAINER.md`) respects both: by running the server propose-only
+  (`--disable-tool promote`), or by its project's instructions, for example
+  with the line
+
+  > A person approves wiki pages here; do not run `wiki-studio approve`.
+
+  On a wiki with this policy an agent following the persona under such
+  instructions stops after propose and leaves promote and approve to a
+  person, because its promote would approve.
 - **Errors.** Every wiki-studio error and every `ValueError` raised by a
   tool becomes an error result (`isError: true`) whose text is
   `{error, exit_code, message}`, with the exit codes of the CLI table
