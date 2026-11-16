@@ -6,7 +6,7 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.9.2]
+## [0.9.2] — 2026-11-17
 
 A guidance release: the curator persona holds the propose, promote, lint and
 approve loop with `wiki-studio` commands, and memkernel's agent template
