@@ -16,3 +16,19 @@ Profile: pr — branch feature/wiki-studio-0-9-2 pushed to origin; a pull reques
 Review artifacts: specs/wiki-studio-0-9-2/collaboration/.
 
 Outcome: PR #103 opened (https://github.com/gosha70/wiki-studio/pull/103); merge: not in this profile (pr).
+
+## Owner fixes after the external review
+
+The driver's four phases passed its gating review. The external review of
+PR #103 then asked for changes, which the owner made on the build branch
+before merge (FR-003 amended; `origin-alignment-2026-11-15-1809.md`):
+
+- `9481865`: the approve step skips and reports `status: draft` and
+  `superseded_by` pages, never edits frontmatter to force an approval, and
+  reports a changed revision instead of approving it.
+- `675fec9`: on an auto-approving wiki, every eligible changed page must
+  appear in promote's approved list, or the agent reports the missing page
+  and stops. `TestTheApprovalSafeguards` pins all three rules.
+
+The build PR's body was also edited by hand to add `Closes #69`, which the
+driver had put only in the title.
