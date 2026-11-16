@@ -4,7 +4,7 @@ title: "A scheduled, propose-only curation pass: one verb writes a report of lin
 appetite: 4w
 bet_status: shaped
 cycle: ""
-circuit_breaker: "Core is all six scopes (D1, D3): the nightly verb that runs structural lint, the audit-format pass and findings and writes one report (S1, S2), drafts bounded proposals with an explicit --backend (S3) and creates no duplicate on rerun (S4), with its cron and CI recipe checked (S5) and the release (S6). Never S3 without S4. Cut order, first to last, each with its trigger: (1) end of week 1, if S1 and S2 are not downhill: the --json report (D8) and the pending-proposals section of the report; (2) end of week 2, if S3 is not over the hill (the curate prompt and the bounds check settled and passing with the test backend): weak-orphan drafting, keeping missing-cross-link drafting (D5); (3) last resort, end of week 3, if S3 is not downhill: S3 and S4 together, the verb ships without --backend and --max-proposals, a follow-up issue carries drafting, and the build PR names #70 without a closing keyword (D16). End of week 4: S6 ships what is true; if the release cannot be cut, the change waits under [Unreleased]. Never, to save time: call promote, approve or anything in promoter.py from the pass; write into the wiki directory, the .audit tree included; hold the wiki lock across a backend call; resolve a backend by environment or auto-detect in the pass (D12); put a model on any path from findings, approve or review_state; add a runtime dependency, a new exit code or an MCP tool; change the page schema or the patch-set format; weaken or skip a test."
+circuit_breaker: "Core is all six scopes (D1, D3): the nightly verb that runs structural lint, the audit-format pass and findings and writes one report (S1, S2), drafts bounded proposals with an explicit --backend (S3) and creates no duplicate on rerun (S4), with its cron and CI recipe checked (S5) and the release (S6). Never S3 without S4. Cut order, first to last, each with its trigger: (1) end of week 1, if S1 and S2 are not downhill: the --json report (D8) and the pending-proposals section of the report; (2) end of week 2, if S3 is not over the hill (the curate prompt and the bounds check settled and passing with the test backend): weak-orphan drafting, keeping missing-cross-link drafting (D5); (3) last resort, end of week 3, if S3 is not downhill: S3 and S4 together, the verb ships without --backend and --max-proposals, a follow-up issue carries drafting, and the build PR names #70 without a closing keyword (D16). End of week 4: S6 ships what is true; if the release cannot be cut, the change waits under [Unreleased]. Never, to save time: call promote, approve or anything in promoter.py from the pass; write into the wiki directory, the .audit tree included; hold the wiki lock across a backend call; accept a draft that changes anything but the links D5 allows (the link-only check); resolve a backend by environment or auto-detect in the pass (D12); put a model on any path from findings, approve or review_state; add a runtime dependency, a new exit code or an MCP tool; change the page schema or the patch-set format; weaken or skip a test."
 shaped_by: "pitch-shaper (Claude Code) for gosha70"
 shaped_date: 2026-11-15
 ---
@@ -106,10 +106,14 @@ wiki-studio was read at main `e2a80c7` (0.9.2 merged, not yet tagged) on
    and `lint` take no lock. A backend call can take two minutes
    (`CopilotCliBackend` timeout 120 s), so holding the lock across one
    would block every promote for that long.
-8. **A new verb needs three edits in `cli.py`, not one.** The dispatch
-   table in `main`, the verb list in the parser description and epilog,
-   and `_VERBS` (line 990). Without the last, the legacy shim reads
-   `wiki-studio nightly` as `ingest --legacy-single-source nightly`.
+8. **A new verb needs three edits in `cli.py`, and two outside it.** In
+   `cli.py`: the dispatch table in `main`, the verb list in the parser
+   description and epilog, and `_VERBS` (line 990). Without the last,
+   the legacy shim reads `wiki-studio nightly` as
+   `ingest --legacy-single-source nightly`. Outside it:
+   `tests/test_cli_contract.py` keeps its own `_VERBS` (line 29), which
+   its help test loops over, and CLAUDE.md's layout line for `cli.py`
+   (line 33) lists the verbs.
 9. **`lint --health --backend` is the precedent for "backend only when
    asked".** `api.lint` resolves a backend only when one is passed
    (`backend is not None`); omitted, the contradiction check is skipped.
@@ -236,8 +240,11 @@ for two kinds (D5):
   `append-index` line and one `append-log` line.
 
 A bounds check refuses a draft that creates a page, edits a page the
-prompt did not show, or changes anything else; the refusal is a failed
-draft in the report, not a proposal. Every `update` carries the
+prompt did not show, or changes anything but links (D5, revised after
+the #104 review): a `missing-cross-link` update with its new links to
+the canonical page removed must equal the original page byte for byte,
+and a weak-orphan `append-index` line links that page and nothing else.
+The refusal is a failed draft in the report, not a proposal. Every `update` carries the
 `base_sha256` of the bytes the prompt showed, so a draft that goes stale
 before review is refused at promote (exit 9). Each finding gets its own
 proposal, so a curator can promote, edit or discard each one alone.
@@ -268,8 +275,9 @@ lands before S3. S5 and S6 need the others.
   circuit-breaker step 1).
 - **Where it goes (D8).** `--report PATH` writes the file (parents
   created, written to a temporary file beside it and renamed, an
-  existing file replaced). A path inside the wiki directory is refused
-  before anything runs (exit 1), as `--search-cache` is. Without
+  existing file replaced). The path is resolved, symlinks included,
+  before the check, and a path that resolves inside the wiki directory
+  is refused before anything runs (exit 1), as `--search-cache` is. Without
   `--report`, the markdown goes to stdout. `--json` prints the result
   object (D8) to stdout instead of the markdown.
 - **Lint failure (D10).** The report puts the structural violations
@@ -279,18 +287,24 @@ lands before S3. S5 and S6 need the others.
   and review findings and no backend (the report lists them, no
   directory appears under the proposals directory, exit 0, the issue's
   first acceptance line); structurally broken (report written, exit 1,
-  no proposal); a report path inside the wiki refused; the whole wiki
+  no proposal); a report path inside the wiki refused, and so is a path
+  outside it that reaches the wiki through a symlinked directory; the whole wiki
   directory, `.audit/` included, byte-identical before and after each
   run (every file's sha256 compared).
 
 ### S2: The verb on the CLI contract, ~1.5-2h
 
 - **The verb (D2).** `nightly` in the dispatch table, `_VERBS` (finding
-  8), the parser description and its own `--help`. Flags: `--report`,
+  8), the parser description and its own `--help`; also in
+  `tests/test_cli_contract.py`'s `_VERBS` (line 29) and in CLAUDE.md's
+  layout line for `cli.py` (line 33). Flags: `--report`,
   `--json`, `--backend`, `--max-proposals`, `--by`, and the global path
   and `--lock-timeout` options every verb takes.
 - **Exit codes (D9).** No new code. The README exit-code table and the
-  parser epilog gain the verb's uses of 0, 1, 2, 3, 4, 6 and 10.
+  parser epilog gain the verb's uses of 0, 1, 2, 3, 4, 6 and 10, and the
+  README states D9's precedence: a lock timeout (10) over a write
+  failure (6) over the first draft failure (3 or 4); a lint failure (1)
+  stops before drafting and never combines with them.
 - **Contract surfaces.** README gets a `### wiki-studio nightly` section
   in Verbs. `info` lists a `nightly` capability and, if D8's JSON form
   ships, its format version (D15). `docs/knowledge-contract.md` documents
@@ -300,7 +314,10 @@ lands before S3. S5 and S6 need the others.
   a run with `api.promote`, `api.approve` and every `promoter` entry
   point patched to raise still completes.
 - **Tests.** In-process `cli.main([...])` for each exit code the verb
-  can give; `--help` lists the flags; `wiki-studio nightly` is not
+  can give, and one per precedence case: a lock timeout after a failed
+  draft exits 10; a write failure after a failed draft exits 6; a
+  backend failure (3) then an invalid response (4) exits 3, and the
+  reverse exits 4; `--help` lists the flags; `wiki-studio nightly` is not
   swallowed by the legacy shim.
 
 ### S3: Drafting with an explicit backend, ~5-7h
@@ -325,6 +342,20 @@ lands before S3. S5 and S6 need the others.
   `create`. A finding whose candidate pages overlap a page already
   drafted in this run is skipped as "overlaps an earlier draft" (two
   updates from one base would make the second stale at promote).
+- **The link-only check (D5, after the #104 review).** Syntactic, no
+  semantic diff. Each candidate page is read once with `api.read_page`;
+  that text is what the prompt shows, and its `sha256` becomes the
+  edit's `base_sha256` in `plan.json`, so promote applies the update only
+  to those exact bytes. For a `missing-cross-link` `update`, every link
+  whose target resolves to the canonical page is removed from the draft
+  and from that original, a link `[text](target)` becoming its `text`;
+  the two results must be equal byte for byte, and the draft must hold
+  more links to the canonical page than the original. A weak-orphan
+  `append-index` line holds exactly one link, and it resolves to the
+  orphan page. The `append-log` line holds no link. Anything else (a
+  reworded sentence, a new "See also" line, a changed frontmatter line,
+  a second link in the index line) is refused as out of bounds: a failed
+  draft in the report, exit 4 by D9.
 - **Writing.** `api.propose(edits, paths, name=…, source="nightly
   <kind>: <pages>", rationale=<finding description>, backend=<name>,
   by=…)`. The lock is taken and released inside each call (D11). The
@@ -335,12 +366,21 @@ lands before S3. S5 and S6 need the others.
   for a given wiki); the rest are listed as "not drafted (cap)".
 - **Failures (D9).** A backend failure, an invalid response or a bounds
   refusal is recorded for that finding and the pass goes on to the next.
+  An `OutputWriteError` from `api.propose` whose cause is
+  `FileExistsError`, or after which the directory exists, is "already
+  proposed" (S4); any other `OutputWriteError` (a full disk, say) is a
+  failed draft and makes the run exit 6.
   A lock timeout stops drafting, since every later write would wait too.
   Governed schema drift (`check_write_contract`) is checked once before
   drafting; drift skips drafting and is reported.
 - **Tests.** With the test backend: proposals exist under the proposals
   directory and the wiki directory is byte-identical before and after
-  (the issue's second acceptance line); each bounds refusal; the cap;
+  (the issue's second acceptance line); each bounds refusal; an
+  over-reaching draft from the test backend refused by the link-only
+  check (an update that adds the link and rewords a sentence, one that
+  adds a "See also" line, an `append-index` line with a second link),
+  with no directory written and exit 4; an `OutputWriteError` not caused
+  by an existing directory (exit 6); the cap;
   a backend raising `BackendInvocationError` on one finding while the
   next is still drafted; a held lock (exit 10, report written); every
   created proposal promotes cleanly with `api.promote` in the test (the
@@ -360,7 +400,8 @@ lands before S3. S5 and S6 need the others.
 - **The check.** Before the backend call, a pending directory of that
   name under the proposals directory means "already proposed": no model
   call, listed in the report. An `OutputWriteError` from `api.propose`
-  for an existing name (a concurrent run) is treated the same way.
+  whose cause is `FileExistsError`, or after which the directory exists
+  (a concurrent run), is treated the same way (D9).
   `.applied/` is not consulted.
 - **Tests.** The issue's third acceptance line: a second run on an
   unchanged wiki creates no directory and makes no backend call (a
@@ -374,7 +415,9 @@ lands before S3. S5 and S6 need the others.
 
 - **`docs/nightly.md`.** A cron line and a GitHub Actions workflow. The
   cron line uses a small wrapper script, because `%` in a crontab entry
-  must be escaped (`$(date +\%F)`). The workflow runs the verb on a
+  must be escaped (`$(date +\%F)`). Both forms pass `--by <agent-name>`,
+  so a cron run records a proposer without relying on
+  `WIKI_STUDIO_ACTOR`. The workflow runs the verb on a
   schedule and uploads the report and the proposals directory as a
   workflow artifact. The verb does no git work; the recipe says that a
   curator promotes from a checkout. Both forms show the no-backend run
@@ -387,10 +430,16 @@ lands before S3. S5 and S6 need the others.
   upload step) with a structural assertion; no YAML dependency is added.
   The page joins the `quickstart-memkernel` job's install-line list only
   if it shows a `pip install` line.
-- **`WIKI_MAINTAINER.md`.** One short paragraph in the curator loop:
-  proposals named `nightly-*` were drafted unattended; review them like
-  any proposal before promoting, and the "Who approves" step applies.
-  The persona's existing command-check tests cover the new command.
+- **`WIKI_MAINTAINER.md` (D21).** One short paragraph in the curator
+  loop: proposals named `nightly-*` were drafted unattended by a model.
+  The agent may review and promote one, but approving one is a person's
+  step: for a `nightly-*` proposal the agent follows the "Who approves"
+  step (0.9.2) as for a project that reserves approval, so on a wiki
+  whose policy approves on promote it stops at propose and reports the
+  directory. The paragraph points to that step and does not restate its
+  outcomes. The persona's existing command-check tests cover the new
+  command, and one check asserts the paragraph names `nightly-*`, the
+  person's approval and the "Who approves" step.
 - **`ingest-rules.md` (D14).** The "Manual-only in v1" paragraph keeps
   "promotion is always initiated by a human or by an explicit agent
   invocation" and replaces "There is no background scheduler" with: a
@@ -414,11 +463,17 @@ lands before S3. S5 and S6 need the others.
   are listed under "needs a curator". Mechanical fixes for
   `no-page-id` and `superseded-still-indexed` are a follow-up issue.
 - **A curating prompt that rewrites prose.** Asked to add a link, a
-  model may also reword the page. *Workaround:* the bounds check limits
-  the pages and actions; `plan.json` already records fact warnings for
-  an update that drops citations, identifiers or numbers, and the report
-  shows their count. The prompt asks for the smallest edit. No semantic
-  diff is attempted.
+  model may also reword the page. *Workaround:* the link-only check (S3,
+  D5): with its new links to the canonical page removed, an update must
+  equal the original byte for byte, so a reworded draft is refused, not
+  proposed. The prompt asks for the smallest edit. No semantic diff is
+  attempted; the check is syntactic.
+- **Overlapping pending proposals.** When the pages a
+  `missing-cross-link` finding names change (a new page mentions the
+  entity), its key changes, so a second pending proposal can overlap
+  the first. *Accepted* (D6): both carry base hashes, so once one is
+  promoted the other fails promote with exit 9, and the curator
+  discards it.
 - **Declined proposals come back.** A curator who deletes a draft gets
   it again on the next run while the finding persists. *Workaround:* none
   in this pitch, by D6. The finding itself recurs nightly until fixed,
@@ -442,6 +497,9 @@ lands before S3. S5 and S6 need the others.
 
 - No promote, approve or `promoter.py` call from the pass, and no
   `--promote` flag. A curator promotes with the existing commands.
+- No code that refuses or flags the approval of a page that came from a
+  `nightly-*` proposal. D21 is persona guidance; `approve` and
+  `review_state` are unchanged.
 - No write under the wiki directory, the `.audit/` tree included, and
   no ingest-log record (`api.propose` writes none). The report is
   refused inside the wiki directory.
@@ -468,8 +526,10 @@ lands before S3. S5 and S6 need the others.
 The owner **decided D1-D16** on 2026-11-15/16 in the main session. D1
 went against the recommended default (4w instead of 2w, so drafting
 ships for certain); D3 follows from it; the other fourteen took the
-default. Each item keeps the default, its reason and the alternatives,
-so the record shows what was weighed. D17-D20 are *settled* by the issue
+default. After the external review of PR #104 (head `5d28a82`), the
+owner extended D5, D6 and D9 and added D21 on 2026-11-16. Each item
+keeps the default, its reason and the alternatives, so the record shows
+what was weighed. D17-D20 are *settled* by the issue
 or the code, and are listed so the spec does not reopen them.
 
 - **D1. Appetite (decided by the owner, 2026-11-16: NOT the default).**
@@ -504,7 +564,7 @@ or the code, and are listed so the spec does not reopen them.
   page's title), which changes the issue's first acceptance line.
 - **D5. Which kinds are drafted, and the bounds (decided by the owner,
   2026-11-16: the default).** Owner, 2026-11-16: the default, the two
-  kinds with these bounds. The default was: Default
+  kinds with these bounds. The default was
   **`missing-cross-link` (updates to the shown unlinked pages, plus one
   log line) and `weak-orphan` whose one inbound link is not from
   `index.md` (one `append-index` line, plus one log line); no `create`;
@@ -512,7 +572,18 @@ or the code, and are listed so the spec does not reopen them.
   report-only. Reason: both fixes are "add a link", are checkable, and
   need no knowledge the model lacks (finding 3, 4). Alternative: also
   draft `stale-claim` re-checks, which asks the model to guess where a
-  source moved.
+  source moved. Owner, 2026-11-16, after the #104 review: **drafts add
+  links only, and that is checked**, syntactically, with no semantic
+  diff. A `missing-cross-link` update, with its new links to the
+  canonical page removed, must equal the original page text byte for
+  byte; the original is read once with `api.read_page`, and its sha256
+  is the edit's `base_sha256`, which binds the check to the bytes
+  promote will replace. A weak-orphan `append-index` line links that
+  page and nothing else. Anything else is refused as out of bounds and
+  recorded as a failed draft (S3). Reading used here: removing a link
+  replaces `[text](target)` with `text`, so a draft can only turn
+  existing words into links; a new "See also" line is refused. Owner,
+  2026-11-16: confirmed, link existing words only.
 - **D6. How a duplicate is recognised (decided by the owner, 2026-11-16:
   the default).** Owner, 2026-11-16: the default, the deterministic
   name. The default was **the proposal directory name
@@ -525,7 +596,11 @@ or the code, and are listed so the spec does not reopen them.
   (a) put the pages' sha256s in the key, so a changed page gets a fresh
   draft beside the stale pending one; (b) scan `plan.json` files instead
   of names, which survives a rename; (c) a `.declined/` directory a
-  curator moves a draft into, which the check also reads.
+  curator moves a draft into, which the check also reads. Owner,
+  2026-11-16, after the #104 review, recorded as accepted: when the
+  pages a `missing-cross-link` finding names change, the key changes, so
+  a second pending proposal can overlap the first; once one is promoted
+  the other fails promote with exit 9, and the curator resolves it.
 - **D7. The cap (decided by the owner, 2026-11-16: the default).**
   Owner, 2026-11-16: the default, 5. The default was **`--max-proposals
   5`, one proposal per finding, in `findings` order; 0 turns drafting
@@ -554,7 +629,16 @@ or the code, and are listed so the spec does not reopen them.
   proposal (drafting stops, report written). Reason: CI sees a broken
   backend, while one bad draft does not lose the rest. Alternative: like
   `findings`, 0 for every completed run and the failures only in the
-  report.
+  report. Owner, 2026-11-16, after the #104 review: **(a)** an
+  `OutputWriteError` from `api.propose` whose cause is `FileExistsError`,
+  or after which the directory exists, means "already proposed" (S4);
+  any other `OutputWriteError` (a full disk, say) records a failed draft
+  and the run exits 6. **(b)** Precedence when several things fail in
+  one run: a lock timeout stops drafting, so **10** wins; else a write
+  failure (a proposal or the report), **6**; else the first draft
+  failure's code, **3** or **4**. A lint failure (**1**) stops before
+  drafting, so it never combines with them. The README exit-code table
+  states this, and S2 tests each case.
 - **D10. When lint fails (decided by the owner, 2026-11-16: the
   default).** Owner, 2026-11-16: the default, the report is written. The
   default was **write the report (violations first, findings as
@@ -628,6 +712,19 @@ or the code, and are listed so the spec does not reopen them.
 - **D20. The verb never promotes (settled).** This is the issue's core
   constraint. S2's import and patch tests and S1's byte-identical wiki
   test hold it.
+- **D21. A person approves a nightly draft (decided by the owner,
+  2026-11-16, after the #104 review).** Owner, 2026-11-16, after the
+  #104 review: an agent may review and promote a `nightly-*` proposal,
+  but approving one is a person's step. On a wiki whose policy sets
+  `auto_approve_on_promote`, the agent stops at propose for a nightly
+  proposal, as for a project that reserves approval, because its
+  promote would approve (finding 12). The S5 persona paragraph says this
+  and points to 0.9.2's "Who approves" step without restating it. This
+  keeps a person in the chain from a model draft to memkernel's governed
+  import, which takes approved pages only. Guidance only: no code
+  refuses such an approval (No-gos). Alternative not taken: treat the
+  agent's review as authorship, so the agent approves a nightly page as
+  it approves its own.
 
 ## Circuit breaker
 
@@ -653,8 +750,9 @@ The cut order, first to last, each with its trigger:
   cut, the change waits under `[Unreleased]`.
 - **Never, to save time:** call promote, approve or `promoter.py` from
   the pass; write into the wiki directory, `.audit/` included; hold the
-  wiki lock across a backend call; resolve a backend by environment or
-  auto-detect in the pass; put a model on any path from `findings`,
+  wiki lock across a backend call; accept a draft that changes anything
+  but the links D5 allows (the link-only check); resolve a backend by
+  environment or auto-detect in the pass; put a model on any path from `findings`,
   `approve` or `review_state`; add a runtime dependency, an exit code or
   an MCP tool; change the page schema or the patch-set format; weaken
   or skip a test.
@@ -682,6 +780,15 @@ and add the persona paragraph; D15 release 0.10.0 after 0.9.2 is
 tagged; D16 the build PR closes #70, with the fallback if the
 last-resort cut drops drafting.
 
+After the external review of PR #104 (head `5d28a82`), the owner decided
+three more points on 2026-11-16: D5 drafts add links only, enforced by
+the syntactic link-only check; D21 a person approves a nightly draft,
+and on an auto-approving wiki the agent stops at propose; D9 an
+`OutputWriteError` caused by an existing directory is "already
+proposed" and any other exits 6, with the precedence 10, then 6, then
+the first draft failure's 3 or 4. D6 records the overlapping-proposal
+case as accepted.
+
 ## Bet log
 
 | Date | bet_status | Note |
@@ -689,3 +796,4 @@ last-resort cut drops drafting.
 | 2026-11-15 | shaping | Pitch drafted from wiki-studio #70 (no comments) and cooldown-after-05 (the owner's order: #69, then #70, then #54). wiki-studio read at main e2a80c7 (0.9.2 merged, not tagged): `findings.py`, `health_lint.py`, `lint.py`, `api.py` (lint, propose, ingest, prepare_backend), `ingestor_multi.py`, `prompt.py`, `backends/` (copilot_cli, test), `wikilock.py`, `cli.py`, `paths.py`, `contract.py`, the persona and `ingest-rules.md`. |
 | 2026-11-15 | shaping → shaped | 6 scopes, 2w, work content 14-20h (model-free core 8-10h). Core: S1 (pass and report), S2 (verb), S5's report-only recipe, S6. Cut first: `--json`, then weak-orphan drafting, then S3 and S4 together. 20 decisions; D1-D16 open for the owner with defaults, not yet asked (AskUserQuestion was unavailable to the shaping agent). |
 | 2026-11-16 | shaped (decided) | Owner answered D1-D16 in the main session (2026-11-15/16). Fifteen defaults; D1 against the default: 4w, so drafting ships for certain. Updated: frontmatter (`appetite: 4w`, circuit breaker), finding 9 (cites `cli.py` 405-410 and 71, 223, 342, verified by the main session for D12), Appetite (same 14-20h estimate; the extra time buys review rounds, prompt design against a real backend and the dedup edge cases; a four-week layout), S3 (a manual real-backend check attached to the build PR), S6, Decisions (each answer recorded), Circuit breaker (all six scopes core; cuts at the end of weeks 1, 2 and 3, drafting only as the week-3 last resort, never S3 without S4), Questions for the owner (answered). The owner kept S3's manual real-backend check (2026-11-16), a by-hand step on the build PR. |
+| 2026-11-16 | shaped (revised after review) | External review of PR #104 (head 5d28a82) asked for changes; the owner decided three points the same day. D5 extended: drafts add links only, checked syntactically (a missing-cross-link update with its new canonical links removed equals the `api.read_page` original byte for byte, bound by `base_sha256`; a weak-orphan index line links that page only; anything else a failed draft). D21 added: a person approves a nightly draft; on an auto-approving wiki the agent stops at propose. D9 extended: `OutputWriteError` from an existing directory is "already proposed", any other exits 6; precedence 10 over 6 over the first 3 or 4, and 1 never combines. Smaller fixes: finding 8 and S2 add `tests/test_cli_contract.py`'s `_VERBS` (line 29) and CLAUDE.md's `cli.py` layout line (line 33); S5's recipe passes `--by`; S1 resolves symlinks before refusing a report path inside the wiki; D6 and a rabbit hole accept overlapping pending proposals after a finding's page set changes (one fails promote with exit 9). Updated: frontmatter circuit breaker (never list), finding 8, Solution shape, S1, S2, S3, S4, S5, rabbit holes, no-gos, Decisions (intro, D5, D6, D9, D21), Circuit breaker (never list), Questions for the owner. |
