@@ -4,3 +4,6 @@ Review: PASS (see specs/wiki-studio-0-10-0/collaboration/build-review-phase-1.md
 
 ### Phase 2 complete — US2: The verb on the CLI contract (2026-11-17T21:18:53Z)
 Review: PASS (see specs/wiki-studio-0-10-0/collaboration/build-review-phase-2.md).
+
+### Phase 3 complete — US3: Drafting with an explicit backend (2026-11-17T21:52:03Z)
+Review: PASS (see specs/wiki-studio-0-10-0/collaboration/build-review-phase-3.md).
