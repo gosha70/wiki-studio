@@ -10,3 +10,6 @@ Review: PASS (see specs/wiki-studio-0-10-0/collaboration/build-review-phase-3.md
 
 ### Phase 4 complete — US4: No duplicate on rerun (2026-11-17T22:03:22Z)
 Review: PASS (see specs/wiki-studio-0-10-0/collaboration/build-review-phase-4.md).
+
+### Phase 5 complete — US5: The recipe and the guidance (2026-11-17T22:13:50Z)
+Review: PASS (see specs/wiki-studio-0-10-0/collaboration/build-review-phase-5.md).
