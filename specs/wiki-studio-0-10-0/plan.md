@@ -187,16 +187,35 @@ Each is recorded so the origin-alignment record at approval can cite it.
     canonical page and all unlinked pages, the draft must update each of
     them, the link-only check applies to each update independently and one
     failing update refuses the whole draft, and each update carries the
-    `base_sha256` of its own `api.read_page`. No page cap and no flag; the
-    `--max-proposals` cap still counts one backend call per finding.
+    `base_sha256` of its own `api.read_page`. No page cap and no flag; a
+    finding is still one backend call (one attempt of FR-016).
 11. **Over-reaching drafts come from stub backends.** The pitch says "an
     over-reaching draft from the test backend"; the test backend stays
     deterministic and valid, and stub backends (or the test backend
     patched behind `--backend test`) supply the refused shapes (FR-023).
-12. **The cap counts backend calls.** D7 caps "proposals"; its reason is
-    "five backend calls bound a run". The spec counts findings sent to the
-    backend, whatever the outcome; already-proposed and overlapping findings
-    do not count (FR-016).
+12. **D7 changed: two bounds instead of one.** D7 set `--max-proposals 5`,
+    "one proposal per finding, in `findings` order", with the reason "five
+    backend calls bound a run". Owner, 2026-11-17, against D7's wording:
+    `--max-proposals N` counts proposals actually created, and a derived
+    bound of `2 × N` backend calls (attempts) limits cost; it is a named
+    constant (`ATTEMPTS_PER_PROPOSAL = 2`), not a flag. A refused or failed
+    draft uses an attempt but no proposal slot, so findings later in the
+    fixed order still get drafted; no state is kept between runs; each
+    refused or failed finding is listed with its reason; `--max-proposals 0`
+    makes no attempt (FR-016, FR-022). Already-proposed and overlapping
+    findings use neither bound.
+15. **Links inside code are refused; aliases are linked as they stand.**
+    The pitch's link-only check does not mention code. A link added inside a
+    fenced block or an inline code span breaks the code or renders as
+    literal text, so FR-019 refuses it, reading code regions with
+    `prose_lint.open_fence` and `closes_fence` (`prose_lint.py` 76-105) and
+    same-line backtick spans; the prompt asks for the first mention outside
+    code (FR-017). With every unlinked page required (FR-014), a page whose
+    only mentions are inside code makes every draft for that finding
+    refused, listed under Failed each run. `missing-cross-link` counts a
+    glossary avoid term as a mention (`health_lint.py` 256); linking it is
+    allowed and the page keeps the avoided term, since the check forbids
+    changing words (FR-019; reviewer's notes, 2026-11-17).
 13. **A read error from `api.lint` or `api.findings` writes no report.** The
     pitch does not say; the spec ends the run with that error's code, as
     `findings` itself does (FR-001).
@@ -270,8 +289,10 @@ bet PR (#107) and this spec PR use no closing keyword.
 NIGHTLY_PROPOSAL_PREFIX = "nightly-"
 NIGHTLY_KEY_LENGTH = 12
 DEFAULT_MAX_PROPOSALS = 5
+ATTEMPTS_PER_PROPOSAL = 2          # FR-016: backend calls per run are bounded at 2 × max_proposals
 
 def proposal_name(kind: str, pages: Sequence[str]) -> str: ...
+def code_regions(text: str) -> list[tuple[int, int]]: ...              # FR-019: fenced blocks and inline spans, as offsets
 def check_report_path(report: Path, paths: WikiPaths) -> Path: ...   # ValueError inside the wiki
 def write_report(text: str, path: Path) -> None: ...                  # temp file + os.replace; OSError re-raised
 def strip_links_to(text: str, page: str, target: str) -> str: ...
@@ -357,8 +378,13 @@ driver defects).
   (FR-008(h), FR-023(g)).
 - **The link-only check by fixture.** One fixture per refused shape the
   reviewer named (a reworded sentence, a "See also" line, a changed
-  frontmatter line, a second index link) plus the bounds cases and unit
-  tests of the helpers (FR-023(c), (d)).
+  frontmatter line, a second index link) plus the bounds cases, links
+  inside a fenced block and an inline span, a page mentioning the entity
+  only inside code, a linked glossary alias, and unit tests of the link and
+  code-region helpers (FR-023(c), (d)).
+- **The two bounds.** A finding that always fails does not block later
+  ones; the attempt bound stops at `2 × N`; `--max-proposals 0` makes no
+  backend call; a second run behaves the same (FR-023(f)).
 - **End to end.** Created proposals promote cleanly and clear their finding
   (FR-023(b)); the issue's three acceptance lines are named tests.
 - **Precedence and stopping.** One case per FR-010 ordering and per note
@@ -376,7 +402,19 @@ driver defects).
 - **Real models reproduce a page imperfectly** (a dropped trailing newline,
   a normalised quote), so the link-only check refuses many drafts.
   Mitigation: refusal is safe (a failed draft, exit 4); the manual check
-  (FR-024) tunes the prompt; the cap bounds the cost.
+  (FR-024) tunes the prompt; FR-016's attempt bound (2 × N backend calls)
+  bounds the cost, and a refusal uses no proposal slot.
+- **Findings that fail every night** (a page whose only mentions are inside
+  code, a page a model cannot reproduce, owner, 2026-11-17). Each such
+  finding uses one attempt per run and no slot, so later findings in the
+  fixed order still get drafted while attempts remain; no state is kept
+  between runs, so the same findings are tried, and listed under Failed
+  with their reason, every night until a curator fixes the page. If more
+  than `2 × N` findings at the head of the order always fail, they use all
+  the attempts and later findings are never reached; the report shows them
+  as `cap: attempts`, and the curator's remedy is to fix the failing pages
+  or raise `--max-proposals` (FR-016, FR-022). Cost per run stays bounded at
+  `2 × N` backend calls.
 - **Prompt size grows with the unlinked pages.** One draft shows the
   canonical page and every unlinked page, and must reproduce each updated
   page in full (owner, 2026-11-17), so a finding with many unlinked pages
@@ -397,7 +435,8 @@ driver defects).
   accepts.
 - **Overlapping pending proposals** when a finding's page set changes (D6,
   accepted): the second fails promote with exit 9.
-- **Declined drafts return nightly** (D6, accepted); the cap bounds it.
+- **Declined drafts return nightly** (D6, accepted); FR-016's proposal cap
+  bounds it.
 - **Lock tests in one process.** A held `WikiLock` in the test process may
   not conflict with the pass's lock on every platform's lock primitive;
   the tests patch `api.propose` to raise `PromoteApplyError(reason="lock_timeout")`
@@ -406,8 +445,9 @@ driver defects).
 ## Success criteria
 
 1. `wiki-studio nightly` writes one report (markdown or JSON), drafts only
-   with an explicit `--backend`, at most five per run, only link additions
-   the check accepts, each bound to the bytes it was drafted from.
+   with an explicit `--backend`, at most five proposals and ten backend
+   calls per run by default, only link additions outside code the check
+   accepts, each bound to the bytes it was drafted from.
 2. The wiki directory is byte-identical after every run; nothing reaches
    promote or approve; a rerun creates no duplicate and calls no backend.
 3. Exit codes follow FR-010, both reviewer notes included.
@@ -430,7 +470,9 @@ Items 1-3 were decided by the owner on 2026-11-17.
 3. **A proposals directory inside the wiki refused with drafting on**
    (departure 9, FR-013). Owner, 2026-11-17: yes, exit 1, symlinks
    resolved, before any backend call.
-4. **The cap counts backend calls** (departure 12, FR-016).
+4. **The proposal cap and the attempt bound** (departure 12, FR-016).
+   Owner, 2026-11-17: `--max-proposals` counts proposals created; backend
+   calls are bounded at twice that, derived, not a flag.
 5. **`--report` with `--json`** writes the markdown file and prints the
    JSON (FR-005).
 6. **The `curate` renderer branch** (departure 8, FR-017).
