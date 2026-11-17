@@ -204,6 +204,12 @@ Each is recorded so the origin-alignment record at approval can cite it.
     refused or failed finding is listed with its reason; `--max-proposals 0`
     makes no attempt (FR-016, FR-022). Already-proposed and overlapping
     findings use neither bound.
+13. **A read error from `api.lint` or `api.findings` writes no report.** The
+    pitch does not say; the spec ends the run with that error's code, as
+    `findings` itself does (FR-001).
+14. **The recipe's install line is unpinned** (`pip install wiki-studio`, as
+    README's), so it resolves at every phase and needs no seventh version
+    place (FR-028).
 15. **Links inside code are refused; aliases are linked as they stand.**
     The pitch's link-only check does not mention code. A link added inside a
     fenced block or an inline code span breaks the code or renders as
@@ -216,12 +222,38 @@ Each is recorded so the origin-alignment record at approval can cite it.
     glossary avoid term as a mention (`health_lint.py` 256); linking it is
     allowed and the page keeps the avoided term, since the check forbids
     changing words (FR-019; reviewer's notes, 2026-11-17).
-13. **A read error from `api.lint` or `api.findings` writes no report.** The
-    pitch does not say; the spec ends the run with that error's code, as
-    `findings` itself does (FR-001).
-14. **The recipe's install line is unpinned** (`pip install wiki-studio`, as
-    README's), so it resolves at every phase and needs no seventh version
-    place (FR-028).
+
+After the external review of this spec's PR #108 (head db1a904), the owner
+decided four points on 17 November 2026:
+
+16. **The link-only check stays as is (owner, against the reviewer's
+    recommendation).** The reviewer showed three shapes that pass FR-019:
+    an empty-text link `[](<canonical>)`, an arbitrary existing word linked
+    ("We set a [retry](<canonical>) budget"), and a link nested inside an
+    existing link (`[[the policy](<canonical>)](other.md)`), and recommended
+    constraining the link text to the slug, the spaced slug or a glossary
+    avoid term. The owner declined: the check does not constrain the added
+    link's text or nesting, the three shapes are accepted, and the person
+    who approves every `nightly-*` proposal (D21) reviews them. FR-019 says
+    so in one sentence; no stricter rule and no fixture for one (risk
+    below).
+17. **The weak-orphan index line has a fixed form.** The pitch says the
+    line "links that page and nothing else"; owner: it is exactly
+    `- [<title>](<orphan path>)`, the title from the orphan's frontmatter
+    `title:`, the path as the index links pages; any other line is refused,
+    exit 4 (FR-019(b)). The test backend emits that form (FR-017).
+18. **The log line's form is checked.** The pitch only says the
+    `append-log` line holds no link; owner: it must be
+    `- <run's UTC date> — <verb> <slug> (<page-type>): <why>`, the verb from
+    `NIGHTLY_LOG_VERBS = ("link",)`, the slug and type of a page the draft
+    edits (the orphan for a weak orphan), the why free text with no link.
+    Structural lint does not read log lines (the reviewer verified;
+    `lint.py` names `log.md` only for reachability, 22 and 61), so FR-019
+    is their only check.
+19. **FR-030's wording.** A `nightly-*` proposal already exists when the
+    agent sees it, so the persona says the agent does not promote it on an
+    auto-approving wiki, instead of "stops at propose"; the rest of D21
+    stands.
 
 The origin block above is unchanged: these are decisions on the derived
 artifacts, recorded here, not a change to the origin.
@@ -244,7 +276,9 @@ bet PR (#107) and this spec PR use no closing keyword.
 - **ADR-3: The link-only check is syntactic and fails closed.** Anything the
   link pattern does not recognise as a link to the canonical page stays in
   both texts, so it can only make the comparison fail (a titled link, an
-  image, a reference link), never pass a rewrite.
+  image, a reference link), never pass a rewrite. It guards the words, not
+  the link's text or nesting (departure 16); the index and log lines have
+  fixed forms (departures 17, 18).
 - **ADR-4: Precedence is computed once.** Outcomes are recorded as they
   happen; `NightlyResult.exit_code` applies FR-010 (2)-(6) and the CLI
   applies (1) after writing the report.
@@ -380,8 +414,11 @@ driver defects).
   reviewer named (a reworded sentence, a "See also" line, a changed
   frontmatter line, a second index link) plus the bounds cases, links
   inside a fenced block and an inline span, a page mentioning the entity
-  only inside code, a linked glossary alias, and unit tests of the link and
-  code-region helpers (FR-023(c), (d)).
+  only inside code, a linked glossary alias, the index line's fixed form
+  (extra prose, a different title, a second link), the log line's form (a
+  wrong date, a slug not edited, a link in the why), and unit tests of the
+  link and code-region helpers (FR-023(c), (d)). No fixture for link text
+  or nesting (departure 16).
 - **The two bounds.** A finding that always fails does not block later
   ones; the attempt bound stops at `2 × N`; `--max-proposals 0` makes no
   backend call; a second run behaves the same (FR-023(f)).
@@ -404,6 +441,19 @@ driver defects).
   Mitigation: refusal is safe (a failed draft, exit 4); the manual check
   (FR-024) tunes the prompt; FR-016's attempt bound (2 × N backend calls)
   bounds the cost, and a refusal uses no proposal slot.
+- **Link text and nesting are unconstrained (owner, 2026-11-17; departure
+  16).** Three shapes pass FR-019: an empty-text link `[](<canonical>)`,
+  an arbitrary existing word linked ("We set a [retry](<canonical>)
+  budget"), and a link nested inside an existing link
+  (`[[the policy](<canonical>)](other.md)`). Consequence: a draft can link
+  words that are not a real mention of the entity, add a link a reader
+  cannot see, or produce nested-link markdown that renderers treat
+  inconsistently; the finding may even clear on such a link. Mitigation:
+  D21, a person approves every `nightly-*` proposal and reviews its diff
+  before promote (FR-030), and every update stays bound to its base hash.
+  The PR #108 reviewer recommended constraining the link text to the slug,
+  the spaced slug or a glossary avoid term; the owner declined, so the
+  build adds no such rule.
 - **Findings that fail every night** (a page whose only mentions are inside
   code, a page a model cannot reproduce, owner, 2026-11-17). Each such
   finding uses one attempt per run and no slot, so later findings in the
