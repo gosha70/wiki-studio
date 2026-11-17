@@ -6,6 +6,45 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.10.0]
+
+A feature release: `wiki-studio nightly`, a propose-only curation pass that
+runs the wiki's routine checks unattended, writes one report and, only with
+an explicit backend, drafts link-only proposals for a curator.
+
+### Added
+
+- The `nightly` verb and its report (0.10.0, US1-US4). One run covers
+  structural lint with the audit-format errors, the model-free `findings`
+  with their counts by kind, and the proposal directories still pending,
+  each with its edit count; the markdown report goes to stdout or
+  `--report PATH`, and `--json` prints the `nightly_version: 1` result
+  object.
+- Drafting with an explicit `--backend` only: at most `--max-proposals N`
+  proposals (default 5) and at most twice as many backend calls, for a
+  `missing-cross-link` and for a weak orphan `index.md` does not link. Each
+  draft may only turn existing words into links; a syntactic check refuses
+  a draft that changes another byte, adds a line or puts a link inside
+  code, and nothing is proposed when it does. Each proposal is written
+  through `api.propose` under a deterministic `nightly-<kind>-<key>` name,
+  so a rerun on an unchanged wiki creates no duplicate.
+- The cron wrapper and the GitHub Actions workflow in `docs/nightly.md`,
+  checked by `tests/test_nightly_recipe.py`.
+- The `nightly` capability and the `nightly: 1` format version in `info`.
+
+### Changed
+
+- `schema/ingest-rules.md`: a scheduled `wiki-studio nightly` run may draft
+  proposals, and never promotes or approves.
+- The curator persona: an agent may review and promote a `nightly-*`
+  proposal, and approving it is a person's step ("Who approves").
+
+### Notes
+
+- No new exit code, MCP tool, page-schema, patch-set, `findings` or `lint`
+  change, and no dependency. The pass never calls `promote`, `approve` or
+  `promoter.py`, and writes nothing in the wiki directory. Issue #70.
+
 ## [0.9.2] — 2026-11-17
 
 A guidance release: the curator persona holds the propose, promote, lint and

@@ -8,9 +8,10 @@ split like a shell line, parsed with the CLI's own parser with every flag
 spelled in full, and then run in-process against a temporary wiki with one
 draftable finding (the ``--backend`` value is replaced by ``test``). The
 wrapper script is run once by ``bash``; the crontab line and the workflow
-are checked line by line, with no YAML dependency. The page's install line
-is resolved as written by the ``quickstart-memkernel`` job's ``PAGES``
-list.
+are checked line by line, with no YAML dependency. The command lines the
+README's nightly section shows get the same parse-and-run check (FR-032).
+The page's install line is resolved as written by the
+``quickstart-memkernel`` job's ``PAGES`` list.
 """
 
 from __future__ import annotations
@@ -35,7 +36,11 @@ from wiki_studio.paths import WikiPaths
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PAGE_PATH = REPO_ROOT / "docs" / "nightly.md"
 PAGE = PAGE_PATH.read_text(encoding="utf-8")
+README_PATH = REPO_ROOT / "README.md"
 CI_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "ci.yml"
+
+# The README's nightly section runs from its heading to the next ``### `` heading.
+README_SECTION_HEADING = "### `wiki-studio nightly`"
 
 # The wrapper's file name, as the page saves it and the crontab line names it.
 WRAPPER_NAME = "nightly-report.sh"
@@ -90,6 +95,13 @@ def _bash_blocks(page: str) -> list:
 def _yaml_blocks(page: str) -> list:
     """Every fenced block whose info string starts with ``yaml``."""
     return [block for block in parse_fenced_blocks(page) if block.info.split()[:1] == ["yaml"]]
+
+
+def _readme_nightly_section(text: str) -> str:
+    """The README text from its nightly heading to the next ``### `` heading."""
+    start = text.index(README_SECTION_HEADING)
+    remainder = text[start + len(README_SECTION_HEADING) :]
+    return remainder[: remainder.index("\n### ")]
 
 
 def _nightly_lines(page: str) -> list[str]:
@@ -171,11 +183,8 @@ class RecipeCase(unittest.TestCase):
             entry.name for entry in self.proposals.iterdir() if entry.is_dir() and not entry.name.startswith(".")
         )
 
-
-class TestEveryShownNightlyLine(RecipeCase):
-    def test_every_line_parses_in_full_and_runs(self) -> None:
-        lines = _nightly_lines(PAGE)
-        self.assertGreaterEqual(len(lines), 4, lines)
+    def run_shown_lines(self, lines: list[str]) -> set[str]:
+        """Parse each shown line in full, run it in-process, and return the proposals the drafting line created."""
         parser = _build_arg_parser()
         drafted: set[str] = set()
         for line in lines:
@@ -202,7 +211,29 @@ class TestEveryShownNightlyLine(RecipeCase):
                         drafted = after - before
                     else:
                         self.assertEqual(after, before, f"{line!r} drafted again on an unchanged wiki")
-        self.assertTrue(drafted, "no drafting line created a proposal")
+        return drafted
+
+
+class TestEveryShownNightlyLine(RecipeCase):
+    def test_every_line_parses_in_full_and_runs(self) -> None:
+        lines = _nightly_lines(PAGE)
+        self.assertGreaterEqual(len(lines), 4, lines)
+        self.assertTrue(self.run_shown_lines(lines), "no drafting line created a proposal")
+
+
+class TestEveryReadmeNightlyLine(RecipeCase):
+    def test_every_line_the_section_shows_parses_in_full_and_runs(self) -> None:
+        section = _readme_nightly_section(README_PATH.read_text(encoding="utf-8"))
+        lines = _nightly_lines(section)
+        self.assertGreaterEqual(len(lines), 2, lines)
+        self.assertTrue(self.run_shown_lines(lines), "no drafting line created a proposal")
+
+    def test_the_synopsis_shows_the_nightly_flags(self) -> None:
+        section = _readme_nightly_section(README_PATH.read_text(encoding="utf-8"))
+        synopsis = next(line for line in section.splitlines() if line.startswith("Synopsis:"))
+        self.assertEqual(
+            re.findall(r"--[a-z-]+", synopsis), ["--report", "--json", "--backend", "--max-proposals", "--by"]
+        )
 
 
 class TestTheCronRecipe(RecipeCase):

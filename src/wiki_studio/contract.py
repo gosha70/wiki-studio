@@ -94,6 +94,7 @@ FORMATS: Mapping[str, int] = MappingProxyType(
         "ingest_log": INGEST_LOG_FORMAT_VERSION,
         "approval": APPROVAL_FORMAT_VERSION,
         "findings": FINDINGS_FORMAT_VERSION,
+        "nightly": NIGHTLY_FORMAT_VERSION,
     }
 )
 CAPABILITY_WIKI_LOCK = "wiki-lock"
@@ -107,6 +108,7 @@ CAPABILITY_SUPERSEDED_BY = "superseded-by"
 CAPABILITY_FINDINGS = "findings"
 CAPABILITY_RANKED_DISCOVERY = "ranked-discovery"
 CAPABILITY_CONTEXT_BUDGET = "context-budget"
+CAPABILITY_NIGHTLY = "nightly"
 CAPABILITIES: tuple[str, ...] = (
     CAPABILITY_WIKI_LOCK,
     CAPABILITY_RECEIPTS,
@@ -119,6 +121,7 @@ CAPABILITIES: tuple[str, ...] = (
     CAPABILITY_FINDINGS,
     CAPABILITY_RANKED_DISCOVERY,
     CAPABILITY_CONTEXT_BUDGET,
+    CAPABILITY_NIGHTLY,
 )
 
 UPDATE_SCHEMA_COMMAND = "wiki-studio init --update-schema"

@@ -23,7 +23,7 @@ The code was extracted from
 pip install wiki-studio          # Python 3.11–3.13, no runtime dependencies
 pip install 'wiki-studio[mcp]'   # optional: the MCP server, wiki-studio-mcp (see MCP)
 wiki-studio --help
-wiki-studio --version           # 0.9.2
+wiki-studio --version           # 0.10.0
 ```
 
 From a checkout: `poetry install`, then `poetry run wiki-studio --help`.
@@ -266,6 +266,59 @@ The JSON format is in `docs/knowledge-contract.md`.
 | `--json` | print `findings_version`, `counts`, `pages_checked` and `findings` as one JSON object |
 | `--paths P [P ...]` | scope every kind to these wiki-relative pages |
 
+### `wiki-studio nightly`
+
+Runs the wiki's routine checks unattended and writes one report: structural
+lint (with the audit-format errors reported beside it), the model-free
+`findings` with their counts by kind, and the proposal directories still
+pending under the proposals directory, each with its edit count. It never
+promotes or approves a proposal, never runs git and writes nothing in the
+wiki directory; its only writes are the report and, with drafting on, the
+proposal directories `api.propose` creates.
+
+Synopsis: `wiki-studio nightly [--report PATH] [--json] [--backend NAME] [--max-proposals N] [--by NAME]`.
+
+Without `--report` the markdown report goes to stdout; `--report PATH`
+writes it to PATH atomically (missing parents are created) instead of
+stdout. PATH must lie outside the wiki directory, directly or through a
+symbolic link, and a refused path exits 1 before anything runs. `--json`
+prints the `nightly_version: 1` result object instead of the markdown on
+stdout, and with `--report` the report file is written before the JSON is
+printed; the format is in `docs/knowledge-contract.md`.
+
+Drafting happens only when `--backend NAME` is given:
+`WIKI_STUDIO_BACKEND` and PATH auto-detect are never consulted, so a run
+without `--backend` calls no model. The pass drafts two findings whose fix
+adds a link: a `missing-cross-link` (every unlinked page the finding names
+is updated) and a weak orphan that `index.md` does not link. A draft may
+only turn existing words into links; a syntactic check refuses a draft
+that adds a word or a line, changes another byte, or puts a link inside
+code, and writes nothing when it does. Each finding gets one proposal,
+written through `api.propose` under the deterministic name
+`nightly-<kind>-<key>`, so a rerun on an unchanged wiki creates no
+duplicate and reports the finding as already proposed.
+`--max-proposals N` (default 5) caps the proposals a run creates, and
+backend calls are bounded at twice N; `0` turns drafting off.
+
+A person approves a `nightly-*` draft: an agent may review and promote one,
+but approving it follows the curator persona's "Who approves" step
+(`src/wiki_studio/schema/WIKI_MAINTAINER.md`). The cron job and the GitHub
+Actions workflow are in [docs/nightly.md](docs/nightly.md).
+
+| Flag | Effect |
+|---|---|
+| `--report PATH` | write the markdown report to PATH (atomic; missing parents created) instead of stdout; a path inside the wiki exits 1 before anything runs |
+| `--json` | print the `nightly_version: 1` JSON object instead of the markdown; with `--report` the file is written first |
+| `--backend NAME` | the only way drafting turns on: `claude`, `codex`, `cursor`, `pi` or `test` (see Backends) |
+| `--max-proposals N` | at most N proposals created (default 5); backend calls are bounded at twice N; `0` turns drafting off |
+| `--by NAME` | who proposes, recorded as `plan.json`'s proposer; see Attribution below |
+
+```bash
+wiki-studio nightly --report reports/nightly.md
+wiki-studio nightly --json
+wiki-studio nightly --backend claude --by <agent-name>
+```
+
 ### `wiki-studio audit-flush`
 
 Commits pending lines of the ingest audit log. The only verb that runs
@@ -403,18 +456,23 @@ arm for memkernel's lifecycle suite built on them (issue #10).
 
 | Code | Meaning |
 |---|---|
-| 0 | success (for `lint`: no fatal findings; for `ingest --check`: gate accepted) |
-| 1 | `ingest --check` rejected; fatal lint findings; a rejected flag combination |
-| 2 | backend not found (unknown name, CLI not on PATH, nothing to auto-detect); usage error |
-| 3 | backend invocation failed (non-zero exit, timeout) |
-| 4 | contract violation: the backend's response failed shape or semantic validation; a page `read` that is not UTF-8; a malformed, newer or unknown-schema manifest; schema drift on a governed wiki; `approve` on a wiki without a manifest |
+| 0 | success (for `lint`: no fatal findings; for `ingest --check`: gate accepted; for `nightly`: a completed run, whatever it found or drafted) |
+| 1 | `ingest --check` rejected; fatal lint findings; a rejected flag combination; `nightly`: structural lint failed (the report is still written, nothing drafted), or a pre-run refusal (a `--report` path inside the wiki, a negative `--max-proposals`, or a proposals directory inside the wiki with drafting on) |
+| 2 | backend not found (unknown name, CLI not on PATH, nothing to auto-detect); usage error; `nightly --backend NAME`: unknown name or its CLI not on PATH, before lint runs |
+| 3 | backend invocation failed (non-zero exit, timeout); `nightly`: a draft's backend call failed |
+| 4 | contract violation: the backend's response failed shape or semantic validation; a page `read` that is not UTF-8; a malformed, newer or unknown-schema manifest; schema drift on a governed wiki; `approve` on a wiki without a manifest; `nightly`: a draft's response was invalid, out of bounds or refused by validation, or governed schema drift skipped drafting |
 | 5 | source file, page or proposal directory missing |
-| 6 | output write failure; `approve` published some records and then failed (the error names the pages published and not) |
+| 6 | output write failure; `approve` published some records and then failed (the error names the pages published and not); `nightly`: the report could not be written, or a proposal write failed |
 | 7 | source or proposal path outside the root (`--allow-out-of-repo` overrides); a `read` path outside the wiki |
 | 8 | verb not implemented |
 | 9 | promote: staged tree failed validation, or a revision precondition failed (stale or unguarded `update`, `create` of a page that now exists); the wiki is unchanged. approve: the batch was refused; nothing was written |
-| 10 | promote: a write into the wiki failed; every file it touched, including the failed one, rolled back |
+| 10 | promote: a write into the wiki failed; every file it touched, including the failed one, rolled back; `nightly`: the wiki lock timed out while writing a proposal |
 | 11 | audit-flush: not a git work tree, append-only invariant violated, malformed log, or git failed |
+
+When `nightly` meets several outcomes in one run it decides the code once,
+at the end: an unwritable report exits 6 whatever else failed; then a lock
+timeout 10; then a failed proposal write 6; then a structural lint failure
+1; then the first draft failure's 3 or 4.
 
 ## Backends
 
