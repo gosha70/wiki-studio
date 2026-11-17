@@ -236,7 +236,11 @@ decided four points on 17 November 2026:
     link's text or nesting, the three shapes are accepted, and the person
     who approves every `nightly-*` proposal (D21) reviews them. FR-019 says
     so in one sentence; no stricter rule and no fixture for one (risk
-    below).
+    below). After the re-review of 822bc69 the owner took the reviewer's
+    smallest tightening: an added link whose text is empty or only
+    whitespace is refused (`empty link text`, one fixture), because it is
+    the one shape a person cannot see on the rendered page. The other two
+    shapes stay accepted.
 17. **The weak-orphan index line has a fixed form.** The pitch says the
     line "links that page and nothing else"; owner: it is exactly
     `- [<title>](<orphan path>)`, the title from the orphan's frontmatter
@@ -442,12 +446,12 @@ driver defects).
   (FR-024) tunes the prompt; FR-016's attempt bound (2 × N backend calls)
   bounds the cost, and a refusal uses no proposal slot.
 - **Link text and nesting are unconstrained (owner, 2026-11-17; departure
-  16).** Three shapes pass FR-019: an empty-text link `[](<canonical>)`,
+  16), except empty link text, which is refused.** Two shapes pass FR-019:
   an arbitrary existing word linked ("We set a [retry](<canonical>)
   budget"), and a link nested inside an existing link
   (`[[the policy](<canonical>)](other.md)`). Consequence: a draft can link
-  words that are not a real mention of the entity, add a link a reader
-  cannot see, or produce nested-link markdown that renderers treat
+  words that are not a real mention of the entity, or produce nested-link
+  markdown that renderers treat
   inconsistently; the finding may even clear on such a link. Mitigation:
   D21, a person approves every `nightly-*` proposal and reviews its diff
   before promote (FR-030), and every update stays bound to its base hash.
