@@ -13,3 +13,6 @@ Review: PASS (see specs/wiki-studio-0-10-0/collaboration/build-review-phase-4.md
 
 ### Phase 5 complete — US5: The recipe and the guidance (2026-11-17T22:13:50Z)
 Review: PASS (see specs/wiki-studio-0-10-0/collaboration/build-review-phase-5.md).
+
+### Phase 6 complete — US6: Release 0.10.0 and closure (2026-11-17T22:24:07Z)
+Review: PASS (see specs/wiki-studio-0-10-0/collaboration/build-review-phase-6.md).
