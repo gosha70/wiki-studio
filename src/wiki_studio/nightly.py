@@ -175,6 +175,18 @@ class CreatedProposal:
 
 
 @dataclass(frozen=True)
+class AlreadyProposed:
+    """A draftable finding whose proposal directory was already pending (FR-025, FR-026)."""
+
+    name: str
+    kind: str
+    pages: tuple[str, ...]
+
+    def as_dict(self) -> dict[str, Any]:
+        return {"name": self.name, "kind": self.kind, "pages": list(self.pages)}
+
+
+@dataclass(frozen=True)
 class NotDraftedProposal:
     """A draftable finding this run did not draft, and why (FR-022)."""
 
@@ -216,9 +228,10 @@ class NightlyResult:
     ``lint`` is the structural result (audit-format errors included), ``findings``
     the full model-free findings, ``needs_curator`` the findings the report lists
     for a person and ``pending`` the proposal directories still waiting.
-    ``drafting`` says what drafting did; ``created``, ``not_drafted`` and
-    ``failed`` carry FR-022's proposal entries. ``exit_code`` applies FR-010
-    (2)-(6); the CLI applies (1), the report write, after writing the report.
+    ``drafting`` says what drafting did; ``created``, ``already_proposed``,
+    ``not_drafted`` and ``failed`` carry FR-022's proposal entries. ``exit_code``
+    applies FR-010 (2)-(6); the CLI applies (1), the report write, after writing
+    the report.
     """
 
     run_at: str
@@ -233,6 +246,7 @@ class NightlyResult:
     drafting: DraftingState
     exit_code: int
     created: tuple[CreatedProposal, ...] = ()
+    already_proposed: tuple[AlreadyProposed, ...] = ()
     not_drafted: tuple[NotDraftedProposal, ...] = ()
     failed: tuple[FailedDraft, ...] = ()
 
@@ -253,7 +267,7 @@ class NightlyResult:
             "drafting": self.drafting.as_dict(),
             "proposals": {
                 "created": [proposal.as_dict() for proposal in self.created],
-                "already_proposed": [],
+                "already_proposed": [entry.as_dict() for entry in self.already_proposed],
                 "not_drafted": [entry.as_dict() for entry in self.not_drafted],
                 "failed": [entry.as_dict() for entry in self.failed],
             },
@@ -294,7 +308,7 @@ class NightlyResult:
             "",
             "### Already proposed",
             "",
-            "none",
+            *self._already_proposed_lines(),
             "",
             "### Not drafted",
             "",
@@ -367,6 +381,11 @@ class NightlyResult:
             lines.extend(f"  - {action} {path}" for action, path in proposal.edits)
             lines.append(f"  - fact warnings: {proposal.fact_warnings}")
         return lines
+
+    def _already_proposed_lines(self) -> list[str]:
+        if not self.already_proposed:
+            return ["none"]
+        return [f"- [{entry.kind}] {', '.join(entry.pages)}: {entry.name}" for entry in self.already_proposed]
 
     def _not_drafted_lines(self) -> list[str]:
         if not self.not_drafted:
@@ -673,7 +692,7 @@ def _pending_proposals(proposals_dir: Path) -> tuple[PendingProposal, ...]:
     """Directories directly under the proposals directory, hidden ones excluded, sorted by name (FR-006)."""
     try:
         entries = sorted(proposals_dir.iterdir(), key=lambda entry: entry.name)
-    except FileNotFoundError:
+    except OSError:  # missing, or not a directory: nothing to list (FR-006)
         return ()
     return tuple(
         PendingProposal(entry.name, _edits_count(entry / "plan.json"))
@@ -741,6 +760,7 @@ class _DraftOutcome:
 
     drafting: DraftingState
     created: tuple[CreatedProposal, ...] = ()
+    already_proposed: tuple[AlreadyProposed, ...] = ()
     not_drafted: tuple[NotDraftedProposal, ...] = ()
     failed: tuple[FailedDraft, ...] = ()
     failure_codes: tuple[int, ...] = ()
@@ -867,6 +887,7 @@ def _draft_all(
 
     attempt_bound = ATTEMPTS_PER_PROPOSAL * max_proposals
     created: list[CreatedProposal] = []
+    already_proposed: list[AlreadyProposed] = []
     not_drafted: list[NotDraftedProposal] = []
     failed: list[FailedDraft] = []
     collected: list[str] = []
@@ -894,6 +915,10 @@ def _draft_all(
         name = proposal_name(finding.kind, finding.pages)
         if stopped_reason is not None:
             not_drafted.append(_not_drafted(draftable, f"drafting stopped: {stopped_reason}"))
+            continue
+        if (paths.proposals_dir / name).is_dir():
+            # A pending proposal of this name: no page read, no backend call, no bound used (FR-025).
+            already_proposed.append(AlreadyProposed(name, finding.kind, finding.pages))
             continue
         if set(draftable.editable) & used_update_targets:
             not_drafted.append(_not_drafted(draftable, "overlaps an earlier draft"))
@@ -959,6 +984,10 @@ def _draft_all(
             stopped_reason, lock_timeout = REASON_LOCK_TIMEOUT, True
             continue
         except (OutputWriteError, OSError) as exc:
+            if isinstance(exc, OutputWriteError) and (paths.proposals_dir / name).is_dir():
+                # Another run created the directory between the pending check and the write (FR-026).
+                already_proposed.append(AlreadyProposed(name, finding.kind, finding.pages))
+                continue
             failed.append(
                 FailedDraft(
                     name, finding.kind, finding.pages, REASON_WRITE_FAILED, OutputWriteError.exit_code, str(exc)
@@ -986,6 +1015,7 @@ def _draft_all(
     return _DraftOutcome(
         DraftingState(state, stopped_reason, backend_name, max_proposals, attempt_bound, attempts, len(created)),
         created=tuple(created),
+        already_proposed=tuple(already_proposed),
         not_drafted=tuple(not_drafted),
         failed=tuple(failed),
         failure_codes=tuple(failure_codes),
@@ -1072,11 +1102,13 @@ def run(
 
     pending = _pending_proposals(paths.proposals_dir)
     draftable_keys = {(draftable.finding.kind, draftable.finding.pages) for draftable in draftables}
-    done = {(proposal.kind, proposal.pages) for proposal in outcome.created}
+    settled = {(proposal.kind, proposal.pages) for proposal in outcome.created} | {
+        (entry.kind, entry.pages) for entry in outcome.already_proposed
+    }
     needs_curator = tuple(
         finding
         for finding in findings_result.findings
-        if (finding.kind, finding.pages) not in draftable_keys or (finding.kind, finding.pages) not in done
+        if (finding.kind, finding.pages) not in draftable_keys or (finding.kind, finding.pages) not in settled
     )
     return NightlyResult(
         run_at=run_at,
@@ -1091,6 +1123,7 @@ def run(
         drafting=outcome.drafting,
         exit_code=_exit_code(lint_result.passed, outcome),
         created=outcome.created,
+        already_proposed=outcome.already_proposed,
         not_drafted=outcome.not_drafted,
         failed=outcome.failed,
     )

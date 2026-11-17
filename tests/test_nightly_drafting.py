@@ -1,6 +1,6 @@
 # Copyright (c) 2026 EGOGE
 # SPDX-License-Identifier: Apache-2.0
-"""0.10.0 (US3): drafting with an explicit backend (FR-013 - FR-023).
+"""0.10.0 (US3, US4): drafting with an explicit backend and no duplicate on rerun (FR-013 - FR-023, FR-025 - FR-027).
 
 The test backend supplies the valid deterministic draft; stub backends (an
 object with ``call(prompt)`` passed to ``api.nightly``, or the test backend
@@ -16,10 +16,11 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from unittest.mock import patch
 
 from tests.conftest import make_repo_layout, packaged_schema_dir, run_cli
@@ -43,6 +44,7 @@ from wiki_studio.nightly import (
 )
 from wiki_studio.paths import WikiPaths
 from wiki_studio.prompt import CURATE_TASK, compose_curate_prompt
+from wiki_studio.proposal import PageAction, PageEdit
 
 _INDEX = (
     "---\npage_type: index\nslug: index\ntitle: Test Wiki\nstatus: stable\nlast_reviewed: 2026-11-17\n---\n"
@@ -342,7 +344,10 @@ class DraftingCase(unittest.TestCase):
         }
 
     def proposal_dirs(self) -> list[str]:
-        return sorted(entry.name for entry in self.proposals.iterdir() if entry.is_dir())
+        """The pending (non-hidden) proposal directories directly under the proposals directory (FR-006)."""
+        return sorted(
+            entry.name for entry in self.proposals.iterdir() if entry.is_dir() and not entry.name.startswith(".")
+        )
 
     def assert_refused_through_cli(self, build: str, mutator) -> None:
         getattr(self, f"build_{build}_wiki")()
@@ -477,17 +482,150 @@ class TestDrafting(DraftingCase):
         for entry in updates:
             self.assertEqual(entry["base_sha256"], api.read_page(entry["path"], self.paths).sha256)
 
-    def test_a_rerun_hits_the_existing_proposal_and_stops_drafting(self) -> None:
-        # Until US4 there is no "already proposed" check: the exclusive create fails (plan departure 4).
+
+class TestNoDuplicateOnRerun(DraftingCase):
+    """US4: a rerun duplicates nothing; an archived or deleted proposal does not block (FR-025 - FR-027)."""
+
+    def test_an_unchanged_rerun_makes_no_call_and_lists_every_finding_as_already_proposed(self) -> None:
+        self.build_wiki()
+        first = api.nightly(self.paths, backend="test")
+        self.assertEqual(len(first.created), 2)
+        names = self.proposal_dirs()
+        backend = CountingBackend()
+        before = self.wiki_snapshot()
+        second = api.nightly(self.paths, backend=backend)
+        self.assertEqual(self.wiki_snapshot(), before)
+        self.assertEqual(backend.calls, [])
+        self.assertEqual(self.proposal_dirs(), names)
+        self.assertEqual(second.created, ())
+        self.assertEqual(second.failed, ())
+        self.assertEqual(second.not_drafted, ())
+        self.assertEqual(second.drafting.attempts, 0)
+        self.assertEqual(second.drafting.created, 0)
+        self.assertEqual(second.drafting.state, "on")
+        self.assertEqual(second.exit_code, 0)
+        self.assertEqual(
+            [(entry.name, entry.kind, entry.pages) for entry in second.already_proposed],
+            [(entry.name, entry.kind, entry.pages) for entry in first.created],
+        )
+        self.assertEqual(
+            second.as_dict()["proposals"]["already_proposed"],
+            [{"name": entry.name, "kind": entry.kind, "pages": list(entry.pages)} for entry in second.already_proposed],
+        )
+        report = second.render_markdown()
+        self.assertNotIn("### Already proposed\n\nnone", report)
+        for entry in first.created:
+            self.assertIn(f"- [{entry.kind}] {', '.join(entry.pages)}: {entry.name}", report)
+        settled = {(entry.kind, entry.pages) for entry in second.already_proposed}
+        curator = {(finding.kind, finding.pages) for finding in second.needs_curator}
+        self.assertFalse(settled & curator, "an already proposed finding needs no curator")
+
+    def test_two_consecutive_cli_runs_leave_the_same_directories_and_the_second_exits_zero(self) -> None:
+        self.build_wiki()
+        before = self.wiki_snapshot()
+        first = self.run_cli("nightly", "--backend", "test")
+        self.assertEqual(first.returncode, 0, first.stderr)
+        names = self.proposal_dirs()
+        self.assertEqual(len(names), 2)
+        second = self.run_cli("nightly", "--backend", "test")
+        self.assertEqual(second.returncode, 0, second.stderr)
+        self.assertEqual(self.wiki_snapshot(), before)
+        self.assertEqual(self.proposal_dirs(), names)
+        self.assertNotIn("### Already proposed\n\nnone", second.stdout)
+        for name in names:
+            self.assertIn(name, second.stdout)
+
+    def test_a_proposal_archived_to_applied_does_not_block_the_redraft(self) -> None:
         self.build_orphan_wiki()
         first = api.nightly(self.paths, backend="test")
-        self.assertEqual(len(first.created), 1)
+        (created,) = first.created
+        _move_to_applied(self.proposals, Path(created.path))
+        self.assertEqual(self.proposal_dirs(), [])
         before = self.wiki_snapshot()
         second = api.nightly(self.paths, backend="test")
         self.assertEqual(self.wiki_snapshot(), before)
-        self.assertEqual(second.exit_code, 6)
-        self.assertEqual(second.failed[0].reason, "write failed")
-        self.assertEqual(self.proposal_dirs(), [first.created[0].name])
+        self.assertEqual([entry.name for entry in second.created], [created.name])
+        self.assertEqual(second.already_proposed, ())
+        self.assertEqual(self.proposal_dirs(), [created.name])
+        self.assertEqual(second.exit_code, 0)
+
+    def test_a_deleted_proposal_is_drafted_again(self) -> None:
+        self.build_orphan_wiki()
+        first = api.nightly(self.paths, backend="test")
+        (created,) = first.created
+        shutil.rmtree(Path(created.path))
+        self.assertEqual(self.proposal_dirs(), [])
+        before = self.wiki_snapshot()
+        second = api.nightly(self.paths, backend="test")
+        self.assertEqual(self.wiki_snapshot(), before)
+        self.assertEqual([entry.name for entry in second.created], [created.name])
+        self.assertEqual(second.already_proposed, ())
+        self.assertEqual(second.exit_code, 0)
+
+    def test_a_proposal_another_run_creates_during_the_draft_is_already_proposed(self) -> None:
+        self.build_orphans(2)
+        paths = self.paths
+
+        def publish(prompt: dict, draft: dict) -> None:
+            """The other run's proposal, written through ``api.propose`` under the same name (FR-026)."""
+            shown = prompt["wiki_state"]["candidate_pages"]
+            edits = [
+                PageEdit(
+                    path=entry["path"],
+                    action=cast("PageAction", entry["action"]),
+                    new_content=entry["new_content"],
+                    rationale=entry["rationale"],
+                    base_sha256=(
+                        hashlib.sha256(shown[entry["path"]].encode("utf-8")).hexdigest()
+                        if entry["action"] == "update"
+                        else None
+                    ),
+                )
+                for entry in draft["edits"]
+            ]
+            api.propose(edits, paths, name=proposal_name(prompt["finding"]["kind"], prompt["finding"]["pages"]))
+
+        class AnotherRunWinsTheRace:
+            def __init__(self) -> None:
+                self.calls = 0
+
+            def call(self, prompt: dict) -> dict:
+                self.calls += 1
+                draft = TestBackend().call(prompt)
+                if self.calls == 1:
+                    publish(prompt, draft)
+                return draft
+
+        backend = AnotherRunWinsTheRace()
+        before = self.wiki_snapshot()
+        result = api.nightly(self.paths, backend=backend)
+        self.assertEqual(self.wiki_snapshot(), before)
+        self.assertEqual(backend.calls, 2, "the second finding is still drafted")
+        first_name = proposal_name("weak-orphan", ("decisions/hidden-1.md",))
+        second_name = proposal_name("weak-orphan", ("decisions/hidden-2.md",))
+        self.assertEqual(self.proposal_dirs(), sorted([first_name, second_name]))
+        self.assertEqual([entry.name for entry in result.already_proposed], [first_name])
+        self.assertEqual([entry.name for entry in result.created], [second_name])
+        self.assertEqual(result.failed, ())
+        self.assertEqual(result.exit_code, 0)
+
+    def test_a_proposals_path_that_is_a_regular_file_is_a_write_failure(self) -> None:
+        self.build_orphans(2)
+        shutil.rmtree(self.proposals)
+        self.proposals.write_text("a regular file\n", encoding="utf-8")
+        backend = CountingBackend()
+        before = self.wiki_snapshot()
+        result = api.nightly(self.paths, backend=backend)
+        self.assertEqual(self.wiki_snapshot(), before)
+        self.assertEqual(len(backend.calls), 1, "the next finding gets no backend call")
+        self.assertEqual(result.already_proposed, ())
+        self.assertEqual(result.created, ())
+        self.assertEqual(result.failed[0].reason, "write failed")
+        self.assertEqual(result.exit_code, 6)
+        self.assertEqual(result.drafting.state, "stopped")
+        self.assertEqual([entry.reason for entry in result.not_drafted], ["drafting stopped: write failed"])
+        self.assertTrue(self.proposals.is_file())
+        self.assertIn("Drafting: stopped (write failed)", result.render_markdown())
 
 
 class TestRefusedDrafts(DraftingCase):
