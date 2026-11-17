@@ -85,6 +85,8 @@ PATCH_SET_FORMAT_VERSION = 1
 INGEST_LOG_FORMAT_VERSION = 1
 APPROVAL_FORMAT_VERSION = 1
 FINDINGS_FORMAT_VERSION = 1
+# The nightly report's JSON form (FR-002); advertised in ``FORMATS`` only when it ships (FR-033).
+NIGHTLY_FORMAT_VERSION = 1
 FORMATS: Mapping[str, int] = MappingProxyType(
     {
         "patch_set": PATCH_SET_FORMAT_VERSION,

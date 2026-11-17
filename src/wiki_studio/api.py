@@ -69,6 +69,8 @@ from .health_lint import lint_health
 from .ingestor import DefaultIngestor
 from .ingestor_multi import COLLISION_ERROR, COLLISION_SUFFIX, DefaultMultiIngestor, write_patch_set_dir
 from .lint import lint_wiki, list_pages
+from .nightly import NightlyResult
+from .nightly import run as _nightly_run
 from .paths import CONTAIN_SYMLINK, ContainmentError, contain, is_absolute_path, resolve_actor
 from .promoter import (
     DEFAULT_WIKI_TITLE,
@@ -128,6 +130,7 @@ __all__ = [
     "IngestRequest",
     "IngestResult",
     "LintResult",
+    "NightlyResult",
     "PageAction",
     "PageEdit",
     "FindResult",
@@ -154,6 +157,7 @@ __all__ = [
     "ingest",
     "init",
     "lint",
+    "nightly",
     "prepare_backend",
     "promote",
     "propose",
@@ -848,6 +852,19 @@ def findings(paths: WikiPaths, *, pages: list[str] | None = None) -> FindingsRes
     ``lint --health --strict`` stays the CI gate.
     """
     return _findings(paths, pages=pages)
+
+
+def nightly(paths: WikiPaths) -> NightlyResult:
+    """Run the model-free nightly pass: structural lint, findings and the pending proposals (FR-001).
+
+    Reads only: no backend is resolved, no wiki lock is taken and nothing is
+    written. The result carries the findings, the pending proposal listing,
+    the markdown report (:meth:`NightlyResult.render_markdown`) and its JSON
+    form (:meth:`NightlyResult.as_dict`); ``exit_code`` is 1 when structural
+    lint failed, else 0. An exception from the lint or findings read
+    propagates and no report exists.
+    """
+    return _nightly_run(paths)
 
 
 # ── read: one page, its text and the hash of the bytes read ───
