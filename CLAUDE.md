@@ -30,7 +30,7 @@ Format with `poetry run ruff format src/ tests/ eval/ examples/ conformance/` be
 ## Layout
 
 ```
-src/wiki_studio/cli.py          verb dispatcher: init | ingest | propose | promote | approve | read | query | find | lint | findings | audit-flush | info (exit codes 0,2..11 are a contract)
+src/wiki_studio/cli.py          verb dispatcher: init | ingest | propose | promote | approve | read | query | find | lint | findings | nightly | audit-flush | info (exit codes 0,2..11 are a contract)
 src/wiki_studio/api.py          the public library API every verb calls (additive changes with defaults only)
 src/wiki_studio/paths.py        WikiPaths: root, wiki_dir, proposals_dir, query log, audit log (the only place paths are resolved)
 src/wiki_studio/contract.py     root manifest (.wiki-studio.json) read side, contained schema loader, fingerprint, drift, info formats and capabilities

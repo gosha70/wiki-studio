@@ -33,6 +33,7 @@ _VERBS = (
     "query",
     "lint",
     "findings",
+    "nightly",
     "audit-flush",
     "info",
     "init",

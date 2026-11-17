@@ -33,7 +33,7 @@ import warnings
 from dataclasses import replace
 from pathlib import Path
 
-from . import __version__, api, discovery
+from . import __version__, api, discovery, nightly
 from .audit_flush import describe_flush
 from .backends import ENV_BACKEND, ENV_BACKEND_DEPRECATED
 from .contract import MANIFEST_PRESENT
@@ -43,6 +43,7 @@ from .errors import (
     ContractViolationError,
     DriftWarning,
     IngestError,
+    OutputWriteError,
     PathOutsideRootError,
     PromoteApplyError,
     PromoteValidationError,
@@ -179,7 +180,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         prog="wiki-studio",
         description=(
             "Karpathy-pattern LLM Wiki maintainer. Verbs: "
-            "init|ingest|propose|promote|approve|read|query|find|lint|findings|audit-flush|info. "
+            "init|ingest|propose|promote|approve|read|query|find|lint|findings|nightly|audit-flush|info. "
             "``wiki-studio <verb> --help`` for per-verb help."
         ),
         epilog=(
@@ -432,6 +433,36 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     )
     p_findings.add_argument(
         "--paths", nargs="+", default=None, metavar="PAGE", help="Scope every kind to these wiki-relative pages."
+    )
+
+    # ── nightly ────────────────────────────────────────────────
+    nightly_help = (
+        "Run the model-free curation pass and write one report: structural lint with the audit-format pass, "
+        "then the model-free findings, then the proposal directories still pending. It never promotes or "
+        "approves a proposal and writes nothing in the wiki directory. Exit codes at this phase: 0 a completed "
+        "run, whatever it found; 1 structural lint failed (the report is still written) or the --report path "
+        "lies inside the wiki (nothing runs); 6 the report could not be written."
+    )
+    p_nightly = sub.add_parser(
+        "nightly",
+        parents=[common],
+        help="Run the model-free curation pass and write one report; never promotes, approves or writes in the wiki.",
+        description=nightly_help,
+    )
+    p_nightly.add_argument(
+        "--report",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help="Write the markdown report to PATH (atomically; missing parents are created) instead of stdout. "
+        "PATH must lie outside the wiki directory, directly or through a symbolic link; a refused path exits 1 "
+        "before anything runs.",
+    )
+    p_nightly.add_argument(
+        "--json",
+        action="store_true",
+        help="Print the result as one JSON object instead of the markdown report on stdout; with --report the "
+        "file is written first and the JSON is printed after it.",
     )
 
     # ── audit-flush ────────────────────────────────────────────
@@ -790,6 +821,29 @@ def _do_findings(args: argparse.Namespace) -> int:
     return 0
 
 
+def _do_nightly(args: argparse.Namespace) -> int:
+    """The model-free pass: the markdown report to stdout or --report, the JSON form with --json (FR-005)."""
+    paths = _paths_from_args(args)
+    # A report path inside the wiki is refused before anything runs (exit 1 by _report).
+    report = nightly.check_report_path(args.report, paths) if args.report is not None else None
+    result = api.nightly(paths)
+    exit_code = result.exit_code
+    if report is not None:
+        try:
+            nightly.write_report(result.render_markdown(), report)
+        except OSError as exc:
+            # FR-010 (1): an unwritable report is 6 whatever else the run found.
+            print(f"error: could not write the report to {report}: {exc}", file=sys.stderr)
+            exit_code = OutputWriteError.exit_code
+            result = replace(result, exit_code=exit_code)
+    elif not args.json:
+        sys.stdout.write(result.render_markdown())
+    if args.json:
+        # After the file write, so the JSON's exit_code is final (FR-005).
+        print(json.dumps(result.as_dict(), indent=2))
+    return exit_code
+
+
 def _do_audit_flush(args: argparse.Namespace) -> int:
     """Commit pending ingest-log lines (or dry-run report them)."""
     result = api.audit_flush(_paths_from_args(args), dry_run=args.dry_run)
@@ -994,6 +1048,7 @@ _VERBS = (
     "query",
     "lint",
     "findings",
+    "nightly",
     "audit-flush",
     "info",
     "init",
@@ -1075,6 +1130,7 @@ def main(argv: list[str] | None = None) -> int:
         "query": _do_query,
         "lint": _do_lint,
         "findings": _do_findings,
+        "nightly": _do_nightly,
         "audit-flush": _do_audit_flush,
         "info": _do_info,
         "init": _do_init,
