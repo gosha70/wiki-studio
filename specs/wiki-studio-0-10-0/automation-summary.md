@@ -16,3 +16,7 @@ Review: PASS (see specs/wiki-studio-0-10-0/collaboration/build-review-phase-5.md
 
 ### Phase 6 complete — US6: Release 0.10.0 and closure (2026-11-17T22:24:07Z)
 Review: PASS (see specs/wiki-studio-0-10-0/collaboration/build-review-phase-6.md).
+
+## Run complete (2026-11-17T22:26:11Z)
+Profile: pr — branch feature/wiki-studio-0-10-0 pushed to origin; a pull request tracks the work (the driver never merges).
+Review artifacts: specs/wiki-studio-0-10-0/collaboration/.
