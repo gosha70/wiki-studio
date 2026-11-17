@@ -31,6 +31,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 # FR-004's copyable line, quoted verbatim in the persona's "Who approves" step.
 RESERVATION_LINE = "A person approves wiki pages here; do not run `wiki-studio approve`."
 
+# FR-030: the label that finds the persona's paragraph on a model-drafted proposal.
+NIGHTLY_LABEL = "**Proposals named `nightly-*`.**"
+
 # Copied from gosha70/memkernel templates/claude-memory-instructions.md at tag v0.8.0,
 # line 46 (citation verified 2026-11-15, see the spec FR-018). Test fixture only;
 # it changes only by a deliberate re-pin to a newer memkernel tag.
@@ -423,6 +426,26 @@ class TestTheReservationLineInTheDocs(unittest.TestCase):
         for page in (REPO_ROOT / "README.md", REPO_ROOT / "docs" / "mcp-adapter.md"):
             with self.subTest(page=str(page.relative_to(REPO_ROOT))):
                 self.assertIn(RESERVATION_LINE, page.read_text(encoding="utf-8"))
+
+
+class TestNightlyProposals(unittest.TestCase):
+    """FR-030: a ``nightly-*`` proposal is the agent's to review, a person's to approve."""
+
+    def nightly_paragraph(self) -> str:
+        """The loop's one paragraph that starts with ``NIGHTLY_LABEL``."""
+        paragraphs = [block.strip() for block in loop_text().split("\n\n") if block.strip()]
+        matching = [block for block in paragraphs if block.startswith(NIGHTLY_LABEL)]
+        self.assertEqual(len(matching), 1, f"the loop must carry one paragraph labelled {NIGHTLY_LABEL}")
+        return matching[0]
+
+    def test_the_paragraph_names_the_rule_and_shows_no_promote_or_approve_command(self) -> None:
+        paragraph = self.nightly_paragraph()
+        self.assertIn("nightly-*", paragraph)
+        self.assertIn("a person", paragraph)
+        self.assertIsNotNone(re.search(r"\bapprov\w*", paragraph), "the paragraph never says who approves")
+        self.assertIn("Who approves", paragraph)
+        self.assertIsNone(first_promote(paragraph), "the paragraph shows a promote command")
+        self.assertIsNone(first_command(paragraph, "approve"), "the paragraph shows an approve command")
 
 
 class TestTheMemoryBoundary(unittest.TestCase):
