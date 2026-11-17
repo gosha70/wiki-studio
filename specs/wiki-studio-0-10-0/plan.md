@@ -3,7 +3,7 @@ spec_mode: full
 feature_id: wiki-studio-0-10-0
 risk_category: feature
 justification: "A new public verb with flags, a JSON form, exit-code uses and an info capability (a released contract), the first unattended model path in the package, writing proposals beside a wiki shared with memkernel's governed import, with a link-only check that is the only thing standing between a model's rewrite and a proposal, a dedup rule that must survive concurrent runs, a checked cron and CI recipe, persona guidance on who approves, and a release; a full spec pins the check's grammar, the exit precedence, the per-phase truth rule and the cut order before an unattended build."
-status: draft
+status: approved
 date: 2026-11-16
 collaboration_mode: single
 origin:
