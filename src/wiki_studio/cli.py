@@ -437,16 +437,25 @@ def _build_arg_parser() -> argparse.ArgumentParser:
 
     # ── nightly ────────────────────────────────────────────────
     nightly_help = (
-        "Run the model-free curation pass and write one report: structural lint with the audit-format pass, "
-        "then the model-free findings, then the proposal directories still pending. It never promotes or "
-        "approves a proposal and writes nothing in the wiki directory. Exit codes at this phase: 0 a completed "
-        "run, whatever it found; 1 structural lint failed (the report is still written) or the --report path "
-        "lies inside the wiki (nothing runs); 6 the report could not be written."
+        "Run the curation pass and write one report: structural lint with the audit-format pass, then the "
+        "model-free findings, then the proposal directories still pending. It never promotes or approves a "
+        "proposal and writes nothing in the wiki directory. With --backend it drafts proposals for a "
+        "missing-cross-link and for a weak orphan not linked from index.md, adding links only, and writes "
+        "them through api.propose. Exit codes: 0 a completed run, whatever it found or drafted; 1 structural "
+        "lint failed (the report is still written), the --report path lies inside the wiki, --max-proposals "
+        "is negative, or the proposals directory lies inside the wiki with drafting on (nothing runs); 2 the "
+        "--backend name is unknown or its CLI is not on PATH, before lint runs; 3 a draft's backend call "
+        "failed; 4 a draft's response was invalid, out of bounds or refused by validation, or governed "
+        "schema drift skipped drafting; 6 the report could not be written, or a proposal write failed; 10 "
+        "the wiki lock timed out while writing a proposal. When several outcomes occur in one run the code "
+        "is decided once, at the end: an unwritable report exits 6 whatever else failed; then a lock "
+        "timeout 10; then a failed proposal write 6; then a structural lint failure 1; then the first draft "
+        "failure's 3 or 4."
     )
     p_nightly = sub.add_parser(
         "nightly",
         parents=[common],
-        help="Run the model-free curation pass and write one report; never promotes, approves or writes in the wiki.",
+        help="Run the curation pass and write one report; never promotes, approves or writes in the wiki.",
         description=nightly_help,
     )
     p_nightly.add_argument(
@@ -463,6 +472,27 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Print the result as one JSON object instead of the markdown report on stdout; with --report the "
         "file is written first and the JSON is printed after it.",
+    )
+    p_nightly.add_argument(
+        "--backend",
+        metavar="NAME",
+        default=None,
+        help="Backend for drafting, used only when given explicitly: WIKI_STUDIO_BACKEND and PATH auto-detect "
+        "are not consulted, so a run without --backend drafts nothing. One of: claude, codex, pi, cursor, test.",
+    )
+    p_nightly.add_argument(
+        "--max-proposals",
+        type=int,
+        default=nightly.DEFAULT_MAX_PROPOSALS,
+        metavar="N",
+        help=f"At most this many proposals created in the run (default {nightly.DEFAULT_MAX_PROPOSALS}); "
+        f"backend calls are bounded at {nightly.ATTEMPTS_PER_PROPOSAL} x N. 0 turns drafting off.",
+    )
+    p_nightly.add_argument(
+        "--by",
+        metavar="NAME",
+        default=None,
+        help=_BY_HELP.format(record="plan.json's proposer"),
     )
 
     # ── audit-flush ────────────────────────────────────────────
@@ -822,12 +852,13 @@ def _do_findings(args: argparse.Namespace) -> int:
 
 
 def _do_nightly(args: argparse.Namespace) -> int:
-    """The model-free pass: the markdown report to stdout or --report, the JSON form with --json (FR-005)."""
+    """The pass: the markdown report to stdout or --report, the JSON form with --json (FR-005, FR-013)."""
     paths = _paths_from_args(args)
     # A report path inside the wiki is refused before anything runs (exit 1 by _report).
     report = nightly.check_report_path(args.report, paths) if args.report is not None else None
-    result = api.nightly(paths)
+    result = api.nightly(paths, backend=args.backend, max_proposals=args.max_proposals, by=args.by)
     exit_code = result.exit_code
+    report_failed = False
     if report is not None:
         try:
             nightly.write_report(result.render_markdown(), report)
@@ -836,11 +867,17 @@ def _do_nightly(args: argparse.Namespace) -> int:
             print(f"error: could not write the report to {report}: {exc}", file=sys.stderr)
             exit_code = OutputWriteError.exit_code
             result = replace(result, exit_code=exit_code)
+            report_failed = True
     elif not args.json:
         sys.stdout.write(result.render_markdown())
     if args.json:
         # After the file write, so the JSON's exit_code is final (FR-005).
         print(json.dumps(result.as_dict(), indent=2))
+    if exit_code != 0 and not report_failed:
+        # FR-010: every non-zero exit prints one error line naming the cause.
+        reason = result.exit_reason()
+        if reason is not None:
+            print(f"error: {reason}", file=sys.stderr)
     return exit_code
 
 

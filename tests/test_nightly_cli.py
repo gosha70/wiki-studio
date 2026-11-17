@@ -32,6 +32,8 @@ _JSON_KEYS = (
     "proposals_dir",
     "lint",
     "findings",
+    "drafting",
+    "proposals",
     "needs_curator",
     "warnings",
     "exit_code",
@@ -159,13 +161,13 @@ class TestTheReportFile(NightlyCliCase):
 
 
 class TestTheCliSurface(NightlyCliCase):
-    def test_nightly_help_names_its_flags_and_no_later_phase_flags(self) -> None:
+    def test_nightly_help_names_its_flags(self) -> None:
         result = self.run_cli("nightly", "--help")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("--report", result.stdout)
-        self.assertIn("--json", result.stdout)
-        for flag in ("--backend", "--max-proposals", "--by"):
-            self.assertNotIn(flag, result.stdout)
+        for flag in ("--report", "--json", "--backend", "--max-proposals", "--by"):
+            self.assertIn(flag, result.stdout)
+        self.assertIn("WIKI_STUDIO_BACKEND", result.stdout)
+        self.assertIn("auto-detect", result.stdout)
 
     def test_top_level_help_lists_the_verb(self) -> None:
         result = self.run_cli("--help")
@@ -238,8 +240,23 @@ class TestNoPromotePath(unittest.TestCase):
                 for name in public:
                     stack.enter_context(patch.object(promoter, name, side_effect=boom))
                 result = run_cli("nightly", cwd=root)
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("# wiki-studio nightly report", result.stdout)
+                # US3: a drafting run with the test backend reaches neither entry point either.
+                wiki = root / "knowledge" / "wiki"
+                (wiki / "decisions").mkdir()
+                (wiki / "index.md").write_text(
+                    "---\npage_type: index\nslug: index\ntitle: Watch\nstatus: stable\n"
+                    "last_reviewed: 2026-11-17\n---\n\n# Watch\n\n- [First](decisions/first.md)\n",
+                    encoding="utf-8",
+                )
+                (wiki / "decisions" / "first.md").write_text(
+                    _page("first").replace("Use the queue.", "See [the hidden page](hidden.md)."), encoding="utf-8"
+                )
+                (wiki / "decisions" / "hidden.md").write_text(_page("hidden"), encoding="utf-8")
+                drafted = run_cli("nightly", "--backend", "test", cwd=root)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn("# wiki-studio nightly report", result.stdout)
+                self.assertEqual(drafted.returncode, 0, drafted.stderr)
+                self.assertTrue(any(entry.is_dir() for entry in (root / "doc_internal" / "proposals").iterdir()))
 
 
 if __name__ == "__main__":

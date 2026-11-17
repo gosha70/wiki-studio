@@ -118,6 +118,11 @@ class TestTheReport(NightlyCase):
                 "# wiki-studio nightly report",
                 "## Lint",
                 "## Findings",
+                "## Proposals",
+                "### Created",
+                "### Already proposed",
+                "### Not drafted",
+                "### Failed",
                 "## Needs a curator",
                 "### Findings",
                 "### Pending proposals",
@@ -127,9 +132,10 @@ class TestTheReport(NightlyCase):
         self.assertIn(f"- Wiki directory: {self.wiki.resolve()}", report)
         self.assertIn(f"- Proposals directory: {self.proposals.resolve()}", report)
         self.assertIn(f"- Package version: {__version__}", report)
+        self.assertIn("- Drafting: off (no --backend)", report)
         self.assertRegex(result.run_at, r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
-        self.assertNotIn("## Proposals", report)
-        self.assertNotIn("drafting", report)
+        self.assertIn("### Created\n\nnone", report)
+        self.assertIn("### Failed\n\nnone", report)
 
     def test_a_structurally_broken_wiki_exits_one_and_still_lists_the_findings(self) -> None:
         self.write_page("decisions/orphan.md", _page("orphan"))
@@ -250,6 +256,8 @@ class TestTheJsonForm(NightlyCase):
                 "proposals_dir",
                 "lint",
                 "findings",
+                "drafting",
+                "proposals",
                 "needs_curator",
                 "warnings",
                 "exit_code",
@@ -266,8 +274,13 @@ class TestTheJsonForm(NightlyCase):
         self.assertEqual(data["needs_curator"]["findings"], [finding.as_dict() for finding in result.findings.findings])
         self.assertEqual(data["warnings"], [])
         self.assertEqual(data["exit_code"], 0)
-        self.assertNotIn("drafting", data)
-        self.assertNotIn("proposals", data)
+        self.assertEqual(data["drafting"]["state"], "off")
+        self.assertEqual(data["drafting"]["reason"], "no --backend")
+        self.assertEqual(set(data["proposals"]), {"created", "already_proposed", "not_drafted", "failed"})
+        self.assertEqual(data["proposals"]["created"], [])
+        self.assertEqual(data["proposals"]["already_proposed"], [])
+        self.assertEqual(data["proposals"]["failed"], [])
+        self.assertEqual(data["proposals"]["not_drafted"][0]["reason"], "drafting off: no --backend")
 
 
 class TestTheReportPath(NightlyCase):

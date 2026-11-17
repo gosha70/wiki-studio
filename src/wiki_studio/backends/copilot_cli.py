@@ -29,7 +29,7 @@ from typing import Any
 
 from ..errors import BackendInvocationError, BackendNotFoundError
 from ..paths import DEFAULT_WIKI_DIR
-from ..prompt import INDEX_LOG_ACTION_RULE
+from ..prompt import CURATE_TASK, INDEX_LOG_ACTION_RULE
 from .json_extract import extract_json_object
 
 # Reference content rendered into the prompt — source body, candidate
@@ -203,16 +203,23 @@ def _render_plain_text_prompt(backend_prompt: dict[str, Any], wiki_label: str = 
     # block was added.
     if wiki_state and (wiki_state.get("index_md") or wiki_state.get("log_md") or wiki_state.get("candidate_pages")):
         lines.append("=== EXISTING WIKI STATE ===")
-        lines.append(
-            "The following is the current wiki state, loaded as your "
-            "working memory. Integrate the new source with what is "
-            "already here: prefer updating an existing page over "
-            "creating a duplicate; append a one-line dated entry to "
-            "log.md with an 'append-log' edit; add a one-line link to "
-            "index.md with an 'append-index' edit whenever you create a "
-            "new page. index.md and log.md are shown in full below for "
-            "reference only: never rewrite them."
-        )
+        if task == CURATE_TASK:
+            lines.append(
+                "The pages below are the pages the finding names. Only the listed pages may be "
+                "edited, each by reproducing it exactly with the one link added; index.md, when "
+                "shown, takes exactly one appended line and is never rewritten."
+            )
+        else:
+            lines.append(
+                "The following is the current wiki state, loaded as your "
+                "working memory. Integrate the new source with what is "
+                "already here: prefer updating an existing page over "
+                "creating a duplicate; append a one-line dated entry to "
+                "log.md with an 'append-log' edit; add a one-line link to "
+                "index.md with an 'append-index' edit whenever you create a "
+                "new page. index.md and log.md are shown in full below for "
+                "reference only: never rewrite them."
+            )
         lines.append("")
         index_md = wiki_state.get("index_md", "")
         if index_md:
@@ -226,10 +233,13 @@ def _render_plain_text_prompt(backend_prompt: dict[str, Any], wiki_label: str = 
             lines.append("")
         candidate_pages = wiki_state.get("candidate_pages", {}) or {}
         if candidate_pages:
-            lines.append(
-                "--- candidate pages (relevance-ranked subset of the wiki, "
-                "selected by lexical overlap with the source) ---"
-            )
+            if task == CURATE_TASK:
+                lines.append("--- pages named by the finding (the canonical page and every page to update) ---")
+            else:
+                lines.append(
+                    "--- candidate pages (relevance-ranked subset of the wiki, "
+                    "selected by lexical overlap with the source) ---"
+                )
             for rel_path, page_content in candidate_pages.items():
                 lines.append(f"--- {wiki_label}/{rel_path} ---")
                 lines.append(_neutralize_extractor_fences(page_content))

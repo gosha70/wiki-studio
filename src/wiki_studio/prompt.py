@@ -9,14 +9,20 @@ import re
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
     from pathlib import Path
 
+    from .findings import Finding
     from .paths import WikiPaths
 
 from . import yaml_lite
 from .contract import load_schema
 from .errors import ContractViolationError
+from .findings import KIND_MISSING_CROSS_LINK, KIND_WEAK_ORPHAN
 from .schema import PROMOTABLE_PAGE_TYPES
+
+# The task name ``nightly`` drafts under (FR-017); the renderer and the test backend branch on it.
+CURATE_TASK = "curate"
 
 # ---------------------------------------------------------------------------
 # Schema paths (read at runtime, never embedded in source)
@@ -166,6 +172,86 @@ def compose_multi_prompt(
             "candidate_pages": dict(getattr(wiki_state, "candidate_pages", {})),
         },
         "response_schema": json.dumps(_PATCH_SET_RESPONSE_SCHEMA),
+    }
+
+
+def compose_curate_prompt(
+    *,
+    finding: Finding,
+    shown: Mapping[str, str],
+    editable: Sequence[str],
+    index_md: str,
+    run_date: str,
+    schema_files: Mapping[str, str],
+) -> dict[str, Any]:
+    """Compose the ``curate`` prompt for one finding: add links and change nothing else (FR-017).
+
+    The reply is a WikiPatchSet shaped as ``compose_multi_prompt``'s. The
+    structured ``finding`` key carries what the test backend reads: the kind,
+    the finding's pages, the editable paths, the canonical page or the orphan
+    and the run's UTC date.
+    """
+    kind = finding.kind
+    canonical = finding.pages[0] if kind == KIND_MISSING_CROSS_LINK and finding.pages else None
+    orphan = finding.pages[0] if kind == KIND_WEAK_ORPHAN and finding.pages else None
+    if canonical is not None:
+        allowed = (
+            f"Allowed edits: exactly one 'update' of each editable page listed below ({', '.join(editable)}), "
+            "and exactly one 'append-log' on log.md. No 'create' and no other edit."
+        )
+    else:
+        allowed = (
+            "Allowed edits: exactly one 'append-index' on index.md whose new_content is exactly "
+            f"'- [<title>]({orphan})' with the orphan's frontmatter title and its wiki-relative path, and "
+            "exactly one 'append-log' on log.md. No 'create' and no 'update'."
+        )
+    system_instructions = " ".join(
+        (
+            "You are curating a wiki by fixing exactly one finding: you add links and change nothing else.",
+            "Reproduce every byte of each page you edit exactly as shown, frontmatter included.",
+            "The only change is one or more inline links built from words already on the page:",
+            "[existing words](<path relative to the edited page>); add no word, no line, no 'See also'",
+            "section and no frontmatter change.",
+            "In each page link the first mention that lies outside code (fenced code blocks and inline",
+            "code spans) and outside an existing link. A mention may be a term the canonical glossary",
+            "page lists to avoid: link it as it stands, never reword it.",
+            allowed,
+            "Add exactly one log line, with one optional trailing newline and nothing else, in this form:",
+            f"'- {run_date} — link <slug> (<page-type>): <why>', with the run's UTC date, the 'slug:' and",
+            "'page_type:' of a page this draft edits (for a weak orphan, the orphan), and a why holding no link.",
+        )
+    )
+    return {
+        "version": 1,
+        "system_instructions": system_instructions,
+        "task": CURATE_TASK,
+        "schema_excerpts": {
+            "ingest_rules": schema_files.get("ingest-rules", ""),
+            "page_types": schema_files.get("page-types", ""),
+            "citation_rules": schema_files.get("citation-rules", ""),
+        },
+        "source": {
+            "kind": "finding",
+            "path": f"{kind}: {', '.join(finding.pages)}",
+            "content": (
+                f"{finding.description}\n\nEditable pages: {', '.join(editable) or '(none)'}\n"
+                f"Run date (UTC): {run_date}"
+            ),
+        },
+        "wiki_state": {
+            "index_md": index_md,
+            "log_md": "",
+            "candidate_pages": dict(shown),
+        },
+        "response_schema": json.dumps(_PATCH_SET_RESPONSE_SCHEMA),
+        "finding": {
+            "kind": kind,
+            "pages": list(finding.pages),
+            "editable": list(editable),
+            "canonical": canonical,
+            "orphan": orphan,
+            "date": run_date,
+        },
     }
 
 
