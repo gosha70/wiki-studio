@@ -6,7 +6,7 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.10.0]
+## [0.10.0] — 2026-11-18
 
 A feature release: `wiki-studio nightly`, a propose-only curation pass that
 runs the wiki's routine checks unattended, writes one report and, only with

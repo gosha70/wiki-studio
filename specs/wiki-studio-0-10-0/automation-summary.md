@@ -22,3 +22,13 @@ Profile: pr — branch feature/wiki-studio-0-10-0 pushed to origin; a pull reque
 Review artifacts: specs/wiki-studio-0-10-0/collaboration/.
 
 Outcome: PR #111 opened (https://github.com/gosha70/wiki-studio/pull/111); merge: not in this profile (pr).
+
+## After the run
+
+- The build PR's body was edited by hand to add `Closes #70`, which the
+  driver had put only in the title.
+- FR-024's manual real-backend check was run by the build session on
+  2026-11-17 with the Claude Code CLI 2.1.325, at the PR's head `ee6c14d`,
+  on a copy of FR-023's fixture wiki. It created 2 minimal drafts, left the
+  wiki byte-identical, and a rerun created no duplicates. The evidence is
+  in PR #111's comment issuecomment-6963953319.
