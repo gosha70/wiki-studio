@@ -2,7 +2,7 @@
 cooldown_after_cycle: "07"
 started: 2026-11-18
 ended: 2026-11-18
-duration: 2d
+duration: 1d
 ---
 
 <!-- Generated at the end of a cooldown by the cooldown-report agent. -->
@@ -70,7 +70,7 @@ landed in the window.
 - **Driver again put the closing keyword in the PR title only** (seen in #103 and #111). The body was edited by hand. This is not filed yet; it is related to code-copilot-team #427 and #408.
 - **The driver never updates the hill.** Scopes were set to done by hand at close.
 - **Infrastructure incident.** code-copilot-team's home moved to `~/.cct` (b99333c). The migration left `~/.cct/providers.toml` and its four backups empty, which blocked the driver. The owner rotated the DeepSeek key and restored the file on 2026-11-17. Filed as gosha70/code-copilot-team#463.
-- **"Already proposed" keeps `is_dir()` (owner, 2026-11-17).** The build session raised it after the reviewer's note expecting "an actual non-symlink directory". The owner chose to keep `is_dir()`, which follows FR-026 as written, so a symlinked directory counts as already proposed. The reviewer confirmed it is harmless: `api.propose` creates the directory exclusively and never writes through an existing entry.
+- **"Already proposed" keeps `is_dir()` (owner, 2026-11-17).** The build session raised whether "already proposed" should require a directory that isn't a symlink. The owner chose to keep `is_dir()`, which follows FR-026 as written, so a symlinked directory counts as already proposed. The reviewer confirmed it is harmless: `api.propose` creates the directory exclusively and never writes through an existing entry.
 
 ## Pitches shaped during cooldown
 
