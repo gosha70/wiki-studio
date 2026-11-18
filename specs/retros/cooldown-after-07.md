@@ -1,6 +1,6 @@
 ---
 cooldown_after_cycle: "07"
-started: 2026-11-17
+started: 2026-11-18
 ended: 2026-11-18
 duration: 2d
 ---
@@ -18,7 +18,7 @@ explicit backend it also writes link-only drafts, named per finding, so a
 rerun never creates a duplicate.
 
 **Shipped as wiki-studio 0.10.0 on 2026-11-18.** Build PR #111 (merge
-`93fe442`, 2026-11-17) closed issue 70 (closed by #111). Release prep:
+`93fe442`, 2026-11-18 UTC) closed issue 70 (closed by #111). Release prep:
 - Release PR #112 (merge `2fe98df`) dated the CHANGELOG heading, added the
   0.10.0 compatibility row, added the CLAUDE.md line for `nightly` and
   recorded a note in the automation summary.
@@ -70,7 +70,7 @@ landed in the window.
 - **Driver again put the closing keyword in the PR title only** (seen in #103 and #111). The body was edited by hand. This is not filed yet; it is related to code-copilot-team #427 and #408.
 - **The driver never updates the hill.** Scopes were set to done by hand at close.
 - **Infrastructure incident.** code-copilot-team's home moved to `~/.cct` (b99333c). The migration left `~/.cct/providers.toml` and its four backups empty, which blocked the driver. The owner rotated the DeepSeek key and restored the file on 2026-11-17. Filed as gosha70/code-copilot-team#463.
-- **Owner decision noted by the reviewer:** `is_dir()` stays the test for "already proposed", so a symlinked directory counts.
+- **"Already proposed" keeps `is_dir()` (owner, 2026-11-17).** The build session raised it after the reviewer's note expecting "an actual non-symlink directory". The owner chose to keep `is_dir()`, which follows FR-026 as written, so a symlinked directory counts as already proposed. The reviewer confirmed it is harmless: `api.propose` creates the directory exclusively and never writes through an existing entry.
 
 ## Pitches shaped during cooldown
 
