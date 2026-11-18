@@ -36,7 +36,7 @@ src/wiki_studio/paths.py        WikiPaths: root, wiki_dir, proposals_dir, query 
 src/wiki_studio/contract.py     root manifest (.wiki-studio.json) read side, contained schema loader, fingerprint, drift, info formats and capabilities
 src/wiki_studio/review.py       page keys, approval-record verification and review_state (read side; promoter.py writes records)
 src/wiki_studio/findings.py     model-free findings: deterministic health kinds plus review, superseded-still-indexed and no-page-id kinds
-src/wiki_studio/nightly.py      the model-free curation pass and its markdown report (never promotes or approves)
+src/wiki_studio/nightly.py      the propose-only curation pass: model-free report, link-only drafts with an explicit backend (never promotes or approves)
 src/wiki_studio/ingestor*.py    single-source and multi-page ingest (proposal generation; never writes the wiki)
 src/wiki_studio/promoter.py     THE ONLY MODULE THAT WRITES INTO THE WIKI DIRECTORY (lint-gated, scoped commit, receipt protocol)
 src/wiki_studio/wikilock.py     WikiLock: the OS advisory lock beside the resolved wiki that serialises cooperating writers
