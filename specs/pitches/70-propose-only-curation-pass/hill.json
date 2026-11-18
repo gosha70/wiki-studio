@@ -1,43 +1,43 @@
 {
   "pitch_id": "70-propose-only-curation-pass",
   "cycle": "07",
-  "updated_at": "2026-11-17T01:21:32Z",
+  "updated_at": "2026-11-18T16:54:07Z",
   "scopes": [
     {
       "id": "S1",
       "name": "The pass and its report, model-free, ~3-4h",
-      "status": "uphill",
-      "last_updated": "2026-11-17T01:21:32Z"
+      "status": "done",
+      "last_updated": "2026-11-18T16:54:07Z"
     },
     {
       "id": "S2",
       "name": "The verb on the CLI contract, ~1.5-2h",
-      "status": "uphill",
-      "last_updated": "2026-11-17T01:21:32Z"
+      "status": "done",
+      "last_updated": "2026-11-18T16:54:07Z"
     },
     {
       "id": "S3",
       "name": "Drafting with an explicit backend, ~5-7h",
-      "status": "uphill",
-      "last_updated": "2026-11-17T01:21:32Z"
+      "status": "done",
+      "last_updated": "2026-11-18T16:54:07Z"
     },
     {
       "id": "S4",
       "name": "No duplicate on rerun, ~1.5-2h",
-      "status": "uphill",
-      "last_updated": "2026-11-17T01:21:32Z"
+      "status": "done",
+      "last_updated": "2026-11-18T16:54:07Z"
     },
     {
       "id": "S5",
       "name": "The recipe and the guidance, ~2-3h",
-      "status": "uphill",
-      "last_updated": "2026-11-17T01:21:32Z"
+      "status": "done",
+      "last_updated": "2026-11-18T16:54:07Z"
     },
     {
       "id": "S6",
       "name": "Release, ~1-1.5h",
-      "status": "uphill",
-      "last_updated": "2026-11-17T01:21:32Z"
+      "status": "done",
+      "last_updated": "2026-11-18T16:54:07Z"
     }
   ]
 }
