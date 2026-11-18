@@ -80,14 +80,18 @@ while re-checking that shape the spec:
    (`schema/__init__.py` 119, `prose_lint.py` 22-27); every corpus
    `decision:` line runs to roughly 35-45 words. The pitch asks that pages
    pass prose lint where it applies and that Decision open with a one-line
-   statement; both cannot hold. Default: split the statement into two
-   sentences where needed, record it, weigh it in the report (FR-008, Q3).
-2. **Discovery sees only pages `index.md` links.** `discovery.py` 5-13: the
-   candidates are the index's intra-wiki links. Every pattern and
-   background page the retrieval measures must be index-linked; the two
-   superseded pages are reachable through their successors (FR-010), and the
-   trace's supersede step leaves its page indexed to show
-   `superseded-still-indexed` (findings.py 157-184).
+   statement; both cannot hold. The owner chose to split so pages pass
+   (Q3). The PR #115 reviewer measured that two sentences still leave five
+   opening sentences over 25 words with `prose_lint.count_words` (618-620),
+   and that a three-sentence form stays at 24 or fewer for all 12 records;
+   FR-008 uses it and records the sentence count.
+2. **Discovery sees only pages `index.md` links.** `discovery.py` 4-7 and
+   410-424: the candidates are the index's intra-wiki links, so a page the
+   index does not link is never considered, and its ineligibility can never
+   be observed. Every page the retrieval measures, the two superseded pages
+   included, is index-linked (FR-010, owner, 2026-11-18), so `findings`
+   reports `superseded-still-indexed` for those two on the fixture
+   (findings.py 157-184), as expected.
 3. **The `fts5` ranker writes a cache beside the wiki.** The search cache
    defaults to a file beside the wiki's lock (`paths.py` 131-133, 389-391),
    so `find` on `eval/patterns/wiki` in place would write next to it under
@@ -125,20 +129,23 @@ while re-checking that shape the spec:
    (`knowledge/wiki/incidents/git-safety-bypasses.md`), the one annotated
    background pair the corpus gives (FR-012).
 9. **The background needs a link rule and one exclusion.** Of
-   code-copilot-team's 21 content pages (working tree), 18 carry `../`
+   code-copilot-team's 21 `.md` pages at the pin (verified by the PR #115
+   reviewer; non-page files such as `open-questions/.gitkeep` and
+   `scripts/lint-wiki.sh` are not copied), many carry `../`
    links, some leaving the wiki or pointing into `schema/`, which structural
    lint would reject inside this repository (`lint.py` 13-21). They are
    rewritten to GitHub URLs at the pin (FR-009). `playbooks/pre-pr-close-keyword-audit.md`
-   quotes closing-keyword phrases (25-109), which no file of this PR may
+   quotes closing-keyword phrases, which no file of this PR may
    carry; it is not copied (FR-009, Q4).
-10. **Pins.** memkernel's CHANGELOG ships `eval/decisions-57/` in 0.9.0
-    (`[0.9.0]` 41, 87-92); the local `refs/tags/v0.9.0` points at `d427381`
-    (an annotated tag object, as `v0.8.0` was in the 0.9.2 bundle), so the
-    build resolves `v0.9.0^{commit}`. memkernel 0.10.0 was released on
-    18 November 2026 and has no local tag; the pin does not need it. For
-    code-copilot-team the pitch read commit `00d49c0`; the checkout's
-    `master` is `8f287f1375ef5db54e673eb0db9a035fc67cc323` today. The spec
-    pins `00d49c0`, resolved and checked by the build (FR-005).
+10. **Pins (verified by the PR #115 reviewer).** memkernel's CHANGELOG at
+    tag `v0.9.0` has the `[0.9.0]` heading at line 9 and the
+    `eval/decisions-57/` line at 60; `v0.9.0` is tag object `d427381` on
+    commit `7f26012`; `corpus.md` there hashes to `10e61af7…ca503`, holds 12
+    records, and every `seed:` line is in one of FR-013's four forms.
+    memkernel 0.10.0 (released 18 November 2026) has no local tag and is not
+    needed. For code-copilot-team the pitch read `00d49c0`, an ancestor of
+    `master` `8f287f1`; all 12 commits the corpus cites are ancestors of the
+    pin. The build re-verifies both (FR-005).
 11. **The freeze has a precedent.** `tests/test_frozen_runs.py` pins frozen
     eval files by sha256 (50, 454); `tests/test_patterns_frozen.py` does the
     same for the labels, questions and protocol, and the git history audit
@@ -151,6 +158,17 @@ while re-checking that shape the spec:
 13. **Cross-repository citations need the owner prefix.** `issue: 98` would
     name this repository's issue; `citation-rules.md` 32-33 gives
     `issue: gosha70/<repo>#<n>`. FR-006 uses it.
+14. **Signal (a)'s link part would be circular** (PR #115 review). FR-006
+    writes intra-wiki links exactly for corpus-annotated pairs (the conflict
+    callouts and Consequences links, config-redaction and the trace archive,
+    each stale page and its successor, the git-lock incident link), and
+    `_candidate_pairs` fires on any direct link (`health_lint.py` 411-414),
+    so (a) would find pairs the build linked from the same source as the
+    labels. FR-014 reports (a)'s shared-path part as (a-path) with its own
+    verdict and marks annotation-linked true pairs; FR-024 flags a verdict
+    resting only on them; FR-030 says such a pass is not evidence of
+    detection. Signal (c) is unaffected: it subtracts the two pages' own
+    slugs, which cancels a mutual link.
 
 ## Departures from the pitch
 
@@ -182,7 +200,11 @@ Each is recorded so the origin-alignment record at approval can cite it.
    (US5) and a unit test of the staleness logic on a synthetic git
    repository (US6), because each phase's diff must carry its own proof. S5's
    "no test runs it" still holds: no test runs it on the checkout.
-8. **The Y-statement may be two sentences** (fact 1, FR-008, Q3).
+8. **The Y-statement is three sentences** (fact 1, FR-008, Q3): the
+   pitch's one-line statement cannot pass prose lint. The owner chose to
+   split it (Q3, two sentences); after the PR #115 review the form is three
+   sentences in one paragraph, with `Chosen:` its own paragraph, and
+   `manifest.json` records the sentence count in place of a split flag.
 9. **The background has a link rule and an exclusion** (fact 9, FR-009, Q4).
 10. **Conversion time is not measured.** S2 and S6 ask for per-page
     conversion time; an unattended build has no per-page clock. The report
@@ -202,6 +224,29 @@ Each is recorded so the origin-alignment record at approval can cite it.
     their values to the frozen protocol.
 15. **`CLAUDE.md` gains one layout line** for `eval/patterns/` (FR-001), as
     each eval tree has one.
+
+After the external review of this spec's PR #115 (head 41e62d8), the owner
+decided one point and the review fixed the rest, on 18 November 2026:
+
+16. **The superseded pages stay in `index.md` (owner).** The first draft
+    left them out and made them reachable through their successors, which
+    made "a superseded page is never selected" untestable, since `find`
+    considers only index-linked pages (fact 2). FR-010 keeps their index
+    lines; `superseded-still-indexed` reports 2 on the fixture, expected and
+    tested (FR-011); retrieval exercises discovery.py 278 (FR-014, FR-018).
+17. **Signal (a) is split and annotation-linked pairs are marked** (fact 14;
+    FR-014, FR-023, FR-024, FR-030).
+18. **Gold details.** A stale record's gold is its successor only, the stale
+    page in `superseded`; the config-redaction question's gold includes its
+    trap page, so a top-ranked trap counts as a hit at 1 there, and "trap
+    outranks" shows it (FR-013, FR-014).
+19. **An evidence item without a commit.** A test path is body text; the
+    git-lock record's incident page becomes a body link to the copied
+    background page, an annotation link under item 17 (FR-006).
+20. **Smaller corrections.** FR-009 copies `.md` files only; FR-005's git
+    allowlist names `fetch --tags` with its one condition; FR-001 no longer
+    compares with `eval/navigation/__init__.py` (it is empty); the memkernel
+    CHANGELOG lines are the tag's (9, 60).
 
 Close target: issue 54, by the evidence PR's merge (`pr.closes: [54]`,
 FR-035). No other issue is closed; the pitch PR (#110), the bet PR (#114)
@@ -281,13 +326,13 @@ The circuit breaker (pitch): cut 1 (end of week 1, S2 not done) keeps the
 five examples and the two pages the stale case needs and drops the other
 records and the background, so US3 labels the pairs among the pages that
 exist (the count changes from 91 and is stated); cut 2 (start of week 2,
-labels not frozen) leaves US5 with signal (a) only; cut 3 (middle of
+labels not frozen) leaves US5 with signal (a) and its (a-path) part only; cut 3 (middle of
 week 2, S5 not run) is FR-029's analytic fallback. Core is US1, the five
 examples, US4 and US7.
 
 ## Owner-run steps
 
-1. Before the driver: answer Q1-Q5; review and approve this bundle; write
+1. Before the driver (Q1-Q5 answered 2026-11-18): review and approve this bundle; write
    `automation.json` (profile `pr`, `max_phases: 7`, `pr.closes: [54]`,
    `merge.method: "merge"`, the gate below) and the origin-alignment record
    in the approval commit. Confirm that the session can read
@@ -317,8 +362,10 @@ bypassed without a per-phase record (the known driver defects).
 ## Test strategy
 
 - **The fixture is valid and traceable** (US2): structural lint on a
-  temporary copy; the convention's sections and lines; no new key; prose
-  lint clean on pattern pages; the corpus copy and every background copy
+  temporary copy; the convention's sections and lines (the Y-statement
+  paragraph's sentence count, `Chosen:` its own paragraph); no new key;
+  prose lint clean on pattern pages; `superseded-still-indexed` for exactly
+  the two superseded pages; the corpus copy and every background copy
   hash to their manifest entries; word counts recompute.
 - **The freeze** (US3): sha256 pins in a test never edited after US3; the
   labels' structure (91 pairs, four dispositions, annotated pairs present);
@@ -349,6 +396,10 @@ bypassed without a per-phase record (the known driver defects).
 - **The bar rests on few pairs** (reviewer note 2). The corpus annotates
   one conflict pair and few look-alikes; the counts are printed beside every
   verdict, and a pass only grounds a drafted issue (FR-024).
+- **Links written from annotations inflate signal (a)** (fact 14). Mitigation:
+  (a-path) has its own verdict, annotation-linked true pairs are marked,
+  and a verdict resting only on them is flagged and not read as detection
+  (FR-014, FR-024, FR-030).
 - **Background pairs dominate the false column.** Linked background pages
   give signal (a) many background–background candidates, all false by rule;
   this is the honest result for a `findings` kind over a real wiki, and the
@@ -388,4 +439,6 @@ Q1-Q5 were answered by the owner on 2026-11-18, every one by its default:
 the build session labels (Q1); a distinct-by-precondition candidate counts
 as false, in its own column (Q2); long summaries split for prose lint (Q3);
 the close-keyword playbook page is not copied (Q4); the thresholds as fixed
-(Q5).
+(Q5). After the PR #115 review (head 41e62d8), Q3's split became the
+three-sentence form (departure 8), and the owner kept the superseded pages
+in `index.md` (departure 16).
