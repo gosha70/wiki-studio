@@ -115,8 +115,8 @@ string key `schema` is still `project` when `<wiki>/schema/` exists and
 |---|---|
 | `package_version` | The installed wiki-studio version. |
 | `schema_contract` | `id`, `version` (the manifest's, else this package's), `source`, `fingerprint` (current), `declared_fingerprint` (the manifest's, or `null`), `drift`. |
-| `formats` | `patch_set: 1`, `receipt: 1`, `ingest_log: 1`, `approval: 1`, `findings: 1`. |
-| `capabilities` | `wiki-lock`, `receipts`, `base-revision`, `root-manifest`, `page-id`, `attribution`, `approval-record`, `superseded-by`, `findings`, `ranked-discovery`, `context-budget` (the last two from 0.8.0). |
+| `formats` | `patch_set: 1`, `receipt: 1`, `ingest_log: 1`, `approval: 1`, `findings: 1`, `nightly: 1` (from 0.10.0). |
+| `capabilities` | `wiki-lock`, `receipts`, `base-revision`, `root-manifest`, `page-id`, `attribution`, `approval-record`, `superseded-by`, `findings`, `ranked-discovery`, `context-budget` (the last two from 0.8.0), `nightly` (from 0.10.0). |
 | `manifest` | Present: `state`, `manifest_version`, `wiki_id`, `policy`, `mode` (`governed` or `managed`). Missing: `state`, `mode: legacy` and an `instruction` to run `wiki-studio init`. |
 | `discovery` | From 0.8.0: `fts5`, `sqlite_version`, `fts5_reason`, `default_ranker`, `default_ranker_source`, `ranker_config_hash`, `cache`. See [Discovery](#discovery). |
 
@@ -426,6 +426,97 @@ pair.
 The health checks run without a backend, so `contradiction` never appears;
 run `lint --health --backend NAME` for it. A disagreement a curator has
 recorded is reported by the three conflict kinds.
+
+## Nightly
+
+`api.nightly(paths, *, backend=None, max_proposals=5, by=None) -> NightlyResult`
+and `wiki-studio nightly [--report PATH] [--json] [--backend NAME] [--max-proposals N] [--by NAME]`
+run the propose-only curation pass (from 0.10.0): structural lint with the
+audit-format errors, the model-free findings, the pending proposal
+directories, and, only with an explicit `backend`, drafts of the two
+findings whose fix adds a link, written through `api.propose`. Without a
+backend the pass resolves none, so `WIKI_STUDIO_BACKEND` and PATH
+auto-detect are never consulted. It never promotes, approves or writes in
+the wiki directory; the markdown report is
+`NightlyResult.render_markdown()` and `--report` writes it atomically
+outside the wiki. `--json` prints the object below.
+
+The JSON form, `nightly_version: 1`:
+
+```json
+{
+  "nightly_version": 1,
+  "package_version": "0.10.0",
+  "run_at": "2026-11-17T03:00:00Z",
+  "wiki_dir": "/srv/project/knowledge/wiki",
+  "proposals_dir": "/srv/project/doc_internal/proposals",
+  "lint": {"passed": true, "violations": [], "audit_errors": []},
+  "findings": {
+    "findings_version": 1,
+    "counts": {
+      "stale-claim": 0, "weak-orphan": 1, "missing-cross-link": 0, "avoid-format": 0,
+      "unapproved": 2, "approval-stale": 0, "approval-policy-changed": 0,
+      "superseded-still-indexed": 0, "no-page-id": 0, "open-conflict": 0,
+      "conflict-one-sided": 0, "conflict-dangling": 0
+    },
+    "pages_checked": 7,
+    "findings": [
+      {"kind": "weak-orphan", "severity": "warning", "pages": ["concepts/b.md"], "description": "..."}
+    ]
+  },
+  "drafting": {
+    "state": "on",
+    "reason": null,
+    "backend": "claude",
+    "max_proposals": 5,
+    "max_attempts": 10,
+    "attempts": 1,
+    "created": 1
+  },
+  "proposals": {
+    "created": [
+      {
+        "name": "nightly-weak-orphan-0f1e2d3c4b5a",
+        "path": "/srv/project/doc_internal/proposals/nightly-weak-orphan-0f1e2d3c4b5a",
+        "kind": "weak-orphan",
+        "pages": ["concepts/b.md"],
+        "edits": [
+          {"action": "append-index", "path": "index.md"},
+          {"action": "append-log", "path": "log.md"}
+        ],
+        "fact_warnings": 0
+      }
+    ],
+    "already_proposed": [],
+    "not_drafted": [],
+    "failed": []
+  },
+  "needs_curator": {
+    "findings": [
+      {"kind": "unapproved", "severity": "warning", "pages": ["concepts/a.md"], "description": "..."}
+    ],
+    "pending": [{"name": "2026-11-16-notes", "edits": 3}]
+  },
+  "warnings": [],
+  "exit_code": 0
+}
+```
+
+`findings` is exactly `findings --json`'s object (see [Findings](#findings)).
+`drafting.state` is `off`, `skipped`, `on` or `stopped`, and `reason` says
+why; with drafting on, `max_proposals` and `max_attempts` are the run's two
+bounds, and `attempts` and `created` how far it got. `proposals` holds
+`created` (`name`, `path`, `kind`, `pages`, `edits`, `fact_warnings`),
+`already_proposed` (`name`, `kind`, `pages`), `not_drafted` (`name`,
+`kind`, `pages`, `reason`) and `failed` (`name`, `kind`, `pages`, `reason`,
+`exit_code`, `message`). `needs_curator` lists the findings a person should
+look at and the pending proposal directories with their edit counts
+(`edits` is `null` when `plan.json` cannot be read). `exit_code` is the code
+the run ends with; the CLI changes it to 6 when the report itself cannot be
+written.
+
+Keys may be added within `nightly_version: 1`: read keys by name, not by
+order, and treat an unknown key as one you do not classify.
 
 ## Reserved edits
 

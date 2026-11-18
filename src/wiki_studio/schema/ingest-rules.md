@@ -82,7 +82,8 @@ from it to make it shorter.
 ## Manual-only in v1
 
 Promotion is **always initiated by a human or by an explicit
-agent invocation** (e.g., `/promote-lesson`). There is no background
-scheduler, no auto-promotion on commit, no inference of wiki-worth
-from git activity. Automated ingest is deferred to a follow-up
-issue.
+agent invocation** (e.g., `/promote-lesson`). A scheduled
+`wiki-studio nightly` run may draft proposals, and it never promotes
+or approves. There is no auto-promotion on commit and no inference
+of wiki-worth from git activity. Automated ingest is deferred to a
+follow-up issue.

@@ -4,8 +4,16 @@
 
 from __future__ import annotations
 
+import posixpath
 import re
+from pathlib import Path
 from typing import Any
+
+from .. import yaml_lite
+from ..errors import ContractViolationError
+from ..nightly import INLINE_LINK_RE, code_regions
+from ..prompt import CURATE_TASK
+from ..prose_lint import find_term
 
 
 def _extract_h1(content: str) -> str:
@@ -36,6 +44,48 @@ def _quote_first_line(content: str) -> str:
     return ""
 
 
+def _frontmatter_value(text: str, key: str) -> str | None:
+    """The frontmatter ``key:`` value, or None when the page has none."""
+    try:
+        value = yaml_lite.parse_frontmatter(text).get(key)
+    except ContractViolationError:
+        return None
+    return value if isinstance(value, str) else None
+
+
+def _body_start(text: str) -> int:
+    """The offset just past the closing frontmatter line, or 0 without frontmatter."""
+    offset = 0
+    for index, line in enumerate(text.splitlines(keepends=True)):
+        if index == 0 and line.strip() != "---":
+            return 0
+        if index > 0 and line.strip() == "---":
+            return offset + len(line)
+        offset += len(line)
+    return 0
+
+
+def _link_first_mention(text: str, page_path: str, canonical: str, slug: str) -> str:
+    """Link the first whole-word mention of ``slug`` outside frontmatter, code and links (FR-017)."""
+    if not text:
+        return text
+    regions = code_regions(text)
+    regions.extend((match.start(), match.end()) for match in INLINE_LINK_RE.finditer(text))
+    best: re.Match[str] | None = None
+    for form in (slug, slug.replace("-", " ")):
+        for match in find_term(text, form):
+            if match.start() < _body_start(text):
+                continue
+            if any(match.start() < end and start < match.end() for start, end in regions):
+                continue
+            if best is None or match.start() < best.start():
+                best = match
+    if best is None:
+        return text
+    target = posixpath.relpath(canonical, posixpath.dirname(page_path) or ".")
+    return f"{text[: best.start()]}[{best.group(0)}]({target}){text[best.end() :]}"
+
+
 class TestBackend:
     """Deterministic in-process backend for unit and integration tests.
 
@@ -61,7 +111,69 @@ class TestBackend:
             return self._call_multi(prompt)
         if task == "query":
             return self._call_query(prompt)
+        if task == CURATE_TASK:
+            return self._call_curate(prompt)
         return self._call_single(prompt)
+
+    def _call_curate(self, prompt: dict[str, Any]) -> dict[str, Any]:
+        """A deterministic draft that passes FR-019: links only, one log line (FR-017).
+
+        For a ``missing-cross-link`` it links the first whole-word mention of
+        the canonical page (its slug or the slug with spaces for hyphens,
+        outside frontmatter, code and existing links) in every editable page,
+        returning a page with no such mention unchanged, so FR-019 refuses the
+        whole draft. For a ``weak-orphan`` it appends the fixed index line.
+        """
+        finding = prompt.get("finding", {}) or {}
+        kind = str(finding.get("kind", ""))
+        editable = [str(page) for page in finding.get("editable", []) or []]
+        canonical = finding.get("canonical")
+        orphan = finding.get("orphan")
+        run_date = str(finding.get("date", ""))
+        wiki_state = prompt.get("wiki_state", {}) or {}
+        shown = wiki_state.get("candidate_pages", {}) or {}
+        edits: list[dict[str, str]] = []
+        if canonical is not None:
+            slug = Path(str(canonical)).stem
+            for page in editable:
+                edits.append(
+                    {
+                        "path": page,
+                        "action": "update",
+                        "new_content": _link_first_mention(str(shown.get(page, "")), page, str(canonical), slug),
+                        "rationale": f"Link the first mention of {slug!r} to its canonical page.",
+                    }
+                )
+            named = editable[0] if editable else str(canonical)
+        else:
+            orphan_path = str(orphan or "")
+            orphan_text = str(shown.get(orphan_path, ""))
+            title = _frontmatter_value(orphan_text, "title") or Path(orphan_path).stem
+            edits.append(
+                {
+                    "path": "index.md",
+                    "action": "append-index",
+                    "new_content": f"- [{title}]({orphan_path})",
+                    "rationale": f"Link the weak orphan {orphan_path!r} from index.md.",
+                }
+            )
+            named = orphan_path
+        named_text = str(shown.get(named, ""))
+        slug = _frontmatter_value(named_text, "slug") or Path(named).stem
+        page_type = _frontmatter_value(named_text, "page_type") or ""
+        edits.append(
+            {
+                "path": "log.md",
+                "action": "append-log",
+                "new_content": f"- {run_date} — link {slug} ({page_type}): nightly {kind} draft",
+                "rationale": "Append one log line for the link the draft adds.",
+            }
+        )
+        return {
+            "version": 1,
+            "rationale": f"Test backend deterministic curate draft for {kind}.",
+            "edits": edits,
+        }
 
     def _call_query(self, prompt: dict[str, Any]) -> dict[str, Any]:
         """Deterministic query response for Phase-3 tests.

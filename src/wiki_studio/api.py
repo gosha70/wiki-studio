@@ -69,6 +69,8 @@ from .health_lint import lint_health
 from .ingestor import DefaultIngestor
 from .ingestor_multi import COLLISION_ERROR, COLLISION_SUFFIX, DefaultMultiIngestor, write_patch_set_dir
 from .lint import lint_wiki, list_pages
+from .nightly import DEFAULT_MAX_PROPOSALS, NightlyResult
+from .nightly import run as _nightly_run
 from .paths import CONTAIN_SYMLINK, ContainmentError, contain, is_absolute_path, resolve_actor
 from .promoter import (
     DEFAULT_WIKI_TITLE,
@@ -128,6 +130,7 @@ __all__ = [
     "IngestRequest",
     "IngestResult",
     "LintResult",
+    "NightlyResult",
     "PageAction",
     "PageEdit",
     "FindResult",
@@ -154,6 +157,7 @@ __all__ = [
     "ingest",
     "init",
     "lint",
+    "nightly",
     "prepare_backend",
     "promote",
     "propose",
@@ -848,6 +852,43 @@ def findings(paths: WikiPaths, *, pages: list[str] | None = None) -> FindingsRes
     ``lint --health --strict`` stays the CI gate.
     """
     return _findings(paths, pages=pages)
+
+
+def nightly(
+    paths: WikiPaths,
+    *,
+    backend: str | Backend | None = None,
+    max_proposals: int = DEFAULT_MAX_PROPOSALS,
+    by: str | None = None,
+) -> NightlyResult:
+    """Run the nightly pass: structural lint, findings, drafting and the pending proposals (FR-001, FR-013).
+
+    Reads only without a backend: no backend is resolved, no wiki lock is
+    taken and nothing is written. With an explicit ``backend`` (a name or a
+    :class:`Backend`) the pass drafts at most ``max_proposals`` proposals for
+    the draftable findings and at most ``2 * max_proposals`` backend calls,
+    each written by :func:`propose`; ``WIKI_STUDIO_BACKEND`` and PATH
+    auto-detect are never consulted, so a run without ``backend`` drafts
+    nothing. A given backend is resolved before lint runs, whatever
+    ``max_proposals`` is (``BackendNotFoundError``, exit 2); a negative
+    ``max_proposals``, and with drafting on a proposals directory that
+    resolves inside the wiki, raise ``ValueError`` (exit 1) before anything
+    runs. ``by`` names the proposer recorded in ``plan.json``.
+
+    The result carries the findings, the proposal entries, the pending
+    listing, the markdown report (:meth:`NightlyResult.render_markdown`) and
+    its JSON form (:meth:`NightlyResult.as_dict`); ``exit_code`` applies
+    FR-010 (2)-(6). An exception from the lint or findings read propagates and
+    no report exists.
+    """
+    if max_proposals < 0:
+        raise ValueError(f"max_proposals must be zero or a positive integer, got {max_proposals}")
+    resolved: Backend | None = None
+    backend_name: str | None = None
+    if backend is not None:
+        resolved = prepare_backend(backend, paths)
+        backend_name = backend if isinstance(backend, str) else backend_display_name(resolved, None)
+    return _nightly_run(paths, backend=resolved, backend_name=backend_name, max_proposals=max_proposals, by=by)
 
 
 # ── read: one page, its text and the hash of the bytes read ───

@@ -59,7 +59,8 @@ class TestApiInfo(ManifestCase):
             },
         )
         self.assertEqual(
-            dict(info.formats), {"patch_set": 1, "receipt": 1, "ingest_log": 1, "approval": 1, "findings": 1}
+            dict(info.formats),
+            {"patch_set": 1, "receipt": 1, "ingest_log": 1, "approval": 1, "findings": 1, "nightly": 1},
         )
         self.assertEqual(
             info.capabilities,
@@ -75,6 +76,7 @@ class TestApiInfo(ManifestCase):
                 "findings",
                 "ranked-discovery",
                 "context-budget",
+                "nightly",
             ),
         )
         self.assertEqual(
@@ -221,6 +223,7 @@ class TestAdvertisedContract(ManifestCase):
             "findings": lambda: "findings" in _VERBS and callable(api.findings) and "findings" in data["formats"],
             "ranked-discovery": lambda: "ranker" in find_params and callable(discovery.fts5_available),
             "context-budget": lambda: "max_bytes" in find_params and "max_bytes" in query_params,
+            "nightly": lambda: "nightly" in _VERBS and callable(api.nightly) and "nightly" in data["formats"],
         }
         for capability in CAPABILITIES:
             with self.subTest(capability):
