@@ -1,0 +1,43 @@
+{
+  "pitch_id": "54-reusable-patterns",
+  "cycle": "08",
+  "updated_at": "2026-11-18T20:07:18Z",
+  "scopes": [
+    {
+      "id": "S1",
+      "name": "Inventory and the fit map, ~1.5-2h",
+      "status": "uphill",
+      "last_updated": "2026-11-18T20:07:18Z"
+    },
+    {
+      "id": "S2",
+      "name": "The pattern corpus, ~3-4h",
+      "status": "uphill",
+      "last_updated": "2026-11-18T20:07:18Z"
+    },
+    {
+      "id": "S3",
+      "name": "The lifecycle trace and retrieval, ~2-3h",
+      "status": "uphill",
+      "last_updated": "2026-11-18T20:07:18Z"
+    },
+    {
+      "id": "S4",
+      "name": "Duplicate candidates on labelled pairs, ~2.5-3.5h",
+      "status": "uphill",
+      "last_updated": "2026-11-18T20:07:18Z"
+    },
+    {
+      "id": "S5",
+      "name": "Revisit signals, ~1-1.5h",
+      "status": "uphill",
+      "last_updated": "2026-11-18T20:07:18Z"
+    },
+    {
+      "id": "S6",
+      "name": "Recommendation, guidance and closure, ~2-3h",
+      "status": "uphill",
+      "last_updated": "2026-11-18T20:07:18Z"
+    }
+  ]
+}
