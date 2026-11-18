@@ -271,7 +271,7 @@ jobs:
 
           from tests.helpers.quickstart_blocks import pip_install_commands
 
-          PAGES = ["README.md", "docs/quickstart.md", "docs/mcp-adapter.md", "docs/quickstart-memkernel.md"]
+          PAGES = ["README.md", "docs/quickstart.md", "docs/mcp-adapter.md", "docs/quickstart-memkernel.md", "docs/nightly.md"]
           pip = ["/tmp/resolve-install/bin/pip", "install", "--dry-run", "--quiet", "--find-links", "dist/"]
           for page in PAGES:
               commands = pip_install_commands(Path(page).read_text(encoding="utf-8"))

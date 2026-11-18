@@ -231,6 +231,15 @@ For each command's flags and output, see the
 [README](https://github.com/gosha70/wiki-studio/blob/main/README.md) and
 the [quickstart](https://github.com/gosha70/wiki-studio/blob/main/docs/quickstart.md).
 
+**Proposals named `nightly-*`.** Such a proposal was drafted
+unattended by a model through `wiki-studio nightly`. You may review it
+and promote it, but approving it is a person's step. For a
+`nightly-*` proposal follow step 9 ("Who approves") as for a project
+whose instructions reserve approval for a person, so on a wiki whose
+policy approves on promote you do not promote it and report the
+proposal directory for a person instead. The proposal already exists
+when you see it, so there is no propose step to stop at.
+
 ## What you must never do
 
 - **Invent sources.** If you cannot cite, you cannot publish.
