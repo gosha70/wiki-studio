@@ -57,19 +57,26 @@ start from this:
   (ADR-0004). For example, on one of the two pages:
   `> [!related] Not a duplicate of [Git safety bypasses](../incidents/git-safety-bypasses.md)`.
   The check then skips that pair. A body line needs no frontmatter key, so
-  the page schema shared with memkernel doesn't change. A frontmatter key
-  such as `not_duplicate_of:` would read more cleanly, but it changes that
-  schema and needs a decision record.
+  the page schema shared with memkernel doesn't change. It is still a new
+  body convention, so it needs its own decision record, as the conflict
+  callout got ADR-0004. A frontmatter key such as `not_duplicate_of:` would
+  read more cleanly, but it changes that schema, which also needs a decision
+  record.
 - **Silence the kind for a wiki.** An optional setting turns the kind off
   for a whole wiki, for teams that don't want it.
 - **Every finding says how to silence it.** The finding's text ends with
   the exact line to add, so no curator has to look it up.
 
 The study's caution still applies: on its small corpus the title-and-summary
-signal raised about as many false alarms as true finds. Warn-by-default is
-reasonable only if silencing a pair is that easy, and the false-alarm rate
-should be measured on the larger corpus first, or curators will learn to
-ignore the warning.
+signal recorded 2 true finds against 1 false alarm, on so few pairs that no
+false-alarm rate can be estimated from it. Warn-by-default is reasonable only
+if silencing a pair is that easy, and the false-alarm rate should be measured
+on the larger corpus first, or curators will learn to ignore the warning.
+
+**Open question: does the kind join `lint --health`?** `findings` only
+reports. If the kind also joined `lint --health`, then `lint --health
+--strict`, which some projects run in CI, would fail a build on a false
+alarm. The spec must decide this; the safer default is `findings` only.
 
 ## Out of scope
 
