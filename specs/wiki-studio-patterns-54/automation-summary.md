@@ -7,3 +7,6 @@ Review: PASS (see specs/wiki-studio-patterns-54/collaboration/build-review-phase
 
 ### Phase 3 complete — US3: Labels and gold, frozen before any signal runs (2026-11-19T02:53:35Z)
 Review: PASS (see specs/wiki-studio-patterns-54/collaboration/build-review-phase-3.md).
+
+### Phase 4 complete — US4: The lifecycle trace and retrieval (2026-11-19T03:26:58Z)
+Review: PASS (see specs/wiki-studio-patterns-54/collaboration/build-review-phase-4.md).
