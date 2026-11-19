@@ -4,9 +4,9 @@
 
 The fixture is exercised through the real API on a temporary copy: structural lint, the
 pattern-page convention, prose lint, supersession, the expected findings, and every pinned
-byte the manifest records. The US4 scripts run in-process against temporary copies and must
-reproduce their committed results without writing under ``eval/patterns/``; every command the
-README shows is parsed with full flag spelling.
+byte the manifest records. The US4 and US5 scripts run in-process against temporary copies
+and must reproduce their committed results without writing under ``eval/patterns/``; every
+command the README shows is parsed with full flag spelling.
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ import unittest
 from pathlib import Path
 from typing import Any
 
-from eval.patterns import retrieval, trace
+from eval.patterns import duplicates, retrieval, trace
 from wiki_studio import api, discovery
 from wiki_studio.cli import _build_arg_parser
 from wiki_studio.paths import WikiPaths
@@ -35,7 +35,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 PATTERNS_DIR = REPO_ROOT / "eval" / "patterns"
 WIKI_DIR = PATTERNS_DIR / "wiki"
 CORPUS = PATTERNS_DIR / "corpus" / "decisions-57.md"
+LABELS = PATTERNS_DIR / "labels.json"
 MANIFEST = PATTERNS_DIR / "manifest.json"
+PROTOCOL = PATTERNS_DIR / "protocol.json"
 README = PATTERNS_DIR / "README.md"
 QUESTIONS = PATTERNS_DIR / "questions.json"
 RESULTS_DIR = PATTERNS_DIR / "results"
@@ -316,11 +318,13 @@ class PatternsScriptsTest(unittest.TestCase):
         before = snapshot_tree(PATTERNS_DIR)
         self.run_trace()
         self.run_retrieval()
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(duplicates.main(["--out", str(Path(tmp) / "duplicates.json")]), 0)
         self.assertEqual(snapshot_tree(PATTERNS_DIR), before)
 
     def test_help_exits_zero(self) -> None:
         with contextlib.redirect_stdout(io.StringIO()):
-            for script in (trace, retrieval):
+            for script in (trace, retrieval, duplicates):
                 self.assertEqual(script.main(["--help"]), 0, script.__name__)
 
     def test_every_readme_command_parses_with_full_flag_spelling(self) -> None:
@@ -328,6 +332,7 @@ class PatternsScriptsTest(unittest.TestCase):
         script_flags = {
             "eval.patterns.trace": (trace, option_strings(trace._build_arg_parser())),
             "eval.patterns.retrieval": (retrieval, option_strings(retrieval._build_arg_parser())),
+            "eval.patterns.duplicates": (duplicates, option_strings(duplicates._build_arg_parser())),
         }
         seen = 0
         for line in README.read_text(encoding="utf-8").splitlines():
@@ -350,6 +355,86 @@ class PatternsScriptsTest(unittest.TestCase):
                 script._build_arg_parser().parse_args(argv[3:])
                 seen += 1
         self.assertGreater(seen, 0)
+
+
+class PatternsDuplicatesTest(unittest.TestCase):
+    """US5: duplicates.py on the frozen labels (FR-022..FR-025)."""
+
+    def run_duplicates(self, patterns_dir: Path | None = None) -> dict[str, Any]:
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "duplicates.json"
+            kwargs = {} if patterns_dir is None else {"patterns_dir": patterns_dir}
+            self.assertEqual(duplicates.main(["--out", str(out)], **kwargs), 0)
+            return json.loads(out.read_text(encoding="utf-8"))
+
+    def committed(self) -> dict[str, Any] | None:
+        path = RESULTS_DIR / "duplicates.json"
+        return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None
+
+    def test_output_matches_the_recorded_result(self) -> None:
+        actual = self.run_duplicates()
+        if actual != self.committed():
+            record_result(actual, "duplicates.json")
+
+    def test_recorded_hashes_equal_the_frozen_files(self) -> None:
+        committed = self.committed()
+        if committed is None:
+            record_result(self.run_duplicates(), "duplicates.json")
+        assert committed is not None
+        self.assertEqual(committed["labels_sha256"], sha256_of(LABELS))
+        self.assertEqual(committed["protocol_sha256"], sha256_of(PROTOCOL))
+
+    def test_every_true_pair_carries_the_annotation_link_mark(self) -> None:
+        committed = self.committed()
+        if committed is None:
+            record_result(self.run_duplicates(), "duplicates.json")
+        assert committed is not None
+        self.assertEqual(sorted(committed["signals"]), ["a", "a-path", "b", "c", "combined"])
+        for name, signal in committed["signals"].items():
+            for candidate in signal["candidates"]:
+                if candidate["true"]:
+                    self.assertIsInstance(candidate["annotation_linked"], bool, f"{name}: {candidate['pair']}")
+
+    def test_the_readme_states_the_frozen_input_and_the_recorded_verdicts(self) -> None:
+        readme = README.read_text(encoding="utf-8")
+        self.assertIn("python -m eval.patterns.duplicates --out <PATH>", readme)
+        protocol = json.loads(PROTOCOL.read_text(encoding="utf-8"))
+        self.assertIn(protocol["labels_sha256"], readme)
+        committed = self.committed()
+        if committed is None:
+            record_result(self.run_duplicates(), "duplicates.json")
+        assert committed is not None
+        rows = []
+        for name, signal in committed["signals"].items():
+            counts = signal["counts"]
+            label = name if name == "combined" else f"({name})"
+            rows.append(
+                f"| {label} | {counts['found_labelled_pairs']} of {counts['eligible_labelled_pairs']} | "
+                f"{counts['found_labelled_annotation_linked']} | {counts['true_candidates']} | "
+                f"{counts['false_candidates']} | {signal['verdict']} |"
+            )
+        missing = [row for row in rows if row not in readme]
+        self.assertEqual(missing, [], "the README's duplicate-candidates table must state the recorded counts")
+
+    def test_a_changed_disposition_exits_one_and_writes_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            copy = Path(tmp) / "patterns"
+            shutil.copytree(PATTERNS_DIR, copy)
+            labels_path = copy / "labels.json"
+            text = labels_path.read_text(encoding="utf-8")
+            changed = text.replace('"disposition": "conflicting"', '"disposition": "unrelated"', 1)
+            self.assertNotEqual(changed, text)
+            labels_path.write_text(changed, encoding="utf-8")
+            expected = json.loads((copy / "protocol.json").read_text(encoding="utf-8"))["labels_sha256"]
+            actual = sha256_of(labels_path)
+            out = Path(tmp) / "duplicates.json"
+            stderr = io.StringIO()
+            with contextlib.redirect_stderr(stderr):
+                code = duplicates.main(["--out", str(out)], patterns_dir=copy)
+            self.assertEqual(code, 1)
+            self.assertFalse(out.exists())
+            self.assertIn(actual, stderr.getvalue())
+            self.assertIn(expected, stderr.getvalue())
 
 
 if __name__ == "__main__":

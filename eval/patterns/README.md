@@ -535,3 +535,74 @@ None of this is enforced: a `find` result is a candidate list, and the
 `Applies when:` line is the only place the page says when it does not
 apply.
 
+## Duplicate candidates
+
+```
+python -m eval.patterns.duplicates --out <PATH>
+```
+
+Without `--out` the command prints the same JSON. It hashes
+`labels.json` first and refuses to run — exit 1, naming both values and
+writing nothing — unless that hash equals `protocol.json`'s
+`labels_sha256` (`96da1b5a7553096ca38e7f0491692b61018c6735cc70d1dcf5c1afc478f39a7e`).
+The run used those frozen labels and the frozen protocol;
+`results/duplicates.json` records the sha256 of both files it read, and
+the counts below are that output, as recorded. The fixture is read in
+place: only `--out` is written, and the three frozen files are never
+touched.
+
+The command computes the five scored outputs FR-014 fixes — (a) (a shared
+cited `sources[].path` or a direct link, with the part that fired),
+(a-path) (the shared-path part alone), (b) (Jaccard similarity of the
+title and the first Decision paragraph at 0.25), (c) (shared entity
+mentions at 2) and their union `combined` — with the thresholds read from
+`protocol.json`. A page carrying `superseded_by` is ineligible, so the
+scope is the 66 eligible pattern pairs, the 240 eligible
+pattern-background pairs and the 190 eligible background-background
+pairs; the 91-pair table is reported as secondary.
+
+| Signal | Eligible labelled pairs found | Annotation-linked among those | True candidates | False candidates | Verdict |
+|---|---|---|---|---|---|
+| (a) | 3 of 3 | 1 | 3 | 36 | fail |
+| (a-path) | 2 of 3 | 0 | 2 | 15 | fail |
+| (b) | 2 of 3 | 1 | 2 | 1 | fail |
+| (c) | 0 of 3 | 0 | 0 | 3 | fail |
+| combined | 3 of 3 | 1 | 3 | 36 | fail |
+
+| Signal | False, `distinct-by-precondition` | False, `unrelated` | False, background unlisted |
+|---|---|---|---|
+| (a) | 3 | 0 | 33 |
+| (a-path) | 2 | 0 | 13 |
+| (b) | 0 | 0 | 1 |
+| (c) | 0 | 0 | 3 |
+| combined | 3 | 0 | 33 |
+
+The bar rests on three eligible pairs labelled `redundant` or
+`conflicting`: the two pattern pairs (the redundant trace-archive pair
+and the conflicting destructive-git-command pair) and the one listed
+pattern-background pair (the git-lock record against the incident page).
+A signal passes when it finds all three and its false candidates do not
+outnumber its true ones. None passes here: (a) and `combined` find all
+three but return 36 false candidates against 3 true; (a-path) misses the
+conflicting pair, which only a direct link joins; (b) finds both pattern
+pairs and misses only the background pair, with one false candidate
+(`overview` against `use-llm-wiki-as-knowledge-layer`); (c) finds no true
+pair and three false ones. A pass would be grounds to draft an issue for
+a `findings` kind, not evidence that such a kind would work in general.
+
+Annotation links are the intra-wiki links the pages carry from corpus
+annotations (the conflict callouts, the Consequences links and the
+git-lock incident link). A true pair found only through such a link is
+marked `annotation_linked`, as is a pair `findings` already reports as
+`open-conflict`. Only the conflicting pair carries the mark in this run:
+it is found by (a) through its callout alone and `findings` reports it as
+`open-conflict`. No verdict rests on annotation-linked pairs —
+`rests_on_annotation_links` is false for all five signals; (a-path) is
+free of the mark by construction and (c) never carries it, because a
+mutual link's own slugs are subtracted.
+
+The superseded exclusion removed 25 of the 91 pattern pairs (every pair
+involving the two superseded pages); no background page is superseded.
+Labels were read, never edited: a disagreement found later is reported in
+the study's report, not patched here.
+
