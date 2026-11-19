@@ -108,9 +108,10 @@ Retrieval, as recorded, for the twelve frozen questions at five pages:
 | `fts5` | 10 of 12 | 12 of 12 | 1 | 2 / 0 |
 
 Every gold page is returned within five by both rankers. The hit-at-1 misses
-are the same kind of case: a background page or a sibling ranks first (the
-trace-archive question puts the never-archive page first under `index-first`;
-so do the benchmark-step and destructive-git questions; under `fts5` the
+are the same kind of case: a background page or a sibling ranks first (under
+`index-first`, the trace-archive question puts the never-archive page first,
+the benchmark-step question its successor, and the destructive-git question
+the recovery playbook; under `fts5` the
 incident page tops the git-lock question and the recovery playbook tops the
 destructive-git question). The false-reuse trap is real in both rankers: on
 the config-redaction question the trap page (its own gold, per the frozen
@@ -177,13 +178,20 @@ and (c) are the measured detectors**: (a-path) has no links by construction,
 never touch, and (c) subtracts the two pages' own slugs, so a mutual link
 cannot create a candidate.
 
-**No issue is drafted for a duplicate `findings` kind.** A pass would have
-been grounds to draft one, not evidence that such a kind would work in
-general; none passed, so the evidence supports keeping this as a throwaway
-script, not shipping a check.
+**No signal passes its frozen bar, but (b) is one disputed label away.** A
+pass would have been grounds to draft an issue, not evidence that such a kind
+would work in general. (b) compares titles and Y-statements, not cited files,
+so its finds don't depend on the labeller's shared-file reasoning. Read with
+the disputed label as `unrelated`, (b) would pass on two pairs, and one of
+them is the conflicting pair that `findings` already reports as
+`open-conflict`, so its only new find would be the never-archive-raw-JSONL /
+trace-archive pair. The owner asked for an issue draft for a (b)-style
+finding anyway (2026-11-19). It is drafted beside this report, marked as
+resting on the disputed label and not on the frozen verdict.
 
 **Limits.** The bar rests on three pairs. (b)'s result (2 true, 1 false) is
-the one a larger corpus could overturn; with only two eligible true pattern
+the one a larger corpus could overturn, and one disputed label (the
+background pair, see Labels) decides its verdict; with only two eligible true pattern
 pairs, no signal's precision or recall is estimated with any confidence.
 
 ## Question 5: How does a source or spec change mark a pattern for review?
@@ -329,8 +337,8 @@ From the nineteen steps of `results/trace.json`:
 
 ### Labels
 
-No label was edited, and no signal verdict depends on a disputed one. One
-label the build would state differently if the set had a fifth disposition:
+No label was edited. One disputed label decides one signal's verdict
+(below). One label the build would state differently if the set had a fifth disposition:
 the two stale-page/successor pairs are labelled `distinct-by-precondition`,
 while a successor replaces its stale page rather than splitting preconditions
 with it. The four dispositions have no "supersedes" value, both pairs are
@@ -353,10 +361,14 @@ Two further points come from the external review of the labelling commit
 - **The background pair's "redundant" label is disputed.** A decision page
   and the incident record behind it are different page types that a curator
   keeps apart. FR-012 defines `unrelated` as "none of these, even when one
-  page cites the other", which arguably fits this pair better. The effect on
-  verdicts is small: (a-path) still cannot find the conflicting pair, whose
-  two pages share no cited file, and every signal fails its bar with or
-  without this pair.
+  page cites the other", which arguably fits this pair better. **This label
+  decides signal (b)'s verdict.** As recorded, (b) found 2 of the 3 true pairs
+  with 1 false candidate, and the one pair it missed is this one. Read as
+  `unrelated`, (b) would find 2 of 2, with 2 true candidates against 1 false,
+  and would pass. No other signal's verdict changes: (a), (a-path), (c) and
+  combined still fail. The label stays frozen, so (b)'s recorded verdict
+  stays "fail". (An earlier version of this section said no verdict depended
+  on this pair; that was wrong.)
 
 The other 89 pattern pairs are not disputed.
 
@@ -409,13 +421,17 @@ The reasons:
   findings and read sequence, the revisit guidance and what memkernel keeps;
   the study's measurements say what the convention can and cannot promise.
 - Neither candidate enhancement is this deliverable. No duplicate signal
-  passes its frozen bar, so no `findings` kind is proposed (question 4); the
+  passes its frozen bar, so no `findings` kind is recommended (question 4);
+  but (b) is one disputed label away from passing, so this is not a settled
+  "no", and a (b)-style finding is drafted as an issue at the owner's
+  request; the
   revision check is real but 12 of its 13 flags were false, so it needs its
-  own specification before it ships (question 5). Both directions the
+  own specification before it ships (question 5). The two directions the
   evidence leaves open — carrying the template into the packaged
-  `page-types.md` and a revision-aware stale check — are drafted beside this
-  report as follow-up issues for the owner to file.
+  `page-types.md` and a revision-aware stale check — and the (b)-style
+  duplicate finding are drafted beside this report as follow-up issues for
+  the owner to file.
 - Not "no change": without docs the convention stays invisible, and the study
   shows every element of it already works. Not "a separately specified
-  enhancement": nothing measured justifies package code now; the two drafts
+  enhancement": nothing measured justifies package code now; the three drafts
   are follow-ups, not the deliverable.
