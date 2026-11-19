@@ -45,6 +45,32 @@ least: the corpus and who labels it, the bar, what a curator does with a
 flag, and how the kind relates to `open-conflict` so the same pair isn't
 reported twice.
 
+**The owner's preferred shape (2026-11-19): warn by default, easy to
+silence.** If the investigation supports a `findings` kind, the spec should
+start from this:
+
+- **On by default.** The kind is reported like any other finding. A finding
+  never blocks promote or approve, so a false alarm costs a curator's
+  attention, not a stuck change.
+- **Silence one pair.** A curator marks two pages as deliberately separate
+  with an optional body line, in the same form as the conflict callout
+  (ADR-0004). For example, on one of the two pages:
+  `> [!related] Not a duplicate of [Git safety bypasses](../incidents/git-safety-bypasses.md)`.
+  The check then skips that pair. A body line needs no frontmatter key, so
+  the page schema shared with memkernel doesn't change. A frontmatter key
+  such as `not_duplicate_of:` would read more cleanly, but it changes that
+  schema and needs a decision record.
+- **Silence the kind for a wiki.** An optional setting turns the kind off
+  for a whole wiki, for teams that don't want it.
+- **Every finding says how to silence it.** The finding's text ends with
+  the exact line to add, so no curator has to look it up.
+
+The study's caution still applies: on its small corpus the title-and-summary
+signal raised about as many false alarms as true finds. Warn-by-default is
+reasonable only if silencing a pair is that easy, and the false-alarm rate
+should be measured on the larger corpus first, or curators will learn to
+ignore the warning.
+
 ## Out of scope
 
 No package code in this issue's text; no automatic merge, deletion or
