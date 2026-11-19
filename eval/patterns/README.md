@@ -175,3 +175,106 @@ research spike on preserving and retrieving implementation decisions; #123
 is its revalidation rule, which flags a decision that cites a changed file
 and still returns it. The study compares wiki-studio's reporting against
 that rule and does not change memkernel.
+
+## Corpus
+
+The pattern corpus is memkernel #57's twelve decision records, read at tag
+`v0.9.0` and copied byte for byte:
+
+- tag: `v0.9.0`
+- commit: `7f260123d28d3594c83d6ebdb4b4433195bd0023`
+- source path: `eval/decisions-57/corpus.md`
+- sha256: `10e61af7bca5dfd764443908b040f8581c4d5de4c8aa774c9dce324b663ca503`
+
+The copy is `eval/patterns/corpus/decisions-57.md`, and it is unchanged: the
+hash above is the hash of the committed copy. It was read with
+`git -C <memkernel> show v0.9.0:eval/decisions-57/corpus.md`, and the commit
+with `git -C <memkernel> rev-parse v0.9.0^{commit}`.
+
+The background is code-copilot-team's `knowledge/wiki/` at commit
+`00d49c0a9eb51e9bf234cee70490889b151cd550` (the short `00d49c0` resolved).
+Every commit the corpus cites is an ancestor of that pin, checked with
+`git -C <code-copilot-team> merge-base --is-ancestor <sha> <pin>`: 76beab2,
+c776632, 2325480, 13eb704, dafbc5b, 5ce94f2, 37e8417, a24a00e, e39969f,
+15438b2, 8dbceaf and 88931a3.
+
+The two repositories were read, never edited. The git commands used are the
+ones the study allows: `rev-parse`, `show`, `cat-file`, `merge-base`,
+`diff --quiet` and `ls-tree`.
+
+### The pattern pages
+
+Fourteen `decision` pages under `eval/patterns/wiki/decisions/`: one per
+corpus record plus a successor for each of the two stale records. Words are
+whitespace-separated tokens: the page body after the frontmatter, and the
+record's section in the corpus copy from its heading to the next heading.
+
+| Page | Record | Kind | Issue 54 example | Words page / record |
+|---|---|---|---|---|
+| `trace-archive-reuses-the-ingest-redaction-path` | reuse: Trace archive reuses the ingest redaction path | reuse | reuse a helper | 155 / 209 |
+| `benchmark-step-reuses-the-one-correlate-scan-seam` | reuse: Benchmark step reuses the one correlate scan seam | reuse | — | 171 / 214 |
+| `swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet` | native-vs-dependency: SWE-bench fetch uses the stdlib rows API, not Parquet | native-vs-dependency | native feature over a dependency | 152 / 199 |
+| `judge-statistics-and-charts-stay-in-the-stdlib` | native-vs-dependency: Judge statistics and charts stay in the stdlib | native-vs-dependency | — | 169 / 199 |
+| `never-bypass-a-git-lock-with-an-alternate-index` | rejected-for-safety: Never bypass a git lock with an alternate index | rejected-for-safety | reject a shorter solution that weakens safety | 157 / 215 |
+| `never-archive-raw-jsonl` | rejected-for-safety: Never archive raw JSONL | rejected-for-safety | — | 154 / 197 |
+| `benchmark-ui-was-backend-free-one-shot-and-studio-only` | stale: Benchmark UI was backend-free, one-shot and Studio-only | stale | supersede after a change | 151 / 235 |
+| `merge-require-green-ci-was-never-read` | stale: merge.require_green_ci was never read | stale | — | 143 / 202 |
+| `the-clusters-view-is-not-an-explorer` | false-reuse-trap: The clusters view is not an explorer | false-reuse-trap | — | 159 / 217 |
+| `config-redaction-is-not-free-text-redaction` | false-reuse-trap: Config redaction is not free-text redaction | false-reuse-trap | keep two similar patterns distinct | 171 / 213 |
+| `destructive-git-commands-require-confirmation` | conflict: Destructive git commands require confirmation | conflict | — | 161 / 227 |
+| `balanced-profile-denies-destructive-git-commands` | conflict: Balanced profile denies destructive git commands | conflict | — | 181 / 252 |
+| `benchmark-explains-itself-linking-runs-is-a-pipeline-step` | successor of the Benchmark UI record | successor | supersede after a change | 200 / — |
+| `merge-require-green-ci-was-never-read-and-was-removed` | successor of the merge.require_green_ci record | successor | — | 136 / — |
+
+`manifest.json` records the same table as `pages`, with each page's
+`y_statement_sentences` (three for a record page, one for a successor) and
+its `successor_of` link.
+
+### The background pages
+
+Every `.md` file of code-copilot-team's `knowledge/wiki/` at the pin outside
+`schema/`, except `index.md`, `log.md` and
+`playbooks/pre-pr-close-keyword-audit.md`, is copied by
+`git show <pin>:knowledge/wiki/<path>` to the same path under
+`eval/patterns/wiki/`. Twenty pages are copied. One transformation is
+applied: an inline link whose target leaves the copied set — a `../` target
+outside the wiki, a `schema/` page, or an excluded page — is rewritten to
+`https://github.com/gosha70/code-copilot-team/blob/<pin>/<repo path>`.
+Nothing else changes. `manifest.json` `background` lists each copy with
+its `sha256_at_pin` (the bytes `git show` printed), its `sha256` (the
+committed copy) and its `links_rewritten` count. Thirty-two links were
+rewritten in all.
+
+The exclusions are named here: `index.md` and `log.md` (the fixture has its
+own), `playbooks/pre-pr-close-keyword-audit.md` (its text quotes GitHub
+closing-keyword phrases, which no file of this study may carry), the
+`schema/` pages (not copied, so their links are rewritten), and the
+non-page files `open-questions/.gitkeep` and `scripts/lint-wiki.sh`. No
+`scripts/` directory exists in the fixture. No copied page failed
+structural lint, so no page was excluded for a violation.
+
+`eval/patterns/wiki/index.md` has `page_type: index` and links every fixture
+page in its "Patterns" and "Background" sections, the two superseded pages
+included. `eval/patterns/wiki/log.md` has `page_type: log` and one line per
+pattern page in the form `- YYYY-MM-DD — add <slug> (decision): <why>`,
+dated from the record.
+
+### What the fixture reports
+
+On the fixture as a wiki, three findings are expected and none of them is a
+defect:
+
+- `superseded-still-indexed` for exactly the two superseded pages, because
+  `index.md` keeps their entries. That is deliberate: `find` considers only
+  the pages `index.md` links, so keeping them indexed is what lets the study
+  observe a superseded page become ineligible rather than invisible.
+- `stale-claim` for every `path:` source of a code-copilot-team file, because
+  those paths do not exist under this repository's root. This is the
+  path-existence check of `health_lint.py` 110-155, not a claim that the
+  cited files are gone from code-copilot-team.
+- `no-page-id` on the fixture's pages, which carry none: `propose --from`
+  assigns one, and the fixture is copied in, not proposed.
+
+No page has an approval record, so the review kinds report the pages
+unapproved as well.
+
