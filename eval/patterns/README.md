@@ -705,3 +705,13 @@ whether a `path:` exists.
 | A security finding | `issue:` or `url:` — a pointer to the finding; no field carries a security flag | Nothing: URLs are never read (`health_lint.py` 115-119) and an issue is never opened | Whether the finding is open, or applies to the pattern |
 | A failed test | A test is named in the body as text (the convention in "The evidence checklist"), or its file cited as `path:` + `sha:`; no field carries an outcome | Nothing runs a test; `stale-claim` checks only that a cited test file exists | The outcome of any test, passing or failing |
 
+## The circuit breaker
+
+The pitch fixes three cuts, and **none was taken**: the corpus holds the
+fourteen pattern pages and the twenty background pages (cut 1's trigger did
+not fire), the labels, questions and protocol landed in their own commit
+before any signal code and the full signal set ran (cut 2's), and the
+revision check ran against the code-copilot-team checkout (cut 3's). Nothing
+was removed by a cut, so no section of this README describes a reduced scope.
+`eval/patterns/report.md` records the same statement with the evidence.
+

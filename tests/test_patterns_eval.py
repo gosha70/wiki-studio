@@ -6,7 +6,9 @@ The fixture is exercised through the real API on a temporary copy: structural li
 pattern-page convention, prose lint, supersession, the expected findings, and every pinned
 byte the manifest records. The US4, US5 and US6 scripts run in-process against temporary
 copies and must reproduce their committed results without writing under ``eval/patterns/``;
-every command the README shows is parsed with full flag spelling.
+every command the README shows is parsed with full flag spelling. US7 adds the
+report's structure, its one recommendation line and ``docs/patterns.md``, whose
+commands run against a temporary copy of the fixture.
 """
 
 from __future__ import annotations
@@ -26,6 +28,7 @@ from pathlib import Path
 from typing import Any
 
 from eval.patterns import duplicates, retrieval, staleness, trace
+from tests.conftest import run_cli
 from wiki_studio import api, discovery
 from wiki_studio.cli import _build_arg_parser
 from wiki_studio.paths import WikiPaths
@@ -41,7 +44,10 @@ MANIFEST = PATTERNS_DIR / "manifest.json"
 PROTOCOL = PATTERNS_DIR / "protocol.json"
 README = PATTERNS_DIR / "README.md"
 QUESTIONS = PATTERNS_DIR / "questions.json"
+REPORT = PATTERNS_DIR / "report.md"
 RESULTS_DIR = PATTERNS_DIR / "results"
+DOCS_PATTERNS = REPO_ROOT / "docs" / "patterns.md"
+CHANGELOG = REPO_ROOT / "CHANGELOG.md"
 HAS_FTS5 = discovery.fts5_available().available
 GIT = shutil.which("git")
 MISMATCH = "PATTERNS-RESULT-MISMATCH"
@@ -50,6 +56,29 @@ REQUIRED_KEYS = ("page_type", "slug", "title", "status", "last_reviewed")
 ALLOWED_KEYS = frozenset((*REQUIRED_KEYS, "sources", "superseded_by", "corrects"))
 SECTIONS = ("Decision", "Context", "Alternatives considered", "Consequences")
 _FRONTMATTER_KEY_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_-]*):")
+
+# FR-030/FR-033: the report answers issue 54's six questions in this order and
+# ends in exactly one of the three outcome lines.
+QUESTION_HEADINGS = (
+    "## Question 1: Can current pages hold a pattern?",
+    "## Question 2: How does an agent propose one, and what evidence must promotion see?",
+    "## Question 3: How does an agent find and cite approved patterns without treating them as binding?",
+    "## Question 4: Can existing lint, query or findings expose near-duplicates without merging anything?",
+    "## Question 5: How does a source or spec change mark a pattern for review?",
+    "## Question 6: What should memkernel keep to point at one?",
+)
+RECOMMENDATION_LINES = (
+    "Recommendation: docs and a template.",
+    "Recommendation: a separately specified enhancement.",
+    "Recommendation: no change.",
+)
+
+# FR-032: the values the docs page's placeholders take when its commands run
+# against a temporary copy of the fixture.
+DOCS_ARGUMENTS = {
+    "<the task, in plain words>": "how should archived traces be redacted",
+    "<page>": "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+}
 
 
 def sha256_of(path: Path) -> str:
@@ -512,6 +541,113 @@ class PatternsStalenessTest(unittest.TestCase):
         ]
         self.assertEqual(actual, expected)
         self.assertEqual(committed["pin"], manifest["pins"]["code_copilot_team"]["commit"])
+
+
+def substitute_docs_arguments(argv: list[str]) -> list[str]:
+    """Replace the docs page's placeholders with values the fixture answers (FR-032)."""
+    return [DOCS_ARGUMENTS.get(token, token) for token in argv]
+
+
+class PatternsReportTest(unittest.TestCase):
+    """US7: the report and its one recommendation (FR-030, FR-033)."""
+
+    report: str
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.report = REPORT.read_text(encoding="utf-8")
+
+    def recommendation_lines(self) -> list[str]:
+        return [line.strip() for line in self.report.splitlines() if line.strip().startswith("Recommendation:")]
+
+    def test_the_six_question_sections_appear_in_order(self) -> None:
+        positions = []
+        for heading in QUESTION_HEADINGS:
+            self.assertIn(heading, self.report)
+            positions.append(self.report.index(heading))
+        self.assertEqual(positions, sorted(positions))
+
+    def test_exactly_one_recommendation_line_of_the_three_forms(self) -> None:
+        lines = self.recommendation_lines()
+        self.assertEqual(len(lines), 1, lines)
+        self.assertIn(lines[0], RECOMMENDATION_LINES)
+
+    def test_docs_patterns_exists_exactly_with_the_template_outcome(self) -> None:
+        lines = self.recommendation_lines()
+        self.assertEqual(len(lines), 1, lines)
+        self.assertEqual(DOCS_PATTERNS.is_file(), lines[0] == RECOMMENDATION_LINES[0])
+
+    def test_every_results_file_it_cites_exists(self) -> None:
+        cited = sorted(set(re.findall(r"results/[A-Za-z0-9_.-]+\.json", self.report)))
+        self.assertTrue(cited)
+        for rel in cited:
+            self.assertTrue((PATTERNS_DIR / rel).is_file(), rel)
+
+    def test_every_wiki_studio_line_it_shows_parses(self) -> None:
+        wiki_flags = option_strings(_build_arg_parser())
+        for line in self.report.splitlines():
+            text = line.strip()
+            if not text.startswith("wiki-studio "):
+                continue
+            argv = shlex.split(text)[1:]
+            for token in argv:
+                if token.startswith("-"):
+                    self.assertIn(token.split("=", 1)[0], wiki_flags, f"spell every flag in full: {text}")
+            with contextlib.redirect_stderr(io.StringIO()):
+                _build_arg_parser().parse_args(argv)
+
+
+class PatternsDocsTest(unittest.TestCase):
+    """US7: docs/patterns.md, its commands and its changelog line (FR-032, FR-033)."""
+
+    docs: str
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        if not DOCS_PATTERNS.is_file():
+            raise unittest.SkipTest("docs/patterns.md is not written (no template outcome)")
+        cls.docs = DOCS_PATTERNS.read_text(encoding="utf-8")
+
+    def command_lines(self) -> list[str]:
+        return [line.strip() for line in self.docs.splitlines() if line.strip().startswith("wiki-studio ")]
+
+    def test_the_page_shows_no_install_command(self) -> None:
+        self.assertNotIn("pip install", self.docs)
+
+    def test_the_page_links_the_readme_install_section(self) -> None:
+        self.assertIn("(../README.md#install)", self.docs)
+
+    def test_every_command_parses_with_full_flag_spelling(self) -> None:
+        wiki_flags = option_strings(_build_arg_parser())
+        lines = self.command_lines()
+        self.assertTrue(lines)
+        for text in lines:
+            argv = substitute_docs_arguments(shlex.split(text)[1:])
+            for token in argv:
+                if token.startswith("-"):
+                    self.assertIn(token.split("=", 1)[0], wiki_flags, f"spell every flag in full: {text}")
+            with contextlib.redirect_stderr(io.StringIO()):
+                _build_arg_parser().parse_args(argv)
+
+    def test_every_command_runs_zero_against_the_fixture(self) -> None:
+        lines = self.command_lines()
+        self.assertTrue(lines)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "project"
+            (root / "knowledge").mkdir(parents=True)
+            shutil.copytree(WIKI_DIR, root / "knowledge" / "wiki")
+            for text in lines:
+                with self.subTest(command=text):
+                    argv = substitute_docs_arguments(shlex.split(text)[1:])
+                    result = run_cli(*argv, cwd=root)
+                    self.assertEqual(result.returncode, 0, f"{text}\n{result.stderr}")
+
+    def test_the_changelog_unreleased_holds_the_docs_line(self) -> None:
+        changelog = CHANGELOG.read_text(encoding="utf-8")
+        self.assertIn("## [Unreleased]", changelog)
+        unreleased = changelog.split("## [Unreleased]", 1)[1].split("\n## [", 1)[0]
+        self.assertIn("### Docs", unreleased)
+        self.assertIn("docs/patterns.md", unreleased)
 
 
 if __name__ == "__main__":
