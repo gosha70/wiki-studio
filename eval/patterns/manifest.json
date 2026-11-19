@@ -1,0 +1,277 @@
+{
+  "pins": {
+    "memkernel": {
+      "tag": "v0.9.0",
+      "commit": "7f260123d28d3594c83d6ebdb4b4433195bd0023",
+      "path": "eval/decisions-57/corpus.md",
+      "sha256": "10e61af7bca5dfd764443908b040f8581c4d5de4c8aa774c9dce324b663ca503"
+    },
+    "code_copilot_team": {
+      "commit": "00d49c0a9eb51e9bf234cee70490889b151cd550"
+    }
+  },
+  "pages": [
+    {
+      "path": "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+      "record": "### reuse: Trace archive reuses the ingest redaction path",
+      "kind": "reuse",
+      "example": "reuse a helper",
+      "successor_of": null,
+      "y_statement_sentences": 3,
+      "words_page": 155,
+      "words_record": 209
+    },
+    {
+      "path": "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+      "record": "### reuse: Benchmark step reuses the one correlate scan seam",
+      "kind": "reuse",
+      "example": null,
+      "successor_of": null,
+      "y_statement_sentences": 3,
+      "words_page": 171,
+      "words_record": 214
+    },
+    {
+      "path": "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md",
+      "record": "### native-vs-dependency: SWE-bench fetch uses the stdlib rows API, not Parquet",
+      "kind": "native-vs-dependency",
+      "example": "native feature over a dependency",
+      "successor_of": null,
+      "y_statement_sentences": 3,
+      "words_page": 152,
+      "words_record": 199
+    },
+    {
+      "path": "decisions/judge-statistics-and-charts-stay-in-the-stdlib.md",
+      "record": "### native-vs-dependency: Judge statistics and charts stay in the stdlib",
+      "kind": "native-vs-dependency",
+      "example": null,
+      "successor_of": null,
+      "y_statement_sentences": 3,
+      "words_page": 169,
+      "words_record": 199
+    },
+    {
+      "path": "decisions/never-bypass-a-git-lock-with-an-alternate-index.md",
+      "record": "### rejected-for-safety: Never bypass a git lock with an alternate index",
+      "kind": "rejected-for-safety",
+      "example": "reject a shorter solution that weakens safety",
+      "successor_of": null,
+      "y_statement_sentences": 3,
+      "words_page": 157,
+      "words_record": 215
+    },
+    {
+      "path": "decisions/never-archive-raw-jsonl.md",
+      "record": "### rejected-for-safety: Never archive raw JSONL",
+      "kind": "rejected-for-safety",
+      "example": null,
+      "successor_of": null,
+      "y_statement_sentences": 3,
+      "words_page": 154,
+      "words_record": 197
+    },
+    {
+      "path": "decisions/benchmark-ui-was-backend-free-one-shot-and-studio-only.md",
+      "record": "### stale: Benchmark UI was backend-free, one-shot and Studio-only",
+      "kind": "stale",
+      "example": "supersede after a change",
+      "successor_of": null,
+      "y_statement_sentences": 3,
+      "words_page": 151,
+      "words_record": 235
+    },
+    {
+      "path": "decisions/merge-require-green-ci-was-never-read.md",
+      "record": "### stale: merge.require_green_ci was never read",
+      "kind": "stale",
+      "example": null,
+      "successor_of": null,
+      "y_statement_sentences": 3,
+      "words_page": 143,
+      "words_record": 202
+    },
+    {
+      "path": "decisions/the-clusters-view-is-not-an-explorer.md",
+      "record": "### false-reuse-trap: The clusters view is not an explorer",
+      "kind": "false-reuse-trap",
+      "example": null,
+      "successor_of": null,
+      "y_statement_sentences": 3,
+      "words_page": 159,
+      "words_record": 217
+    },
+    {
+      "path": "decisions/config-redaction-is-not-free-text-redaction.md",
+      "record": "### false-reuse-trap: Config redaction is not free-text redaction",
+      "kind": "false-reuse-trap",
+      "example": "keep two similar patterns distinct",
+      "successor_of": null,
+      "y_statement_sentences": 3,
+      "words_page": 171,
+      "words_record": 213
+    },
+    {
+      "path": "decisions/destructive-git-commands-require-confirmation.md",
+      "record": "### conflict: Destructive git commands require confirmation",
+      "kind": "conflict",
+      "example": null,
+      "successor_of": null,
+      "y_statement_sentences": 3,
+      "words_page": 161,
+      "words_record": 227
+    },
+    {
+      "path": "decisions/balanced-profile-denies-destructive-git-commands.md",
+      "record": "### conflict: Balanced profile denies destructive git commands",
+      "kind": "conflict",
+      "example": null,
+      "successor_of": null,
+      "y_statement_sentences": 3,
+      "words_page": 181,
+      "words_record": 252
+    },
+    {
+      "path": "decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md",
+      "record": null,
+      "kind": "successor",
+      "example": "supersede after a change",
+      "successor_of": "decisions/benchmark-ui-was-backend-free-one-shot-and-studio-only.md",
+      "y_statement_sentences": 1,
+      "words_page": 200,
+      "words_record": null
+    },
+    {
+      "path": "decisions/merge-require-green-ci-was-never-read-and-was-removed.md",
+      "record": null,
+      "kind": "successor",
+      "example": null,
+      "successor_of": "decisions/merge-require-green-ci-was-never-read.md",
+      "y_statement_sentences": 1,
+      "words_page": 136,
+      "words_record": null
+    }
+  ],
+  "background": [
+    {
+      "path": "overview.md",
+      "sha256_at_pin": "84cbe1bb1abfc3247635de8d4f26b1c6cddf9d3edaeb8861d401de1ddd28693e",
+      "sha256": "2fe6f999b559032719d94f5a0ee434e59efb6868b0f7ff5c19a0bb363abb154e",
+      "links_rewritten": 5
+    },
+    {
+      "path": "concepts/cross-session-state-must-be-file-backed.md",
+      "sha256_at_pin": "fb93ba80c6819da0c8d189178a65db2f0fd925cfacefb74147a4c6726f748270",
+      "sha256": "fb93ba80c6819da0c8d189178a65db2f0fd925cfacefb74147a4c6726f748270",
+      "links_rewritten": 0
+    },
+    {
+      "path": "concepts/multi-round-spec-review.md",
+      "sha256_at_pin": "60304223d94adf1016e5c57d92adab1fe8d2081f5089c71c06808add6472e2c0",
+      "sha256": "60304223d94adf1016e5c57d92adab1fe8d2081f5089c71c06808add6472e2c0",
+      "links_rewritten": 0
+    },
+    {
+      "path": "concepts/phase-scoped-build-prompts.md",
+      "sha256_at_pin": "6ff11a25bddb547b65a92fbfb1dca9813b4280ebacc21be73bfd739b896225d6",
+      "sha256": "6ff11a25bddb547b65a92fbfb1dca9813b4280ebacc21be73bfd739b896225d6",
+      "links_rewritten": 0
+    },
+    {
+      "path": "concepts/spec-driven-development.md",
+      "sha256_at_pin": "09385c94d3429d1213b73d4b7d2c16f99046fdb4997fca0dea8201e5c84890f0",
+      "sha256": "09385c94d3429d1213b73d4b7d2c16f99046fdb4997fca0dea8201e5c84890f0",
+      "links_rewritten": 0
+    },
+    {
+      "path": "decisions/infra-verification-as-gate.md",
+      "sha256_at_pin": "2057acc58de4792e53666ca88cf9af099ef517dd6f9eb434e24187770a395266",
+      "sha256": "2057acc58de4792e53666ca88cf9af099ef517dd6f9eb434e24187770a395266",
+      "links_rewritten": 0
+    },
+    {
+      "path": "decisions/use-llm-wiki-as-knowledge-layer.md",
+      "sha256_at_pin": "038e0613f0efae713d9edef43153d680c4639ffa42f5091eadcc43a2553dc17a",
+      "sha256": "038e0613f0efae713d9edef43153d680c4639ffa42f5091eadcc43a2553dc17a",
+      "links_rewritten": 0
+    },
+    {
+      "path": "glossary/index.md",
+      "sha256_at_pin": "8ca2384b713fd95c3688be2e9c8d519d95726948e47e097558ec3078aed53a31",
+      "sha256": "e1c4bb2c79082b3a61317643f09ba25cc0580da6355b1031e62446121d2ee7bc",
+      "links_rewritten": 1
+    },
+    {
+      "path": "incidents/executable-artifacts-shipped-unexecuted.md",
+      "sha256_at_pin": "1ec913f5bc92ef198c40cff1684bd6e4f65e54a81edd8cef3a71e80cb8b37ecc",
+      "sha256": "1ec913f5bc92ef198c40cff1684bd6e4f65e54a81edd8cef3a71e80cb8b37ecc",
+      "links_rewritten": 0
+    },
+    {
+      "path": "incidents/git-safety-bypasses.md",
+      "sha256_at_pin": "65d8232fb65c48184e62dd8700eef61e9eef36f80dd53da2f1a57d01234f05f1",
+      "sha256": "65d8232fb65c48184e62dd8700eef61e9eef36f80dd53da2f1a57d01234f05f1",
+      "links_rewritten": 0
+    },
+    {
+      "path": "incidents/plan-agent-contract-contradiction.md",
+      "sha256_at_pin": "2d24f6ce58e2f19bd91427e67134b3c808b56a40db8dcf0599c10b54f9b2090a",
+      "sha256": "2d24f6ce58e2f19bd91427e67134b3c808b56a40db8dcf0599c10b54f9b2090a",
+      "links_rewritten": 0
+    },
+    {
+      "path": "incidents/spec-code-coherence-drift.md",
+      "sha256_at_pin": "bda223c340ec6f8670fe7698e080b3df453117b18f1ff839a44bd42a8eaeb904",
+      "sha256": "bda223c340ec6f8670fe7698e080b3df453117b18f1ff839a44bd42a8eaeb904",
+      "links_rewritten": 0
+    },
+    {
+      "path": "playbooks/drive-claude-code-with-local-vllm.md",
+      "sha256_at_pin": "c661341f47aaab74566439c789c24f2acf3cf8d04c3a7347d068c935e179a48d",
+      "sha256": "5558b506a4bdceff8ba626e78f4da3e4eb7065645be374fbb655a33b00b70a03",
+      "links_rewritten": 3
+    },
+    {
+      "path": "playbooks/grep-based-acceptance-criteria.md",
+      "sha256_at_pin": "533ceed71ff90c9ba0b4715b6019bd373f38f314c773db021ff6d1b9107f2068",
+      "sha256": "533ceed71ff90c9ba0b4715b6019bd373f38f314c773db021ff6d1b9107f2068",
+      "links_rewritten": 0
+    },
+    {
+      "path": "playbooks/recover-after-bad-ai-git-op.md",
+      "sha256_at_pin": "bb3dc8efee9e257d40bf0c775b0c2aeeef8e5f1de9e6f339f80eeef0117f6dc9",
+      "sha256": "8ae69d15d3ac7c691fffc73c838204454b0430cb4962d1841a6fc0d45ea01cc2",
+      "links_rewritten": 1
+    },
+    {
+      "path": "playbooks/respond-to-production-readiness-review.md",
+      "sha256_at_pin": "94c5a7cf9de9b0a4046915033b48a5486fb3c27161034e79837626e8a9ac1097",
+      "sha256": "94c5a7cf9de9b0a4046915033b48a5486fb3c27161034e79837626e8a9ac1097",
+      "links_rewritten": 0
+    },
+    {
+      "path": "workflows/doc-coverage-audit.md",
+      "sha256_at_pin": "aaa2e65f7aa9f0763d04c07a50c42e0edf1765971f367bcfc173750668da4cb2",
+      "sha256": "aaa2e65f7aa9f0763d04c07a50c42e0edf1765971f367bcfc173750668da4cb2",
+      "links_rewritten": 0
+    },
+    {
+      "path": "workflows/origin-alignment.md",
+      "sha256_at_pin": "2ed82f965b1a2512ea9ff86457e842cafd6adcf7264ec9e62e814153686b3335",
+      "sha256": "6d997bd551293f21ae1668781c6bbd8be45179dfa14144a46b1a984d71cd0c08",
+      "links_rewritten": 4
+    },
+    {
+      "path": "workflows/promote-lesson-to-wiki.md",
+      "sha256_at_pin": "b6e2b4d023749d834970c5952fcbd8377b23d70bf7e3f2f5f5b2d87952608bb6",
+      "sha256": "e17e4540c75e875457fd4ee9652750fc257f917169589021affac798b39ba5c8",
+      "links_rewritten": 11
+    },
+    {
+      "path": "workflows/run-wiki-ingest.md",
+      "sha256_at_pin": "0627ed574630959cab0f532db91563921308a61e49363c4843ba00f9b24780bc",
+      "sha256": "9bdf159696cb57d9dec3f0de55307c52af90523bd9cd3d6a4967615afc7822b8",
+      "links_rewritten": 7
+    }
+  ]
+}

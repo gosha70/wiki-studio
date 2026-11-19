@@ -1,0 +1,112 @@
+{
+  "questions": [
+    {
+      "id": "trace-archive-reuses-the-ingest-redaction-path",
+      "record": "### reuse: Trace archive reuses the ingest redaction path",
+      "question": "Add a durable archive that stores the full text of each turn for search and export.",
+      "gold": ["decisions/trace-archive-reuses-the-ingest-redaction-path.md"],
+      "reuse_target": "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+      "trap": null,
+      "superseded": null
+    },
+    {
+      "id": "benchmark-step-reuses-the-one-correlate-scan-seam",
+      "record": "### reuse: Benchmark step reuses the one correlate scan seam",
+      "question": "Add a pipeline step that links benchmark runs to sessions and reports live progress.",
+      "gold": ["decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md"],
+      "reuse_target": "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+      "trap": null,
+      "superseded": null
+    },
+    {
+      "id": "swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet",
+      "record": "### native-vs-dependency: SWE-bench fetch uses the stdlib rows API, not Parquet",
+      "question": "Add task fetching for the SWE-bench Verified adapter.",
+      "gold": ["decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md"],
+      "reuse_target": "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md",
+      "trap": null,
+      "superseded": null
+    },
+    {
+      "id": "judge-statistics-and-charts-stay-in-the-stdlib",
+      "record": "### native-vs-dependency: Judge statistics and charts stay in the stdlib",
+      "question": "Compute the judge-calibration correlation and render the report charts.",
+      "gold": ["decisions/judge-statistics-and-charts-stay-in-the-stdlib.md"],
+      "reuse_target": "decisions/judge-statistics-and-charts-stay-in-the-stdlib.md",
+      "trap": null,
+      "superseded": null
+    },
+    {
+      "id": "never-bypass-a-git-lock-with-an-alternate-index",
+      "record": "### rejected-for-safety: Never bypass a git lock with an alternate index",
+      "question": "A commit fails because `.git/index.lock` exists; make the commit go through.",
+      "gold": ["decisions/never-bypass-a-git-lock-with-an-alternate-index.md"],
+      "reuse_target": "decisions/never-bypass-a-git-lock-with-an-alternate-index.md",
+      "trap": null,
+      "superseded": null
+    },
+    {
+      "id": "never-archive-raw-jsonl",
+      "record": "### rejected-for-safety: Never archive raw JSONL",
+      "question": "Add full-text trace retention; the simplest source is the original JSONL files.",
+      "gold": ["decisions/never-archive-raw-jsonl.md"],
+      "reuse_target": "decisions/never-archive-raw-jsonl.md",
+      "trap": null,
+      "superseded": null
+    },
+    {
+      "id": "benchmark-ui-was-backend-free-one-shot-and-studio-only",
+      "record": "### stale: Benchmark UI was backend-free, one-shot and Studio-only",
+      "question": "The Benchmark page feels empty and passive; make it explain what a benchmark run is and let the user link runs from the page.",
+      "gold": ["decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md"],
+      "reuse_target": "decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md",
+      "trap": null,
+      "superseded": "decisions/benchmark-ui-was-backend-free-one-shot-and-studio-only.md"
+    },
+    {
+      "id": "merge-require-green-ci-was-never-read",
+      "record": "### stale: merge.require_green_ci was never read",
+      "question": "Set `merge.require_green_ci` to true so the driver refuses to merge without green CI.",
+      "gold": ["decisions/merge-require-green-ci-was-never-read-and-was-removed.md"],
+      "reuse_target": "decisions/merge-require-green-ci-was-never-read-and-was-removed.md",
+      "trap": null,
+      "superseded": "decisions/merge-require-green-ci-was-never-read.md"
+    },
+    {
+      "id": "the-clusters-view-is-not-an-explorer",
+      "record": "### false-reuse-trap: The clusters view is not an explorer",
+      "question": "Add filtering, drill-down and a graph visualization to the clusters page.",
+      "gold": ["decisions/the-clusters-view-is-not-an-explorer.md"],
+      "reuse_target": "decisions/the-clusters-view-is-not-an-explorer.md",
+      "trap": null,
+      "superseded": null
+    },
+    {
+      "id": "config-redaction-is-not-free-text-redaction",
+      "record": "### false-reuse-trap: Config redaction is not free-text redaction",
+      "question": "Redact free-text transcript excerpts before writing them to a new log path.",
+      "gold": ["decisions/config-redaction-is-not-free-text-redaction.md", "decisions/trace-archive-reuses-the-ingest-redaction-path.md"],
+      "reuse_target": "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+      "trap": "decisions/config-redaction-is-not-free-text-redaction.md",
+      "superseded": null
+    },
+    {
+      "id": "destructive-git-commands-require-confirmation",
+      "record": "### conflict: Destructive git commands require confirmation",
+      "question": "Recover a project by running `git reset --hard origin/main`.",
+      "gold": ["decisions/destructive-git-commands-require-confirmation.md", "decisions/balanced-profile-denies-destructive-git-commands.md"],
+      "reuse_target": "decisions/destructive-git-commands-require-confirmation.md",
+      "trap": null,
+      "superseded": null
+    },
+    {
+      "id": "balanced-profile-denies-destructive-git-commands",
+      "record": "### conflict: Balanced profile denies destructive git commands",
+      "question": "Recover a project by running `git reset --hard origin/main` in a project initialized with `--permissions balanced`.",
+      "gold": ["decisions/balanced-profile-denies-destructive-git-commands.md", "decisions/destructive-git-commands-require-confirmation.md"],
+      "reuse_target": "decisions/balanced-profile-denies-destructive-git-commands.md",
+      "trap": null,
+      "superseded": null
+    }
+  ]
+}

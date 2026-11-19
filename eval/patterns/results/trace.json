@@ -1,0 +1,150 @@
+{
+  "study": "issue 54 lifecycle trace",
+  "page": "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md",
+  "page_removal": {
+    "index_line_removed": true,
+    "linked_from_other_pages": false
+  },
+  "steps": [
+    {
+      "step": "init",
+      "argv": ["init", "--root", "<root>", "--wiki-dir", "<root>/wiki", "--proposals-dir", "<root>/proposals"],
+      "exit_code": 0,
+      "observation": {
+        "policy": {
+          "approval_required": false,
+          "approver_required": false,
+          "auto_approve_on_promote": false
+        }
+      }
+    },
+    {
+      "step": "propose-candidate",
+      "argv": ["propose", "--from", "<root>/drafts/trace-candidate", "--name", "trace-candidate", "--by", "trace-agent", "--root", "<root>", "--wiki-dir", "<root>/wiki", "--proposals-dir", "<root>/proposals"],
+      "exit_code": 0,
+      "observation": {"page_in_wiki": false, "proposal_written": true}
+    },
+    {
+      "step": "propose-broken",
+      "argv": ["propose", "--from", "<root>/drafts/trace-broken", "--name", "trace-broken", "--by", "trace-agent", "--root", "<root>", "--wiki-dir", "<root>/wiki", "--proposals-dir", "<root>/proposals"],
+      "exit_code": 0,
+      "observation": {"page_in_wiki": false, "proposal_written": true}
+    },
+    {
+      "step": "promote-broken-refused",
+      "argv": ["promote", "<root>/proposals/trace-broken", "--by", "trace-agent", "--root", "<root>", "--wiki-dir", "<root>/wiki", "--proposals-dir", "<root>/proposals"],
+      "exit_code": 9,
+      "observation": {"page_in_wiki": false}
+    },
+    {
+      "step": "promote-candidate",
+      "argv": ["promote", "<root>/proposals/trace-candidate", "--by", "trace-agent", "--root", "<root>", "--wiki-dir", "<root>/wiki", "--proposals-dir", "<root>/proposals"],
+      "exit_code": 0,
+      "observation": {"page_in_wiki": true, "review_state": "unapproved", "page_id_present": true}
+    },
+    {
+      "step": "lint",
+      "argv": ["lint", "--root", "<root>", "--wiki-dir", "<root>/wiki", "--proposals-dir", "<root>/proposals"],
+      "exit_code": 0,
+      "observation": {"pages": 36, "violations": 0}
+    },
+    {
+      "step": "cited-file-written",
+      "argv": ["write-file", "<root>/specs/benchmark-adapters-backends/spec.md"],
+      "exit_code": 0,
+      "observation": {"path": "specs/benchmark-adapters-backends/spec.md", "exists": true}
+    },
+    {
+      "step": "findings-after-cited-file",
+      "argv": ["findings", "--json", "--root", "<root>", "--wiki-dir", "<root>/wiki", "--proposals-dir", "<root>/proposals"],
+      "exit_code": 0,
+      "observation": {
+        "page": "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md",
+        "kinds": ["stale-claim", "unapproved", "weak-orphan"],
+        "stale_claim_paths": ["benchmarks/adapters/swe_bench_verified/fetch.py"],
+        "superseded_still_indexed": false
+      }
+    },
+    {
+      "step": "read",
+      "argv": ["read", "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md", "--json", "--root", "<root>", "--wiki-dir", "<root>/wiki", "--proposals-dir", "<root>/proposals"],
+      "exit_code": 0,
+      "observation": {
+        "page": "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md",
+        "sha256_is_hex64": true,
+        "content_matches_wiki_file": true
+      }
+    },
+    {
+      "step": "approve",
+      "argv": ["approve", "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md", "--revision", "<sha256>", "--by", "trace-agent", "--root", "<root>", "--wiki-dir", "<root>/wiki", "--proposals-dir", "<root>/proposals"],
+      "exit_code": 0,
+      "observation": {"review_state": "approved", "review_kinds": []}
+    },
+    {
+      "step": "find-approved",
+      "argv": ["find", "Add task fetching for the SWE-bench Verified adapter.", "--ranker", "index-first", "--json", "--root", "<root>", "--wiki-dir", "<root>/wiki", "--proposals-dir", "<root>/proposals"],
+      "exit_code": 0,
+      "observation": {"page_selected": true, "page_ineligible": null}
+    },
+    {
+      "step": "propose-update",
+      "argv": ["propose", "--from", "<root>/drafts/trace-update", "--name", "trace-update", "--by", "trace-agent", "--root", "<root>", "--wiki-dir", "<root>/wiki", "--proposals-dir", "<root>/proposals"],
+      "exit_code": 0,
+      "observation": {"proposal_written": true, "page_bytes_unchanged": true}
+    },
+    {
+      "step": "promote-update",
+      "argv": ["promote", "<root>/proposals/trace-update", "--by", "trace-agent", "--root", "<root>", "--wiki-dir", "<root>/wiki", "--proposals-dir", "<root>/proposals"],
+      "exit_code": 0,
+      "observation": {"review_state": "stale", "review_kinds": ["approval-stale"]}
+    },
+    {
+      "step": "propose-supersession",
+      "argv": ["propose", "--from", "<root>/drafts/trace-supersede", "--name", "trace-supersede", "--by", "trace-agent", "--root", "<root>", "--wiki-dir", "<root>/wiki", "--proposals-dir", "<root>/proposals"],
+      "exit_code": 0,
+      "observation": {"proposal_written": true, "successor_in_wiki": false, "page_bytes_unchanged": true}
+    },
+    {
+      "step": "promote-supersession",
+      "argv": ["promote", "<root>/proposals/trace-supersede", "--by", "trace-agent", "--root", "<root>", "--wiki-dir", "<root>/wiki", "--proposals-dir", "<root>/proposals"],
+      "exit_code": 0,
+      "observation": {"successor_in_wiki": true, "review_state": "superseded"}
+    },
+    {
+      "step": "find-after-supersession",
+      "argv": ["find", "Add task fetching for the SWE-bench Verified adapter.", "--ranker", "index-first", "--json", "--root", "<root>", "--wiki-dir", "<root>/wiki", "--proposals-dir", "<root>/proposals"],
+      "exit_code": 0,
+      "observation": {"page_selected": false, "page_ineligible": "superseded", "successor_selected": true}
+    },
+    {
+      "step": "findings-after-supersession",
+      "argv": ["findings", "--json", "--root", "<root>", "--wiki-dir", "<root>/wiki", "--proposals-dir", "<root>/proposals"],
+      "exit_code": 0,
+      "observation": {
+        "page": "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md",
+        "kinds": ["stale-claim", "superseded-still-indexed", "weak-orphan"],
+        "stale_claim_paths": ["benchmarks/adapters/swe_bench_verified/fetch.py"],
+        "superseded_still_indexed": true
+      }
+    },
+    {
+      "step": "cited-file-changed",
+      "argv": ["change-file", "<root>/specs/benchmark-adapters-backends/spec.md"],
+      "exit_code": 0,
+      "observation": {"path": "specs/benchmark-adapters-backends/spec.md", "changed": true}
+    },
+    {
+      "step": "findings-after-source-change",
+      "argv": ["findings", "--json", "--root", "<root>", "--wiki-dir", "<root>/wiki", "--proposals-dir", "<root>/proposals"],
+      "exit_code": 0,
+      "observation": {
+        "page": "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md",
+        "kinds": ["stale-claim", "superseded-still-indexed", "weak-orphan"],
+        "stale_claim_paths": ["benchmarks/adapters/swe_bench_verified/fetch.py"],
+        "superseded_still_indexed": true,
+        "findings_unchanged": true
+      }
+    }
+  ]
+}

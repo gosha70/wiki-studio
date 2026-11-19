@@ -6,6 +6,12 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Docs
+
+- `docs/patterns.md`: the `decision`-page pattern convention the issue 54
+  study wrote and tested — the template, the evidence checklist, the find,
+  findings and read sequence, revisit guidance and what memkernel keeps.
+
 ## [0.10.0] — 2026-11-18
 
 A feature release: `wiki-studio nightly`, a propose-only curation pass that

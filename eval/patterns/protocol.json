@@ -1,0 +1,62 @@
+{
+  "eligibility": {
+    "rule": "A page carrying superseded_by is ineligible, as api.find treats it.",
+    "reason": "superseded"
+  },
+  "signals": {
+    "a": {
+      "definition": "health_lint._candidate_pairs: two eligible pages are a candidate when they share at least one cited sources[].path, or one page links directly to the other.",
+      "parts": ["shared-path", "direct-link"],
+      "reports": "which part fired"
+    },
+    "a-path": {
+      "definition": "Signal (a)'s shared-path part on its own: two eligible pages citing at least one common sources[].path.",
+      "parent": "a",
+      "scored_separately": true,
+      "verdict": "its own verdict and counts, free of annotation links by construction"
+    },
+    "b": {
+      "definition": "Jaccard similarity of wiki_state._tokenise(title + ' ' + the first paragraph of ## Decision) between the two eligible pages; for a background page without ## Decision, its title and its first body paragraph.",
+      "threshold": {"metric": "jaccard", "operator": ">=", "value": 0.25}
+    },
+    "c": {
+      "definition": "Shared entity mentions counted as missing-cross-link counts them: the entity vocabulary is every fixture page's slug except index, log and overview; mentions are found with health_lint._entity_mentions over the body after the frontmatter, with the per-file glossary aliases prose_lint.load_avoid_map gives; the intersection less the two pages' own slugs.",
+      "threshold": {"metric": "shared_entities", "operator": ">=", "value": 2}
+    },
+    "combined": {
+      "definition": "The union of (a), (b) and (c).",
+      "members": ["a", "b", "c"]
+    }
+  },
+  "annotation_linked": {
+    "definition": "A true candidate is marked annotation_linked when the only part of its signal that fired is a link FR-006 wrote from an annotation (a callout, a Consequences link, the incident link), or when findings already reports the pair as open-conflict.",
+    "why": "FR-006 writes intra-wiki links exactly for corpus-annotated pairs, the same source as the labels, so a link-only hit is not evidence of detection. Signal (c) is unaffected: it subtracts the two pages' own slugs. Signal (b) reads titles and the Y-statement paragraph, which the annotation links never touch."
+  },
+  "scope": {
+    "pattern_pattern": "every unordered pair of the 14 pattern pages (91 pairs)",
+    "eligible_pattern_pairs": 66,
+    "pattern_background": "every eligible pattern-background pair",
+    "background_background": "every eligible background-background pair",
+    "secondary": "the 91-pair table is reported as secondary"
+  },
+  "labels": {
+    "true": ["redundant", "conflicting"],
+    "false": ["distinct-by-precondition", "unrelated"],
+    "background_rule": "A pair involving a background page is false unless it is listed in labels.json background_pairs with a true disposition."
+  },
+  "pass_bar": {
+    "rule": "A signal passes when it finds every eligible pair labelled redundant or conflicting and its false candidates do not outnumber its true ones across the whole scope.",
+    "no_labelled_pairs": "not testable, never a pass",
+    "meaning": "A pass is grounds to draft an issue for a findings kind, not evidence that such a kind would work in general."
+  },
+  "retrieval": {
+    "method": "api.find(question, paths, max_pages=5, ranker=r) for each question in questions.json and each r in discovery.RANKERS",
+    "rankers": ["index-first", "fts5"],
+    "hit_at_1": "The top page is a gold page; the config-redaction question's gold includes its trap page, so a top-ranked trap is a hit at 1 there.",
+    "hit_at_5": "Every gold page is among the five.",
+    "trap_outranks": "The trap page ranks above the reuse_target, or the target is absent while the trap is present; null for a question with no trap.",
+    "superseded": "For a question with a superseded page, that page (linked from index.md) must be listed ineligible with reason superseded and never selected."
+  },
+  "labels_sha256": "96da1b5a7553096ca38e7f0491692b61018c6735cc70d1dcf5c1afc478f39a7e",
+  "questions_sha256": "3701e8a2fcaa3ca7bde8ee0c0ac41ff1d7968c589821830944ad335373a7e1bf"
+}
