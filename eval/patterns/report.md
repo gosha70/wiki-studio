@@ -335,8 +335,30 @@ the two stale-page/successor pairs are labelled `distinct-by-precondition`,
 while a successor replaces its stale page rather than splitting preconditions
 with it. The four dispositions have no "supersedes" value, both pairs are
 ineligible in the scope, and no verdict depends on them. Reported here, not
-edited (FR-012). The other 89 pattern pairs and the one background pair are
-not disputed.
+edited (FR-012).
+
+Two further points come from the external review of the labelling commit
+(`dbd8c60`). Both are reported here, and no label was edited (FR-012):
+
+- **Two redundant labels rest partly on shared files, which (a-path)
+  measures.** The never-archive-raw-JSONL / trace-archive pair's reason
+  names "the same archive path calling `redact_text`". The git-lock page and
+  `incidents/git-safety-bypasses.md` both cite
+  `claude_code/.claude/rules/safety.md`. Both labels hold up on content (the
+  same decision, issue and date; the incident quotes the rule). But when
+  (a-path) finds these two pairs, it partly confirms how the labeller
+  reasoned, not only what the pages say. This is the risk the plan named: a
+  labeller reasoning about shared sources. (a-path)'s 2 of 3 should be read
+  with that in mind; its verdict is a fail either way.
+- **The background pair's "redundant" label is disputed.** A decision page
+  and the incident record behind it are different page types that a curator
+  keeps apart. FR-012 defines `unrelated` as "none of these, even when one
+  page cites the other", which arguably fits this pair better. The effect on
+  verdicts is small: (a-path) still cannot find the conflicting pair, whose
+  two pages share no cited file, and every signal fails its bar with or
+  without this pair.
+
+The other 89 pattern pairs are not disputed.
 
 ### Cuts
 
