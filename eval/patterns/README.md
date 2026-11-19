@@ -393,3 +393,145 @@ the five. For a question with a `superseded` page, that page (still linked
 from `index.md`) must be listed ineligible with reason `superseded` and
 never selected.
 
+## The lifecycle trace
+
+```
+python -m eval.patterns.trace --out <PATH>
+```
+
+Without `--out` the command prints the same JSON. It copies
+`eval/patterns/wiki` into a temporary root, removes one issue 54 example
+page **P** and its index line from the copy, and then runs the real verbs
+in-process through `wiki_studio.cli.main`. P is
+`decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md`, the
+native-feature example: no other fixture page links to it, so removing it
+leaves no dangling link. Every verb receives `--root`, `--wiki-dir` and
+`--proposals-dir` pointing into the temporary root, and propose, promote
+and approve receive `--by trace-agent`. Each step records its argv with the
+temporary root written `<root>` and the reviewed revision written
+`<sha256>`, its exit code, and a deterministic observation; no timestamp,
+page id, sha256 value or generated proposal path is recorded, so the
+output is the same on every run. The committed output is
+`results/trace.json`.
+
+| Step | What it shows |
+|---|---|
+| `init` | The manifest's policy: `auto_approve_on_promote` is false, so nothing is approved by promotion |
+| `propose-candidate` | P, its index line and a log line travel as a pending proposal; P is absent from the wiki |
+| `propose-broken` | A draft whose body links a missing page is accepted as a proposal (`propose` does not resolve links) |
+| `promote-broken-refused` | The staged-tree linter refuses it: exit 9, nothing broken reaches the wiki |
+| `promote-candidate` | P enters the wiki unapproved, with the `page_id` `propose --from` assigned |
+| `lint` | The promoted wiki is structurally clean |
+| `cited-file-written` | A file appears at P's first cited `path:`, inside the temporary root |
+| `findings-after-cited-file` | P is `unapproved`; the path just written is no longer a `stale-claim`, the second cited path still is |
+| `read` | P's live text and the sha256 of exactly those bytes |
+| `approve` | The approval names the revision that was read; P is then in no review kind |
+| `find-approved` | `find` with P's later-task question selects P |
+| `propose-update` | An update of P, guarded by the revision `read` printed, is pending; the live bytes do not change |
+| `promote-update` | P's approval no longer matches the live bytes: `approval-stale` |
+| `propose-supersession` | A successor page and an update of P adding `superseded_by`, proposed together |
+| `promote-supersession` | Both land in one promotion; P reads `superseded` |
+| `find-after-supersession` | The same `find` lists P ineligible with reason `superseded` and selects the successor |
+| `findings-after-supersession` | P is `superseded-still-indexed` while its index line stays, and the review kind is gone |
+| `cited-file-changed` | The cited file's bytes change again |
+| `findings-after-source-change` | P's findings are exactly what they were: nothing reports a changed source (`health_lint.py` 110-155) |
+
+The trace calls no backend, writes only inside its temporary root, and
+leaves `eval/patterns/` untouched (a test snapshots the tree before and
+after it runs).
+
+## Retrieval results
+
+```
+python -m eval.patterns.retrieval --out <PATH>
+```
+
+The command copies the fixture into a temporary root — so the `fts5`
+search cache, which lives beside the wiki's lock, is written there — and
+asks each of the twelve questions in
+`questions.json` with `api.find(question, paths, max_pages=5, ranker=r)`
+for every ranker in `discovery.RANKERS`. Per question and ranker it
+records the selected pages in rank order, the ranker that ran (`ran_as`,
+so an FTS5 fallback is visible), hit at 1, hit at 5, whether the trap
+outranks the reuse target (null where the question names no trap), and for
+a question with a superseded page whether that page is listed ineligible
+with reason `superseded` and absent from the selection. It also records
+`questions_sha256` and the Python and SQLite versions of the run. The
+navigation runner under `eval/navigation` needs a `corpus/` and
+`stopwords.txt` for its grep control, which this fixture does not have; it
+is neither used nor edited.
+
+The committed output is `results/retrieval.json`, the output of a run with
+FTS5 available: Python 3.13.2, SQLite 3.48.0. The per-question entries and
+the totals by ranker are recorded there, and the test suite compares every
+`index-first` entry on any machine and every `fts5` entry wherever this
+Python's SQLite has FTS5.
+
+## The evidence checklist
+
+Before a curator promotes a pattern proposal, the candidate should carry
+five items:
+
+1. the canonical implementation as a `sources:` entry with `path:` and
+   `sha:`;
+2. at least one test or verification outcome;
+3. the originating spec, issue or PR;
+4. the rejected options with their reasons;
+5. a revisit trigger.
+
+Read from the five issue 54 example pages, marked `present`, `absent`, or
+`not recorded in the source record` where the page says so:
+
+| Issue 54 example | Canonical `path:` + `sha:` | Test or verification outcome | Originating spec, issue or PR | Rejected options with reasons | Revisit trigger |
+|---|---|---|---|---|---|
+| Reuse a helper (`trace-archive-reuses-the-ingest-redaction-path`) | present | present | present | present | present |
+| Native feature over a dependency (`swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet`) | present | absent | present | present | present |
+| Reject a shorter solution that weakens safety (`never-bypass-a-git-lock-with-an-alternate-index`) | present | absent | absent | present | not recorded in the source record |
+| Supersede after a change (`benchmark-explains-itself-linking-runs-is-a-pipeline-step`) | present | present | present | present | not recorded in the source record |
+| Keep two similar patterns distinct (`config-redaction-is-not-free-text-redaction`) | present | absent | present | present | present |
+
+A missing item is a reason to send a proposal back — curator guidance, not
+a check in code: nothing in lint, `findings` or approval reads any of the
+five.
+
+## Citing without binding
+
+An agent uses a found pattern without treating it as binding in four
+steps:
+
+```
+wiki-studio find "<question>" --json
+wiki-studio findings --json
+wiki-studio read <page> --json
+```
+
+The first returns the pages `query` would put in front of a model; the
+second keeps only pages whose review state is `approved` (the MCP
+`review_state` tool answers the same question without a model, and an
+`unapproved`, `approval-stale` or `approval-policy-changed` page is a
+reason to stop); the third returns the page's text and the sha256 of the
+bytes being cited, which is what an approval binds. The reader then checks
+the page's `Applies when:` and `Does not apply when:` lines against the
+task. An approval is evidence that a curator saw those bytes, not that the
+pattern applies.
+
+The trace runs each command: `find` at `find-approved` and
+`find-after-supersession`, `findings` at three steps, and `read` at `read`
+before the approval.
+
+The corpus has cases where a found pattern must not be reused:
+
+- the two false-reuse traps: `config-redaction-is-not-free-text-redaction`
+  (its helper redacts configuration values by key name, not free text —
+  reuse `trace-archive-reuses-the-ingest-redaction-path` for free text) and
+  `the-clusters-view-is-not-an-explorer` (a minimal read-only view is not
+  an explorer, so filtering, drill-down and graph work is not a reuse);
+- the two superseded pages, `benchmark-ui-was-backend-free-one-shot-and-studio-only`
+  and `merge-require-green-ci-was-never-read`: their successors are the
+  live pages, and `find` lists the stale pages ineligible with reason
+  `superseded` (the trace's `find-after-supersession` shows it).
+
+None of this is enforced: a `find` result is a candidate list, and the
+`Applies when:` line is the only place the page says when it does not
+apply.
+

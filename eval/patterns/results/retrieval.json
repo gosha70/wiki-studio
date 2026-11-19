@@ -1,0 +1,397 @@
+{
+  "study": "issue 54 retrieval",
+  "questions_sha256": "3701e8a2fcaa3ca7bde8ee0c0ac41ff1d7968c589821830944ad335373a7e1bf",
+  "max_pages": 5,
+  "environment": {
+    "python": "3.13.2",
+    "sqlite": "3.48.0"
+  },
+  "rankers": {
+    "fts5": {
+      "questions": [
+        {
+          "id": "trace-archive-reuses-the-ingest-redaction-path",
+          "selected": [
+            "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+            "decisions/never-archive-raw-jsonl.md",
+            "playbooks/drive-claude-code-with-local-vllm.md",
+            "decisions/config-redaction-is-not-free-text-redaction.md",
+            "decisions/use-llm-wiki-as-knowledge-layer.md"
+          ],
+          "ran_as": "fts5",
+          "hit_at_1": true,
+          "hit_at_5": true,
+          "trap_outranks": null,
+          "superseded": null
+        },
+        {
+          "id": "benchmark-step-reuses-the-one-correlate-scan-seam",
+          "selected": [
+            "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+            "decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md",
+            "playbooks/drive-claude-code-with-local-vllm.md",
+            "workflows/run-wiki-ingest.md",
+            "decisions/judge-statistics-and-charts-stay-in-the-stdlib.md"
+          ],
+          "ran_as": "fts5",
+          "hit_at_1": true,
+          "hit_at_5": true,
+          "trap_outranks": null,
+          "superseded": null
+        },
+        {
+          "id": "swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet",
+          "selected": [
+            "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md",
+            "workflows/origin-alignment.md",
+            "playbooks/drive-claude-code-with-local-vllm.md",
+            "incidents/plan-agent-contract-contradiction.md",
+            "concepts/spec-driven-development.md"
+          ],
+          "ran_as": "fts5",
+          "hit_at_1": true,
+          "hit_at_5": true,
+          "trap_outranks": null,
+          "superseded": null
+        },
+        {
+          "id": "judge-statistics-and-charts-stay-in-the-stdlib",
+          "selected": [
+            "decisions/judge-statistics-and-charts-stay-in-the-stdlib.md",
+            "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+            "decisions/the-clusters-view-is-not-an-explorer.md",
+            "decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md",
+            "concepts/cross-session-state-must-be-file-backed.md"
+          ],
+          "ran_as": "fts5",
+          "hit_at_1": true,
+          "hit_at_5": true,
+          "trap_outranks": null,
+          "superseded": null
+        },
+        {
+          "id": "never-bypass-a-git-lock-with-an-alternate-index",
+          "selected": [
+            "incidents/git-safety-bypasses.md",
+            "decisions/never-bypass-a-git-lock-with-an-alternate-index.md",
+            "concepts/multi-round-spec-review.md",
+            "workflows/promote-lesson-to-wiki.md",
+            "decisions/use-llm-wiki-as-knowledge-layer.md"
+          ],
+          "ran_as": "fts5",
+          "hit_at_1": false,
+          "hit_at_5": true,
+          "trap_outranks": null,
+          "superseded": null
+        },
+        {
+          "id": "never-archive-raw-jsonl",
+          "selected": [
+            "decisions/never-archive-raw-jsonl.md",
+            "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+            "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md",
+            "incidents/spec-code-coherence-drift.md",
+            "decisions/config-redaction-is-not-free-text-redaction.md"
+          ],
+          "ran_as": "fts5",
+          "hit_at_1": true,
+          "hit_at_5": true,
+          "trap_outranks": null,
+          "superseded": null
+        },
+        {
+          "id": "benchmark-ui-was-backend-free-one-shot-and-studio-only",
+          "selected": [
+            "decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md",
+            "incidents/git-safety-bypasses.md",
+            "playbooks/recover-after-bad-ai-git-op.md",
+            "decisions/never-bypass-a-git-lock-with-an-alternate-index.md",
+            "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md"
+          ],
+          "ran_as": "fts5",
+          "hit_at_1": true,
+          "hit_at_5": true,
+          "trap_outranks": null,
+          "superseded": {
+            "page": "decisions/benchmark-ui-was-backend-free-one-shot-and-studio-only.md",
+            "listed_ineligible": true,
+            "selected": false
+          }
+        },
+        {
+          "id": "merge-require-green-ci-was-never-read",
+          "selected": [
+            "decisions/merge-require-green-ci-was-never-read-and-was-removed.md",
+            "playbooks/recover-after-bad-ai-git-op.md",
+            "incidents/executable-artifacts-shipped-unexecuted.md",
+            "decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md",
+            "incidents/plan-agent-contract-contradiction.md"
+          ],
+          "ran_as": "fts5",
+          "hit_at_1": true,
+          "hit_at_5": true,
+          "trap_outranks": null,
+          "superseded": {
+            "page": "decisions/merge-require-green-ci-was-never-read.md",
+            "listed_ineligible": true,
+            "selected": false
+          }
+        },
+        {
+          "id": "the-clusters-view-is-not-an-explorer",
+          "selected": [
+            "decisions/the-clusters-view-is-not-an-explorer.md",
+            "workflows/promote-lesson-to-wiki.md",
+            "workflows/run-wiki-ingest.md",
+            "overview.md",
+            "decisions/infra-verification-as-gate.md"
+          ],
+          "ran_as": "fts5",
+          "hit_at_1": true,
+          "hit_at_5": true,
+          "trap_outranks": null,
+          "superseded": null
+        },
+        {
+          "id": "config-redaction-is-not-free-text-redaction",
+          "selected": [
+            "decisions/config-redaction-is-not-free-text-redaction.md",
+            "workflows/promote-lesson-to-wiki.md",
+            "workflows/run-wiki-ingest.md",
+            "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+            "workflows/origin-alignment.md"
+          ],
+          "ran_as": "fts5",
+          "hit_at_1": true,
+          "hit_at_5": true,
+          "trap_outranks": true,
+          "superseded": null
+        },
+        {
+          "id": "destructive-git-commands-require-confirmation",
+          "selected": [
+            "playbooks/recover-after-bad-ai-git-op.md",
+            "decisions/destructive-git-commands-require-confirmation.md",
+            "decisions/balanced-profile-denies-destructive-git-commands.md",
+            "glossary/index.md",
+            "incidents/git-safety-bypasses.md"
+          ],
+          "ran_as": "fts5",
+          "hit_at_1": false,
+          "hit_at_5": true,
+          "trap_outranks": null,
+          "superseded": null
+        },
+        {
+          "id": "balanced-profile-denies-destructive-git-commands",
+          "selected": [
+            "decisions/balanced-profile-denies-destructive-git-commands.md",
+            "decisions/destructive-git-commands-require-confirmation.md",
+            "playbooks/recover-after-bad-ai-git-op.md",
+            "incidents/git-safety-bypasses.md",
+            "overview.md"
+          ],
+          "ran_as": "fts5",
+          "hit_at_1": true,
+          "hit_at_5": true,
+          "trap_outranks": null,
+          "superseded": null
+        }
+      ],
+      "totals": {
+        "questions": 12,
+        "hit_at_1": 10,
+        "hit_at_5": 12,
+        "trap_outranks": 1,
+        "superseded_checked": 2,
+        "superseded_violations": 0
+      }
+    },
+    "index-first": {
+      "questions": [
+        {
+          "id": "trace-archive-reuses-the-ingest-redaction-path",
+          "selected": [
+            "decisions/never-archive-raw-jsonl.md",
+            "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+            "decisions/config-redaction-is-not-free-text-redaction.md",
+            "concepts/multi-round-spec-review.md",
+            "concepts/phase-scoped-build-prompts.md"
+          ],
+          "ran_as": "index-first",
+          "hit_at_1": false,
+          "hit_at_5": true,
+          "trap_outranks": null,
+          "superseded": null
+        },
+        {
+          "id": "benchmark-step-reuses-the-one-correlate-scan-seam",
+          "selected": [
+            "decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md",
+            "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+            "decisions/judge-statistics-and-charts-stay-in-the-stdlib.md",
+            "concepts/cross-session-state-must-be-file-backed.md",
+            "workflows/run-wiki-ingest.md"
+          ],
+          "ran_as": "index-first",
+          "hit_at_1": false,
+          "hit_at_5": true,
+          "trap_outranks": null,
+          "superseded": null
+        },
+        {
+          "id": "swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet",
+          "selected": ["decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md"],
+          "ran_as": "index-first",
+          "hit_at_1": true,
+          "hit_at_5": true,
+          "trap_outranks": null,
+          "superseded": null
+        },
+        {
+          "id": "judge-statistics-and-charts-stay-in-the-stdlib",
+          "selected": ["decisions/judge-statistics-and-charts-stay-in-the-stdlib.md"],
+          "ran_as": "index-first",
+          "hit_at_1": true,
+          "hit_at_5": true,
+          "trap_outranks": null,
+          "superseded": null
+        },
+        {
+          "id": "never-bypass-a-git-lock-with-an-alternate-index",
+          "selected": [
+            "decisions/never-bypass-a-git-lock-with-an-alternate-index.md",
+            "incidents/git-safety-bypasses.md",
+            "concepts/multi-round-spec-review.md",
+            "decisions/destructive-git-commands-require-confirmation.md",
+            "decisions/balanced-profile-denies-destructive-git-commands.md"
+          ],
+          "ran_as": "index-first",
+          "hit_at_1": true,
+          "hit_at_5": true,
+          "trap_outranks": null,
+          "superseded": null
+        },
+        {
+          "id": "never-archive-raw-jsonl",
+          "selected": [
+            "decisions/never-archive-raw-jsonl.md",
+            "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+            "playbooks/grep-based-acceptance-criteria.md",
+            "playbooks/respond-to-production-readiness-review.md"
+          ],
+          "ran_as": "index-first",
+          "hit_at_1": true,
+          "hit_at_5": true,
+          "trap_outranks": null,
+          "superseded": null
+        },
+        {
+          "id": "benchmark-ui-was-backend-free-one-shot-and-studio-only",
+          "selected": [
+            "decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md",
+            "workflows/run-wiki-ingest.md",
+            "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+            "decisions/judge-statistics-and-charts-stay-in-the-stdlib.md",
+            "decisions/never-bypass-a-git-lock-with-an-alternate-index.md"
+          ],
+          "ran_as": "index-first",
+          "hit_at_1": true,
+          "hit_at_5": true,
+          "trap_outranks": null,
+          "superseded": {
+            "page": "decisions/benchmark-ui-was-backend-free-one-shot-and-studio-only.md",
+            "listed_ineligible": true,
+            "selected": false
+          }
+        },
+        {
+          "id": "merge-require-green-ci-was-never-read",
+          "selected": [
+            "decisions/merge-require-green-ci-was-never-read-and-was-removed.md",
+            "decisions/destructive-git-commands-require-confirmation.md",
+            "incidents/executable-artifacts-shipped-unexecuted.md",
+            "playbooks/respond-to-production-readiness-review.md"
+          ],
+          "ran_as": "index-first",
+          "hit_at_1": true,
+          "hit_at_5": true,
+          "trap_outranks": null,
+          "superseded": {
+            "page": "decisions/merge-require-green-ci-was-never-read.md",
+            "listed_ineligible": true,
+            "selected": false
+          }
+        },
+        {
+          "id": "the-clusters-view-is-not-an-explorer",
+          "selected": [
+            "decisions/the-clusters-view-is-not-an-explorer.md",
+            "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+            "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+            "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md",
+            "decisions/judge-statistics-and-charts-stay-in-the-stdlib.md"
+          ],
+          "ran_as": "index-first",
+          "hit_at_1": true,
+          "hit_at_5": true,
+          "trap_outranks": null,
+          "superseded": null
+        },
+        {
+          "id": "config-redaction-is-not-free-text-redaction",
+          "selected": [
+            "decisions/config-redaction-is-not-free-text-redaction.md",
+            "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+            "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+            "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md",
+            "decisions/judge-statistics-and-charts-stay-in-the-stdlib.md"
+          ],
+          "ran_as": "index-first",
+          "hit_at_1": true,
+          "hit_at_5": true,
+          "trap_outranks": true,
+          "superseded": null
+        },
+        {
+          "id": "destructive-git-commands-require-confirmation",
+          "selected": [
+            "playbooks/recover-after-bad-ai-git-op.md",
+            "decisions/never-bypass-a-git-lock-with-an-alternate-index.md",
+            "decisions/destructive-git-commands-require-confirmation.md",
+            "decisions/balanced-profile-denies-destructive-git-commands.md",
+            "overview.md"
+          ],
+          "ran_as": "index-first",
+          "hit_at_1": false,
+          "hit_at_5": true,
+          "trap_outranks": null,
+          "superseded": null
+        },
+        {
+          "id": "balanced-profile-denies-destructive-git-commands",
+          "selected": [
+            "decisions/balanced-profile-denies-destructive-git-commands.md",
+            "playbooks/recover-after-bad-ai-git-op.md",
+            "decisions/never-bypass-a-git-lock-with-an-alternate-index.md",
+            "decisions/destructive-git-commands-require-confirmation.md",
+            "overview.md"
+          ],
+          "ran_as": "index-first",
+          "hit_at_1": true,
+          "hit_at_5": true,
+          "trap_outranks": null,
+          "superseded": null
+        }
+      ],
+      "totals": {
+        "questions": 12,
+        "hit_at_1": 9,
+        "hit_at_5": 12,
+        "trap_outranks": 1,
+        "superseded_checked": 2,
+        "superseded_violations": 0
+      }
+    }
+  }
+}

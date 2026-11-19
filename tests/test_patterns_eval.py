@@ -1,24 +1,32 @@
 # Copyright (c) 2026 EGOGE
 # SPDX-License-Identifier: Apache-2.0
-"""US2 tests: the pattern corpus fixture under ``eval/patterns/wiki`` (FR-011).
+"""The pattern-corpus fixture and its scripts (FR-011, FR-021).
 
 The fixture is exercised through the real API on a temporary copy: structural lint, the
 pattern-page convention, prose lint, supersession, the expected findings, and every pinned
-byte the manifest records.
+byte the manifest records. The US4 scripts run in-process against temporary copies and must
+reproduce their committed results without writing under ``eval/patterns/``; every command the
+README shows is parsed with full flag spelling.
 """
 
 from __future__ import annotations
 
+import argparse
+import contextlib
 import hashlib
+import io
 import json
 import re
+import shlex
 import shutil
 import tempfile
 import unittest
 from pathlib import Path
 from typing import Any
 
-from wiki_studio import api
+from eval.patterns import retrieval, trace
+from wiki_studio import api, discovery
+from wiki_studio.cli import _build_arg_parser
 from wiki_studio.paths import WikiPaths
 from wiki_studio.prose_lint import SEGMENT_PARAGRAPH, scan_page, split_sentences
 from wiki_studio.yaml_lite import parse_frontmatter
@@ -29,6 +37,10 @@ WIKI_DIR = PATTERNS_DIR / "wiki"
 CORPUS = PATTERNS_DIR / "corpus" / "decisions-57.md"
 MANIFEST = PATTERNS_DIR / "manifest.json"
 README = PATTERNS_DIR / "README.md"
+QUESTIONS = PATTERNS_DIR / "questions.json"
+RESULTS_DIR = PATTERNS_DIR / "results"
+HAS_FTS5 = discovery.fts5_available().available
+MISMATCH = "PATTERNS-RESULT-MISMATCH"
 
 REQUIRED_KEYS = ("page_type", "slug", "title", "status", "last_reviewed")
 ALLOWED_KEYS = frozenset((*REQUIRED_KEYS, "sources", "superseded_by", "corrects"))
@@ -217,6 +229,127 @@ class PatternsFixtureTest(unittest.TestCase):
             pins["code_copilot_team"]["commit"],
         ):
             self.assertIn(value, readme)
+
+
+def snapshot_tree(root: Path) -> dict[str, str]:
+    """Every file under ``root`` with its sha256, keyed by POSIX relative path (bytecode excluded)."""
+    return {
+        path.relative_to(root).as_posix(): sha256_of(path)
+        for path in sorted(root.rglob("*"))
+        if path.is_file() and "__pycache__" not in path.parts
+    }
+
+
+def record_result(actual: object, name: str) -> None:
+    """Fail with the whole generated result, so a stale committed file can be regenerated from it."""
+    raise AssertionError(
+        f"{MISMATCH} results/{name} differs from the generated output; record this JSON as the result: "
+        f"{json.dumps(actual, sort_keys=True)}"
+    )
+
+
+def option_strings(parser: argparse.ArgumentParser) -> set[str]:
+    """Every long and short option spelling a parser (and its subparsers) accepts."""
+    found: set[str] = set()
+    for action in parser._actions:
+        found.update(action.option_strings)
+        if isinstance(action, argparse._SubParsersAction):
+            for sub in action.choices.values():
+                found |= option_strings(sub)
+    return found
+
+
+class PatternsScriptsTest(unittest.TestCase):
+    """US4: the trace and retrieval scripts reproduce their committed results (FR-021)."""
+
+    def run_trace(self) -> dict[str, Any]:
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "trace.json"
+            self.assertEqual(trace.main(["--out", str(out)]), 0)
+            return json.loads(out.read_text(encoding="utf-8"))
+
+    def run_retrieval(self) -> dict[str, Any]:
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "retrieval.json"
+            self.assertEqual(retrieval.main(["--out", str(out)]), 0)
+            return json.loads(out.read_text(encoding="utf-8"))
+
+    def committed(self, name: str) -> dict[str, Any] | None:
+        path = RESULTS_DIR / name
+        return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None
+
+    def test_trace_matches_the_recorded_result(self) -> None:
+        actual = self.run_trace()
+        if actual != self.committed("trace.json"):
+            record_result(actual, "trace.json")
+
+    def test_retrieval_matches_the_recorded_result_for_index_first(self) -> None:
+        actual = self.run_retrieval()
+        committed = self.committed("retrieval.json")
+        if committed is None or actual["rankers"]["index-first"] != committed["rankers"]["index-first"]:
+            record_result(actual, "retrieval.json")
+
+    @unittest.skipUnless(HAS_FTS5, "this Python's SQLite has no FTS5")
+    def test_retrieval_matches_the_recorded_result_for_fts5(self) -> None:
+        actual = self.run_retrieval()
+        committed = self.committed("retrieval.json")
+        if committed is None or actual["rankers"]["fts5"] != committed["rankers"]["fts5"]:
+            record_result(actual, "retrieval.json")
+
+    def test_retrieval_records_the_questions_hash(self) -> None:
+        committed = self.committed("retrieval.json")
+        if committed is None:
+            record_result(self.run_retrieval(), "retrieval.json")
+        assert committed is not None
+        self.assertEqual(committed["questions_sha256"], sha256_of(QUESTIONS))
+
+    def test_the_readme_records_the_committed_runs_versions(self) -> None:
+        committed = self.committed("retrieval.json")
+        if committed is None:
+            record_result(self.run_retrieval(), "retrieval.json")
+        assert committed is not None
+        readme = README.read_text(encoding="utf-8")
+        self.assertIn(committed["environment"]["python"], readme)
+        self.assertIn(committed["environment"]["sqlite"], readme)
+
+    def test_the_scripts_write_nothing_under_eval_patterns(self) -> None:
+        before = snapshot_tree(PATTERNS_DIR)
+        self.run_trace()
+        self.run_retrieval()
+        self.assertEqual(snapshot_tree(PATTERNS_DIR), before)
+
+    def test_help_exits_zero(self) -> None:
+        with contextlib.redirect_stdout(io.StringIO()):
+            for script in (trace, retrieval):
+                self.assertEqual(script.main(["--help"]), 0, script.__name__)
+
+    def test_every_readme_command_parses_with_full_flag_spelling(self) -> None:
+        wiki_flags = option_strings(_build_arg_parser())
+        script_flags = {
+            "eval.patterns.trace": (trace, option_strings(trace._build_arg_parser())),
+            "eval.patterns.retrieval": (retrieval, option_strings(retrieval._build_arg_parser())),
+        }
+        seen = 0
+        for line in README.read_text(encoding="utf-8").splitlines():
+            text = line.strip()
+            if text.startswith("wiki-studio "):
+                argv = shlex.split(text)[1:]
+                for token in argv:
+                    if token.startswith("-"):
+                        self.assertIn(token.split("=", 1)[0], wiki_flags, f"spell every flag in full: {text}")
+                with contextlib.redirect_stderr(io.StringIO()):
+                    _build_arg_parser().parse_args(argv)
+                seen += 1
+            elif text.startswith("python -m eval.patterns."):
+                argv = shlex.split(text)
+                self.assertIn(argv[2], script_flags, f"unknown study script: {text}")
+                script, flags = script_flags[argv[2]]
+                for token in argv[3:]:
+                    if token.startswith("-"):
+                        self.assertIn(token.split("=", 1)[0], flags, f"spell every flag in full: {text}")
+                script._build_arg_parser().parse_args(argv[3:])
+                seen += 1
+        self.assertGreater(seen, 0)
 
 
 if __name__ == "__main__":
