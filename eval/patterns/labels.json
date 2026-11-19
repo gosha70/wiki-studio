@@ -1,0 +1,558 @@
+{
+  "pattern_pairs": [
+    {
+      "pair": ["decisions/balanced-profile-denies-destructive-git-commands.md", "decisions/destructive-git-commands-require-confirmation.md"],
+      "disposition": "conflicting",
+      "reason": "The two records name the same destructive git commands in the same harness: one requires confirmation first and the other's profile denies the command outright.",
+      "annotation": "partner: Destructive git commands require confirmation."
+    },
+    {
+      "pair": ["decisions/config-redaction-is-not-free-text-redaction.md", "decisions/trace-archive-reuses-the-ingest-redaction-path.md"],
+      "disposition": "distinct-by-precondition",
+      "reason": "Both pages pick a redaction helper, but configuration values are keyed by credential-marker names while trace text goes through the ingest redactor.",
+      "annotation": "seed: this record and the trace-archive reuse record."
+    },
+    {
+      "pair": ["decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md", "decisions/benchmark-ui-was-backend-free-one-shot-and-studio-only.md"],
+      "disposition": "distinct-by-precondition",
+      "reason": "Both pages decide the Benchmark page boundary, but the later record replaces the backend-free one-shot constraint with a setting, a step and a live payload.",
+      "annotation": "seed: this record and the superseding record."
+    },
+    {
+      "pair": ["decisions/merge-require-green-ci-was-never-read-and-was-removed.md", "decisions/merge-require-green-ci-was-never-read.md"],
+      "disposition": "distinct-by-precondition",
+      "reason": "Both pages decide how green CI gates a merge, but the later record removes the key the earlier one delegated enforcement to.",
+      "annotation": "seed: this record and the correction."
+    },
+    {
+      "pair": ["decisions/balanced-profile-denies-destructive-git-commands.md", "decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md"],
+      "disposition": "unrelated",
+      "reason": "One page sets a balanced permission profile that denies destructive git commands; the other records the Benchmark page's setting, correlate step and live payload; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/balanced-profile-denies-destructive-git-commands.md", "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md"],
+      "disposition": "unrelated",
+      "reason": "One page sets a balanced permission profile that denies destructive git commands; the other reuses the one correlate scan seam for the benchmark step; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/balanced-profile-denies-destructive-git-commands.md", "decisions/benchmark-ui-was-backend-free-one-shot-and-studio-only.md"],
+      "disposition": "unrelated",
+      "reason": "One page sets a balanced permission profile that denies destructive git commands; the other records the first Benchmark UI as backend-free, one-shot and Studio-only; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/balanced-profile-denies-destructive-git-commands.md", "decisions/config-redaction-is-not-free-text-redaction.md"],
+      "disposition": "unrelated",
+      "reason": "One page sets a balanced permission profile that denies destructive git commands; the other redacts configuration values by credential-marker key name; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/balanced-profile-denies-destructive-git-commands.md", "decisions/judge-statistics-and-charts-stay-in-the-stdlib.md"],
+      "disposition": "unrelated",
+      "reason": "One page sets a balanced permission profile that denies destructive git commands; the other keeps judge statistics and report charts in the stdlib; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/balanced-profile-denies-destructive-git-commands.md", "decisions/merge-require-green-ci-was-never-read-and-was-removed.md"],
+      "disposition": "unrelated",
+      "reason": "One page sets a balanced permission profile that denies destructive git commands; the other replaces `merge.require_green_ci` with GitHub branch protection; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/balanced-profile-denies-destructive-git-commands.md", "decisions/merge-require-green-ci-was-never-read.md"],
+      "disposition": "unrelated",
+      "reason": "One page sets a balanced permission profile that denies destructive git commands; the other delegated green-CI enforcement to `merge.require_green_ci`; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/balanced-profile-denies-destructive-git-commands.md", "decisions/never-archive-raw-jsonl.md"],
+      "disposition": "unrelated",
+      "reason": "One page sets a balanced permission profile that denies destructive git commands; the other archives parsed, redacted text instead of raw JSONL; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/balanced-profile-denies-destructive-git-commands.md", "decisions/never-bypass-a-git-lock-with-an-alternate-index.md"],
+      "disposition": "distinct-by-precondition",
+      "reason": "Both pages guard git operations in the same harness, but the balanced profile denies destructive commands while the other rule forbids routing around a lock.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/balanced-profile-denies-destructive-git-commands.md", "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md"],
+      "disposition": "unrelated",
+      "reason": "One page sets a balanced permission profile that denies destructive git commands; the other fetches SWE-bench tasks with the stdlib rows API; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/balanced-profile-denies-destructive-git-commands.md", "decisions/the-clusters-view-is-not-an-explorer.md"],
+      "disposition": "unrelated",
+      "reason": "One page sets a balanced permission profile that denies destructive git commands; the other keeps the clusters view a minimal read-only list; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/balanced-profile-denies-destructive-git-commands.md", "decisions/trace-archive-reuses-the-ingest-redaction-path.md"],
+      "disposition": "unrelated",
+      "reason": "One page sets a balanced permission profile that denies destructive git commands; the other reuses the ingest `redact_text` helper for the trace archive; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md", "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md"],
+      "disposition": "distinct-by-precondition",
+      "reason": "Both pages name `correlate.run` as the one scan seam, but one decides the Benchmark page boundary and the other the step's scan reuse.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md", "decisions/config-redaction-is-not-free-text-redaction.md"],
+      "disposition": "unrelated",
+      "reason": "One page records the Benchmark page's setting, correlate step and live payload; the other redacts configuration values by credential-marker key name; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md", "decisions/destructive-git-commands-require-confirmation.md"],
+      "disposition": "unrelated",
+      "reason": "One page records the Benchmark page's setting, correlate step and live payload; the other requires confirmation before destructive git commands; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md", "decisions/judge-statistics-and-charts-stay-in-the-stdlib.md"],
+      "disposition": "unrelated",
+      "reason": "One page records the Benchmark page's setting, correlate step and live payload; the other keeps judge statistics and report charts in the stdlib; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md", "decisions/merge-require-green-ci-was-never-read-and-was-removed.md"],
+      "disposition": "unrelated",
+      "reason": "Both pages supersede an earlier decision, but for different features, and neither page names the other.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md", "decisions/merge-require-green-ci-was-never-read.md"],
+      "disposition": "unrelated",
+      "reason": "One page records the Benchmark page's setting, correlate step and live payload; the other delegated green-CI enforcement to `merge.require_green_ci`; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md", "decisions/never-archive-raw-jsonl.md"],
+      "disposition": "unrelated",
+      "reason": "One page records the Benchmark page's setting, correlate step and live payload; the other archives parsed, redacted text instead of raw JSONL; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md", "decisions/never-bypass-a-git-lock-with-an-alternate-index.md"],
+      "disposition": "unrelated",
+      "reason": "One page records the Benchmark page's setting, correlate step and live payload; the other stops and explains a blocked git commit instead of routing around the lock; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md", "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md"],
+      "disposition": "unrelated",
+      "reason": "One page records the Benchmark page's setting, correlate step and live payload; the other fetches SWE-bench tasks with the stdlib rows API; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md", "decisions/the-clusters-view-is-not-an-explorer.md"],
+      "disposition": "unrelated",
+      "reason": "One page records the Benchmark page's setting, correlate step and live payload; the other keeps the clusters view a minimal read-only list; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md", "decisions/trace-archive-reuses-the-ingest-redaction-path.md"],
+      "disposition": "unrelated",
+      "reason": "One page records the Benchmark page's setting, correlate step and live payload; the other reuses the ingest `redact_text` helper for the trace archive; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md", "decisions/benchmark-ui-was-backend-free-one-shot-and-studio-only.md"],
+      "disposition": "unrelated",
+      "reason": "One page reuses the one correlate scan seam for the benchmark step; the other records the first Benchmark UI as backend-free, one-shot and Studio-only; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md", "decisions/config-redaction-is-not-free-text-redaction.md"],
+      "disposition": "unrelated",
+      "reason": "One page reuses the one correlate scan seam for the benchmark step; the other redacts configuration values by credential-marker key name; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md", "decisions/destructive-git-commands-require-confirmation.md"],
+      "disposition": "unrelated",
+      "reason": "One page reuses the one correlate scan seam for the benchmark step; the other requires confirmation before destructive git commands; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md", "decisions/judge-statistics-and-charts-stay-in-the-stdlib.md"],
+      "disposition": "unrelated",
+      "reason": "One page reuses the one correlate scan seam for the benchmark step; the other keeps judge statistics and report charts in the stdlib; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md", "decisions/merge-require-green-ci-was-never-read-and-was-removed.md"],
+      "disposition": "unrelated",
+      "reason": "One page reuses the one correlate scan seam for the benchmark step; the other replaces `merge.require_green_ci` with GitHub branch protection; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md", "decisions/merge-require-green-ci-was-never-read.md"],
+      "disposition": "unrelated",
+      "reason": "One page reuses the one correlate scan seam for the benchmark step; the other delegated green-CI enforcement to `merge.require_green_ci`; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md", "decisions/never-archive-raw-jsonl.md"],
+      "disposition": "unrelated",
+      "reason": "One page reuses the one correlate scan seam for the benchmark step; the other archives parsed, redacted text instead of raw JSONL; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md", "decisions/never-bypass-a-git-lock-with-an-alternate-index.md"],
+      "disposition": "unrelated",
+      "reason": "One page reuses the one correlate scan seam for the benchmark step; the other stops and explains a blocked git commit instead of routing around the lock; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md", "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md"],
+      "disposition": "unrelated",
+      "reason": "One page reuses the one correlate scan seam for the benchmark step; the other fetches SWE-bench tasks with the stdlib rows API; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md", "decisions/the-clusters-view-is-not-an-explorer.md"],
+      "disposition": "unrelated",
+      "reason": "One page reuses the one correlate scan seam for the benchmark step; the other keeps the clusters view a minimal read-only list; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md", "decisions/trace-archive-reuses-the-ingest-redaction-path.md"],
+      "disposition": "distinct-by-precondition",
+      "reason": "Both pages reuse an existing implementation instead of adding a second one, but one is the trace archive's redaction path and the other the benchmark step's scan seam.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-ui-was-backend-free-one-shot-and-studio-only.md", "decisions/config-redaction-is-not-free-text-redaction.md"],
+      "disposition": "unrelated",
+      "reason": "One page records the first Benchmark UI as backend-free, one-shot and Studio-only; the other redacts configuration values by credential-marker key name; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-ui-was-backend-free-one-shot-and-studio-only.md", "decisions/destructive-git-commands-require-confirmation.md"],
+      "disposition": "unrelated",
+      "reason": "One page records the first Benchmark UI as backend-free, one-shot and Studio-only; the other requires confirmation before destructive git commands; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-ui-was-backend-free-one-shot-and-studio-only.md", "decisions/judge-statistics-and-charts-stay-in-the-stdlib.md"],
+      "disposition": "unrelated",
+      "reason": "One page records the first Benchmark UI as backend-free, one-shot and Studio-only; the other keeps judge statistics and report charts in the stdlib; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-ui-was-backend-free-one-shot-and-studio-only.md", "decisions/merge-require-green-ci-was-never-read-and-was-removed.md"],
+      "disposition": "unrelated",
+      "reason": "One page records the first Benchmark UI as backend-free, one-shot and Studio-only; the other replaces `merge.require_green_ci` with GitHub branch protection; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-ui-was-backend-free-one-shot-and-studio-only.md", "decisions/merge-require-green-ci-was-never-read.md"],
+      "disposition": "unrelated",
+      "reason": "Both pages are deprecated decisions about different features, and each is superseded by its own successor, so neither names the other.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-ui-was-backend-free-one-shot-and-studio-only.md", "decisions/never-archive-raw-jsonl.md"],
+      "disposition": "unrelated",
+      "reason": "One page records the first Benchmark UI as backend-free, one-shot and Studio-only; the other archives parsed, redacted text instead of raw JSONL; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-ui-was-backend-free-one-shot-and-studio-only.md", "decisions/never-bypass-a-git-lock-with-an-alternate-index.md"],
+      "disposition": "unrelated",
+      "reason": "One page records the first Benchmark UI as backend-free, one-shot and Studio-only; the other stops and explains a blocked git commit instead of routing around the lock; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-ui-was-backend-free-one-shot-and-studio-only.md", "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md"],
+      "disposition": "unrelated",
+      "reason": "One page records the first Benchmark UI as backend-free, one-shot and Studio-only; the other fetches SWE-bench tasks with the stdlib rows API; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-ui-was-backend-free-one-shot-and-studio-only.md", "decisions/the-clusters-view-is-not-an-explorer.md"],
+      "disposition": "unrelated",
+      "reason": "One page records the first Benchmark UI as backend-free, one-shot and Studio-only; the other keeps the clusters view a minimal read-only list; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/benchmark-ui-was-backend-free-one-shot-and-studio-only.md", "decisions/trace-archive-reuses-the-ingest-redaction-path.md"],
+      "disposition": "unrelated",
+      "reason": "One page records the first Benchmark UI as backend-free, one-shot and Studio-only; the other reuses the ingest `redact_text` helper for the trace archive; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/config-redaction-is-not-free-text-redaction.md", "decisions/destructive-git-commands-require-confirmation.md"],
+      "disposition": "unrelated",
+      "reason": "One page redacts configuration values by credential-marker key name; the other requires confirmation before destructive git commands; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/config-redaction-is-not-free-text-redaction.md", "decisions/judge-statistics-and-charts-stay-in-the-stdlib.md"],
+      "disposition": "unrelated",
+      "reason": "One page redacts configuration values by credential-marker key name; the other keeps judge statistics and report charts in the stdlib; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/config-redaction-is-not-free-text-redaction.md", "decisions/merge-require-green-ci-was-never-read-and-was-removed.md"],
+      "disposition": "unrelated",
+      "reason": "One page redacts configuration values by credential-marker key name; the other replaces `merge.require_green_ci` with GitHub branch protection; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/config-redaction-is-not-free-text-redaction.md", "decisions/merge-require-green-ci-was-never-read.md"],
+      "disposition": "unrelated",
+      "reason": "One page redacts configuration values by credential-marker key name; the other delegated green-CI enforcement to `merge.require_green_ci`; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/config-redaction-is-not-free-text-redaction.md", "decisions/never-archive-raw-jsonl.md"],
+      "disposition": "distinct-by-precondition",
+      "reason": "Both pages demand redaction before text is printed or stored, but one scopes it to configuration keys and the other to archived trace content.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/config-redaction-is-not-free-text-redaction.md", "decisions/never-bypass-a-git-lock-with-an-alternate-index.md"],
+      "disposition": "unrelated",
+      "reason": "One page redacts configuration values by credential-marker key name; the other stops and explains a blocked git commit instead of routing around the lock; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/config-redaction-is-not-free-text-redaction.md", "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md"],
+      "disposition": "unrelated",
+      "reason": "One page redacts configuration values by credential-marker key name; the other fetches SWE-bench tasks with the stdlib rows API; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/config-redaction-is-not-free-text-redaction.md", "decisions/the-clusters-view-is-not-an-explorer.md"],
+      "disposition": "distinct-by-precondition",
+      "reason": "Both pages record that a look-alike must not be reused outside its scope, but one concerns the clusters UI and the other configuration redaction.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/destructive-git-commands-require-confirmation.md", "decisions/judge-statistics-and-charts-stay-in-the-stdlib.md"],
+      "disposition": "unrelated",
+      "reason": "One page requires confirmation before destructive git commands; the other keeps judge statistics and report charts in the stdlib; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/destructive-git-commands-require-confirmation.md", "decisions/merge-require-green-ci-was-never-read-and-was-removed.md"],
+      "disposition": "unrelated",
+      "reason": "One page requires confirmation before destructive git commands; the other replaces `merge.require_green_ci` with GitHub branch protection; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/destructive-git-commands-require-confirmation.md", "decisions/merge-require-green-ci-was-never-read.md"],
+      "disposition": "unrelated",
+      "reason": "One page requires confirmation before destructive git commands; the other delegated green-CI enforcement to `merge.require_green_ci`; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/destructive-git-commands-require-confirmation.md", "decisions/never-archive-raw-jsonl.md"],
+      "disposition": "unrelated",
+      "reason": "One page requires confirmation before destructive git commands; the other archives parsed, redacted text instead of raw JSONL; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/destructive-git-commands-require-confirmation.md", "decisions/never-bypass-a-git-lock-with-an-alternate-index.md"],
+      "disposition": "distinct-by-precondition",
+      "reason": "Both pages are safety rules in the same skill for git work, but one covers commands run before a destructive operation and the other a commit blocked by a lock.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/destructive-git-commands-require-confirmation.md", "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md"],
+      "disposition": "unrelated",
+      "reason": "One page requires confirmation before destructive git commands; the other fetches SWE-bench tasks with the stdlib rows API; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/destructive-git-commands-require-confirmation.md", "decisions/the-clusters-view-is-not-an-explorer.md"],
+      "disposition": "unrelated",
+      "reason": "One page requires confirmation before destructive git commands; the other keeps the clusters view a minimal read-only list; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/destructive-git-commands-require-confirmation.md", "decisions/trace-archive-reuses-the-ingest-redaction-path.md"],
+      "disposition": "unrelated",
+      "reason": "One page requires confirmation before destructive git commands; the other reuses the ingest `redact_text` helper for the trace archive; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/judge-statistics-and-charts-stay-in-the-stdlib.md", "decisions/merge-require-green-ci-was-never-read-and-was-removed.md"],
+      "disposition": "unrelated",
+      "reason": "One page keeps judge statistics and report charts in the stdlib; the other replaces `merge.require_green_ci` with GitHub branch protection; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/judge-statistics-and-charts-stay-in-the-stdlib.md", "decisions/merge-require-green-ci-was-never-read.md"],
+      "disposition": "unrelated",
+      "reason": "One page keeps judge statistics and report charts in the stdlib; the other delegated green-CI enforcement to `merge.require_green_ci`; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/judge-statistics-and-charts-stay-in-the-stdlib.md", "decisions/never-archive-raw-jsonl.md"],
+      "disposition": "unrelated",
+      "reason": "One page keeps judge statistics and report charts in the stdlib; the other archives parsed, redacted text instead of raw JSONL; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/judge-statistics-and-charts-stay-in-the-stdlib.md", "decisions/never-bypass-a-git-lock-with-an-alternate-index.md"],
+      "disposition": "unrelated",
+      "reason": "One page keeps judge statistics and report charts in the stdlib; the other stops and explains a blocked git commit instead of routing around the lock; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/judge-statistics-and-charts-stay-in-the-stdlib.md", "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md"],
+      "disposition": "distinct-by-precondition",
+      "reason": "Both pages keep part of the benchmark harness in the stdlib, but one is the SWE-bench fetch adapter and the other the judge statistics and report charts.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/judge-statistics-and-charts-stay-in-the-stdlib.md", "decisions/the-clusters-view-is-not-an-explorer.md"],
+      "disposition": "unrelated",
+      "reason": "One page keeps judge statistics and report charts in the stdlib; the other keeps the clusters view a minimal read-only list; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/judge-statistics-and-charts-stay-in-the-stdlib.md", "decisions/trace-archive-reuses-the-ingest-redaction-path.md"],
+      "disposition": "unrelated",
+      "reason": "One page keeps judge statistics and report charts in the stdlib; the other reuses the ingest `redact_text` helper for the trace archive; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/merge-require-green-ci-was-never-read-and-was-removed.md", "decisions/never-archive-raw-jsonl.md"],
+      "disposition": "unrelated",
+      "reason": "One page replaces `merge.require_green_ci` with GitHub branch protection; the other archives parsed, redacted text instead of raw JSONL; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/merge-require-green-ci-was-never-read-and-was-removed.md", "decisions/never-bypass-a-git-lock-with-an-alternate-index.md"],
+      "disposition": "unrelated",
+      "reason": "One page replaces `merge.require_green_ci` with GitHub branch protection; the other stops and explains a blocked git commit instead of routing around the lock; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/merge-require-green-ci-was-never-read-and-was-removed.md", "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md"],
+      "disposition": "unrelated",
+      "reason": "One page replaces `merge.require_green_ci` with GitHub branch protection; the other fetches SWE-bench tasks with the stdlib rows API; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/merge-require-green-ci-was-never-read-and-was-removed.md", "decisions/the-clusters-view-is-not-an-explorer.md"],
+      "disposition": "unrelated",
+      "reason": "One page replaces `merge.require_green_ci` with GitHub branch protection; the other keeps the clusters view a minimal read-only list; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/merge-require-green-ci-was-never-read-and-was-removed.md", "decisions/trace-archive-reuses-the-ingest-redaction-path.md"],
+      "disposition": "unrelated",
+      "reason": "One page replaces `merge.require_green_ci` with GitHub branch protection; the other reuses the ingest `redact_text` helper for the trace archive; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/merge-require-green-ci-was-never-read.md", "decisions/never-archive-raw-jsonl.md"],
+      "disposition": "unrelated",
+      "reason": "One page delegated green-CI enforcement to `merge.require_green_ci`; the other archives parsed, redacted text instead of raw JSONL; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/merge-require-green-ci-was-never-read.md", "decisions/never-bypass-a-git-lock-with-an-alternate-index.md"],
+      "disposition": "unrelated",
+      "reason": "One page delegated green-CI enforcement to `merge.require_green_ci`; the other stops and explains a blocked git commit instead of routing around the lock; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/merge-require-green-ci-was-never-read.md", "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md"],
+      "disposition": "unrelated",
+      "reason": "One page delegated green-CI enforcement to `merge.require_green_ci`; the other fetches SWE-bench tasks with the stdlib rows API; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/merge-require-green-ci-was-never-read.md", "decisions/the-clusters-view-is-not-an-explorer.md"],
+      "disposition": "unrelated",
+      "reason": "One page delegated green-CI enforcement to `merge.require_green_ci`; the other keeps the clusters view a minimal read-only list; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/merge-require-green-ci-was-never-read.md", "decisions/trace-archive-reuses-the-ingest-redaction-path.md"],
+      "disposition": "unrelated",
+      "reason": "One page delegated green-CI enforcement to `merge.require_green_ci`; the other reuses the ingest `redact_text` helper for the trace archive; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/never-archive-raw-jsonl.md", "decisions/never-bypass-a-git-lock-with-an-alternate-index.md"],
+      "disposition": "distinct-by-precondition",
+      "reason": "Both pages refuse a shorter path that weakens a gate, but one guards a blocked git commit and the other the trace archive's privacy.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/never-archive-raw-jsonl.md", "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md"],
+      "disposition": "unrelated",
+      "reason": "One page archives parsed, redacted text instead of raw JSONL; the other fetches SWE-bench tasks with the stdlib rows API; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/never-archive-raw-jsonl.md", "decisions/the-clusters-view-is-not-an-explorer.md"],
+      "disposition": "unrelated",
+      "reason": "One page archives parsed, redacted text instead of raw JSONL; the other keeps the clusters view a minimal read-only list; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/never-archive-raw-jsonl.md", "decisions/trace-archive-reuses-the-ingest-redaction-path.md"],
+      "disposition": "redundant",
+      "reason": "Both pages decide the trace archive's privacy floor and name the same archive path calling `redact_text`, so a curator could state both in one page.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/never-bypass-a-git-lock-with-an-alternate-index.md", "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md"],
+      "disposition": "unrelated",
+      "reason": "One page stops and explains a blocked git commit instead of routing around the lock; the other fetches SWE-bench tasks with the stdlib rows API; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/never-bypass-a-git-lock-with-an-alternate-index.md", "decisions/the-clusters-view-is-not-an-explorer.md"],
+      "disposition": "unrelated",
+      "reason": "One page stops and explains a blocked git commit instead of routing around the lock; the other keeps the clusters view a minimal read-only list; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/never-bypass-a-git-lock-with-an-alternate-index.md", "decisions/trace-archive-reuses-the-ingest-redaction-path.md"],
+      "disposition": "unrelated",
+      "reason": "One page stops and explains a blocked git commit instead of routing around the lock; the other reuses the ingest `redact_text` helper for the trace archive; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md", "decisions/the-clusters-view-is-not-an-explorer.md"],
+      "disposition": "unrelated",
+      "reason": "One page fetches SWE-bench tasks with the stdlib rows API; the other keeps the clusters view a minimal read-only list; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md", "decisions/trace-archive-reuses-the-ingest-redaction-path.md"],
+      "disposition": "unrelated",
+      "reason": "One page fetches SWE-bench tasks with the stdlib rows API; the other reuses the ingest `redact_text` helper for the trace archive; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    },
+    {
+      "pair": ["decisions/the-clusters-view-is-not-an-explorer.md", "decisions/trace-archive-reuses-the-ingest-redaction-path.md"],
+      "disposition": "unrelated",
+      "reason": "One page keeps the clusters view a minimal read-only list; the other reuses the ingest `redact_text` helper for the trace archive; the decisions and their preconditions do not overlap.",
+      "annotation": null
+    }
+  ],
+  "background_pairs": [
+    {
+      "pair": ["decisions/never-bypass-a-git-lock-with-an-alternate-index.md", "incidents/git-safety-bypasses.md"],
+      "disposition": "redundant",
+      "reason": "Both pages state the same stop-and-explain rule for a blocked git commit, and the incident page quotes the prohibitions the decision page records.",
+      "annotation": "evidence: `code-copilot-team@5ce94f2 claude_code/.claude/rules/safety.md:Blocked Operations`; `code-copilot-team@37e8417 shared/skills/safety/SKILL.md`; incident: `knowledge/wiki/incidents/git-safety-bypasses.md`; PR/issue: none; tests: none."
+    }
+  ]
+}

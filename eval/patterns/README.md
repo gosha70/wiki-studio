@@ -278,3 +278,118 @@ defect:
 No page has an approval record, so the review kinds report the pages
 unapproved as well.
 
+## Protocol: labels, gold and signals, frozen before any signal runs
+
+`eval/patterns/labels.json`, `eval/patterns/questions.json` and
+`eval/patterns/protocol.json` were written in US3, the phase after the
+corpus, and were committed before any signal or retrieval code existed in
+the repository. They are frozen: nothing after that phase edits them,
+`protocol.json` records the sha256 of the other two, and
+`tests/test_patterns_frozen.py` pins all three.
+
+### Labels
+
+`labels.json` labels all 91 unordered pairs of the 14 pattern pages. Each
+entry carries the sorted pair, a disposition, a one-sentence reason drawn
+from the two pages, and `annotation`: the corpus line that names the pair (a
+`partner:`, a seed, or the git-lock record's `incident:` evidence), or null.
+The four pairs the corpus annotates are listed first. The dispositions are:
+
+- `redundant`: a merge candidate — the pages record the same decision, with
+  the same implementation and the same evidence;
+- `conflicting`: a `[!conflict]` case — the two conflict records that name
+  the same destructive git commands at different layers;
+- `distinct-by-precondition`: the pages agree, or state the same decision
+  shape, but their stated preconditions or scopes differ, so both stand;
+- `unrelated`: none of these, even when one page cites the other.
+
+The 91 pairs are one `redundant`, one `conflicting`, eleven
+`distinct-by-precondition` and seventy-eight `unrelated`.
+
+`background_pairs` lists only the pattern-background pairs a corpus record
+names; one is named, the git-lock record and
+`incidents/git-safety-bypasses.md`, and it is labelled `redundant`. Every
+pair that involves a background page and is not listed is a false candidate
+by rule.
+
+### Questions and gold
+
+`questions.json` holds the twelve records' replay questions in corpus
+order. Each entry's `question` is the record's `later-task:` text verbatim
+and its `record` is the record's corpus heading. `gold` follows the record's
+`seed:` line: "this record" gives the record's page; "this record and its
+partner" gives both conflict pages; "this record and the trace-archive reuse
+record" gives the config-redaction page and the trace-archive page, its
+trap; "this record and the superseding record" and "this record and the
+correction" give the successor page only, with the stale page in
+`superseded`. `reuse_target` is the page to reuse — the record's page, the
+successor for a stale record, the trace-archive page for the config-redaction
+question; `trap` is the look-alike page a seed names, which only the
+config-redaction question has; `superseded` is the stale page that must stay
+ineligible.
+
+### Signals and thresholds
+
+`protocol.json` fixes five scored outputs: (a), (a-path), (b), (c) and
+`combined`.
+
+- (a) is `health_lint._candidate_pairs`' rule: two eligible pages are a
+  candidate when they share at least one cited `sources[].path` or one
+  links directly to the other, and the output records which part fired.
+- (a-path) is (a)'s shared-path part on its own, scored with its own verdict
+  and counts.
+- (b) is the Jaccard similarity of `wiki_state._tokenise(title + " " + the
+  first paragraph of the Decision section)` between two pages, at least
+  0.25; a background page without a `## Decision` section contributes its
+  title and its first body paragraph.
+- (c) is shared entity mentions as `missing-cross-link` counts them: the
+  entity vocabulary is every fixture page's slug except `index`, `log` and
+  `overview`, mentions are found with `health_lint._entity_mentions` in the
+  body after the frontmatter with the per-file glossary aliases
+  `prose_lint.load_avoid_map` gives, and the intersection less the two
+  pages' own slugs must reach 2.
+- `combined` is the union of (a), (b) and (c).
+
+An eligible page is one that carries no `superseded_by`, as `find` treats
+it; the two stale pages are ineligible. The scope is every eligible pattern
+pair (66 of the 91), every eligible pattern-background pair and every
+eligible background-background pair; the 91-pair table is reported as
+secondary.
+
+### Annotation-linked pairs
+
+The corpus annotations are the source of both the labels and the intra-wiki
+links the pages carry (the conflict callouts, the Consequences links and the
+git-lock incident link). A true candidate is marked `annotation_linked` when
+the only part of its signal that fired is such a link, or when `findings`
+already reports the pair as `open-conflict`. The mark exists because a link
+the study wrote from an annotation cannot be evidence that a signal detects
+duplicates. Signal (c) is unaffected: a mutual link puts each page's slug in
+the other's body, and (c) subtracts the two pages' own slugs. (b) reads
+titles and the Y-statement paragraph, which the annotation links never
+touch, and (a-path) has no links by construction.
+
+### True, false and the pass bar
+
+A candidate is true when its label is `redundant` or `conflicting`; it is
+false when its label is `distinct-by-precondition` or `unrelated`, and a
+pair involving a background page is false unless `background_pairs` lists it
+with a true disposition. A signal passes when it finds every eligible pair
+labelled `redundant` or `conflicting` and its false candidates do not
+outnumber its true ones across the whole scope. With no such labelled pair
+the bar is "not testable", never a pass. The eligible true pairs number two,
+so any verdict rests on those two pairs; a pass is grounds to draft an issue
+for a `findings` kind, not evidence that such a kind would work in general.
+
+### Retrieval
+
+Each question is asked with `api.find(question, paths, max_pages=5,
+ranker=r)` for each ranker (`index-first`, `fts5`). Hit at 1 means the top
+page is a gold page; the config-redaction question's gold includes its trap
+page, so a top-ranked trap is a hit at 1 there, and "trap outranks" — the
+trap above the `reuse_target`, or the target absent while the trap is
+present — is the metric that shows it. Hit at 5 means every gold page is in
+the five. For a question with a `superseded` page, that page (still linked
+from `index.md`) must be listed ineligible with reason `superseded` and
+never selected.
+
