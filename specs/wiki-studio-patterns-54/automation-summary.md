@@ -10,3 +10,6 @@ Review: PASS (see specs/wiki-studio-patterns-54/collaboration/build-review-phase
 
 ### Phase 4 complete — US4: The lifecycle trace and retrieval (2026-11-19T03:26:58Z)
 Review: PASS (see specs/wiki-studio-patterns-54/collaboration/build-review-phase-4.md).
+
+### Phase 5 complete — US5: Duplicate candidates on the frozen labels (2026-11-19T03:58:27Z)
+Review: PASS (see specs/wiki-studio-patterns-54/collaboration/build-review-phase-5.md).
