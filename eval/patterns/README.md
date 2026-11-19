@@ -606,3 +606,102 @@ involving the two superseded pages); no background page is superseded.
 Labels were read, never edited: a disagreement found later is reported in
 the study's report, not patched here.
 
+## Revisit signals
+
+```
+python -m eval.patterns.staleness --checkout <PATH> --out <PATH>
+```
+
+Without `--out` the command prints the same JSON. It reads every `path:` +
+`sha:` source of the fourteen pattern pages and the code-copilot-team pin from
+`manifest.json`, and for each source runs, read-only and with an argument list
+rather than a shell, `git -C <checkout> cat-file -e <pin>:<path>` (present at
+the pin or missing) and, when the `sha:` is known to the checkout,
+`git -C <checkout> diff --quiet <sha> <pin> -- <path>` (changed or unchanged
+since `sha`, `null` with a reason when the `sha:` is not a commit in the
+checkout). It reads nothing over the network and writes only `--out`.
+
+Per source it records `stale_claim`, which is what `stale-claim` would report
+with the wiki inside that checkout at the pin: the path-existence check of
+`health_lint.py` 110-155, flagged exactly when the path is missing (141). Per
+source it records `revision_check` too, and per page the page's `Revisit
+when:` line. It never edits the checkout, the fixture or the results.
+
+The checks were run once, by hand, on the local code-copilot-team checkout at
+the manifest's pin `00d49c0a9eb51e9bf234cee70490889b151cd550`;
+`results/staleness.json` records them, and the counts below are that file, as
+recorded. The run covers 24 sources on the fourteen pages:
+`stale-claim` flags none of them, and the revision check reports 15 changed and
+9 unchanged (none unknown). The 15 changed entries are 14 distinct page–file
+citations, because the merge page cites one spec at two commits.
+
+### The per-pattern comparison
+
+One row per source. The last column is a judgment, not a result: it was made
+after the run, reading the cited file at the pin against the page's `Revisit
+when:` line, and it is not recorded in `results/staleness.json`.
+
+| Page | Cited source at its `sha:` | `stale-claim` | Revision check | Judgment under `Revisit when:` (made after the run) |
+|---|---|---|---|---|
+| `trace-archive-reuses-the-ingest-redaction-path` | `specs/session-analytics-trace-archive/shaping.md` @ `76beab2` | not flagged | unchanged | — |
+| `trace-archive-reuses-the-ingest-redaction-path` | `scripts/session_analytics/archive.py` @ `c776632` | not flagged | changed | At the pin the archive still calls `redact_text` and stores redacted text only, so the reuse stands — no review |
+| `benchmark-step-reuses-the-one-correlate-scan-seam` | `specs/session-analytics-benchmark-step/spec.md` @ `2325480` | not flagged | changed | FR-4's one scan seam is still stated at the pin — no review |
+| `benchmark-step-reuses-the-one-correlate-scan-seam` | `scripts/session_analytics/api/server.py` @ `2325480` | not flagged | changed | At the pin the step still calls `correlate.run` with `CorrelationStats` and a progress callback — no review |
+| `swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet` | `specs/benchmark-adapters-backends/spec.md` @ `13eb704` | not flagged | changed | Design Decision 3 (HF rows API, not Parquet) is still stated at the pin — no review |
+| `swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet` | `benchmarks/adapters/swe_bench_verified/fetch.py` @ `13eb704` | not flagged | unchanged | — |
+| `judge-statistics-and-charts-stay-in-the-stdlib` | `specs/benchmark-llm-judge/origin-alignment-2026-05-20-0238.md` @ `dafbc5b` | not flagged | unchanged | — |
+| `judge-statistics-and-charts-stay-in-the-stdlib` | `scripts/benchmark_runner/calibration/spearman.py` @ `dafbc5b` | not flagged | changed | The file is absent at `dafbc5b` and present at the pin as a stdlib-only Spearman: the pattern holds, but the page (from its record) names a commit that does not contain the file — no review for the pattern; the citation is wrong |
+| `never-bypass-a-git-lock-with-an-alternate-index` | `claude_code/.claude/rules/safety.md` @ `5ce94f2` | not flagged | changed | The `GIT_INDEX_FILE` prohibition is still present at the pin; the page records no trigger — no review |
+| `never-bypass-a-git-lock-with-an-alternate-index` | `shared/skills/safety/SKILL.md` @ `37e8417` | not flagged | unchanged | — |
+| `never-archive-raw-jsonl` | `specs/session-analytics-trace-archive/shaping.md` @ `76beab2` | not flagged | unchanged | — |
+| `never-archive-raw-jsonl` | `scripts/session_analytics/archive.py` @ `c776632` | not flagged | changed | The pin version still stores redacted text only and keeps the opt-out gate — no review |
+| `benchmark-ui-was-backend-free-one-shot-and-studio-only` | `specs/session-analytics-benchmark-ui/spec.md` @ `2325480` | not flagged | unchanged | — |
+| `benchmark-ui-was-backend-free-one-shot-and-studio-only` | `specs/session-analytics-benchmark-step/spec.md` @ `2325480` | not flagged | changed | The superseding spec still supersedes the page's decision, and the page is already superseded by its successor — no review |
+| `merge-require-green-ci-was-never-read` | `specs/auto-build-loop-merge-profile/spec.md` @ `a24a00e` | not flagged | changed | The spec carries the correction ("never read … removed") at `e39969f` and not at `a24a00e`: the page's `Revisit when:` condition has arrived, and its successor page is that review |
+| `merge-require-green-ci-was-never-read` | `specs/auto-build-loop-merge-profile/spec.md` @ `e39969f` | not flagged | changed | The same file at the correction's own commit; the successor page records it — no further review |
+| `the-clusters-view-is-not-an-explorer` | `specs/session-analytics-similarity-ui/plan.md` @ `15438b2` | not flagged | changed | `Not planned` still excludes the explorer at the pin — no review |
+| `config-redaction-is-not-free-text-redaction` | `scripts/lib/analytics_layers.py` @ `8dbceaf` | not flagged | changed | At the pin `redact()` still redacts by key name and gains no content-pattern redaction — no review |
+| `destructive-git-commands-require-confirmation` | `claude_code/.claude/rules/safety.md` @ `5ce94f2` | not flagged | changed | The confirmation list the pattern records is still present at the pin — no review |
+| `destructive-git-commands-require-confirmation` | `shared/skills/safety/SKILL.md` @ `37e8417` | not flagged | unchanged | — |
+| `balanced-profile-denies-destructive-git-commands` | `adapters/claude-code/permissions/balanced.json` @ `88931a3` | not flagged | unchanged | — |
+| `balanced-profile-denies-destructive-git-commands` | `specs/init-permission-profiles/spec.md` @ `88931a3` | not flagged | unchanged | — |
+| `benchmark-explains-itself-linking-runs-is-a-pipeline-step` | `specs/session-analytics-benchmark-step/spec.md` @ `2325480` | not flagged | changed | The spec still states the supersession the page records; the page states no trigger — no review |
+| `merge-require-green-ci-was-never-read-and-was-removed` | `specs/auto-build-loop-merge-profile/spec.md` @ `e39969f` | not flagged | changed | The correction the page records is still present and was extended, not reversed; the page states no trigger — no review |
+
+Counted per page, as memkernel #57 counted its own:
+
+- `stale-claim` flags none of the 24 sources: 0 flags, 0 false flags, and 1
+  page that needed review and was not flagged (`merge-require-green-ci-was-never-read`,
+  whose spec exists at the pin — path existence cannot see a content change).
+- The revision check flags 13 pages (15 source entries). One flag is true:
+  the merge page, whose `Revisit when:` condition arrived. Twelve are false:
+  the other flagged pages need no review under their own `Revisit when:` line,
+  or state none. No page that needed review went unflagged. One of the twelve
+  is false for revisit and true for citation accuracy: the judge-statistics
+  page names `spearman.py` at a commit that does not contain it.
+
+**"Flag, still return" fits the wiki as it stands.** Memkernel #123's rule —
+flag the decision and still return it — is what the wiki already does with
+every finding: `findings` reads only (`findings.py` 188; `api.py` 837-839), an
+approval binds bytes and is untouched by a finding (`review.py` 1-21), and
+discovery's eligibility is the `superseded_by` check alone — it reads no
+findings (`discovery.py` 278). The trace shows it: P carries `stale-claim` and
+`unapproved` findings at `findings-after-cited-file`, and `find` still selects
+it at `find-approved`. What does not exist is a shipped check that compares a
+`sha:` with git; the revision check measured here is this study's script, not
+a wiki-studio behaviour, and were it added it would fit the same model — a
+finding that flags and still returns.
+
+### What a `sources:` entry can carry, and what checks it
+
+Issue 54 names four revisit triggers. No shipped check detects any of them:
+the only check that reads a source entry is `stale-claim`, and it reads only
+whether a `path:` exists.
+
+| Trigger | What a `sources:` entry can carry today | What checks it | What none can |
+|---|---|---|---|
+| A changed source | `path:` + `sha:`, the source and the commit it was read at | `stale-claim`: path existence only (`health_lint.py` 110-155); the revision comparison is this study's script, not a package check | Whether the cited bytes still say what the page says of them |
+| A new spec revision | `path:` + `sha:` names the revision cited; `issue:` or `pr:` can name where the revision is discussed | Nothing: no check compares a `sha:`, and `issue:`, `pr:` and `url:` entries are never resolved | That a newer revision of the spec exists |
+| A security finding | `issue:` or `url:` — a pointer to the finding; no field carries a security flag | Nothing: URLs are never read (`health_lint.py` 115-119) and an issue is never opened | Whether the finding is open, or applies to the pattern |
+| A failed test | A test is named in the body as text (the convention in "The evidence checklist"), or its file cited as `path:` + `sha:`; no field carries an outcome | Nothing runs a test; `stale-claim` checks only that a cited test file exists | The outcome of any test, passing or failing |
+

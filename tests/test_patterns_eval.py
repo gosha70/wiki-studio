@@ -4,9 +4,9 @@
 
 The fixture is exercised through the real API on a temporary copy: structural lint, the
 pattern-page convention, prose lint, supersession, the expected findings, and every pinned
-byte the manifest records. The US4 and US5 scripts run in-process against temporary copies
-and must reproduce their committed results without writing under ``eval/patterns/``; every
-command the README shows is parsed with full flag spelling.
+byte the manifest records. The US4, US5 and US6 scripts run in-process against temporary
+copies and must reproduce their committed results without writing under ``eval/patterns/``;
+every command the README shows is parsed with full flag spelling.
 """
 
 from __future__ import annotations
@@ -19,12 +19,13 @@ import json
 import re
 import shlex
 import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 from typing import Any
 
-from eval.patterns import duplicates, retrieval, trace
+from eval.patterns import duplicates, retrieval, staleness, trace
 from wiki_studio import api, discovery
 from wiki_studio.cli import _build_arg_parser
 from wiki_studio.paths import WikiPaths
@@ -42,6 +43,7 @@ README = PATTERNS_DIR / "README.md"
 QUESTIONS = PATTERNS_DIR / "questions.json"
 RESULTS_DIR = PATTERNS_DIR / "results"
 HAS_FTS5 = discovery.fts5_available().available
+GIT = shutil.which("git")
 MISMATCH = "PATTERNS-RESULT-MISMATCH"
 
 REQUIRED_KEYS = ("page_type", "slug", "title", "status", "last_reviewed")
@@ -333,6 +335,7 @@ class PatternsScriptsTest(unittest.TestCase):
             "eval.patterns.trace": (trace, option_strings(trace._build_arg_parser())),
             "eval.patterns.retrieval": (retrieval, option_strings(retrieval._build_arg_parser())),
             "eval.patterns.duplicates": (duplicates, option_strings(duplicates._build_arg_parser())),
+            "eval.patterns.staleness": (staleness, option_strings(staleness._build_arg_parser())),
         }
         seen = 0
         for line in README.read_text(encoding="utf-8").splitlines():
@@ -435,6 +438,80 @@ class PatternsDuplicatesTest(unittest.TestCase):
             self.assertFalse(out.exists())
             self.assertIn(actual, stderr.getvalue())
             self.assertIn(expected, stderr.getvalue())
+
+
+@unittest.skipUnless(GIT is not None, "git is not on PATH")
+class PatternsStalenessTest(unittest.TestCase):
+    """US6: staleness.py against a temporary repository (FR-026, FR-027, FR-029)."""
+
+    def run_git(self, repo: Path, *args: str) -> subprocess.CompletedProcess[str]:
+        assert GIT is not None
+        command = [
+            GIT,
+            "-C",
+            str(repo),
+            "-c",
+            "user.name=patterns-test",
+            "-c",
+            "user.email=patterns@example.invalid",
+            *args,
+        ]
+        return subprocess.run(command, check=True, capture_output=True, text=True)
+
+    def two_commit_repo(self, tmp: Path) -> tuple[Path, str, str]:
+        """A repository whose pin keeps a file unchanged, changes one and deletes one."""
+        repo = tmp / "checkout"
+        repo.mkdir()
+        self.run_git(repo, "init")
+        (repo / "unchanged.txt").write_text("same at both commits\n", encoding="utf-8")
+        (repo / "changed.txt").write_text("before\n", encoding="utf-8")
+        (repo / "deleted.txt").write_text("removed at the pin\n", encoding="utf-8")
+        self.run_git(repo, "add", ".")
+        self.run_git(repo, "commit", "-m", "first")
+        first = self.run_git(repo, "rev-parse", "HEAD").stdout.strip()
+        (repo / "changed.txt").write_text("after\n", encoding="utf-8")
+        (repo / "deleted.txt").unlink()
+        self.run_git(repo, "add", "-A")
+        self.run_git(repo, "commit", "-m", "second")
+        pin = self.run_git(repo, "rev-parse", "HEAD").stdout.strip()
+        return repo, first, pin
+
+    def test_check_sources_reports_unchanged_changed_and_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo, first, pin = self.two_commit_repo(Path(tmp))
+            results = staleness.check_sources(
+                repo,
+                pin,
+                [
+                    {"path": "unchanged.txt", "sha": first},
+                    {"path": "changed.txt", "sha": first},
+                    {"path": "deleted.txt", "sha": first},
+                    {"path": "changed.txt", "sha": "0000000"},
+                ],
+            )
+        self.assertEqual([entry["revision_check"] for entry in results[:3]], ["unchanged", "changed", "changed"])
+        self.assertEqual([entry["stale_claim"] for entry in results[:3]], ["not flagged", "not flagged", "flagged"])
+        self.assertIsNone(results[3]["revision_check"])
+        self.assertTrue(results[3]["revision_reason"])
+
+    def test_help_exits_zero(self) -> None:
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(staleness.main(["--help"]), 0)
+
+    def test_results_list_exactly_the_pattern_pages_path_sources(self) -> None:
+        manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+        expected: list[tuple[str, str, str]] = []
+        for entry in manifest["pages"]:
+            parsed = parse_frontmatter((WIKI_DIR / entry["path"]).read_text(encoding="utf-8"))
+            for source in parsed["sources"]:
+                if "path" in source:
+                    expected.append((entry["path"], str(source["path"]), str(source["sha"])))
+        committed = json.loads((RESULTS_DIR / "staleness.json").read_text(encoding="utf-8"))
+        actual = [
+            (page["page"], source["path"], source["sha"]) for page in committed["pages"] for source in page["sources"]
+        ]
+        self.assertEqual(actual, expected)
+        self.assertEqual(committed["pin"], manifest["pins"]["code_copilot_team"]["commit"])
 
 
 if __name__ == "__main__":

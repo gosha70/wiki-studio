@@ -1,0 +1,267 @@
+{
+  "study": "issue 54 revisit signals",
+  "pin": "00d49c0a9eb51e9bf234cee70490889b151cd550",
+  "pages": [
+    {
+      "page": "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+      "revisit_when": "the ingest redaction contract changes or the archive needs a mode that `redact_text` does not implement.",
+      "sources": [
+        {
+          "path": "specs/session-analytics-trace-archive/shaping.md",
+          "sha": "76beab2",
+          "stale_claim": "not flagged",
+          "revision_check": "unchanged",
+          "revision_reason": null
+        },
+        {
+          "path": "scripts/session_analytics/archive.py",
+          "sha": "c776632",
+          "stale_claim": "not flagged",
+          "revision_check": "changed",
+          "revision_reason": null
+        }
+      ]
+    },
+    {
+      "page": "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+      "revisit_when": "the step needs a different transaction or progress contract from the CLI scan.",
+      "sources": [
+        {
+          "path": "specs/session-analytics-benchmark-step/spec.md",
+          "sha": "2325480",
+          "stale_claim": "not flagged",
+          "revision_check": "changed",
+          "revision_reason": null
+        },
+        {
+          "path": "scripts/session_analytics/api/server.py",
+          "sha": "2325480",
+          "stale_claim": "not flagged",
+          "revision_check": "changed",
+          "revision_reason": null
+        }
+      ]
+    },
+    {
+      "page": "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md",
+      "revisit_when": "the HF rows API changes or the no-new-deps constraint is lifted.",
+      "sources": [
+        {
+          "path": "specs/benchmark-adapters-backends/spec.md",
+          "sha": "13eb704",
+          "stale_claim": "not flagged",
+          "revision_check": "changed",
+          "revision_reason": null
+        },
+        {
+          "path": "benchmarks/adapters/swe_bench_verified/fetch.py",
+          "sha": "13eb704",
+          "stale_claim": "not flagged",
+          "revision_check": "unchanged",
+          "revision_reason": null
+        }
+      ]
+    },
+    {
+      "page": "decisions/judge-statistics-and-charts-stay-in-the-stdlib.md",
+      "revisit_when": "the calibration corpus grows beyond a few hundred labels or the charts need features pure-string SVG cannot express.",
+      "sources": [
+        {
+          "path": "specs/benchmark-llm-judge/origin-alignment-2026-05-20-0238.md",
+          "sha": "dafbc5b",
+          "stale_claim": "not flagged",
+          "revision_check": "unchanged",
+          "revision_reason": null
+        },
+        {
+          "path": "scripts/benchmark_runner/calibration/spearman.py",
+          "sha": "dafbc5b",
+          "stale_claim": "not flagged",
+          "revision_check": "changed",
+          "revision_reason": null
+        }
+      ]
+    },
+    {
+      "page": "decisions/never-bypass-a-git-lock-with-an-alternate-index.md",
+      "revisit_when": "not recorded in the source record.",
+      "sources": [
+        {
+          "path": "claude_code/.claude/rules/safety.md",
+          "sha": "5ce94f2",
+          "stale_claim": "not flagged",
+          "revision_check": "changed",
+          "revision_reason": null
+        },
+        {
+          "path": "shared/skills/safety/SKILL.md",
+          "sha": "37e8417",
+          "stale_claim": "not flagged",
+          "revision_check": "unchanged",
+          "revision_reason": null
+        }
+      ]
+    },
+    {
+      "page": "decisions/never-archive-raw-jsonl.md",
+      "revisit_when": "a raw-copy path can prove the same redaction and opt-out guarantees, or the redaction gate becomes lossless.",
+      "sources": [
+        {
+          "path": "specs/session-analytics-trace-archive/shaping.md",
+          "sha": "76beab2",
+          "stale_claim": "not flagged",
+          "revision_check": "unchanged",
+          "revision_reason": null
+        },
+        {
+          "path": "scripts/session_analytics/archive.py",
+          "sha": "c776632",
+          "stale_claim": "not flagged",
+          "revision_check": "changed",
+          "revision_reason": null
+        }
+      ]
+    },
+    {
+      "page": "decisions/benchmark-ui-was-backend-free-one-shot-and-studio-only.md",
+      "revisit_when": "the page needs explanation or actions that require a setting, a pipeline step or polling.",
+      "sources": [
+        {
+          "path": "specs/session-analytics-benchmark-ui/spec.md",
+          "sha": "2325480",
+          "stale_claim": "not flagged",
+          "revision_check": "unchanged",
+          "revision_reason": null
+        },
+        {
+          "path": "specs/session-analytics-benchmark-step/spec.md",
+          "sha": "2325480",
+          "stale_claim": "not flagged",
+          "revision_check": "changed",
+          "revision_reason": null
+        }
+      ]
+    },
+    {
+      "page": "decisions/merge-require-green-ci-was-never-read.md",
+      "revisit_when": "a driver-side CI gate is reintroduced or the merge profile changes.",
+      "sources": [
+        {
+          "path": "specs/auto-build-loop-merge-profile/spec.md",
+          "sha": "a24a00e",
+          "stale_claim": "not flagged",
+          "revision_check": "changed",
+          "revision_reason": null
+        },
+        {
+          "path": "specs/auto-build-loop-merge-profile/spec.md",
+          "sha": "e39969f",
+          "stale_claim": "not flagged",
+          "revision_check": "changed",
+          "revision_reason": null
+        }
+      ]
+    },
+    {
+      "page": "decisions/the-clusters-view-is-not-an-explorer.md",
+      "revisit_when": "cluster quality is validated on real data and the owner reopens the explorer question.",
+      "sources": [
+        {
+          "path": "specs/session-analytics-similarity-ui/plan.md",
+          "sha": "15438b2",
+          "stale_claim": "not flagged",
+          "revision_check": "changed",
+          "revision_reason": null
+        }
+      ]
+    },
+    {
+      "page": "decisions/config-redaction-is-not-free-text-redaction.md",
+      "revisit_when": "the two redaction helpers are unified or `analytics_layers.redact` gains content-pattern redaction.",
+      "sources": [
+        {
+          "path": "scripts/lib/analytics_layers.py",
+          "sha": "8dbceaf",
+          "stale_claim": "not flagged",
+          "revision_check": "changed",
+          "revision_reason": null
+        }
+      ]
+    },
+    {
+      "page": "decisions/destructive-git-commands-require-confirmation.md",
+      "revisit_when": "the safety rule or the project permission profiles change.",
+      "sources": [
+        {
+          "path": "claude_code/.claude/rules/safety.md",
+          "sha": "5ce94f2",
+          "stale_claim": "not flagged",
+          "revision_check": "changed",
+          "revision_reason": null
+        },
+        {
+          "path": "shared/skills/safety/SKILL.md",
+          "sha": "37e8417",
+          "stale_claim": "not flagged",
+          "revision_check": "unchanged",
+          "revision_reason": null
+        }
+      ]
+    },
+    {
+      "page": "decisions/balanced-profile-denies-destructive-git-commands.md",
+      "revisit_when": "the balanced deny list changes or the safety rule becomes an outright ban.",
+      "sources": [
+        {
+          "path": "adapters/claude-code/permissions/balanced.json",
+          "sha": "88931a3",
+          "stale_claim": "not flagged",
+          "revision_check": "unchanged",
+          "revision_reason": null
+        },
+        {
+          "path": "specs/init-permission-profiles/spec.md",
+          "sha": "88931a3",
+          "stale_claim": "not flagged",
+          "revision_check": "unchanged",
+          "revision_reason": null
+        }
+      ]
+    },
+    {
+      "page": "decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md",
+      "revisit_when": "not recorded in the source record.",
+      "sources": [
+        {
+          "path": "specs/session-analytics-benchmark-step/spec.md",
+          "sha": "2325480",
+          "stale_claim": "not flagged",
+          "revision_check": "changed",
+          "revision_reason": null
+        }
+      ]
+    },
+    {
+      "page": "decisions/merge-require-green-ci-was-never-read-and-was-removed.md",
+      "revisit_when": "not recorded in the source record.",
+      "sources": [
+        {
+          "path": "specs/auto-build-loop-merge-profile/spec.md",
+          "sha": "e39969f",
+          "stale_claim": "not flagged",
+          "revision_check": "changed",
+          "revision_reason": null
+        }
+      ]
+    }
+  ],
+  "totals": {
+    "pages": 14,
+    "sources": 24,
+    "stale_claim_flagged": 0,
+    "revision_changed": 15,
+    "revision_unchanged": 9,
+    "revision_unknown": 0,
+    "pages_with_a_changed_source": 13
+  }
+}
