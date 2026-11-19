@@ -19,3 +19,16 @@ Review: PASS (see specs/wiki-studio-patterns-54/collaboration/build-review-phase
 
 ### Phase 7 complete — US7: Recommendation and closure (2026-11-19T04:27:09Z)
 Review: PASS (see specs/wiki-studio-patterns-54/collaboration/build-review-phase-7.md).
+
+## Milestone checkpoint — after phase 7 (US7: Recommendation and closure)
+
+Paused 2026-11-19T04:27:11Z for batched manual testing + retro.
+
+- [ ] Manual testing of phases up to 7 complete
+- [ ] Retro notes recorded
+
+To resume: append a line 'approved-by: <name> <date>' below, then run:
+`scripts/auto-build-loop.sh wiki-studio-patterns-54 --resume`
+
+<!-- checkpoint-after-phase: 7 -->
+approved-by: gosha70 2026-11-19 (owner, typed "sign off" in the build session; external review passed d834a43)
