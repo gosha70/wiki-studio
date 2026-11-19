@@ -13,3 +13,6 @@ Review: PASS (see specs/wiki-studio-patterns-54/collaboration/build-review-phase
 
 ### Phase 5 complete — US5: Duplicate candidates on the frozen labels (2026-11-19T03:58:27Z)
 Review: PASS (see specs/wiki-studio-patterns-54/collaboration/build-review-phase-5.md).
+
+### Phase 6 complete — US6: Revisit signals (2026-11-19T04:12:33Z)
+Review: PASS (see specs/wiki-studio-patterns-54/collaboration/build-review-phase-6.md).
