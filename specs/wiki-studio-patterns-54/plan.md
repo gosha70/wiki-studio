@@ -3,7 +3,7 @@ spec_mode: full
 feature_id: wiki-studio-patterns-54
 risk_category: research
 justification: "A research spike with no package change, but its value rests entirely on measurement discipline: labels and gold frozen in their own commit before any signal runs, a corpus and a background pinned to exact bytes in two other repositories, deterministic committed results that tests reproduce, an FTS5-dependent ranker, a by-hand git run against a sibling checkout, a conditional user-facing doc whose commands must be checked, and an evidence PR that closes an issue; a full spec pins the protocol, the per-phase truth rule and the cut order before an unattended build."
-status: draft
+status: approved
 date: 2026-11-18
 collaboration_mode: single
 origin:

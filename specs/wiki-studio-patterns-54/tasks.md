@@ -1,6 +1,6 @@
 # Tasks: reusable engineering patterns, a research spike (issue 54)
 
-<!-- status: draft -->
+<!-- status: approved -->
 <!-- One `## US<n>:` group = one auto-build phase = one commit. [US#]/FR tags trace to spec.md. US1 is pitch scope S1, US2 S2, US3 S4's labels with S3's gold, US4 S3, US5 S4's run, US6 S5, US7 S6. -->
 <!-- Read first: CLAUDE.md, spec.md, plan.md (facts and departures), specs/pitches/54-reusable-patterns/pitch.md, src/wiki_studio/schema/page-types.md (11-49, 104-121, 188-212), src/wiki_studio/lint.py (1-33), src/wiki_studio/prose_lint.py (1-27), src/wiki_studio/health_lint.py (110-155, 199-315, 371-417), src/wiki_studio/findings.py (57-184), src/wiki_studio/review.py (1-21), src/wiki_studio/discovery.py (1-162, 270-290), src/wiki_studio/api.py (find 1158-1207), src/wiki_studio/wiki_state.py (43-146), docs/adr/0004-conflict-callout.md, eval/navigation/discovery.py (1-20, 190-225), eval/composition/successor-issue.md, tests/test_discovery.py (40-50, 190-200, 265-275), tests/test_frozen_runs.py (45-60, 440-460), tests/test_discovery_eval.py (1-40), tests/conftest.py (run_cli). memkernel (read-only): eval/decisions-57/corpus.md at tag v0.9.0. code-copilot-team (read-only): knowledge/wiki/ at commit 00d49c0. -->
 <!-- Run per phase: poetry run ruff check src/ tests/ eval/ conformance/ examples/ && poetry run ruff format --check src/ tests/ eval/ conformance/ examples/ && poetry run mypy src/ && poetry run pytest -q -p no:cacheprovider --cov=wiki_studio --cov-fail-under=92 -->
