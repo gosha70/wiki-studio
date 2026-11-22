@@ -111,7 +111,7 @@ Candidates, all to be shaped:
 - [ ] Stale memkernel CI pin: CI tests memkernel 0.6.0 while newer memkernel releases exist.
 - [ ] Optional follow-up: code-copilot-team's own copy of the persona.
 - [ ] Auto-build driver bugs: code-copilot-team #427, #463 and #471 are closed there; recheck on the next build that a resumed run no longer replaces an adopted PR's description or appends "(Closes #N)" to its title (seen on #117 in this cycle).
-- [ ] File in code-copilot-team: the cost cap is checked only before each step, so a run can finish over it ($157.63 against $150 in this cycle).
-- [ ] File in code-copilot-team: the 500-line default review limit (`CCT_REVIEW_DIFF_MAX_LINES`) stops a data-heavy step as "inconclusive"; this cycle needed 6,000.
+- [x] Filed as code-copilot-team #503: the cost cap is checked only before each step, so a run can finish over it ($157.63 against $150 in this cycle).
+- [x] Filed as code-copilot-team #504: the 500-line default review limit (`CCT_REVIEW_DIFF_MAX_LINES`) stops a data-heavy step as "inconclusive"; this cycle needed 6,000.
 - [ ] Optional, from step 2's review: no test checks the background copy's `links_rewritten` counts in the patterns study's manifest.
 - [ ] Issue 75 and memkernel PR #144.
