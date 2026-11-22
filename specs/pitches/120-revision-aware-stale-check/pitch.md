@@ -4,7 +4,7 @@ title: "A revision-aware check for a page's cited sources: measure candidate fil
 appetite: 4w
 bet_status: shaped
 cycle: ""
-circuit_breaker: "Core is S1 (the supplementary set of real cases, its labels, the candidates and the bar, frozen before any candidate code, D17), S2 (the measurement, published whatever it shows, run with code-copilot-team's checkout as a source root), S3 (the exact source-not-at-revision finding, the repository matching across the root's repository and the source roots (D6), the git hardening and the per-run call cap, and the defined result when the check cannot run), S5's documents for what ships, and S6 (the release). S4 (source-revision-changed) ships only if a candidate clears the bar frozen in S1. S4 is the first scope at risk in 4w now that labelling comes first. Cut order, first to last, each with its trigger: (1) end of week 2 (moved from week 1 by D17), if S1's freeze has not landed: the candidate set narrows to C0, C1 and C2 (C3 and C4 dropped and named as unmeasured), and the supplementary set freezes with the cases labelled by then; below the minimum of D18 its recall condition is reported not testable; (2) start of week 3, if S2 shows no candidate clearing the bar, or S2 has not run: S4 is cut, the release ships S3 only, and issue 120 stays open with the measurement as its evidence (D4); (3) middle of week 4, if S4 is not downhill: S4 is cut the same way. End of week 4: S6 ships what is true; if the release cannot be cut, the change waits under [Unreleased]. Never, to save time: cut S3 down to the root's repository only (the owner chose source roots, D6); put a model on any path from findings, approve or review_state; read over the network, a partial clone's lazy blob fetch included; fetch into, or write to, a source root; run a git command outside S3's read-only plumbing set, without -c core.fsmonitor=false, core.hooksPath and protocol.allow=never, without --no-ext-diff --no-textconv on a diff, or past the per-run call cap; drop the hardening tests; pass a sha or path to git that is not validated, or through a shell; withdraw or alter an approval, or change what find returns; make lint --health --strict fail on a new kind; add a frontmatter key, a page type, a runtime dependency, an exit code or an MCP tool; bump findings_version; edit a label, a case, a candidate definition or the bar after the freeze; skip the owner's review of the labelling commit; add a case after the run; fetch a case's history over the network; edit eval/patterns' frozen files, memkernel or code-copilot-team; weaken or skip a test."
+circuit_breaker: "Core is S1 (the supplementary set of real cases, its labels, the candidates and the bar, frozen before any candidate code, D17), S2 (the measurement, published whatever it shows, run with code-copilot-team's checkout as a source root), S3 (the exact source-not-at-revision finding, the repository matching across the root's repository and the source roots (D6), the git hardening and the per-run call cap, and the defined result when the check cannot run), S5's documents for what ships, and S6 (the release). S4 (source-revision-changed) ships only if a candidate clears the bar frozen in S1. S4 is the first scope at risk in 4w now that labelling comes first. Cut order, first to last, each with its trigger: (1) end of week 2 (moved from week 1 by D17), if S1's freeze has not landed: the candidate set narrows to C0, C1 and C2 (C3 and C4 dropped and named as unmeasured), and the supplementary set freezes with the cases labelled by then; below the minimum of D18 its recall condition is reported not testable; (2) start of week 3, if S2 shows no candidate clearing the bar, or S2 has not run: S4 is cut, the release ships S3 only, and issue 120 stays open with the measurement as its evidence (D4); (3) middle of week 4, if S4 is not downhill: S4 is cut the same way. End of week 4: S6 ships what is true; if the release cannot be cut, the change waits under [Unreleased]. Never, to save time: cut S3 down to the root's repository only (the owner chose source roots, D6); put a model on any path from findings, approve or review_state; read over the network, a partial clone's lazy blob fetch included; fetch into, or write to, a source root; run a git command outside S3's read-only plumbing set, without -c core.fsmonitor=false, core.hooksPath and protocol.allow=never, without --no-ext-diff --no-textconv on a diff, or past the per-run call cap; drop the hardening tests; pass a sha or path to git that is not validated, or through a shell; withdraw or alter an approval, or change what find returns; make lint --health --strict fail on a new kind; add a frontmatter key, a page type, a runtime dependency, an exit code or an MCP tool; bump findings_version; edit a label, a case, a candidate definition or the bar after the freeze; skip the owner's review of the labelling commit; add a case after the run; fetch a case's history over the network; quote text from the keyword-quoting case pages in a PR description, commit message or issue, or widen the closing-keyword exclusion beyond that directory (D19); let an inherited GIT_ variable other than GIT_CONFIG_GLOBAL, GIT_CONFIG_SYSTEM and GIT_CONFIG_NOSYSTEM reach git; accept a source root that is not the top of its own work tree; check a sha shorter than 7 characters, or move on to another repository after an ambiguous prefix; edit eval/patterns' frozen files, memkernel or code-copilot-team; weaken or skip a test."
 shaped_by: "pitch-shaper (Claude Code) for gosha70"
 shaped_date: 2026-11-22
 ---
@@ -238,6 +238,12 @@ rabbit holes.
       no revision event.
     So up to seven candidates: five verbatim historical pages (three of
     them one page at three moments) and two built pages. The pre-pr
+    playbook quotes GitHub closing-keyword phrases: 9, 13, 18 and 18
+    lines in its versions at `87bbc65^`, `87bbc65`, `a9628e5` and
+    `fc28fc3^` (counted with `git show` and a case-insensitive
+    `(close|fix|resolve)[sd]? +#<n>` match). The issue 54 study left this
+    page out of its fixture for that reason (`eval/patterns/README.md`
+    249). The owner kept the three cases, fenced off (D19). The pre-pr
     playbook cites `path:` without `sha:`; its cases take the commit of
     the page's previous revision as the derived `sha:`. Whether each
     candidate "should flag" is the labeller's call from the recorded
@@ -311,6 +317,7 @@ eval/revisions/
   README.md        protocol: the 24 sources, the supplementary cases, labels, candidates, bar, cost measure (S1, frozen)
   labels.json      per source: needs-review under Revisit when; citation error (S1, frozen, sha256-pinned)
   cases/<id>/      one real case each: page.md (before the correction), case.json (pins, labels) (S1, frozen, D17)
+  cases/keyword-quoting/<id>/   the three pre-pr playbook cases, fenced off (D19)
   pre-successor/   the merge page as it stood before its successor (S1, frozen)
   candidates.py    every candidate scored from recorded hunks (S2)
   record.py        by hand, once: the -U0 hunks of each changed source against the checkout (S2)
@@ -413,14 +420,20 @@ key is added to the source.
   root in the configured order. Each is classified once per run: a full
   clone is *usable*; a directory that is not a git work tree, a shallow
   clone or a partial clone is *skipped*, with its reason, and is never
-  fetched into or written to. Git missing from PATH skips them all.
+  fetched into or written to. A source root must be the top of its own
+  work tree (`git rev-parse --show-toplevel` resolves to it), else it is
+  skipped as "not the top of a git work tree". Git missing from PATH
+  skips them all. Every call runs with a clean environment (S3).
 - **Matching.** A repository "has" a commit when
   `git -C <repo> cat-file -e <sha>^{commit}` succeeds there, which reads
   only local objects. The first usable repository in order that has the
   commit is the source's repository, and the finding names it (the root,
   or the source root's path). When more than one has it, the first wins;
   the match is by commit alone, and the path is then checked only in that
-  repository.
+  repository. A `sha:` under 7 characters is not checked ("too short").
+  A prefix ambiguous in a repository is not checked ("ambiguous in
+  <repo>"), and the search for that source stops: it does not move on to
+  the next repository.
 - **Reading the path.** The cited `path:` is read relative to the matched
   directory: the root, as `stale-claim` reads it, or the source root as
   configured (so a source root for repo-relative citations is the
@@ -428,7 +441,7 @@ key is added to the source.
   path must be relative and stay inside that directory, and it reaches
   git only as `<sha>:./<path>` or after `--`.
 - **No repository has the commit.** If every repository in the list was
-  usable, the source is `source-not-at-revision` and the description
+  usable and none reported an ambiguity, the source is `source-not-at-revision` and the description
   lists the repositories searched. If at least one was skipped, the
   commit may be in a repository the check could not read: the source is
   *not checked*, counted with that reason in `revision_check`, and is not
@@ -475,7 +488,12 @@ S3, S4, S5, S6. S3 does not depend on S2's result.
   12/12/11 and 11/11/10, so the bar's denominators cannot drift.
 - **The supplementary cases (D17).** One directory per case under
   `eval/revisions/cases/<id>/`, built from the local code-copilot-team
-  checkout, read-only and never fetched:
+  checkout, read-only and never fetched. The three pre-pr playbook cases
+  live apart, under `eval/revisions/cases/keyword-quoting/<id>/`, by
+  D19: their pages quote closing-keyword phrases verbatim, and that
+  directory is the only one any closing-keyword file check excludes.
+  The README, `case.json`, the labels and the report name those cases
+  by id and path only and never quote their keyword lines:
   - `page.md`: the page as it stood before the correction. For the five
     wiki events (finding 17), the page's bytes at the commit before the
     correcting one, verbatim, except a derived `sha:` added to a `path:`
@@ -576,8 +594,17 @@ S3, S4, S5, S6. S3 does not depend on S2's result.
   on PATH, shallow (`git rev-parse --is-shallow-repository`) or partial,
   and its HEAD. It matches each `sha:` to the first usable repository
   that has the commit (`git cat-file -e <sha>^{commit}`), as the
-  solution shape describes. A `sha:` must match 4-40 lowercase hex
-  before it reaches git; a `path:` must be relative and stay inside the
+  solution shape describes. A `sha:` must be 7-40 lowercase hex before
+  it reaches git (7 is git's default abbreviation, and every `sha:` in
+  the study has 7): a shorter one is *not checked*, reason "too short",
+  and is not a finding; one that is not hex at all is
+  `source-not-at-revision` (malformed). A prefix that is ambiguous in a
+  repository (more than one object there starts with it) is *not
+  checked*, reason "ambiguous in <repo>"; the search for that source
+  stops there and does not move on to the next repository, and it never
+  yields `source-not-at-revision`. The spec picks the detection
+  (`rev-parse --disambiguate=<prefix>` or reading `rev-parse`'s error
+  with `LC_ALL=C`); a `path:` must be relative and stay inside the
   matched directory, under the same containment rules as today's source
   roots. Every call uses an argument list with `--` before paths, no
   shell, and a bounded timeout. Calls are batched by repository and
@@ -600,8 +627,50 @@ S3, S4, S5, S6. S3 does not depend on S2's result.
     `core.hooksPath` points hooks nowhere (none of these commands runs
     one, so it costs nothing); `protocol.allow=never` makes any attempted
     transport, a partial clone's lazy fetch included, fail instead of
-    reaching the network. Each is a `-c` on the command line, not an
-    environment variable that redirects git's state.
+    reaching the network. Each is a `-c` on the command line.
+  - *A clean environment for every call.* Git reads `GIT_DIR`,
+    `GIT_WORK_TREE`, `GIT_INDEX_FILE`, `GIT_OBJECT_DIRECTORY` and their
+    kin before `-C`, and git sets several of them when it runs a hook, so
+    `findings` run from a pre-commit hook would check every `sha:`
+    against the hook's repository. The git layer builds each call's
+    environment from `os.environ` with a deny rule: **every variable
+    whose name starts with `GIT_` is removed**, which covers the whole
+    list `git rev-parse --local-env-vars` prints in git 2.53
+    (`GIT_ALTERNATE_OBJECT_DIRECTORIES`, `GIT_CONFIG`,
+    `GIT_CONFIG_PARAMETERS`, `GIT_CONFIG_COUNT`, `GIT_OBJECT_DIRECTORY`,
+    `GIT_DIR`, `GIT_WORK_TREE`, `GIT_IMPLICIT_WORK_TREE`,
+    `GIT_GRAFT_FILE`, `GIT_INDEX_FILE`, `GIT_NO_REPLACE_OBJECTS`,
+    `GIT_REPLACE_REF_BASE`, `GIT_PREFIX`, `GIT_SHALLOW_FILE`,
+    `GIT_COMMON_DIR`) plus `GIT_CONFIG_KEY_<n>`/`GIT_CONFIG_VALUE_<n>`,
+    `GIT_EXTERNAL_DIFF`, `GIT_DISCOVERY_ACROSS_FILESYSTEM` and any
+    variable a later git adds, **except three kept on purpose:**
+    `GIT_CONFIG_GLOBAL`, `GIT_CONFIG_SYSTEM` and `GIT_CONFIG_NOSYSTEM`,
+    which only say where the user's own config lives (the reason system
+    and global config are kept, below). The layer then sets
+    `GIT_CEILING_DIRECTORIES` (next bullet), `GIT_TERMINAL_PROMPT=0` and
+    `LC_ALL=C` (stable messages). Removing a variable or limiting
+    discovery redirects nothing: no variable here points git at a
+    different repository, index or lock.
+  - *`paths.git_toplevel` is left as it is.* It resolves the default
+    root for every verb and passes the environment through. Inside a
+    hook `GIT_DIR` names the repository the hook runs in, so the root it
+    finds is the right one, and changing it would change every verb's
+    behaviour from hooks, which is outside this bet. The revision layer
+    does not reuse it: it re-derives each repository from its directory
+    with the clean environment.
+  - *No search upward from a source root.* A plain directory inside
+    another repository passes `--is-inside-work-tree` and would match
+    against the enclosing repository. A source root is used only when
+    `git rev-parse --show-toplevel`, resolved, equals the configured
+    directory, resolved; otherwise it is skipped, reason "not the top of
+    a git work tree". As a second guard, each call into a source root
+    sets `GIT_CEILING_DIRECTORIES` to the directory's resolved parent, so
+    git cannot look above it. The root keeps today's meaning (its
+    repository is its git toplevel, as `default_root` finds it, and
+    `--root` may name a subdirectory), so its calls set the ceiling to
+    the parent of that resolved toplevel. The two guards do not conflict:
+    the ceiling stops discovery above the directory, the equality check
+    catches a directory that is not itself the top.
   - *System and global config are kept.* `GIT_CONFIG_NOSYSTEM=1` and
     `GIT_CONFIG_GLOBAL=/dev/null` are not used: those files are the
     user's own, not the configured repository's, and they carry
@@ -653,6 +722,19 @@ S3, S4, S5, S6. S3 does not depend on S2's result.
   - no usable repository at all, and git missing (patched `OSError`);
   - an option-shaped `sha:` (`--output=x`) refused before git; a path
     escaping the root or a source root refused;
+  - a 6-character `sha:` is not checked, reason "too short", no finding;
+  - a 7-character prefix ambiguous in the first repository and present
+    as a commit in the second: not checked, reason "ambiguous in <first
+    repository>", the second repository never consulted for it, no
+    `source-not-at-revision`;
+  - `GIT_DIR`, `GIT_WORK_TREE`, `GIT_INDEX_FILE`, `GIT_OBJECT_DIRECTORY`,
+    `GIT_ALTERNATE_OBJECT_DIRECTORIES` and `GIT_COMMON_DIR` set to a
+    different repository (as a hook would): the result is identical to a
+    run without them, and a spy on the subprocess call shows no `GIT_`
+    variable reaches git except the three kept and the ones the layer
+    sets;
+  - a source root that is a subfolder of a repository is skipped, reason
+    "not the top of a git work tree", and its commits are not matched;
   - a source root whose `.git/config` sets `core.fsmonitor` to a script,
     and whose config and `.gitattributes` set an external diff driver
     (`diff.external` and a `diff=<driver>` attribute with `command`) and
@@ -804,9 +886,19 @@ D11.
 - **Cross-repository sources.** The study's pages cite another
   repository, and the schema cannot say which. *Workaround:* the `sha:`
   picks the repository among the root's and the source roots (D6). A
-  short `sha:` that is ambiguous in a repository fails `cat-file` there
-  and counts as not found in it; the spec says how the description
-  reports it.
+  `sha:` shorter than 7 characters is not checked ("too short"); a
+  prefix ambiguous in a repository is not checked ("ambiguous in
+  <repo>") and the search stops there, so an ambiguity can never turn
+  into a wrong match in a later repository or a false
+  `source-not-at-revision` (S3).
+- **Inherited git variables and upward search.** `GIT_DIR` and its kin,
+  set by a hook, would point every call at the hook's repository; a
+  source root inside another repository would match against the
+  enclosing one. *Workaround:* every `GIT_` variable but the user's
+  three config-location variables is removed from each call's
+  environment, a source root must be the top of its own work tree, and
+  `GIT_CEILING_DIRECTORIES` stops discovery above it; a test covers each
+  (S3).
 - **`stale-claim` still reads the root only.** A source matched in a
   source root whose path does not exist under the root keeps today's
   `stale-claim`, so cross-repository citations stay noisy on that kind.
@@ -832,6 +924,16 @@ D11.
   `-c core.hooksPath=<devnull>` and `-c protocol.allow=never`; none
   through a shell; no diff without `--no-ext-diff --no-textconv`; no
   `safe.directory` override; no git call past the per-run cap.
+- No text from the pages under `eval/revisions/cases/keyword-quoting/`
+  is ever quoted in a PR description, a commit message or an issue,
+  because GitHub acts on closing keywords there (D19). The evidence and
+  the report refer to those cases by id and path. No closing-keyword
+  exclusion reaches beyond that one directory.
+- No inherited `GIT_` variable reaches git except
+  `GIT_CONFIG_GLOBAL`, `GIT_CONFIG_SYSTEM` and `GIT_CONFIG_NOSYSTEM`; no
+  source root that is not the top of its own work tree; no `sha:`
+  shorter than 7 characters checked; no move to the next repository
+  after an ambiguity.
 - `findings` stays read-only: no write to the wiki, the proposals
   directory or any repository, and a missing git or a non-repository
   root is a `revision_check` reason, never an error exit.
@@ -859,7 +961,9 @@ contract, and are listed so the spec does not reopen them. D17 was added
 after the external review of PR #124 (head `7fb2dc7`); the owner
 **decided D17** on 2026-11-22 **against the default** (label more real
 cases first). D18 follows from that answer; the owner **decided D18** on
-2026-11-22 (the default).
+2026-11-22 (the default). After the second external review of PR #124
+(head `02fa871`) the owner decided D19 on 2026-11-22; D20 records that
+review's git requirements as settled.
 
 - **D1. Appetite (decided by the owner, 2026-11-22: the default).**
   Owner, 2026-11-22: **4w, the full project**, knowing S4 ships only if a
@@ -1057,6 +1161,40 @@ cases first). D18 follows from that answer; the owner **decided D18** on
   on the filters. Alternatives: keep every positive (strictest, one
   missed case fails a candidate); a minimum of 3 with two thirds kept;
   report the recall count without making it a condition.
+- **D19. The pre-pr playbook cases quote closing keywords (decided by
+  the owner, 2026-11-22: keep them, fenced off).** Owner, 2026-11-22:
+  **keep the three cases**, with these rules:
+  - their pages are stored verbatim in their own directory,
+    `eval/revisions/cases/keyword-quoting/`, apart from the other cases;
+  - the repository's closing-keyword check, and any "no closing keyword
+    in any file" test the build adds, exclude exactly that directory and
+    nothing else. Today no check in this repository scans files: the
+    pre-PR check sessions run scans commit messages and the PR body
+    (`scripts/pre-pr-check.sh`, from code-copilot-team), so the rule
+    binds any file check that is added;
+  - no text from those case pages is ever quoted in a PR description, a
+    commit message or an issue, because GitHub acts on it (no-gos and
+    the circuit breaker's "never" list);
+  - the evidence and the report refer to those cases by id and path,
+    never by quoting their keyword lines.
+  Why it was a question: the issue 54 study excluded this page from its
+  fixture for exactly this reason (`eval/patterns/README.md` 249), and
+  the three cases are a large share of the supplementary set (finding
+  17). The alternatives were to drop the three cases (leaving four
+  candidates, near D18's minimum) or to redact the keyword lines (which
+  would change the bytes the case is meant to preserve).
+- **D20. The second review's git requirements (settled by the review of
+  PR #124 at `02fa871`).** Every git call gets a clean environment: all
+  `GIT_` variables removed except `GIT_CONFIG_GLOBAL`,
+  `GIT_CONFIG_SYSTEM` and `GIT_CONFIG_NOSYSTEM`, then
+  `GIT_CEILING_DIRECTORIES`, `GIT_TERMINAL_PROMPT=0` and `LC_ALL=C` set;
+  `paths.git_toplevel` is left as it is. A source root must be the top of
+  its own work tree (resolved `--show-toplevel` equals the resolved
+  directory), else it is skipped as "not the top of a git work tree".
+  A `sha:` must be at least 7 hex characters, else "not checked: too
+  short"; an ambiguous prefix is "not checked: ambiguous in <repo>", the
+  search stops there and never yields `source-not-at-revision`. S3 holds
+  the detail and the tests.
 
 ## Circuit breaker
 
@@ -1098,7 +1236,13 @@ The cut order, first to last, each with its trigger:
   key, page type, runtime dependency, exit code or MCP tool; bump
   `findings_version`; edit a label, a case, a candidate or the bar after
   the freeze; skip the owner's review of the labelling commit; add a case
-  after the run; fetch a case's history over the network;
+  after the run; fetch a case's history over the network; quote text
+  from the keyword-quoting case pages in a PR description, commit
+  message or issue, or widen the closing-keyword exclusion beyond that
+  directory (D19); let an inherited `GIT_` variable other than the three
+  config-location ones reach git, accept a source root that is not the
+  top of its work tree, check a `sha:` under 7 characters, or move on to
+  another repository after an ambiguity;
   edit `eval/patterns/`'s frozen files, memkernel or code-copilot-team;
   weaken or skip a test.
 
@@ -1115,6 +1259,9 @@ it. D17, added after the external review of PR #124, was answered on
 before any measuring. **D18 was answered on 2026-11-22 with the default**, following from it: at least 4
 positives for the recall condition to be tested, and keep at least
 three quarters of them, rounded up? Default: yes, those numbers.
+After the second external review of PR #124, **D19 was answered on
+2026-11-22**: keep the three pre-pr playbook cases, fenced off in their
+own directory.
 
 - D1 **4w, the full project**, knowing S4 ships only if a candidate
   clears the frozen bar.
@@ -1148,6 +1295,12 @@ three quarters of them, rounded up? Default: yes, those numbers.
   fixture, labelled by the build session from the correction evidence,
   the labelling commit reviewed by the owner, frozen before any
   candidate code; a recall condition joins the bar (D18).
+- D18 the default: at least 4 positives, keep at least three quarters,
+  rounded up.
+- D19 **keep the three pre-pr playbook cases, fenced off**: stored
+  verbatim in `eval/revisions/cases/keyword-quoting/`, the only directory
+  any closing-keyword file check excludes; never quoted in a PR
+  description, commit message or issue; referred to by id and path.
 
 ## Bet log
 
@@ -1159,3 +1312,4 @@ three quarters of them, rounded up? Default: yes, those numbers.
 | 2026-11-22 | shaped (revised after review) | External review of PR #124 (head 7fb2dc7), four points, written before the reviewer read the pitch. (1) The bar is derived from the committed file: finding 9 gains a table from `results/staleness.json`'s fields joined to each page's `superseded_by` (15 changed entries / 14 citations / 13 pages, less 3 / 2 / 2 superseded, less the `spearman.py` citation error, leaving 11 / 11 / 10), recomputed by S1's frozen test; entry counts are reported beside the owner's page bar, which is unchanged. (2) The shipped check never examines a superseded page; the merge page's flag is measured on a frozen pre-successor copy (finding 15: the page has one commit and was born superseded, so no older commit exists) and the recall side rests on that one entry; D17 added, open, default no. (3) Git hardening in S3, no-gos and circuit breaker: read-only tree-to-tree plumbing, `--no-ext-diff --no-textconv`, `--no-pager -c core.fsmonitor=false -c core.hooksPath=<devnull> -c protocol.allow=never` on every call; system and global config kept, because they carry `safe.directory` (finding 16); a per-run call cap with "not checked" past it; `findings` read-only; tests with marker-writing fsmonitor, external diff and textconv scripts. (4) S5 lists every place that defines source roots (`git grep` at ff30e34): knowledge contract, README 49 and 502, `docs/mcp-adapter.md` 35, packaged `lint-rules.md` 75, `cli.py` help and `info`, `mcp_adapter/config.py` help, `paths.py` docstrings. Appetite 16.5-22h (S1 2-2.5h, S3 4.5-6h, S5 3-4h), still 4w. Updated: frontmatter circuit breaker; findings 9, 15, 16; Appetite; Solution shape; S1, S2, S3, S5; rabbit holes; no-gos; Decisions (intro, D3 clarified, D16, D17); Circuit breaker; Questions for the owner. |
 | 2026-11-22 | shaped (decided, D17) | Owner answered D17 on 2026-11-22, against the default: label more real cases first, frozen before any measuring. Searched offline: memkernel at a9d229c adds none (its two #57 `stale` records are already the study's); code-copilot-team at 2a60217 has seven candidates (finding 17): the pre-pr playbook at 87bbc65, a9628e5 and fc28fc3 (script changes d0e48c3, 34a752d, 801309f), the vLLM playbook at a9a3b1e, the run-wiki-ingest workflow after 68bff41, and the #281 supersessions in `specs/provider-config/spec.md` (6529175) and `specs/benchmark-adapters-backends/spec.md` (e59f7cc). D17 records the source, fixtures, labels-first, who labels (build session, owner reviews the labelling commit), the bar's third condition combined by AND, and the schedule. D18 added, open: minimum 4 positives, keep at least three quarters rounded up. Appetite 20.5-27h (S1 5-6.5h, S2 4-5h), 4w holds for the core, S4 first at risk; triggers moved to end of week 2, start of week 3 and middle of week 4. Updated: frontmatter circuit breaker; finding 17; Appetite and planned order; Solution shape (the supplementary set, the combined bar); S1, S2; rabbit holes; Decisions (intro, D3 note, D17, D18); Circuit breaker; Questions for the owner. |
 | 2026-11-22 | shaped (decided, D18) | Owner answered D18 on 2026-11-22 with the default: at least 4 real cases for the recall condition to be tested, and a candidate keeps at least three quarters of them, rounded up (3 of 4, 4 of 5, 5 of 6, 6 of 7). No decision remains open. |
+| 2026-11-22 | shaped (revised after review 2) | External review of PR #124 at 02fa871 asked for small changes; the owner decided the one decision the same day. D19 added (owner): keep the three pre-pr playbook cases (their versions at 87bbc65^, 87bbc65, a9628e5 and fc28fc3^ quote closing-keyword phrases on 9, 13, 18 and 18 lines; issue 54 left the page out for that reason, `eval/patterns/README.md` 249), stored verbatim in `eval/revisions/cases/keyword-quoting/`, the only directory a closing-keyword file check excludes; never quoted in a PR description, commit message or issue; referred to by id and path. D20 added (settled by the review): every git call's environment drops all `GIT_` variables except `GIT_CONFIG_GLOBAL`, `GIT_CONFIG_SYSTEM` and `GIT_CONFIG_NOSYSTEM` (covering git 2.53's `--local-env-vars` list) and sets `GIT_CEILING_DIRECTORIES`, `GIT_TERMINAL_PROMPT=0`, `LC_ALL=C`; `paths.git_toplevel` left as it is (inside a hook it finds the hook's own repository, and changing it would change every verb); a source root must equal its resolved `--show-toplevel`, else "not the top of a git work tree", with the ceiling as a second guard; `sha:` minimum 7 hex ("not checked: too short"), an ambiguous prefix is "not checked: ambiguous in <repo>" and stops the search. Updated: frontmatter circuit breaker; finding 17; Solution shape (layout, the candidate list, matching, no-commit rule); S1; S3 (sha rules, clean environment, top-of-work-tree check, tests for each); rabbit holes; no-gos; Decisions (intro, D19, D20); Circuit breaker; Questions for the owner. |
