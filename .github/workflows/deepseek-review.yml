@@ -56,7 +56,7 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "${DEEPSEEK_API_KEY}" ]; then
-            echo "DEEPSEEK_API_KEY is not available to this run (a fork or Dependabot PR); skipping."
+            echo "DEEPSEEK_API_KEY is not available to this run (for example a Dependabot PR); skipping."
             exit 0
           fi
 
@@ -64,7 +64,10 @@ jobs:
           gh api "repos/${REPO}/compare/${BASE}...${HEAD}" -H "Accept: application/vnd.github.v3.diff" > diff.txt
           total_lines=$(wc -l < diff.txt | tr -d ' ')
           total_bytes=$(wc -c < diff.txt | tr -d ' ')
-          head -n "$MAX_DIFF_LINES" diff.txt | head -c "$MAX_DIFF_BYTES" > diff.cut
+          # Two steps through a file: in a pipe, a byte cut that stops early would end the
+          # line cut with SIGPIPE (exit 141), which set -o pipefail turns into a failed job.
+          head -n "$MAX_DIFF_LINES" diff.txt > diff.lines
+          head -c "$MAX_DIFF_BYTES" diff.lines > diff.cut
           shown_lines=$(wc -l < diff.cut | tr -d ' ')
           shown_bytes=$(wc -c < diff.cut | tr -d ' ')
           truncated=false
