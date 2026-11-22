@@ -120,6 +120,31 @@ add `## Status` or `## Date` H2s to a wiki decision page.** If
 you are migrating an external ADR, drop those sections and let
 the frontmatter carry the metadata.
 
+**Optional pattern convention.** A decision page can also carry
+reusable engineering guidance (a "pattern") by using body lines
+inside the four sections above. It adds no frontmatter key, page
+type, directory or H2, and nothing checks it; review enforces it.
+
+- `## Decision`: the first paragraph is the Y-statement, written
+  as three sentences so each stays within prose lint's 25-word
+  limit: "In the context of <situation>, we chose <choice>." /
+  "We chose it over <alternative>." / "The reason: <why>." A
+  statement of 25 words or fewer can stay one sentence. A
+  separate paragraph names the canonical implementation:
+  `Chosen: <name>`.
+- `## Context`: `Requirement:`, `Applies when:` and
+  `Does not apply when:` lines, so the pattern isn't reused out
+  of scope.
+- `## Consequences`: a `Revisit when:` line (what a curator
+  checks when a source moves), plus `Tests:` and `Confidence:`
+  lines.
+- `sources:`: cite the canonical implementation or its spec as
+  `path:` with the `sha:` it was read at.
+
+The full template, an evidence checklist and how to find, cite,
+revisit and supersede a pattern are in `docs/patterns.md`
+(https://github.com/gosha70/wiki-studio/blob/main/docs/patterns.md).
+
 ### `playbook` — `playbooks/<slug>.md`
 An operational recipe for a recurring situation. Like a workflow,
 but oriented around "you are in trouble, do this" rather than

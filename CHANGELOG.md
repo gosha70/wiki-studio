@@ -11,6 +11,10 @@ uses [Semantic Versioning](https://semver.org/).
 - `docs/patterns.md`: the `decision`-page pattern convention the issue 54
   study wrote and tested — the template, the evidence checklist, the find,
   findings and read sequence, revisit guidance and what memkernel keeps.
+- The packaged `page-types.md` describes the optional pattern convention in
+  its `decision` section and points to `docs/patterns.md`, so users and
+  ingest prompts see it offline (issue 119). No frontmatter key, page type,
+  section, lint rule or schema version changes.
 
 ## [0.10.0] — 2026-11-18
 
