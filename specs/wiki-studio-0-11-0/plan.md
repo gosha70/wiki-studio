@@ -116,7 +116,9 @@ re-checking that shape the spec:
    reaches `diff` or `diff-tree`, whose lookups are not commit-typed.
 7. **The pitch's `diff-tree --name-only` cannot tell "added" from
    "modified".** The exact kind needs the path absent at the `sha:` and
-   present at HEAD; `--name-status --no-renames` gives `A`, `D` and `M`, so
+   present at HEAD; `--name-status --no-renames` gives `A`, `D` and `M`
+   (with `--relative`, so the printed paths match the cited paths when
+   `--root` names a subdirectory), so
    one call per (repository, commit) serves both the exact kind and the
    structural rule (FR-023).
 8. **C2's heading rule needs the source's lines.** The pitch's set reads no
@@ -191,7 +193,7 @@ Each is recorded so the origin-alignment record at approval can cite it.
 10. **One ambiguity method** (the pitch review's note 2; fact 6; O2): the
     commit-typed lookup, without `--quiet`, read under `LC_ALL=C`. The pitch
     counted any object type and offered `--disambiguate`.
-11. **`diff-tree --name-status --no-renames`** instead of `--name-only`
+11. **`diff-tree --name-status --no-renames --relative`** instead of `--name-only`
     (fact 7), and p1 combines `--show-toplevel --is-shallow-repository HEAD`
     in one call; FR-008 fixes the call plan for S2 and S3 alike.
 12. **`cat-file blob` joins the read-only set** for C2's heading rule only
@@ -389,6 +391,13 @@ O1; the driver honours the `<!-- milestone -->` markers only when phases come
 from tasks.md. After each run, re-run the gate on the branch head before
 trusting `landed`, check no phase was bypassed without a per-phase record, and
 confirm an open PR exists (the known driver defects).
+
+Both runs are started with `CCT_REVIEW_DIFF_MAX_LINES=6000` in the
+environment while code-copilot-team's issue 504 is open (the driver's default
+of 500 lines parked issue 54's data step as inconclusive). US1 commits seven
+case pages with the labels, protocol, README and a test, and US3 the recorded
+hunks: about 830 changed lines across the study's cited files alone, one file
+539 of them.
 
 ## Test strategy
 
