@@ -7,16 +7,18 @@ name: DeepSeek review
 # blocks a merge: the external review and the `reviewed` label (review-gate.yml)
 # stay the gate.
 #
-# pull_request_target runs main's copy of this file, so a PR cannot change its own
-# reviewer. The job never checks out or runs the PR's code; it reads the diff
-# through the API, sends it to DeepSeek and writes one comment. The diff is
-# untrusted text: the prompt says so, and the job only ever posts a comment.
+# Plain `pull_request`, not `pull_request_target`: GitHub gives no repository
+# secrets to a PR from a fork, so only PRs from branches of this repository (people
+# with write access) can spend the DeepSeek key, and the job skips everything else.
+# It never runs the PR's code: it reads the diff of the exact base and head commits
+# of the triggering event through the API, sends it to DeepSeek and writes one
+# comment. The diff is untrusted text, and the prompt says so.
 #
-# Needs the repository secret DEEPSEEK_API_KEY. Without it (for example on a
-# Dependabot PR, which gets no repository secrets) the job notes that and exits 0.
+# Needs the repository secret DEEPSEEK_API_KEY. Set a spending limit on the key in
+# DeepSeek's console as well; this job caps each request's size, not the bill.
 
 on:
-  pull_request_target:
+  pull_request:
     types: [opened, reopened, synchronize, ready_for_review]
 
 permissions:
@@ -37,27 +39,35 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
       PR: ${{ github.event.pull_request.number }}
+      BASE: ${{ github.event.pull_request.base.sha }}
       HEAD: ${{ github.event.pull_request.head.sha }}
       TITLE: ${{ github.event.pull_request.title }}
       DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
       BASE_URL: https://api.deepseek.com/v1
       MODEL: deepseek-flash
+      MAX_TOKENS: "16384"
       MAX_DIFF_LINES: "6000"
+      MAX_DIFF_BYTES: "300000"
+      BOT_LOGIN: github-actions[bot]
       MARKER: "<!-- deepseek-review -->"
     steps:
       - name: Review the diff and post the comment
         run: |
-          set -uo pipefail
+          set -euo pipefail
           if [ -z "${DEEPSEEK_API_KEY}" ]; then
-            echo "DEEPSEEK_API_KEY is not available to this run; skipping the review."
+            echo "DEEPSEEK_API_KEY is not available to this run (a fork or Dependabot PR); skipping."
             exit 0
           fi
 
-          gh pr diff "$PR" --repo "$REPO" > diff.txt || { echo "Could not read the diff; skipping."; exit 0; }
-          total=$(wc -l < diff.txt | tr -d ' ')
+          # The diff between the exact commits of this event, never the PR's moving head.
+          gh api "repos/${REPO}/compare/${BASE}...${HEAD}" -H "Accept: application/vnd.github.v3.diff" > diff.txt
+          total_lines=$(wc -l < diff.txt | tr -d ' ')
+          total_bytes=$(wc -c < diff.txt | tr -d ' ')
+          head -n "$MAX_DIFF_LINES" diff.txt | head -c "$MAX_DIFF_BYTES" > diff.cut
+          shown_lines=$(wc -l < diff.cut | tr -d ' ')
+          shown_bytes=$(wc -c < diff.cut | tr -d ' ')
           truncated=false
-          if [ "$total" -gt "$MAX_DIFF_LINES" ]; then
-            head -n "$MAX_DIFF_LINES" diff.txt > diff.cut && mv diff.cut diff.txt
+          if [ "$shown_bytes" -lt "$total_bytes" ]; then
             truncated=true
           fi
 
@@ -78,18 +88,19 @@ jobs:
 
           {
             echo "PR #${PR}: ${TITLE}"
-            echo "Head commit: ${HEAD}"
+            echo "Reviewing ${BASE:0:7}...${HEAD:0:7}"
             if [ "$truncated" = true ]; then
-              echo "NOTE: the diff has ${total} lines; only the first ${MAX_DIFF_LINES} are shown."
+              echo "NOTE: the diff has ${total_lines} lines (${total_bytes} bytes); only the first ${shown_lines} lines (${shown_bytes} bytes) are shown."
             fi
             echo
-            cat diff.txt
+            cat diff.cut
           } > user.txt
 
-          jq -n --arg model "$MODEL" --rawfile system system.txt --rawfile user user.txt '{
+          jq -n --arg model "$MODEL" --argjson max_tokens "$MAX_TOKENS" \
+            --rawfile system system.txt --rawfile user user.txt '{
               model: $model,
               messages: [{role: "system", content: $system}, {role: "user", content: $user}],
-              max_tokens: 4096,
+              max_tokens: $max_tokens,
               temperature: 0.1,
               thinking: {type: "disabled"}
             }' > request.json
@@ -98,33 +109,38 @@ jobs:
             -X POST "${BASE_URL}/chat/completions" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${DEEPSEEK_API_KEY}" \
-            --data @request.json)
-          if [ "$http" != "200" ]; then
-            review="_The DeepSeek review could not run (HTTP ${http}). This check is advisory; it does not block the merge._"
-          else
+            --data @request.json || echo "000")
+          review=""
+          if [ "$http" = "200" ]; then
             review=$(jq -r '.choices[0].message.content // empty' response.json)
-            [ -n "$review" ] || review="_DeepSeek returned an empty answer. This check is advisory._"
+          fi
+          if [ -z "$review" ]; then
+            review="_The DeepSeek review could not run (HTTP ${http}). This check is advisory; it does not block the merge._"
           fi
 
-          note=""
-          if [ "$truncated" = true ]; then
-            note=$'\n\n_The diff had '"${total}"' lines; DeepSeek saw the first '"${MAX_DIFF_LINES}"'._'
-          fi
           {
             echo "$MARKER"
             echo "## DeepSeek review (advisory) of \`${HEAD:0:7}\`"
             echo
             echo "$review"
-            echo "$note"
+            if [ "$truncated" = true ]; then
+              echo
+              echo "_The diff had ${total_lines} lines (${total_bytes} bytes); DeepSeek saw the first ${shown_lines} lines (${shown_bytes} bytes)._"
+            fi
             echo
-            echo "_Model \`${MODEL}\`. This comment is updated on each push; it never blocks the merge. The external review and the \`reviewed\` label are the gate._"
+            echo "_Reviewed \`${BASE:0:7}...${HEAD:0:7}\` with model \`${MODEL}\`. This comment is updated on each push; it never blocks the merge. The external review and the \`reviewed\` label are the gate._"
           } > comment.md
 
+          # Only this workflow's own comment is ever updated; a lookup failure stops the job.
           existing=$(gh api "repos/${REPO}/issues/${PR}/comments" --paginate \
-            --jq "[.[] | select(.body | startswith(\"${MARKER}\"))][0].id // empty")
+            --jq "[.[] | select(.user.login == \"${BOT_LOGIN}\" and (.body | startswith(\"${MARKER}\")))] | .[0].id // empty")
           if [ -n "$existing" ]; then
             gh api -X PATCH "repos/${REPO}/issues/comments/${existing}" -F body=@comment.md > /dev/null
+            echo "Updated the DeepSeek review comment for ${HEAD:0:7}."
           else
             gh api -X POST "repos/${REPO}/issues/${PR}/comments" -F body=@comment.md > /dev/null
+            echo "Posted the DeepSeek review comment for ${HEAD:0:7}."
           fi
-          echo "Posted the DeepSeek review for ${HEAD:0:7}."
+          if [ "$http" != "200" ]; then
+            echo "::warning::DeepSeek returned HTTP ${http}; the comment says the review could not run."
+          fi
