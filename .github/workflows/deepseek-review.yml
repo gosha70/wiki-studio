@@ -32,7 +32,8 @@ concurrency:
 jobs:
   deepseek-review:
     name: DeepSeek review (advisory)
-    if: github.event.pull_request.draft == false
+    # Not a draft, and from a branch of this repository: a fork's PR doesn't start the job.
+    if: github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
