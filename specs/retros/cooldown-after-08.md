@@ -25,9 +25,9 @@ finding or verb:
   is one disputed label away from passing, and the report says so.
 - The revision check flagged 13 pages; 12 of the 13 flags were false.
 - Three follow-up issue drafts are in `eval/patterns/issues/`. The owner chose to file all three on 2026-11-22, as issues 119, 120 and 121, with links pointing at files at 25b9e13:
-  - [pattern template in page-types](https://github.com/gosha70/wiki-studio/blob/25b9e13/eval/patterns/issues/pattern-template-in-page-types.md)
-  - [revision-aware stale check](https://github.com/gosha70/wiki-studio/blob/25b9e13/eval/patterns/issues/revision-aware-stale-check.md)
-  - [title-and-summary duplicate finding](https://github.com/gosha70/wiki-studio/blob/25b9e13/eval/patterns/issues/duplicate-title-summary-finding.md)
+  - [issue 119](https://github.com/gosha70/wiki-studio/issues/119), the pattern template in page-types (draft: [eval/patterns/issues/pattern-template-in-page-types.md](https://github.com/gosha70/wiki-studio/blob/25b9e13/eval/patterns/issues/pattern-template-in-page-types.md))
+  - [issue 120](https://github.com/gosha70/wiki-studio/issues/120), a revision-aware stale check (draft: [eval/patterns/issues/revision-aware-stale-check.md](https://github.com/gosha70/wiki-studio/blob/25b9e13/eval/patterns/issues/revision-aware-stale-check.md))
+  - [issue 121](https://github.com/gosha70/wiki-studio/issues/121), a title-and-summary duplicate finding (draft: [eval/patterns/issues/duplicate-title-summary-finding.md](https://github.com/gosha70/wiki-studio/blob/25b9e13/eval/patterns/issues/duplicate-title-summary-finding.md))
 
 PRs in the cycle:
 
@@ -59,7 +59,6 @@ Also during the cycle:
 - GitHub blocks `pull_request_target` by default in public repositories from
   2026-12-02. The owner created an Active Actions policy allowing it for
   `.github/workflows/review-gate.yml` only; the gate ran under it.
-- The repositories moved to `/Volumes/DevSSD/dev/repo`.
 
 ## Bug fixes shipped
 
@@ -111,5 +110,8 @@ Candidates, all to be shaped:
 - [x] File the three follow-up drafts (issues 119, 120, 121).
 - [ ] Stale memkernel CI pin: CI tests memkernel 0.6.0 while newer memkernel releases exist.
 - [ ] Optional follow-up: code-copilot-team's own copy of the persona.
-- [ ] Auto-build driver bugs: code-copilot-team #427, #463, #471.
+- [ ] Auto-build driver bugs: code-copilot-team #427, #463 and #471 are closed there; recheck on the next build that a resumed run no longer replaces an adopted PR's description or appends "(Closes #N)" to its title (seen on #117 in this cycle).
+- [ ] File in code-copilot-team: the cost cap is checked only before each step, so a run can finish over it ($157.63 against $150 in this cycle).
+- [ ] File in code-copilot-team: the 500-line default review limit (`CCT_REVIEW_DIFF_MAX_LINES`) stops a data-heavy step as "inconclusive"; this cycle needed 6,000.
+- [ ] Optional, from step 2's review: no test checks the background copy's `links_rewritten` counts in the patterns study's manifest.
 - [ ] Issue 75 and memkernel PR #144.
