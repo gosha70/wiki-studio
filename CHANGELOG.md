@@ -6,7 +6,7 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.11.0]
+## [0.11.0] — 2026-11-23
 
 A feature release: `findings` checks a page's cited sources against git,
 read-only and offline, and reports a source that is not at its cited revision
