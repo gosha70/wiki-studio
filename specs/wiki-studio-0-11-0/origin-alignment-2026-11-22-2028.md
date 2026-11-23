@@ -50,7 +50,8 @@ This approval commit does four things:
 - adds `automation.json` for **run 1 only**, copied from issue 54's with these
   fields changed: the branch `feature/wiki-studio-0-11-0-evidence`;
   `phases` from `tasks.md` with `milestone_every: 0` and `max_phases: 3`; and
-  `pr` holding only a title, no `closes`. It keeps the `pr` profile, DeepSeek
+  `pr` holding only a title, no `closes`; and `review.diff_max_lines: 6000`.
+  It keeps the `pr` profile, DeepSeek
   as the gating reviewer, the gate command of the spec's Constraints, two fix
   sessions per phase and the $150 / 12 h caps;
 - adds this record;
@@ -64,8 +65,10 @@ plan's `origin.issue`, 120, which the evidence PR must not close (FR-016,
 FR-046). So at the pause after US3 the evidence PR is opened by hand from the
 pushed branch, after `pre-pr-check.sh --closes none`, and run 1 is never
 resumed. If it were, `max_phases: 3` stops it before US4 and the driver parks
-without opening or adopting a PR. The run is started with
-`CCT_REVIEW_DIFF_MAX_LINES=6000` in its environment. Run 1's ledger is set
+without opening or adopting a PR. The review limit is `review.diff_max_lines:
+6000` in `automation.json`, which the driver (code-copilot-team `fd05256`,
+its PR 509) freezes at launch, so the resume after the labelling pause
+keeps it without the environment variable. Run 1's ledger is set
 aside before run 2; run 2's settings (its branch from `main`, `--start-phase
 4`, `pr.closes: [120]` only with a winner) come with the spec amendment.
 
