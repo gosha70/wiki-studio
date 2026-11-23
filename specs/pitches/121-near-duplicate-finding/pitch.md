@@ -4,7 +4,7 @@ title: "A near-duplicate finding from titles and summaries: re-measure the issue
 appetite: 4w
 bet_status: shaped
 cycle: ""
-circuit_breaker: "Core is S1 (the corpus: code-copilot-team's routing and pi spec decisions at fd05256 and memkernel's spec decisions at 8279d76, about 215 items, extracted verbatim, everything the issue 54 corpus was drawn from or overlaps excluded, every page pinned by sha256, D2), S2 (the labels, the candidates and the bar, labelled by a session with no candidate code, reviewed by the owner and frozen, D3, D4, D5) and S3 (the measurement, published whatever it shows, as an evidence PR opened by hand). S4 (the possible-duplicate kind), S5 (ADR-0006 and the documents) and S6 (the 0.12.0 release) ship only if a candidate clears the bar frozen in S2. Cut order, first to last, each with its trigger: (1) end of week 1, if S1's extraction has not landed: both repositories stay, code-copilot-team narrows to the routing family (pi dropped) and memkernel drops its three H3-format pre-0.7 plans (14 items), about 172 pages, and the extension order still applies before the freeze; (2) end of week 2, if S2's freeze has not landed: the labels freeze as reviewed by then, and with fewer than 8 true pairs the verdict is not testable; (3) start of week 3, if no candidate clears the bar, the verdict is not testable, or S3 has not run: S4-S6 are cut, the cycle ends early, and issue 121 stays open with the measurement as its evidence; (4) middle of week 4, if S4 is not downhill: S4-S6 are cut the same way, and the kind becomes a follow-up bet that starts from the frozen winner. End of week 4: S6 ships what is true; if the release cannot be cut, the change waits under [Unreleased]. Never, to save time: drop a repository from the base; include a spec the issue 54 corpus was drawn from or that overlaps it; run any candidate, or compute any similarity score, on the new corpus before the freeze; edit a label, a page, a candidate, the threshold or the bar after the freeze, or add pages after the run; skip the owner's review of the labelling commit; put a model on any path from findings, approve or review_state; change wiki_state._tokenise; add a frontmatter key, a page type, an exit code, a runtime dependency or an MCP tool; ship the kind without ADR-0006 for the related line; make lint --health or --strict report or fail on the new kind; make the kind block promote or approve, or merge, delete or supersede anything; bump findings_version; edit eval/patterns' frozen files, memkernel or code-copilot-team; read over the network; quote closing-keyword text anywhere; weaken or skip a test."
+circuit_breaker: "Core is S1 (the corpus: code-copilot-team's routing and pi spec decisions at fd05256 and memkernel's spec decisions at 8279d76, about 215 items, extracted verbatim, everything the issue 54 corpus was drawn from or overlaps excluded, every page pinned by sha256, D2), S2 (the labels, the candidates and the bar, labelled by a session with no candidate code, reviewed by the owner and frozen, D3, D4, D5) and S3 (the measurement, published whatever it shows, as an evidence PR opened by hand). S4 (the possible-duplicate kind), S5 (ADR-0006 and the documents) and S6 (the 0.12.0 release) ship only if a candidate clears the bar frozen in S2. Cut order, first to last, each with its trigger: (1) end of week 1, if S1's extraction has not landed: both repositories stay, code-copilot-team narrows to the routing family (pi dropped) and memkernel drops its three H3-format pre-0.7 plans (14 items), about 172 pages, and the extension order still applies before the freeze; (2) end of week 2, if S2's freeze has not landed: the labels freeze as reviewed by then, and with fewer than 8 true pairs the verdict is not testable; (3) start of week 3, if no candidate clears the bar, the verdict is not testable, or S3 has not run: S4-S6 are cut, the cycle ends early, and issue 121 stays open with the measurement as its evidence; (4) middle of week 4, if S4 is not downhill: S4-S6 are cut the same way, and the kind becomes a follow-up bet that starts from the frozen winner. End of week 4: S6 ships what is true; if the release cannot be cut, the change waits under [Unreleased]. Never, to save time: start S4, or change anything under src/, before 0.11.0 is tagged and released; drop a repository from the base; build a page body that keeps a list marker or the item's label; group labels by decision instead of by question; ship the kind without the report, contract and documents saying only decision pages were measured (D10); include a spec the issue 54 corpus was drawn from or that overlaps it; run any candidate, or compute any similarity score, on the new corpus before the freeze; edit a label, a page, a candidate, the threshold or the bar after the freeze, or add pages after the run; skip the owner's review of the labelling commit; put a model on any path from findings, approve or review_state; change wiki_state._tokenise; add a frontmatter key, a page type, an exit code, a runtime dependency or an MCP tool; ship the kind without ADR-0006 for the related line; make lint --health or --strict report or fail on the new kind; make the kind block promote or approve, or merge, delete or supersede anything; bump findings_version; edit eval/patterns' frozen files, memkernel or code-copilot-team; read over the network; quote closing-keyword text anywhere; weaken or skip a test."
 shaped_by: "pitch-shaper (Claude Code) for gosha70"
 shaped_date: 2026-11-23
 ---
@@ -206,6 +206,22 @@ candidate corpus**, so no number below comes from (b).
     carry identifiers (`D5`, `D-upsert-key`, `S1.`, `ADR-1:`) that would
     become tokens. Title extraction has to strip them, and the report has
     to say the pages are extracted, not curated.
+15. **A verbatim copy would score most pages on their title alone.**
+    (Raised by the external review of PR #132 at `75fdea7`; checked
+    against the code.) `_first_paragraph` (`eval/patterns/duplicates.py`
+    125-138) splits `## Decision` on blank lines and skips every block
+    that starts with one of `_SKIPPED_BLOCK_PREFIXES` (`#`, `>`, `|`, a
+    code fence, `- `, `* `, `+ `; line 64) or matches
+    `_NUMBERED_ITEM_RE` (`\d+[.)]` and a space; line 63). When the page
+    has `## Decision` and no block survives, it returns an empty string;
+    it falls back to the body only when the page has no `## Decision` at
+    all. By form, the base holds code-copilot-team 90 list items, 17
+    bold-paragraph items and 6 H3 items (113), and memkernel 51 list
+    items, 37 bold-paragraph items and 14 H3 items (102): **141 list
+    items** whose verbatim copy starts with a list marker. Bold-paragraph
+    items start with `**`, which is not skipped, but their bullets are,
+    so only the label line would be read. S1's body rule removes the
+    label and the markers (solution shape).
 
 So a larger independent corpus exists, but only by extraction, and the
 number of true pairs it holds is unknown until it is labelled. **"Not
@@ -215,18 +231,20 @@ the cycle early with the evidence published.
 ## Appetite
 
 **4w** (D1, decided by the owner), one cycle, with an early exit. Work
-content for an LLM executor is about 20.5-27 hours across six scopes;
-the core (S1-S3) is about 13.5-17.5 hours. D2's second repository added
+content for an LLM executor is about 21.5-28 hours across six scopes;
+the core (S1-S3) is about 14-18 hours. D2's second repository added
 about 1h to S1 (a second pin and the H3 section mapping), 2-3h to S2
-(about 215 pages to cluster instead of 96) and 0.5h to S3 (results by
-repository and by pair scope).
+(about 215 pages to group instead of 96) and 0.5h to S3 (results by
+repository and by pair scope). The review of PR #132 added 0.5h to S1
+(the body rule, six per-form tests, the empty-paragraph report) and the
+owner's D10 0.5h to S4 (tests on other page types).
 
 | Scope | Estimate |
 |-------|----------|
-| S1 The corpus, extracted verbatim from two repositories and pinned | 4-5h |
+| S1 The corpus, extracted verbatim from two repositories and pinned | 4.5-5.5h |
 | S2 Labels, candidates and bar, frozen | 6-8h (plus the owner's review) |
 | S3 The measurement and the evidence PR | 3.5-4.5h |
-| S4 The `possible-duplicate` kind (only with a winner) | 4-5h |
+| S4 The `possible-duplicate` kind (only with a winner) | 4.5-5.5h |
 | S5 ADR-0006, contract and documents (only with a winner) | 2-3h |
 | S6 Release 0.12.0 (only with a winner) | 1-1.5h |
 
@@ -242,7 +260,7 @@ Why not 6w: if no candidate clears the bar, or the corpus cannot supply
 enough true pairs, the cycle ends at the start of week 3.
 
 **Does 4w still hold after D2?** Yes for the core. Week 1 is now the
-tight one: two extractions and about 215 pages to cluster before the
+tight one: two extractions and about 215 pages to group before the
 owner's review. Cut 1 is a defined narrowing that keeps both
 repositories; the freeze (trigger 2) stays at the end of week 2.
 
@@ -292,10 +310,10 @@ eval/duplicates/
   extract.py         run once, by hand: verbatim extraction from both repositories at their pins (S1)
   corpus.json        per page: repository, commit, spec path, line span, form, sha256 (S1; frozen)
   corpus/<repository>/<family>/   one decision page per extracted item (S1; frozen)
-  labels.json        clusters, dispositions and reasons (S2; frozen, sha256-pinned)
+  labels.json        groups by question, dispositions, reasons, the cross-family summary (S2; frozen, sha256-pinned)
   protocol.json      candidates, threshold, bar, selection rule (S2; frozen)
   candidates.py      scores B0 and B1 from the frozen pages (S3)
-  results/           candidates.json, secondary.json (S3)
+  results/           candidates.json, secondary.json (compared by CI), timing.json (not compared) (S3)
   report.md          the table, the verdict, the winner or "none", the limits (S3)
 
 src/wiki_studio/duplicates.py   the winning candidate, the skip rules, the related-line parser (S4)
@@ -328,13 +346,40 @@ labelling, and is the same for both repositories:
 - *Title:* the H3 text or the bold text, with a leading identifier
   (`D5`, `D-upsert-key`, `S1.`, `A1`, `R2`, `ADR-1:`) and a trailing
   parenthetical removed; when nothing is left, the item's first sentence.
-- *Body:* `## Decision` holds the item's text verbatim. An H3 item with
-  `**Context**:`, `**Decision**:` and `**Consequences**:` lines
-  (memkernel's three pre-0.7 plans) has each line moved, unchanged, to
-  the matching section, so `## Decision`'s first paragraph is the
-  decision and not its context. No word of an item is rewritten, so the
-  labeller does not write the text it labels (the issue 54 risk: the
-  build wrote both the pages' links and the labels).
+- *Body, and why it is not a plain copy (finding 15).* The scorer reads
+  the first block of `## Decision` that does not start with `#`, `>`,
+  `|`, a code fence, `- `, `* `, `+ ` or a numbered-item marker
+  (`\d+[.)]` and a space), and returns an empty string, not a fallback,
+  when `## Decision` holds nothing else. A list item copied with its
+  marker would be skipped whole, and 141 of the 215 base items are list
+  items. So `## Decision` is built from the item's text in four steps,
+  the same for every form, and no word is changed, added or reordered:
+  1. **The label is removed from the body.** The H3 line, or the bold
+     span that opens the paragraph or list item (`**D1 Key.**`,
+     `**S1. A wiki's identity: …**`), becomes the title (above) and is
+     not repeated in the body. Kept in the body, it would double the
+     title's tokens and put identifiers such as `d1`, `s1` and `a1` on
+     pages of unrelated specs, since every spec numbers from D1; a
+     curated page has no such label, so removing it is part of building
+     the fixture, and B0 stays the study's signal exactly.
+  2. **Each line loses its leading indentation and one leading list
+     marker** (`- `, `* `, `+ `, or `\d+[.)]` and a space). Blank lines
+     stay where they were, so a list item and its continuation lines (and
+     any nested items written without a blank line) become one prose
+     paragraph, and a bold-paragraph item's bullets become prose.
+  3. **memkernel's 14 H3 ADR items** (`### ADR-1: …`) have their
+     `**Context**:`, `**Decision**:` and `**Consequences**:` lines moved,
+     unchanged apart from losing those three labels, to `## Context`,
+     `## Decision` and `## Consequences`. The `## Decision` paragraph is
+     the decision, and no page gains a `decision` token from the label.
+  4. Headings, tables, code fences and blockquotes inside an item stay as
+     written; the scorer skips them, as it would on a curated page.
+
+  Inline cross-references in the text (`(D6)`, `FR-012`) are words of
+  the item and stay; B1 drops identifier-shaped tokens (below), B0 keeps
+  them. Because no word is written by the build, the labeller does not
+  write the text it labels (the issue 54 risk: the build wrote both the
+  pages' links and the labels).
 - *Frontmatter:* `page_type: decision`, a slug from the repository, spec
   name and item number, the title, and a `sources:` entry with the spec's
   path and the pinned commit.
@@ -351,11 +396,21 @@ still holds fewer than 8 true pairs, the verdict is **not testable**.
 **The labels (D3, D5, decided by the owner).** One labelling session
 that has never seen candidate code works per family (routing, pi,
 memkernel): it reads every page of the family and groups pages that
-record the same decision into clusters, then gives every pair inside a
-cluster a disposition and a one-line reason naming the decision. Pairs
-across families, and across the two repositories, follow D9 (owner,
-2026-11-23: scored, `unrelated` unless the labeller lists them after one
-pass over every family's cluster summaries). Six dispositions:
+answer **the same question**, then gives every pair inside a group a
+disposition and a one-line reason naming the question. Grouping by
+question, not by decision, matters: `conflicting` and `supersedes` pairs
+(both true) answer one question with different decisions, and
+`companion` and `distinct-by-precondition` pairs (both false) are close
+in subject too; grouping by "the same decision" would leave the first
+two out of every group and lose true pairs. A page may sit in more than
+one group; a pair is labelled once. **A within-family pair outside every
+group is `unrelated`.** Pairs across families, and across the two
+repositories, follow D9 (owner, 2026-11-23: scored, `unrelated` unless
+the labeller lists them). The labeller lists them from one pass over a
+summary of all three families that has one line per group (its
+question) **and one line per page in no group** (its title), at most
+about 215 lines, so a duplicate between two ungrouped pages in different
+families can still be found. Six dispositions:
 
 - true: `redundant` (the same decision, in other words), `conflicting`
   (the same question, opposite choices), `supersedes` (a later decision
@@ -382,12 +437,18 @@ frozen threshold of 0.25, both over every pair in scope:
   tokens that are only digits, or 7-40 hex characters with a digit,
   dropped; the Y-statement template's fixed words (`context`, `we`,
   `chose`, `over`, `reason`, the list frozen from `page-types.md`'s
-  template text) dropped. Everything else as B0.
+  template text) dropped; identifier-shaped tokens (a letter prefix from
+  a frozen list, `d`, `s`, `a`, `r`, `us`, `fr-`, `nfr-`, `adr-`, followed
+  only by digits, such as `d6`, `fr-012`, `adr-1`) dropped. Everything
+  else as B0.
 
 The threshold is not varied. The report gives each true pair's score
 under both, as a distribution, not binding. A same-page-type restriction
 is not a candidate: the corpus holds only decision pages, so it would
-measure nothing (D6 sets the shipped scope instead).
+measure nothing (D6 and D10 set the shipped scope instead). B1's
+template-word drop is meant for curated pages written to the
+decision-page template; spec items do not use that template, so this
+corpus cannot measure that part of B1 (S3's limits say so).
 
 **The bar (D4, decided by the owner).** A candidate passes only when all
 three hold: (1) the frozen labels hold at least **8** true pairs, else
@@ -442,14 +503,21 @@ in-scope page, as the conflict scan does.
 **Defaults the owner decided.** On by default. A switch per wiki turns
 it off (D8: `WIKI_STUDIO_DUPLICATE_CHECK=off`, read into `WikiPaths`). In
 `findings` only, not `lint --health` (D7). Same page type only (D6), so a
-decision page and its incident record are never compared.
+decision page and its incident record are never compared. **Every
+content page type, not decisions only** (D10): concept, workflow,
+incident, playbook and decision pages are each compared with pages of
+their own type. A page without `## Decision` is read by the study's rule,
+its title and its first prose block (for a concept page the `## Summary`
+text, for an incident the `## What happened` text). Only decision pages
+are measured; the other types are unmeasured, and the report, the
+contract and the documents say so plainly.
 
 ## Scopes
 
 Build order: S1, S2, S3 (the evidence PR), the spec amendment, then S4,
 S5, S6 only with a winner.
 
-### S1: The corpus, extracted verbatim from two repositories and pinned, ~4-5h
+### S1: The corpus, extracted verbatim from two repositories and pinned, ~4.5-5.5h
 
 - `eval/duplicates/extract.py`, run once by hand in the main session:
   reads each spec file with `git show <commit>:<path>` in the local
@@ -471,10 +539,21 @@ S5, S6 only with a winner.
   memkernel's `memkernel-0-16-lifecycle-corrections`) is listed in the
   README by id and left out of the fixture, as issue 54 left out the
   pre-pr playbook; no such text is copied.
-- A test pins every page to `corpus.json` and checks the rule on one
-  fixed item of each form, including a memkernel H3 item's section
-  mapping and a bold-paragraph item with its bullets (the main session
-  runs it).
+- A test pins every page to `corpus.json` and checks the rule on six
+  fixed items, one per form in each repository (code-copilot-team's list
+  item, bold paragraph and H3; memkernel's list item, bold paragraph and
+  H3 ADR item): the title is the label without its identifier, the label
+  is absent from the body, and **the paragraph the scorer reads**
+  (`_first_paragraph`, imported read-only from
+  `eval/patterns/duplicates.py`) **equals the item's text after its label,
+  written out in the test**. The main session runs it.
+- The README reports, per repository and form, how many pages' first
+  paragraph comes out empty and the token counts of each page's title and
+  first paragraph. This reads the scorer's input page by page and
+  compares no two pages, so it is allowed before the freeze; it computes
+  no similarity and no candidate. A page with an empty first paragraph
+  stays in the corpus (B0 scores it on its title, as the study did) and
+  is listed.
 - The extracted pages are lint-checked with `wiki-studio lint` on a
   temporary wiki before the labelling starts, so the scorer reads valid
   pages.
@@ -483,10 +562,13 @@ S5, S6 only with a winner.
 
 - **The labelling commit**, written by a session that has never run any
   candidate and has no candidate code in its tree (D3): `labels.json`
-  with the clusters per family, every in-cluster pair's disposition and
-  reason, and the cross-family and cross-repository pairs listed by D9's
-  rule. The labelling is per page, not per pair: about 215 pages in three
-  families, the memkernel family the largest by text. The extension rule
+  with the groups per family (each named by its question), every
+  in-group pair's disposition and reason, the rule that a within-family
+  pair outside every group is `unrelated`, the cross-family summary (one
+  line per group and one per ungrouped page) and the cross-family and
+  cross-repository pairs listed from it under D9. The labelling is per
+  page, not per pair: about 215 pages in three families, the memkernel
+  family the largest by text. The extension rule
   applies here, before the freeze, if the base holds fewer than 8 true
   pairs.
 - **The owner's review (D3)** of every true and `companion` label, and
@@ -511,19 +593,23 @@ S5, S6 only with a winner.
   and labels and writes `results/candidates.json`: per candidate, true
   and false candidates, true pairs found out of n (or "not testable"),
   false candidates by disposition (`companion`, `distinct-by-precondition`,
-  `unrelated`), by pair scope and by repository, and per 100 pages, each
-  true pair's score, wall time. The main session runs it; a CI test
-  reruns it from the committed pages and checks the output equals the
-  committed file.
+  `unrelated`), by pair scope and by repository, and per 100 pages, and
+  each true pair's score. The main session runs it; a CI test reruns it
+  from the committed pages and checks the output equals the committed
+  file. Wall time is written to a separate `results/timing.json`, which
+  the test does not compare (a re-run's time never matches).
 - `results/secondary.json`, not binding: B0 and B1 on the issue 54
   fixture with its frozen labels, read both as recorded and with the
   disputed pair as `companion`, so the two readings sit beside the new
   result. The issue 54 files are read, never edited.
 - `report.md`: the table; the verdict (a winner, "no candidate clears the
   bar", or "not testable"); the limits: extracted spec decisions, two
-  repositories by one author, three families unless extended, decisions
-  only (so nothing is measured across page types), a count out of n for
-  recall, not an estimate. A "Post hoc (not binding)" section only if a
+  repositories by one author, three families unless extended; decision
+  pages only, so the other content page types the shipped kind compares
+  (D10) are unmeasured, and nothing is measured across page types; B1's
+  template-word drop is meant for curated template pages, which this
+  corpus does not contain, so that part of B1 is unmeasured; a count out
+  of n for recall, not an estimate. A "Post hoc (not binding)" section only if a
   flaw is found after the freeze, such as a cross-repository false
   candidate the owner reads as a true pair.
 - **The evidence PR**, opened by hand from the main session: one commit
@@ -531,8 +617,13 @@ S5, S6 only with a winner.
   nothing under `src/wiki_studio/`. Its body names issue 121 without a
   closing keyword.
 
-### S4: The `possible-duplicate` kind, ~4-5h (only with a winner)
+### S4: The `possible-duplicate` kind, ~4.5-5.5h (only with a winner)
 
+- **S4 starts only after 0.11.0 is tagged and released.** The owner is
+  closing cycle 09 with that release recorded as pending (2026-11-23);
+  no change under `src/` lands on top of an unreleased 0.11.0. If the tag
+  is not there when S4 would start, S4 waits, and trigger 4 applies as
+  usual. The evidence (S1-S3) does not wait.
 - `src/wiki_studio/duplicates.py`: the winning candidate exactly
   (`_tokenise` imported, unchanged; the paragraph rule and, for B1, the
   normalisation reimplemented in the package, since the package cannot
@@ -540,11 +631,14 @@ S5, S6 only with a winner.
   `conflicts.py`'s line-based form.
 - `findings.py`: `KIND_POSSIBLE_DUPLICATE` added to `FINDING_KINDS` after
   the conflict kinds; one finding per pair; the description ends with the
-  related line to add. Same page type only (D6).
+  related line to add. Same page type only (D6), every content page
+  type (D10): a page without `## Decision` is read by the study's rule,
+  its title and first prose block.
 - The switch (D8) read into `WikiPaths`; off means the kind is listed in
   `counts` at zero and never computed.
 - Tests: the winner replayed on the frozen corpus gives exactly the
-  committed candidates; superseded pages skipped; open and one-sided
+  committed candidates; a concept pair and a workflow pair are compared
+  and a concept-decision pair is not (D6, D10); superseded pages skipped; open and one-sided
   conflict pairs skipped; a related line on either side silences the pair
   and a dangling one silences nothing; the description's related line,
   pasted into the page, silences the finding; a scoped run; the switch;
@@ -552,7 +646,7 @@ S5, S6 only with a winner.
   and `find` unchanged on a flagged page; `nightly`'s report and the MCP
   `findings` tool list the kind; the no-backend guard and the single-writer
   scan still passing; a 500-page synthetic wiki finishes within a bound
-  the spec sets from S3's wall time.
+  the spec sets from S3's `results/timing.json`.
 
 ### S5: ADR-0006, contract and documents, ~2-3h (only with a winner)
 
@@ -565,12 +659,19 @@ S5, S6 only with a winner.
 - `docs/knowledge-contract.md`: the kind's row in the findings table and
   the switch; README's environment table; `docs/patterns.md`: what to do
   with a flag (the three actions).
+- **What was measured, stated plainly (D10)** in the contract row,
+  `docs/patterns.md` and the CHANGELOG entry: the kind was measured on
+  decision pages only (extracted spec decisions, the evidence PR's
+  numbers); concept, workflow, incident and playbook pages are compared
+  by the same rule (title and first prose block) and their false-alarm
+  rate is unmeasured.
 - `CHANGELOG.md` `[Unreleased]`; CLAUDE.md's layout line for
   `duplicates.py`. Every command a changed page shows gets its check.
 
 ### S6: Release 0.12.0, ~1-1.5h (only with a winner)
 
-The next minor after 0.11.0, which must be tagged and released first.
+The next minor after 0.11.0, which must be tagged and released first
+(before S4 touches `src/`, as S4 says).
 Version bumped in `pyproject.toml` and `__init__.py` together, the
 CHANGELOG dated, the compatibility row, the release page with the
 workflow's wheel and sdist. The build PR names issue 121 for closure only
@@ -598,9 +699,14 @@ with the evidence.
   not tuned after the pages are read.
 - **Cross-repository pairs.** Half of the 23,005 pairs cross the two
   repositories, and labelling them pair by pair is not feasible.
-  *Workaround:* D9's default, one pass over the families' cluster
-  summaries, with an unlisted pair counted false; a disagreement found
-  after the run goes to the post-hoc section.
+  *Workaround:* D9's default, one pass over a summary with one line per
+  group and one per ungrouped page, with an unlisted pair counted false;
+  a disagreement found after the run goes to the post-hoc section.
+- **Scoring the extraction instead of the text** (finding 15). A body
+  that keeps list markers, labels or identifiers measures how specs are
+  formatted, not what they say. *Workaround:* S1's body rule, the six
+  per-form tests on the paragraph the scorer reads, and the
+  empty-paragraph count in the README, all before the freeze.
 - **Family jargon.** Every routing page says `routing`, `profile`,
   `tier`, `backend`; every memkernel page says `memory`, `recall`,
   `store`. Jaccard on short texts sharing jargon may flag many
@@ -697,7 +803,10 @@ The owner **decided D1-D8** on 2026-11-23 in the main session. D2 went
 against the recommended default (memkernel's spec decisions join the
 corpus from the start); the other seven took the default. Each item keeps
 the default and the alternatives, so the record shows what was weighed.
-D9 followed from D2; the owner answered it with the default on 2026-11-23. S-1 to S-9 are settled by the issue, the
+D9 followed from D2; the owner answered it with the default on 2026-11-23,
+and the review of PR #132 at `75fdea7` refined its summary (one line per
+group and one per ungrouped page). D10 came from that review; the owner
+decided it on 2026-11-23 against the reviewer's recommendation. S-1 to S-9 are settled by the issue, the
 code or the contract, and are listed so the spec does not reopen them.
 
 - **D1. Appetite (decided by the owner, 2026-11-23: the default).**
@@ -717,8 +826,10 @@ code or the contract, and are listed so the spec does not reopen them.
   items by the first count), extended in order; the other alternative,
   code-copilot-team's wiki, is not independent (finding 7).
 - **D3. Who labels (decided by the owner, 2026-11-23: the default).**
-  One session that has never seen candidate code labels, clustering each
-  family; the owner reviews every true and `companion` label plus 20
+  One session that has never seen candidate code labels, grouping each
+  family's pages by the question they answer (refined by the review of
+  PR #132: grouping by "the same decision" would miss `conflicting` and
+  `supersedes` pairs); the owner reviews every true and `companion` label plus 20
   false pairs drawn with a fixed seed (split routing 8, pi 1, memkernel
   11 by within-family pairs). Alternative weighed: two labellers blind to
   each other, agreement reported.
@@ -734,7 +845,7 @@ code or the contract, and are listed so the spec does not reopen them.
 - **D6. Which pairs the shipped kind compares (decided by the owner,
   2026-11-23: the default).** Pages of the same page type only.
   Alternative weighed: all content pages, companion pairs silenced one
-  related line at a time.
+  related line at a time. D10 sets which page types.
 - **D7. `lint --health` (decided by the owner, 2026-11-23: the
   default).** No: the kind is in `findings` only, so `lint --health
   --strict` in CI never fails on it.
@@ -746,10 +857,22 @@ code or the contract, and are listed so the spec does not reopen them.
 - **D9. Pairs across families and across repositories (raised by D2;
   owner, 2026-11-23, the default).** Every pair is scored and counted. A
   cross-family or cross-repository pair is `unrelated` unless the labeller
-  lists it after one pass over a one-line summary of every cluster in all
-  three families (about 1h, inside S2's estimate); the owner reviews every
-  listed pair with the true labels. The shipped kind would compare such
-  pairs in a real wiki, so their false alarms are counted.
+  lists it after one pass over a summary of all three families (about
+  1h, inside S2's estimate); the owner reviews every listed pair with the
+  true labels. The shipped kind would compare such pairs in a real wiki,
+  so their false alarms are counted. The review of PR #132 refined the
+  summary: one line per group **and one per page in no group** (at most
+  about 215 lines), since a summary of groups alone could never surface a
+  duplicate between two ungrouped pages.
+- **D10. Which page types the shipped kind compares (decided by the
+  owner, 2026-11-23, against the reviewer's recommendation).** Owner:
+  **all same-type pairs of every content page type**: concept, workflow,
+  incident and playbook pages as well as decisions, each compared only
+  with its own type (D6). A page without `## Decision` is read by the
+  study's rule, its title and first prose block. The report, the contract
+  row, `docs/patterns.md` and the CHANGELOG say plainly that only decision
+  pages were measured and the other types are unmeasured (S3, S5). The
+  reviewer recommended decision pages only, the one type measured.
 - **S-1. The silence line is a body line** (the owner's shape in issue
   121): `> [!related]` in the conflict callout's form, on either page,
   with ADR-0006. The issue weighed a frontmatter key and preferred the
@@ -766,7 +889,9 @@ code or the contract, and are listed so the spec does not reopen them.
   shape).
 - **S-7. The issue 54 study stays frozen**, its disputed label included;
   the new labels apply to the new corpus only.
-- **S-8. Release 0.12.0** if the kind ships, after 0.11.0 is out.
+- **S-8. Release 0.12.0** if the kind ships. 0.11.0 is tagged and
+  released before S4 touches `src/` (the owner closes cycle 09 with that
+  release pending, 2026-11-23).
 - **S-9. Script runs are main-session steps; the evidence PR is opened
   by hand** (the issue 120 cycle's lessons).
 
@@ -795,15 +920,25 @@ the default on 2026-11-23. No decision remains open.
 - D9 (answered 2026-11-23: the default): Are pairs across families and across the two repositories scored
   and labelled — default: **scored and counted; such a pair is
   `unrelated` unless the labeller lists it, after one pass over a
-  one-line summary of every cluster in all three families (about 1h,
-  inside S2's estimate); the owner reviews every listed pair with the
-  true labels** — why it matters: 13,962 of the base's 23,005 pairs cross
+  summary of all three families (about 1h, inside S2's estimate); the
+  owner reviews every listed pair with the true labels** (the review of
+  PR #132 refined the summary to one line per group and one per
+  ungrouped page) — why it matters: 13,962 of the base's 23,005 pairs cross
   a family (11,526 of them cross the repositories), and the shipped kind
   would compare them in a real wiki, so leaving them out would hide their
   false alarms. Alternatives: score within-family pairs only (9,043
   pairs, cheaper, but blind to cross-family false alarms); or label every
   cross-repository pair one by one (11,526 pairs, not feasible in the
   appetite).
+
+After the external review of PR #132 at `75fdea7`, **D10 was answered on
+2026-11-23** against the reviewer's recommendation. No decision remains
+open.
+
+- D10 answered: the shipped kind compares all same-type pairs of every
+  content page type (concept, workflow, incident, playbook and decision);
+  the report, the contract and the documents state that only decision
+  pages were measured and the other types are unmeasured.
 
 ## Bet log
 
@@ -813,3 +948,4 @@ the default on 2026-11-23. No decision remains open.
 | 2026-11-23 | shaping → shaped | 6 scopes, 4w with an early exit, work content 17-22.5h (core S1-S3 10-13h). Core: corpus, frozen labels and bar, measurement as a hand-opened evidence PR. S4-S6 (`possible-duplicate`, ADR-0006, 0.12.0) only if B0 or B1 clears the frozen bar. D1-D8 open for the owner with defaults, not yet asked (the shaping agent cannot ask). |
 | 2026-11-23 | shaped (decided) | Owner answered D1-D8 on 2026-11-23 in the main session. Seven defaults; D2 against the default: memkernel's spec decisions join the corpus from the start. Recounted offline with one extraction rule over three item forms (H3, bold paragraph, bold-led list item; finding 13), which replaces the first grep counts: code-copilot-team at fd05256 367 items in 58 files, routing 84 and pi 29 (113); memkernel at 8279d76 (the checkout had moved from 569d28f) 112 items in 20 spec directories. Overlap with the issue 54 corpus checked: its 12 records cite 21 sources, all in code-copilot-team, none in memkernel; excluded 173 code-copilot-team items (session-analytics, benchmark, auto-build, init-permission-profiles, redaction-canaries) and 10 memkernel items (the two specs that evaluate on decisions-57). Base about 215 pages, 23,005 pairs (9,043 within a family, 11,526 across repositories); extension order of 81 code-copilot-team items after the base. D9 added, open: pairs across families and repositories scored, `unrelated` unless listed after one pass over cluster summaries. Appetite 20.5-27h (core 13.5-17.5h; S1 4-5h, S2 6-8h, S3 3.5-4.5h), still 4w. Updated: frontmatter circuit breaker (both repositories in core, cut 1 keeps both: routing only and memkernel without its three H3 plans, about 172 pages); findings 8, 10-14; Appetite and planned order; Solution shape (the corpus, the extraction rule, exclusions, extension order, labels, owner's review sample split routing 8, pi 1, memkernel 11, bar by pair scope); S1, S2, S3; rabbit holes (extraction forms, cross-repository pairs, memkernel jargon); no-gos; Circuit breaker; Decisions (D1-D9); Questions for the owner (answered, D9 open). |
 | 2026-11-23 | shaped (decided, D9) | Owner answered D9 on 2026-11-23 with the default: every pair is scored and counted; a cross-family or cross-repository pair is `unrelated` unless the labeller lists it after one pass over the cluster summaries, and the owner reviews every listed pair. No decision remains open. |
+| 2026-11-23 | shaped (revised after review) | External review of PR #132 at 75fdea7 asked for changes; each was checked against the code. (1) Blocking: `_first_paragraph` (`eval/patterns/duplicates.py` 125-138, prefixes on 63-64) skips blocks starting with a heading, blockquote, table row or fence marker, a bullet marker or a numbered-item marker, and returns an empty string when `## Decision` holds nothing else; 141 of the 215 base items are list items (code-copilot-team 90, memkernel 51), so a verbatim copy would score them on their title alone. Finding 15 added; S1's body rule now removes the label (title only, so no `d1`/`s1`/`a1` tokens, and B0 stays the study's signal exactly), removes each line's indentation and one list marker, moves memkernel's 14 H3 ADR lines to their sections without the `**Decision**:`-style labels, and changes no word; B1 also drops identifier-shaped tokens left in the text (`d6`, `fr-012`); S1's test checks on six items (three forms in each repository) that the paragraph the scorer reads equals the item's text after its label; the README reports empty first paragraphs and token counts per page, allowed before the freeze because it compares no pages. (2) Labelling groups pages by the same question, not the same decision, so `conflicting` and `supersedes` pairs land in a group; a within-family pair outside every group is `unrelated`. (3) D9's summary has one line per group and one per ungrouped page (at most about 215). (4) D10 added, decided by the owner against the reviewer's recommendation: the kind compares same-type pairs of every content page type; S3's limits, S4's tests and S5's documents say only decision pages were measured. (5) Wall time moves to `results/timing.json`, which CI does not compare. (6) Limits: B1's template-word drop cannot be measured on spec items. Also: S4 starts only after 0.11.0 is tagged and released (cycle 09 closes with it pending); added to S4, S6, S-8 and the frontmatter never-list. Appetite 21.5-28h (core 14-18h; S1 4.5-5.5h, S4 4.5-5.5h), still 4w. Updated: frontmatter circuit breaker; findings 15; Appetite; Solution shape (layout, body rule, labels, candidates, defaults); S1-S6; rabbit holes; Decisions (intro, D3, D6, D9, D10, S-8); Questions for the owner (D10 answered). |
