@@ -2,8 +2,9 @@
 
 `wiki-studio nightly` runs the wiki's routine checks unattended and writes
 one report. It prepares work for a curator and stops: it never promotes or
-approves a proposal, never runs git, and writes nothing in the wiki
-directory.
+approves a proposal, never commits, pushes or checks out, and writes
+nothing in the wiki directory; its findings step reads repositories
+read-only.
 
 One run does four things:
 
@@ -101,7 +102,9 @@ CLI makes each draft's backend call fail, and the run exits 3.
 
 The same pass runs as a scheduled workflow. This form installs with the
 line above, runs without a backend, and uploads the report and the
-proposals directory after every run:
+proposals directory after every run. The checkout asks for the full
+history (`fetch-depth: 0`), because the revision check skips a shallow
+clone, so with the default shallow checkout no cited `sha:` is checked:
 
 ```yaml
 name: wiki-nightly
@@ -114,6 +117,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
@@ -144,6 +149,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
@@ -160,8 +167,8 @@ jobs:
 
 ## After the run
 
-The verb does no git work: it never commits, pushes or checks out. A
-curator promotes a draft from a checkout of the repository that holds the
+The verb never commits, pushes or checks out; its findings step reads
+repositories read-only. A curator promotes a draft from a checkout of the repository that holds the
 wiki: `wiki-studio promote <proposal-dir>`. A promotion applies the draft
 only while every page still carries the revision the draft was built from.
 

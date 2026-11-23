@@ -10,7 +10,7 @@ peer_profile: deepseek
 runner_fingerprint: ae8dc147cf1264834bab35d116b6ab96b06618f438763cde3a90621d78036dba
 verdict: PASS
 blocking_findings_open: 0
-target_ref: feature/wiki-studio-0-11-0-evidence
+target_ref: feature/wiki-studio-0-11-0
 rounds_completed: 1
 attempt_count: 1
 bypass: false
@@ -25,12 +25,12 @@ bypass: false
 
 ## Summary
 
-The freeze test is well-structured and correctly pins the study files and case files by sha256, with a sensible exception for `record.py`-written `hunks.json` files. The main correctness concern is that the exception predicate `is_recorded_hunks` uses `path.parent.parent == KEYWORD_QUOTING_DIR`, which is fragile against symlinks/`..` segments and, more importantly, does not verify the file is actually a regular file at the expected depth — but the bigger issue is that the test does not guard against the freeze test file itself being edited, and the `case_files_present` walk will silently miss files if `CASES_DIR` doesn't exist (raising `FileNotFoundError` rather than a clear assertion). Overall the test is sound for its stated purpose.
+This is a release-preparation commit that bumps the version from 0.10.0 to 0.11.0 across `pyproject.toml`, `src/wiki_studio/__init__.py`, README, quickstart docs, and the corresponding tests. The changes are mechanical and internally consistent; the only substantive concern is that the CHANGELOG's `[Unreleased]` section is now empty and the new `[0.11.0]` section lacks a release date, plus a test that previously asserted on `[Unreleased]` was retargeted to `[0.11.0]` — which is correct but means future unreleased entries will no longer be guarded by that test.
 
 ## Findings
 
-- [note] f-59753a97: `path.parent.parent == KEYWORD_QUOTING_DIR` compares `Path` objects by string equality of their resolved-or-not forms; if `CASES_DIR.rglob` ever yields paths with different normalization (e.g., symlinked `eval/revisions`), the comparison could silently fail and cause `hunks.json` to be treated as a frozen case file, breaking the test on legitimate `record.py` output. (tests/test_revisions_frozen.py)
-- [note] f-8dd3aa21: If `CASES_DIR` does not exist (e.g., a checkout missing the eval tree), `rglob` returns an empty iterator and the test `test_pinned_case_files_are_exactly_the_case_files_present` fails with a confusing "set() != {…}" message rather than a clear "cases directory missing" error. (tests/test_revisions_frozen.py)
-- [note] f-ef100746: The test asserts `is_recorded_hunks` returns False for `case_dir / "nested" / RECORDED_HUNKS_NAME`, but does not assert True for a `hunks.json` at the correct depth in a *different* keyword-quoting case id (e.g., `pre-pr-doc-audit/hunks.json`), so a regression that hardcodes `pre-pr-strict-mode` would not be caught. (tests/test_revisions_frozen.py)
-- [note] f-0bc54635: The docstring says "This module is written once and never edited after the US2 phase," but there is no mechanism (e.g., a self-hash or a CI check) enforcing that; the claim is aspirational and could mislead a future maintainer into thinking the test is tamper-evident. (tests/test_revisions_frozen.py)
-- [note] f-433ad629: The pinned hashes are hardcoded literals with no provenance comment (e.g., the commit sha they were taken from), making it hard to audit whether the pins match the reviewed commit `af53cef`/`1be4060`. (tests/test_revisions_frozen.py)
+- [note] f-30c0a3b1: The new `[0.11.0]` section has no release date, unlike `[0.10.0] — 2026-11-18` and other released sections. This is inconsistent with the changelog's own convention and makes it ambiguous whether 0.11.0 is actually released or still pending. (CHANGELOG.md)
+- [note] f-1e39048f: The `[Unreleased]` section is now empty (no subsections). This is acceptable at release time, but the empty heading is a minor smell — some changelog linters flag empty sections. (CHANGELOG.md)
+- [note] f-dd0d356d: The test was retargeted from `[Unreleased]` to `[0.11.0]`. This is correct for the release, but it means the "docs line" guard no longer protects future unreleased entries — a future contributor adding a `### Docs` entry under `[Unreleased]` won't be checked. Consider whether the test should assert on the most recent release section dynamically (e.g., first `## [` heading after `[Unreleased]`) rather than hard-coding `0.11.0`, so it doesn't need editing every release. (tests/test_patterns_eval.py)
+- [note] f-8fa62544: The `### Notes` subsection is placed after the `### Added`/`### Changed`/etc. subsections but before the next `## [` heading — verify this matches the changelog's established ordering convention (some projects put Notes before Added). Not a correctness issue, just consistency. (CHANGELOG.md)
+- [note] f-d3794066: Version bump is consistent across `pyproject.toml`, `src/wiki_studio/__init__.py`, README, quickstart docs, and tests — no drift detected. No action needed; noting for completeness. (pyproject.toml)

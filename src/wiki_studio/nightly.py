@@ -57,6 +57,7 @@ from .proposal import (
     validate_patch_set,
 )
 from .prose_lint import closes_fence, open_fence
+from .revisions import SUMMARY_PREFIX
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -289,6 +290,7 @@ class NightlyResult:
             f"- Proposals directory: {self.proposals_dir}",
             f"- Package version: {self.package_version}",
             f"- Drafting: {self.drafting.summary()}",
+            f"- Revision check: {self.findings.revision_check.summary().removeprefix(SUMMARY_PREFIX)}",
             "",
             "## Lint",
             "",

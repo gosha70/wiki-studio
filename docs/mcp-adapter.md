@@ -32,7 +32,7 @@ setting is read once at launch and held for the life of the process.
 | `--root PATH` | `WIKI_STUDIO_ROOT` | project root |
 | `--wiki-dir PATH` | `WIKI_STUDIO_WIKI_DIR` | wiki directory |
 | `--proposals-dir PATH` | `WIKI_STUDIO_PROPOSALS_DIR` | proposals directory; must lie inside the root, so `propose` reports a root-relative `proposal_dir` and `promote` never needs `allow_out_of_repo` |
-| `--source-root PATH` (repeatable) | `WIKI_STUDIO_SOURCE_ROOTS` | directories outside the root that pages may link into |
+| `--source-root PATH` (repeatable) | `WIKI_STUDIO_SOURCE_ROOTS` | directories outside the root that pages may link into; each is also a repository the `findings` tool searches for cited commits ([knowledge contract](knowledge-contract.md#findings)) |
 | `--lock-timeout SECONDS` | `WIKI_STUDIO_LOCK_TIMEOUT` | wiki-lock wait |
 | `--search-cache PATH` | `WIKI_STUDIO_SEARCH_CACHE` | the `fts5` search cache, outside the wiki |
 | `--ranker {fts5,index-first}` | `WIKI_STUDIO_RANKER` | the `find` tool's default ranker |

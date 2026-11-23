@@ -55,8 +55,8 @@ EXPECTED_RUN_BLOCKS = [
 # The page's install lines: memkernel with base wiki-studio, then the MCP extra in its own
 # environment (memkernel 0.6.0 requires mcp<2, the extra mcp>=2.3). CI resolves each one.
 EXPECTED_INSTALL_COMMANDS = [
-    ["memkernel[wiki]==0.6.0", "wiki-studio==0.10.0"],
-    ["wiki-studio[mcp]==0.10.0"],
+    ["memkernel[wiki]==0.6.0", "wiki-studio==0.11.0"],
+    ["wiki-studio[mcp]==0.11.0"],
 ]
 
 

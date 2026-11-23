@@ -303,6 +303,20 @@ class TestTheWorkflow(unittest.TestCase):
         drafting_run = next(line for line in drafting if "run:" in line and "wiki-studio nightly" in line)
         self.assertIn("--backend", drafting_run, "the drafting variant is shown second")
 
+    def test_both_workflows_check_out_the_full_history(self) -> None:
+        """0.11.0 FR-040: a shallow checkout is skipped by the revision check, so each checkout asks for depth 0."""
+        workflows = _yaml_blocks(PAGE)
+        self.assertEqual(len(workflows), 2, "the page shows the workflow and its drafting variant")
+        for workflow in workflows:
+            lines = workflow.text.splitlines()
+            checkouts = [index for index, line in enumerate(lines) if "uses: actions/checkout@" in line]
+            self.assertEqual(len(checkouts), 1, workflow.text)
+            step = checkouts[0]
+            indent = len(lines[step]) - len(lines[step].lstrip(" ")) + 2
+            self.assertEqual(lines[step + 1], " " * indent + "with:", workflow.text)
+            self.assertEqual(lines[step + 2].strip(), "fetch-depth: 0", workflow.text)
+            self.assertGreater(len(lines[step + 2]) - len(lines[step + 2].lstrip(" ")), indent, workflow.text)
+
 
 class TestThePageKeepsToItsPhase(unittest.TestCase):
     def test_the_page_names_no_readme_section_and_no_version(self) -> None:

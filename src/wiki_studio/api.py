@@ -845,7 +845,19 @@ def findings(paths: WikiPaths, *, pages: list[str] | None = None) -> FindingsRes
     ``open-conflict`` (two pages each carry a conflict callout naming the
     other), ``conflict-one-sided`` (a callout names a page that carries none
     back) and ``conflict-dangling`` (a callout names no wiki page, or one
-    that cannot be its other page). Reads only, takes no
+    that cannot be its other page), ``source-not-at-revision`` (a cited
+    ``path:`` absent at its ``sha:`` in the matched repository, a ``sha:`` no
+    repository has while every repository was usable, or a malformed ``sha:``;
+    the root's repository is searched first, then the source roots in order)
+    and ``source-revision-changed`` (a cited file changed in place since its
+    ``sha:`` on a line naming one of the page's identifiers or ``file:line``
+    references, or under a Markdown heading the page names; for a page naming
+    none, any change beyond whitespace; the description quotes the page's
+    ``Revisit when:`` line; the page's review state, approvals and ``find``
+    eligibility are unchanged).
+    ``revision_check`` reports the run state: ``on`` or ``off`` with its
+    reason, every repository used or skipped, and the sources checked and not
+    checked by reason. Git is read read-only and offline. Reads only, takes no
     lock. ``pages=None`` covers the whole wiki; an explicit list scopes every
     kind to those pages (``PathOutsideRootError`` / ``SourceMissingError`` as
     ``read_page``). A completed run is a result whatever it finds;

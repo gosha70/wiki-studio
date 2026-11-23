@@ -133,6 +133,8 @@ class TestTheReport(NightlyCase):
         self.assertIn(f"- Proposals directory: {self.proposals.resolve()}", report)
         self.assertIn(f"- Package version: {__version__}", report)
         self.assertIn("- Drafting: off (no --backend)", report)
+        # The temporary project is not a git repository, so the revision check is off (0.11.0, FR-027).
+        self.assertIn("\n- Drafting: off (no --backend)\n- Revision check: off (", report)
         self.assertRegex(result.run_at, r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
         self.assertIn("### Created\n\nnone", report)
         self.assertIn("### Failed\n\nnone", report)

@@ -109,6 +109,8 @@ def _add_path_options(parser: argparse.ArgumentParser, *, suppress_defaults: boo
         metavar="PATH",
         help="A directory outside the root whose files pages may reference with local links (images, data, "
         "source files); repeatable. A local link target must otherwise resolve inside the root. "
+        "A source root is also a repository findings searches for cited commits, after the root's own "
+        "(docs/knowledge-contract.md, Findings). "
         f"Default: {ENV_SOURCE_ROOTS} ({os.pathsep!r}-separated), else none.",
     )
     parser.add_argument(
@@ -417,7 +419,15 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         "unapproved, approval-stale, approval-policy-changed (review state), superseded-still-indexed, "
         "no-page-id, and the conflict kinds open-conflict (two pages each carry a callout naming the other), "
         "conflict-one-sided (a callout names a page that carries none back) and conflict-dangling "
-        "(a callout names no wiki page, or one that cannot be its other page). Read-only; takes no lock; "
+        "(a callout names no wiki page, or one that cannot be its other page), source-not-at-revision "
+        "(a cited path absent at its sha: in the matched repository, a sha: no repository has, or a malformed "
+        "sha:; the root's repository is searched first, then the source roots) and source-revision-changed "
+        "(a cited file changed since its sha: on a line naming one of the page's identifiers or file:line "
+        "references, or under a heading the page names; any change beyond whitespace for a page naming none; "
+        "the description quotes the page's 'Revisit when:' line; review state and approvals are unchanged). "
+        "A revision check line after the "
+        "counts (revision_check in --json) says whether that check ran, which repositories it used and how many "
+        "sources it could not check. Read-only, git included; takes no lock; "
         "exits 0 on a completed run whatever it finds (lint --health --strict is the CI gate)."
     )
     p_findings = sub.add_parser(
@@ -429,7 +439,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     p_findings.add_argument(
         "--json",
         action="store_true",
-        help="Print findings_version, counts, pages_checked and findings as one JSON object.",
+        help="Print findings_version, counts, pages_checked, findings and revision_check as one JSON object.",
     )
     p_findings.add_argument(
         "--paths", nargs="+", default=None, metavar="PAGE", help="Scope every kind to these wiki-relative pages."
@@ -846,6 +856,7 @@ def _do_findings(args: argparse.Namespace) -> int:
         return 0
     counts = ", ".join(f"{kind} {n}" for kind, n in result.counts.items() if n)
     print(f"findings: {len(result.findings)} across {result.pages_checked} pages" + (f" ({counts})" if counts else ""))
+    print(result.revision_check.summary())
     for finding in result.findings:
         print(f"  [{finding.kind} / {finding.severity}] {', '.join(finding.pages)}: {finding.description}")
     return 0
@@ -956,7 +967,9 @@ def _do_info(args: argparse.Namespace) -> int:
     print(f"audit-log: {paths.audit_log}")
     print(f"schema: {schema}" + (f" copy at {paths.schema_dir}" if schema == _SCHEMA_PROJECT else ""))
     print(f"lock-file: {lock_path_for(paths.wiki_dir)}  (timeout {paths.lock_timeout:g}s)")
-    print("source-roots: " + (", ".join(str(p) for p in paths.source_roots) or "(none; links stay inside the root)"))
+    roots = ", ".join(str(p) for p in paths.source_roots)
+    roots_note = "link targets, and repositories searched for cited commits: docs/knowledge-contract.md"
+    print(f"source-roots: {roots}  ({roots_note})" if roots else "source-roots: (none; links stay inside the root)")
     print(f"package-version: {contract.package_version}")
     sc = contract.schema_contract
     print(f"schema-contract: {sc.schema_id} version {sc.version} ({sc.source} rules)")

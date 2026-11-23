@@ -142,7 +142,7 @@ TOOL_RESULT_KEYS: dict[str, frozenset[str]] = {
     TOOL_INFO: frozenset(
         {"package_version", "schema_contract", "formats", "capabilities", "manifest", "discovery", "adapter"}
     ),
-    TOOL_FINDINGS: frozenset({"findings_version", "counts", "pages_checked", "findings"}),
+    TOOL_FINDINGS: frozenset({"findings_version", "counts", "pages_checked", "findings", "revision_check"}),
     TOOL_REVIEW_STATE: frozenset({"states"}),
 }
 

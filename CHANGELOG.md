@@ -6,6 +6,66 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.11.0]
+
+A feature release: `findings` checks a page's cited sources against git,
+read-only and offline, and reports a source that is not at its cited revision
+or that changed where the page points, with a `revision_check` object saying
+when the check could not run.
+
+### Added
+
+- `findings` reports a new kind, `source-not-at-revision` (issue 120): a
+  page cites a `path:` at a `sha:` that does not contain it while the path
+  exists at the matched repository's HEAD, cites a commit none of the
+  repositories has while every one of them was usable, or cites a malformed
+  `sha:`. Superseded pages are skipped and a `path:` without `sha:` is not
+  checked. Git is read read-only and offline through a fixed set of
+  plumbing calls, with inherited `GIT_` variables dropped and a timeout.
+- `findings` results carry a `revision_check` object (and the text output
+  and the `nightly` report one line) saying whether the check ran (`on` or
+  `off` with its reason), each repository used or skipped with why (shallow
+  or partial clones, directories that are not the top of a work tree,
+  ownership refusals and others), and the sources checked and not checked by
+  reason. It is additive: `findings_version` stays 1 and no capability is
+  added. The MCP `findings` tool carries it too.
+- Source roots (`--source-root`, `WIKI_STUDIO_SOURCE_ROOTS`) are also
+  searched for cited commits, after the root's own repository and in the
+  configured order; the first usable repository that has the commit is
+  named in the finding. A source root is used only when it is the top of its
+  own git work tree.
+- `WIKI_STUDIO_GIT_CALL_LIMIT` caps the git processes one revision check may
+  start (default 500, ten times the count measured on the issue 120 study);
+  once it is reached, the remaining sources are reported as not checked,
+  never as findings.
+- `findings` reports a second new kind, `source-revision-changed` (issue
+  120): a cited file changed in place since its `sha:`, and a changed line
+  names one of the page's backticked identifiers or `file:line` references,
+  or a changed Markdown section's heading occurs in the page; for a page
+  that names none, any change beyond whitespace counts. Anchors shorter than
+  4 characters, with no letter, or the last dotted part of a backticked path
+  are ignored. This is candidate C2 of the frozen study in `eval/revisions/`
+  ([report](https://github.com/gosha70/wiki-studio/blob/main/eval/revisions/report.md)), with the anchor rule its post-hoc
+  block measured. The description quotes the page's `Revisit when:` line, or
+  says the page records none (ADR-0005). The kind flags and still returns: a
+  flagged page's review state, its approvals and what `find` selects do not
+  change, and `lint --health --strict` does not report it. Superseded pages,
+  sources with `source-not-at-revision` and paths missing at HEAD get none.
+
+### Changed
+
+- The packaged `citation-rules.md` no longer says drift is not detected: it
+  says what `findings` now checks for a `path:` with a `sha:` (the two
+  revision kinds) and what it does not (whether the cited bytes still say
+  what the page says; ticket and URL sources). A project's schema override is
+  not touched, and the fingerprint covers overrides only, so no manifest
+  drifts.
+- The nightly GitHub Actions recipe in `docs/nightly.md` checks out with
+  `fetch-depth: 0` in both workflows, because the revision check skips a
+  shallow clone. The pages that said the nightly pass never runs git now say
+  it never commits, pushes or checks out, and that its findings step reads
+  repositories read-only.
+
 ### Docs
 
 - `docs/patterns.md`: the `decision`-page pattern convention the issue 54
@@ -15,6 +75,13 @@ uses [Semantic Versioning](https://semver.org/).
   its `decision` section and points to `docs/patterns.md`, so users and
   ingest prompts see it offline (issue 119). No frontmatter key, page type,
   section, lint rule or schema version changes.
+
+### Notes
+
+- No new exit code, MCP tool, frontmatter key, page type, capability or
+  dependency; `findings_version` stays 1 and `lint --health --strict` is
+  unchanged. No scope was cut: the frozen study in `eval/revisions/` named
+  C2 as its winner, so both kinds ship. Issue 120.
 
 ## [0.10.0] — 2026-11-18
 
