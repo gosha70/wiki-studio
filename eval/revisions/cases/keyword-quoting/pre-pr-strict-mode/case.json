@@ -1,0 +1,35 @@
+{
+  "id": "pre-pr-strict-mode",
+  "repository": "code-copilot-team",
+  "page_origin": "verbatim",
+  "page_from": {
+    "path": "knowledge/wiki/playbooks/pre-pr-close-keyword-audit.md",
+    "commit": "23fc078bfe0713236953dd8d5dda88e50a883865"
+  },
+  "path": "scripts/pre-pr-check.sh",
+  "sha": "33beb17",
+  "sha_derived": true,
+  "sha_derivation": "The page cites the path with no sha; 33beb17b242c12b2c91403a696c28703905a9efb is the commit of the page's previous revision, the last to touch the page before the correcting commit.",
+  "source_change_commits": [
+    "87bbc6515cf46051bef1c69653607303cdc5e63f"
+  ],
+  "read_commit": "87bbc6515cf46051bef1c69653607303cdc5e63f",
+  "read_rule": "correcting",
+  "correcting_commit": "87bbc6515cf46051bef1c69653607303cdc5e63f",
+  "sha256": {
+    "page_md": "e326f37e422df2925383d8804c4517c93b7ddee1ef5063362d81cdee26426e7d",
+    "source_at_sha": "5659167a6052cf4a5bb564fb8343401b05fb0314c53cf8af2bb4d4fb6bb6753d",
+    "source_at_read": "bc40648eb3864d75e104d1c49939c0349ea35ee942b12d6b2dae20158a623413"
+  },
+  "evidence": {
+    "message_of": "87bbc6515cf46051bef1c69653607303cdc5e63f",
+    "diff_of": "87bbc6515cf46051bef1c69653607303cdc5e63f",
+    "paths": [
+      "scripts/pre-pr-check.sh",
+      "knowledge/wiki/playbooks/pre-pr-close-keyword-audit.md"
+    ]
+  },
+  "negative": false,
+  "should_flag": true,
+  "reason": "The script stopped ignoring text inside code formatting when it scans, which the page described as the safe way to mention an issue; the page was rewritten in the same commit to withdraw that advice."
+}

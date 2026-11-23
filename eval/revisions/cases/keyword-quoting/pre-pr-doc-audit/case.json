@@ -1,0 +1,36 @@
+{
+  "id": "pre-pr-doc-audit",
+  "repository": "code-copilot-team",
+  "page_origin": "verbatim",
+  "page_from": {
+    "path": "knowledge/wiki/playbooks/pre-pr-close-keyword-audit.md",
+    "commit": "69926b16efaa85e3ee64f5d767e96a8079b09982"
+  },
+  "path": "scripts/pre-pr-check.sh",
+  "sha": "a9628e5",
+  "sha_derived": true,
+  "sha_derivation": "The page cites the path with no sha; a9628e506177eb02110f3d7e007c898eda3b8480 is the commit of the page's previous revision, the last to touch the page before the correcting commit.",
+  "source_change_commits": [
+    "d0e48c3962ddf18269d5859f25fa394c2beda3e7",
+    "34a752d8b162596ae6566f22d1601ce6e53ff25f",
+    "801309fa1910498416460cada4faaa1929daa196"
+  ],
+  "read_commit": "69926b16efaa85e3ee64f5d767e96a8079b09982",
+  "read_rule": "parent",
+  "correcting_commit": "fc28fc3f257564da640a2a3c70b187974c189334",
+  "sha256": {
+    "page_md": "f7448bc62b980bc7117230644e0199e051a65ed2a56e91fd73c7b9e16625eab7",
+    "source_at_sha": "b973df47e6f899977abf0bfbf374d33647254611dc6f87131f9077270f656427",
+    "source_at_read": "8d3804af74f9339372c8dccb25202f8e02d9a65a900b321196af6a6fef80df19"
+  },
+  "evidence": {
+    "message_of": "fc28fc3f257564da640a2a3c70b187974c189334",
+    "diff_of": "fc28fc3f257564da640a2a3c70b187974c189334",
+    "paths": [
+      "knowledge/wiki/playbooks/pre-pr-close-keyword-audit.md"
+    ]
+  },
+  "negative": false,
+  "should_flag": true,
+  "reason": "The script gained a mode for a pull request that completes no issue and a check that each named issue appears in the description; the page listed neither until its next revision added both."
+}

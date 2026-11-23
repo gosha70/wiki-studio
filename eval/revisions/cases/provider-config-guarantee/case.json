@@ -1,0 +1,33 @@
+{
+  "id": "provider-config-guarantee",
+  "repository": "code-copilot-team",
+  "page_origin": "built",
+  "page_from": {
+    "path": "specs/provider-config/spec.md",
+    "commit": "840119fa71783465b89df0b7b1c809c8dfbda8be"
+  },
+  "path": "specs/provider-config/spec.md",
+  "sha": "840119f",
+  "sha_derived": false,
+  "source_change_commits": [
+    "652917572b604235778c23c7175d54de2d3cd51c"
+  ],
+  "read_commit": "652917572b604235778c23c7175d54de2d3cd51c",
+  "read_rule": "correcting",
+  "correcting_commit": "652917572b604235778c23c7175d54de2d3cd51c",
+  "sha256": {
+    "page_md": "d1fca3aadbf56e910ec0828feed397e7ab0cd39bd6ac2772e61605ba150bfaeb",
+    "source_at_sha": "513eb168b049ab12d1be0a5cb6642b6967dc6c8810576fa7a36242f90711c056",
+    "source_at_read": "0c84605287072e24a539d0649573379b1a2cda6342e2228653f737481909e5a6"
+  },
+  "evidence": {
+    "message_of": "652917572b604235778c23c7175d54de2d3cd51c",
+    "diff_of": "652917572b604235778c23c7175d54de2d3cd51c",
+    "paths": [
+      "specs/provider-config/spec.md"
+    ]
+  },
+  "negative": false,
+  "should_flag": true,
+  "reason": "The spec struck through the guarantee that a Codex run records its active provider id and marked it superseded; the built page records exactly that guarantee as its choice."
+}

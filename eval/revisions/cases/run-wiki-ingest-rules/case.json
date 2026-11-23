@@ -1,0 +1,33 @@
+{
+  "id": "run-wiki-ingest-rules",
+  "repository": "code-copilot-team",
+  "page_origin": "verbatim",
+  "page_from": {
+    "path": "knowledge/wiki/workflows/run-wiki-ingest.md",
+    "commit": "d3179fd3b037df88f520a6428e1e1af1d826abfb"
+  },
+  "path": "knowledge/wiki/schema/ingest-rules.md",
+  "sha": "f6b1ee7",
+  "sha_derived": false,
+  "source_change_commits": [
+    "68bff413e829f706b6a732742a62fa219091a45a"
+  ],
+  "read_commit": "d3179fd3b037df88f520a6428e1e1af1d826abfb",
+  "read_rule": "parent",
+  "correcting_commit": "5dc717d76e19ea80f40978ed861619394320116c",
+  "sha256": {
+    "page_md": "0627ed574630959cab0f532db91563921308a61e49363c4843ba00f9b24780bc",
+    "source_at_sha": "7aa6fb29f4ba3f578f83f2f747963f0695d51fa082871ab59853ff5125f32387",
+    "source_at_read": "e664a9e975dbae00c5b4f75440feac9017f39a3b8ec3180922716d57661c00dd"
+  },
+  "evidence": {
+    "message_of": "5dc717d76e19ea80f40978ed861619394320116c",
+    "diff_of": "5dc717d76e19ea80f40978ed861619394320116c",
+    "paths": [
+      "knowledge/wiki/workflows/run-wiki-ingest.md"
+    ]
+  },
+  "negative": false,
+  "should_flag": false,
+  "reason": "The cited rules file gained a section on writing style and kept the four-question gate the page cites it for; the page's edit answered the removal of two scripts and an environment variable it names, not the cited change."
+}

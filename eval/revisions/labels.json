@@ -1,0 +1,286 @@
+{
+  "study": "issue 120 revision check: labels for the issue 54 study's 24 sources",
+  "copied_from": {
+    "results": "eval/patterns/results/staleness.json",
+    "judgments": "eval/patterns/README.md",
+    "superseded": "eval/patterns/wiki/"
+  },
+  "pages": [
+    {
+      "page": "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+      "superseded": false,
+      "sources": [
+        {
+          "path": "specs/session-analytics-trace-archive/shaping.md",
+          "sha": "76beab2",
+          "revision_check": "unchanged",
+          "judgment": null,
+          "needs_review": false,
+          "citation_error": false
+        },
+        {
+          "path": "scripts/session_analytics/archive.py",
+          "sha": "c776632",
+          "revision_check": "changed",
+          "judgment": "At the pin the archive still calls `redact_text` and stores redacted text only, so the reuse stands — no review",
+          "needs_review": false,
+          "citation_error": false
+        }
+      ]
+    },
+    {
+      "page": "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+      "superseded": false,
+      "sources": [
+        {
+          "path": "specs/session-analytics-benchmark-step/spec.md",
+          "sha": "2325480",
+          "revision_check": "changed",
+          "judgment": "FR-4's one scan seam is still stated at the pin — no review",
+          "needs_review": false,
+          "citation_error": false
+        },
+        {
+          "path": "scripts/session_analytics/api/server.py",
+          "sha": "2325480",
+          "revision_check": "changed",
+          "judgment": "At the pin the step still calls `correlate.run` with `CorrelationStats` and a progress callback — no review",
+          "needs_review": false,
+          "citation_error": false
+        }
+      ]
+    },
+    {
+      "page": "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md",
+      "superseded": false,
+      "sources": [
+        {
+          "path": "specs/benchmark-adapters-backends/spec.md",
+          "sha": "13eb704",
+          "revision_check": "changed",
+          "judgment": "Design Decision 3 (HF rows API, not Parquet) is still stated at the pin — no review",
+          "needs_review": false,
+          "citation_error": false
+        },
+        {
+          "path": "benchmarks/adapters/swe_bench_verified/fetch.py",
+          "sha": "13eb704",
+          "revision_check": "unchanged",
+          "judgment": null,
+          "needs_review": false,
+          "citation_error": false
+        }
+      ]
+    },
+    {
+      "page": "decisions/judge-statistics-and-charts-stay-in-the-stdlib.md",
+      "superseded": false,
+      "sources": [
+        {
+          "path": "specs/benchmark-llm-judge/origin-alignment-2026-05-20-0238.md",
+          "sha": "dafbc5b",
+          "revision_check": "unchanged",
+          "judgment": null,
+          "needs_review": false,
+          "citation_error": false
+        },
+        {
+          "path": "scripts/benchmark_runner/calibration/spearman.py",
+          "sha": "dafbc5b",
+          "revision_check": "changed",
+          "judgment": "The file is absent at `dafbc5b` and present at the pin as a stdlib-only Spearman: the pattern holds, but the page (from its record) names a commit that does not contain the file — no review for the pattern; the citation is wrong",
+          "needs_review": false,
+          "citation_error": true
+        }
+      ]
+    },
+    {
+      "page": "decisions/never-bypass-a-git-lock-with-an-alternate-index.md",
+      "superseded": false,
+      "sources": [
+        {
+          "path": "claude_code/.claude/rules/safety.md",
+          "sha": "5ce94f2",
+          "revision_check": "changed",
+          "judgment": "The `GIT_INDEX_FILE` prohibition is still present at the pin; the page records no trigger — no review",
+          "needs_review": false,
+          "citation_error": false
+        },
+        {
+          "path": "shared/skills/safety/SKILL.md",
+          "sha": "37e8417",
+          "revision_check": "unchanged",
+          "judgment": null,
+          "needs_review": false,
+          "citation_error": false
+        }
+      ]
+    },
+    {
+      "page": "decisions/never-archive-raw-jsonl.md",
+      "superseded": false,
+      "sources": [
+        {
+          "path": "specs/session-analytics-trace-archive/shaping.md",
+          "sha": "76beab2",
+          "revision_check": "unchanged",
+          "judgment": null,
+          "needs_review": false,
+          "citation_error": false
+        },
+        {
+          "path": "scripts/session_analytics/archive.py",
+          "sha": "c776632",
+          "revision_check": "changed",
+          "judgment": "The pin version still stores redacted text only and keeps the opt-out gate — no review",
+          "needs_review": false,
+          "citation_error": false
+        }
+      ]
+    },
+    {
+      "page": "decisions/benchmark-ui-was-backend-free-one-shot-and-studio-only.md",
+      "superseded": true,
+      "sources": [
+        {
+          "path": "specs/session-analytics-benchmark-ui/spec.md",
+          "sha": "2325480",
+          "revision_check": "unchanged",
+          "judgment": null,
+          "needs_review": false,
+          "citation_error": false
+        },
+        {
+          "path": "specs/session-analytics-benchmark-step/spec.md",
+          "sha": "2325480",
+          "revision_check": "changed",
+          "judgment": "The superseding spec still supersedes the page's decision, and the page is already superseded by its successor — no review",
+          "needs_review": false,
+          "citation_error": false
+        }
+      ]
+    },
+    {
+      "page": "decisions/merge-require-green-ci-was-never-read.md",
+      "superseded": true,
+      "sources": [
+        {
+          "path": "specs/auto-build-loop-merge-profile/spec.md",
+          "sha": "a24a00e",
+          "revision_check": "changed",
+          "judgment": "The spec carries the correction (\"never read … removed\") at `e39969f` and not at `a24a00e`: the page's `Revisit when:` condition has arrived, and its successor page is that review",
+          "needs_review": true,
+          "citation_error": false
+        },
+        {
+          "path": "specs/auto-build-loop-merge-profile/spec.md",
+          "sha": "e39969f",
+          "revision_check": "changed",
+          "judgment": "The same file at the correction's own commit; the successor page records it — no further review",
+          "needs_review": false,
+          "citation_error": false
+        }
+      ]
+    },
+    {
+      "page": "decisions/the-clusters-view-is-not-an-explorer.md",
+      "superseded": false,
+      "sources": [
+        {
+          "path": "specs/session-analytics-similarity-ui/plan.md",
+          "sha": "15438b2",
+          "revision_check": "changed",
+          "judgment": "`Not planned` still excludes the explorer at the pin — no review",
+          "needs_review": false,
+          "citation_error": false
+        }
+      ]
+    },
+    {
+      "page": "decisions/config-redaction-is-not-free-text-redaction.md",
+      "superseded": false,
+      "sources": [
+        {
+          "path": "scripts/lib/analytics_layers.py",
+          "sha": "8dbceaf",
+          "revision_check": "changed",
+          "judgment": "At the pin `redact()` still redacts by key name and gains no content-pattern redaction — no review",
+          "needs_review": false,
+          "citation_error": false
+        }
+      ]
+    },
+    {
+      "page": "decisions/destructive-git-commands-require-confirmation.md",
+      "superseded": false,
+      "sources": [
+        {
+          "path": "claude_code/.claude/rules/safety.md",
+          "sha": "5ce94f2",
+          "revision_check": "changed",
+          "judgment": "The confirmation list the pattern records is still present at the pin — no review",
+          "needs_review": false,
+          "citation_error": false
+        },
+        {
+          "path": "shared/skills/safety/SKILL.md",
+          "sha": "37e8417",
+          "revision_check": "unchanged",
+          "judgment": null,
+          "needs_review": false,
+          "citation_error": false
+        }
+      ]
+    },
+    {
+      "page": "decisions/balanced-profile-denies-destructive-git-commands.md",
+      "superseded": false,
+      "sources": [
+        {
+          "path": "adapters/claude-code/permissions/balanced.json",
+          "sha": "88931a3",
+          "revision_check": "unchanged",
+          "judgment": null,
+          "needs_review": false,
+          "citation_error": false
+        },
+        {
+          "path": "specs/init-permission-profiles/spec.md",
+          "sha": "88931a3",
+          "revision_check": "unchanged",
+          "judgment": null,
+          "needs_review": false,
+          "citation_error": false
+        }
+      ]
+    },
+    {
+      "page": "decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md",
+      "superseded": false,
+      "sources": [
+        {
+          "path": "specs/session-analytics-benchmark-step/spec.md",
+          "sha": "2325480",
+          "revision_check": "changed",
+          "judgment": "The spec still states the supersession the page records; the page states no trigger — no review",
+          "needs_review": false,
+          "citation_error": false
+        }
+      ]
+    },
+    {
+      "page": "decisions/merge-require-green-ci-was-never-read-and-was-removed.md",
+      "superseded": false,
+      "sources": [
+        {
+          "path": "specs/auto-build-loop-merge-profile/spec.md",
+          "sha": "e39969f",
+          "revision_check": "changed",
+          "judgment": "The correction the page records is still present and was extended, not reversed; the page states no trigger — no review",
+          "needs_review": false,
+          "citation_error": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "id": "vllm-backend-doc",
+  "repository": "code-copilot-team",
+  "page_origin": "verbatim",
+  "page_from": {
+    "path": "knowledge/wiki/playbooks/drive-claude-code-with-local-vllm.md",
+    "commit": "fe9c69098fe7ecb5a65af0d3bc707f6bc128691d"
+  },
+  "path": "benchmarks/backends/vllm.md",
+  "sha": "c8b1f97",
+  "sha_derived": false,
+  "source_change_commits": [
+    "9cbffbb9e7ad2baf59484ba7afd2e0d468a51001",
+    "a9a3b1e43894017cc28353b96d78ada85e8f9ac7"
+  ],
+  "read_commit": "a9a3b1e43894017cc28353b96d78ada85e8f9ac7",
+  "read_rule": "correcting",
+  "correcting_commit": "a9a3b1e43894017cc28353b96d78ada85e8f9ac7",
+  "sha256": {
+    "page_md": "4506f78ebe993596dbe39edb03f5f1321e0216f67f73901f5f35deace3339e9e",
+    "source_at_sha": null,
+    "source_at_read": "b9c6f6809344e2cfa59d41ce99cb5d29d48a58508fc3df9e78b1992fa06da0c5"
+  },
+  "evidence": {
+    "message_of": "a9a3b1e43894017cc28353b96d78ada85e8f9ac7",
+    "diff_of": "a9a3b1e43894017cc28353b96d78ada85e8f9ac7",
+    "paths": [
+      "benchmarks/backends/vllm.md",
+      "knowledge/wiki/playbooks/drive-claude-code-with-local-vllm.md"
+    ]
+  },
+  "negative": false,
+  "should_flag": false,
+  "reason": "The cited file does not exist at the cited commit (it was introduced one commit later), so the entry is a citation error for the exact kind; the correction repointed the page's two sha values and changed no other line of the page."
+}

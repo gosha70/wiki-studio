@@ -1,0 +1,300 @@
+{
+  "study": "issue 120 revision check: candidates, bar, selection and call plan",
+  "wiki_studio_base": "a75a63a304f7353e241f5bda42dd3ba08cfac408",
+  "study_pin": {
+    "repository": "code-copilot-team",
+    "commit": "00d49c0a9eb51e9bf234cee70490889b151cd550"
+  },
+  "inputs": {
+    "staleness": "eval/patterns/results/staleness.json",
+    "wiki": "eval/patterns/wiki",
+    "labels": "eval/revisions/labels.json",
+    "pre_successor": "eval/revisions/pre-successor/merge-require-green-ci-was-never-read.md",
+    "cases": "eval/revisions/cases"
+  },
+  "derivation": [
+    {
+      "step": "revision_check == \"changed\"",
+      "entries": 15,
+      "citations": 14,
+      "pages": 13
+    },
+    {
+      "step": "less the pages whose frontmatter has superseded_by",
+      "entries": -3,
+      "citations": -2,
+      "pages": -2
+    },
+    {
+      "step": "live pages with a changed source",
+      "entries": 12,
+      "citations": 12,
+      "pages": 11
+    },
+    {
+      "step": "less the entry absent at its sha",
+      "entries": -1,
+      "citations": -1,
+      "pages": -1
+    },
+    {
+      "step": "left for the revision kind",
+      "entries": 11,
+      "citations": 11,
+      "pages": 10
+    }
+  ],
+  "citation_error_entry": {
+    "page": "decisions/judge-statistics-and-charts-stay-in-the-stdlib.md",
+    "path": "scripts/benchmark_runner/calibration/spearman.py",
+    "sha": "dafbc5b"
+  },
+  "true_entry": {
+    "page": "decisions/merge-require-green-ci-was-never-read.md",
+    "path": "specs/auto-build-loop-merge-profile/spec.md",
+    "sha": "a24a00e",
+    "read_on": "eval/revisions/pre-successor/merge-require-green-ci-was-never-read.md"
+  },
+  "false_pages": [
+    "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+    "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+    "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md",
+    "decisions/never-bypass-a-git-lock-with-an-alternate-index.md",
+    "decisions/never-archive-raw-jsonl.md",
+    "decisions/the-clusters-view-is-not-an-explorer.md",
+    "decisions/config-redaction-is-not-free-text-redaction.md",
+    "decisions/destructive-git-commands-require-confirmation.md",
+    "decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md",
+    "decisions/merge-require-green-ci-was-never-read-and-was-removed.md"
+  ],
+  "false_entries": [
+    {
+      "page": "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+      "path": "scripts/session_analytics/archive.py",
+      "sha": "c776632"
+    },
+    {
+      "page": "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+      "path": "specs/session-analytics-benchmark-step/spec.md",
+      "sha": "2325480"
+    },
+    {
+      "page": "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+      "path": "scripts/session_analytics/api/server.py",
+      "sha": "2325480"
+    },
+    {
+      "page": "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md",
+      "path": "specs/benchmark-adapters-backends/spec.md",
+      "sha": "13eb704"
+    },
+    {
+      "page": "decisions/never-bypass-a-git-lock-with-an-alternate-index.md",
+      "path": "claude_code/.claude/rules/safety.md",
+      "sha": "5ce94f2"
+    },
+    {
+      "page": "decisions/never-archive-raw-jsonl.md",
+      "path": "scripts/session_analytics/archive.py",
+      "sha": "c776632"
+    },
+    {
+      "page": "decisions/the-clusters-view-is-not-an-explorer.md",
+      "path": "specs/session-analytics-similarity-ui/plan.md",
+      "sha": "15438b2"
+    },
+    {
+      "page": "decisions/config-redaction-is-not-free-text-redaction.md",
+      "path": "scripts/lib/analytics_layers.py",
+      "sha": "8dbceaf"
+    },
+    {
+      "page": "decisions/destructive-git-commands-require-confirmation.md",
+      "path": "claude_code/.claude/rules/safety.md",
+      "sha": "5ce94f2"
+    },
+    {
+      "page": "decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md",
+      "path": "specs/session-analytics-benchmark-step/spec.md",
+      "sha": "2325480"
+    },
+    {
+      "page": "decisions/merge-require-green-ci-was-never-read-and-was-removed.md",
+      "path": "specs/auto-build-loop-merge-profile/spec.md",
+      "sha": "e39969f"
+    }
+  ],
+  "cases": [
+    "eval/revisions/cases/vllm-backend-doc",
+    "eval/revisions/cases/run-wiki-ingest-rules",
+    "eval/revisions/cases/provider-config-guarantee",
+    "eval/revisions/cases/benchmark-provider-id",
+    "eval/revisions/cases/keyword-quoting/pre-pr-strict-mode",
+    "eval/revisions/cases/keyword-quoting/pre-pr-keyword-set",
+    "eval/revisions/cases/keyword-quoting/pre-pr-doc-audit"
+  ],
+  "built_cases": [
+    "provider-config-guarantee",
+    "benchmark-provider-id"
+  ],
+  "structural_rules": [
+    {
+      "id": "superseded-page-skipped",
+      "rule": "A page whose frontmatter carries superseded_by is skipped."
+    },
+    {
+      "id": "missing-at-head",
+      "rule": "A source whose path is missing at the matched repository's HEAD gets no revision kind."
+    },
+    {
+      "id": "missing-at-sha",
+      "rule": "A source whose path is missing at its sha goes to the exact kind and gets no revision kind."
+    }
+  ],
+  "changed_lines": {
+    "command": "git diff -U0",
+    "lines": "the + and - lines of the hunks",
+    "excluded": "file headers (diff, index, ---, +++) and hunk headers (@@)"
+  },
+  "anchors": {
+    "extraction": "wiki_studio.fact_diff, unchanged: _BACKTICK_RE spans normalized by _normalize_identifier, and _PATH_LINE_RE references as <file>:<line>, both over the page body with fenced code blanked by _without_fences",
+    "last_dotted_component": true,
+    "match": "the anchor occurs as a substring of a changed line"
+  },
+  "heading_rule": {
+    "applies_to": "a source whose path ends in .md",
+    "heading": "the nearest ATX heading at or above the hunk's first old-side line, in the source at the cited sha",
+    "pure_insertion": "the old-side line the insertion follows",
+    "match": "the heading's text occurs in the page body, case-insensitive",
+    "no_heading_above": "the heading rule does not fire for that hunk"
+  },
+  "revisit_when": {
+    "prefix": "Revisit when:",
+    "line": "the first body line outside fenced code whose text, after leading whitespace and an optional list marker, starts with the prefix; read to the end of that line",
+    "tokens": "wiki_studio.wiki_state._tokenise, which drops its stop list",
+    "match": "a changed line shares at least one token with the line's text after the prefix",
+    "not_recorded": "a page with no such line, or whose line contains \"not recorded\" (case-insensitive), has no Revisit-when tokens"
+  },
+  "candidates": [
+    {
+      "id": "C0",
+      "name": "plain change",
+      "flags_when": "the path differs between the sha and HEAD",
+      "fallback": null,
+      "steps": ["p1", "p2", "p3", "p4"]
+    },
+    {
+      "id": "C1",
+      "name": "change ignoring whitespace",
+      "flags_when": "the path differs between the sha and HEAD under -w --ignore-blank-lines",
+      "fallback": null,
+      "steps": ["p1", "p2", "p3", "p4", "p5"]
+    },
+    {
+      "id": "C2",
+      "name": "anchor touch",
+      "flags_when": "a changed line contains one of the page's anchors, or the heading rule fires for a hunk",
+      "fallback": {
+        "when": "the page has no anchor",
+        "to": "C1"
+      },
+      "steps": ["p1", "p2", "p3", "p4", "p6", "p7"],
+      "fallback_steps": ["p5"]
+    },
+    {
+      "id": "C3",
+      "name": "Revisit-when tokens",
+      "flags_when": "a changed line shares a token with the page's Revisit when: line",
+      "fallback": {
+        "when": "the page has no Revisit-when tokens",
+        "to": "C1"
+      },
+      "steps": ["p1", "p2", "p3", "p4", "p6"],
+      "fallback_steps": ["p5"]
+    },
+    {
+      "id": "C4",
+      "name": "anchor touch and Revisit-when tokens",
+      "flags_when": "C2 and C3 both flag the source, each with its own fallback",
+      "fallback": null,
+      "steps": ["p1", "p2", "p3", "p4", "p6", "p7"],
+      "fallback_steps": ["p5"]
+    }
+  ],
+  "bar": {
+    "combine": "all",
+    "false_pages": {
+      "binding": true,
+      "max_flagged": 5,
+      "of": 10,
+      "reported_beside": "false entries flagged, of 11"
+    },
+    "true_entry_kept": {
+      "binding": true,
+      "on": "the pre-successor copy"
+    },
+    "recall": {
+      "binding": true,
+      "counts": "cases with should_flag true and negative false",
+      "min_positives": 4,
+      "keep_numerator": 3,
+      "keep_denominator": 4,
+      "rounding": "up",
+      "below_minimum": "not testable"
+    },
+    "reported_only": {
+      "binding": false,
+      "cases": ["eval/revisions/cases/run-wiki-ingest-rules", "eval/revisions/cases/vllm-backend-doc"],
+      "what": "cases with should_flag false and negative false; for each candidate, whether it flags each case"
+    }
+  },
+  "selection": [
+    "among the candidates that pass the bar, the fewest false pages flagged",
+    "then the fewest git processes on the study run",
+    "then the lowest-numbered candidate"
+  ],
+  "winner_line": {
+    "winner": "Winner: C<n>",
+    "none": "Winner: none"
+  },
+  "cost": {
+    "measures": ["git processes", "wall time"],
+    "per": "run",
+    "counted_on": "the call plan"
+  },
+  "call_plan": {
+    "p1": {
+      "per": "repository, once",
+      "command": "rev-parse --show-toplevel --is-shallow-repository HEAD"
+    },
+    "p2": {
+      "per": "repository, once, when p1 succeeds and the repository is not shallow",
+      "command": "config --get extensions.partialclone"
+    },
+    "p3": {
+      "per": "distinct sha, repository by repository in order until the first match or ambiguity",
+      "command": "rev-parse --verify <sha>^{commit}"
+    },
+    "p4": {
+      "per": "matched (repository, full commit)",
+      "command": "diff-tree -r --name-status --no-renames --relative <commit> HEAD -- <cited paths>"
+    },
+    "p5": {
+      "per": "changed cited path, only as a candidate needs it (C1 and the C1 fallbacks)",
+      "command": "diff --quiet -w --ignore-blank-lines <commit> HEAD -- <path>"
+    },
+    "p6": {
+      "per": "changed cited path, only as a candidate needs it (C2, C3, C4)",
+      "command": "diff -U0 <commit> HEAD -- <path>"
+    },
+    "p7": {
+      "per": "changed cited Markdown path, only as a candidate needs it (the heading rule of C2 and C4)",
+      "command": "cat-file blob <commit>:./<path>"
+    }
+  },
+  "cut_1": {
+    "trigger": "the end of week 2 passes without the freeze, invoked by the owner at the milestone",
+    "effect": "candidates narrow to C0, C1 and C2; C3 and C4 are named as unmeasured"
+  },
+  "no_case_after_the_run": true
+}

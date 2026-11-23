@@ -1,0 +1,259 @@
+{
+  "study": "issue 120 revision check: the record",
+  "case": "pre-pr-strict-mode",
+  "run": {
+    "repositories": [
+      {
+        "name": "wiki-studio",
+        "role": "root",
+        "status": "used",
+        "reason": null,
+        "head": "7af7fd4dcea6145e2cf736e7352a4a66c36b019d"
+      },
+      {
+        "name": "code-copilot-team",
+        "role": "source-root",
+        "status": "used",
+        "reason": null,
+        "head": "87bbc6515cf46051bef1c69653607303cdc5e63f"
+      }
+    ],
+    "pages": [
+      {
+        "page": "pre-pr-strict-mode",
+        "superseded": false,
+        "sources": [
+          {
+            "path": "scripts/pre-pr-check.sh",
+            "sha": "33beb17",
+            "state": "checked",
+            "reason": null,
+            "repository": "code-copilot-team",
+            "commit": "33beb17b242c12b2c91403a696c28703905a9efb",
+            "status": "M",
+            "present_at_sha": true,
+            "present_at_head": true
+          }
+        ]
+      }
+    ],
+    "paths": [
+      {
+        "repository": "code-copilot-team",
+        "commit": "33beb17b242c12b2c91403a696c28703905a9efb",
+        "head": "87bbc6515cf46051bef1c69653607303cdc5e63f",
+        "path": "scripts/pre-pr-check.sh",
+        "status": "M",
+        "markdown": false,
+        "p5_differs": true,
+        "hunks": [
+          {
+            "old_start": 108,
+            "old_count": 14,
+            "new_start": 108,
+            "new_count": 18,
+            "lines": [
+              "-# strip_code_spans \u2014 drop markdown code spans before scanning so the",
+              "-# audit matches GitHub's actual close-keyword parser behavior:",
+              "-# inline-backtick spans (`...`) and triple-backtick fenced blocks are",
+              "-# rendered as code by GitHub and are NOT parsed for close keywords.",
+              "-# Documenting an issue via `` `Closes #X` `` is the safe pattern the",
+              "-# memory recommends; the audit must respect that, not punish it.",
+              "-strip_code_spans() {",
+              "-  awk '",
+              "-    BEGIN { in_fence = 0 }",
+              "-    /^```/ { in_fence = !in_fence; print \"\"; next }",
+              "-    in_fence { print \"\"; next }",
+              "-    { gsub(/`[^`]*`/, \"\"); print }",
+              "-  '",
+              "-}",
+              "+# Scanning model (corrected 2026-05-21 after PR #54 incident).",
+              "+# GitHub's close-keyword parser in COMMIT MESSAGES fires on every",
+              "+# `(Closes|Fixes|Resolves) #N` token in the raw text \u2014 including",
+              "+# tokens that appear inside inline-backtick code spans (`...`) and",
+              "+# inside triple-backtick fenced code blocks. The \"backtick to be",
+              "+# safe\" guidance that the v1 of this script encoded was empirically",
+              "+# wrong: PR #54's merge closed epic #34 via a commit whose ONLY",
+              "+# `Closes #34` references were backticked or fenced.",
+              "+#",
+              "+# Consequence: the audit must NOT pre-strip markdown code spans",
+              "+# before grepping. Every match in the raw text is a live close-",
+              "+# keyword and must have its ID in --closes. The defense for a",
+              "+# documentation reference is to REPHRASE rather than backtick \u2014",
+              "+# e.g. write \"the PR that closes #34\" (no close-keyword prefix) or",
+              "+# \"the close-keyword for #34\" instead of \"Closes #34\".",
+              "+#",
+              "+# The empirical test is the only authoritative source for parser",
+              "+# behavior; the playbook documents how to run one before assuming."
+            ],
+            "heading": null
+          },
+          {
+            "old_start": 168,
+            "old_count": 1,
+            "new_start": 172,
+            "new_count": 1,
+            "lines": [
+              "-COMMIT_BODIES=\"$(git log \"${BASE}..HEAD\" --format='COMMIT %h%n%B%n---END---' | strip_code_spans)\"",
+              "+COMMIT_BODIES=\"$(git log \"${BASE}..HEAD\" --format='COMMIT %h%n%B%n---END---')\""
+            ],
+            "heading": null
+          },
+          {
+            "old_start": 181,
+            "old_count": 1,
+            "new_start": 185,
+            "new_count": 1,
+            "lines": [
+              "-    scan_line \"$line\" \"commit $current_sha\" \"commit messages reference unintended issue IDs (backtick them, or add the ID to --closes if intended)\"",
+              "+    scan_line \"$line\" \"commit $current_sha\" \"commit messages reference unintended issue IDs (rephrase the prose to drop the close-keyword, or add the ID to --closes if intended \u2014 backticking does NOT save you for commit messages, see the playbook)\""
+            ],
+            "heading": null
+          },
+          {
+            "old_start": 208,
+            "old_count": 3,
+            "new_start": 212,
+            "new_count": 3,
+            "lines": [
+              "-  # Scan body for close keywords (after stripping markdown code spans",
+              "-  # \u2014 see strip_code_spans rationale above). Every close-keyword",
+              "-  # match on a line (not just the first one) is checked against",
+              "+  # Scan body for close keywords \u2014 strict mode (NO code-span",
+              "+  # stripping; see the \"Scanning model\" comment block above for",
+              "+  # why). Every close-keyword match on a line is checked against"
+            ],
+            "heading": null
+          },
+          {
+            "old_start": 216,
+            "old_count": 1,
+            "new_start": 220,
+            "new_count": 1,
+            "lines": [
+              "-  done < <(strip_code_spans < \"$BODY_FILE\")",
+              "+  done < \"$BODY_FILE\""
+            ],
+            "heading": null
+          },
+          {
+            "old_start": 267,
+            "old_count": 1,
+            "new_start": 271,
+            "new_count": 1,
+            "lines": [
+              "-echo \"Fix the offending references (backtick them, rephrase them, or add the ID to --closes), then re-run.\" >&2",
+              "+echo \"Fix the offending references (rephrase the prose to drop the close-keyword, or add the ID to --closes if intended). Backticking does NOT shield commit messages from GitHub's parser \u2014 see knowledge/wiki/playbooks/pre-pr-close-keyword-audit.md for the empirical finding.\" >&2"
+            ],
+            "heading": null
+          }
+        ]
+      }
+    ],
+    "calls": [
+      {
+        "step": "p1",
+        "repository": "wiki-studio",
+        "commit": null,
+        "path": null,
+        "exit": 0,
+        "seconds": 0.011379
+      },
+      {
+        "step": "p2",
+        "repository": "wiki-studio",
+        "commit": null,
+        "path": null,
+        "exit": 1,
+        "seconds": 0.007813
+      },
+      {
+        "step": "p1",
+        "repository": "code-copilot-team",
+        "commit": null,
+        "path": null,
+        "exit": 0,
+        "seconds": 0.008415
+      },
+      {
+        "step": "p2",
+        "repository": "code-copilot-team",
+        "commit": null,
+        "path": null,
+        "exit": 1,
+        "seconds": 0.009309
+      },
+      {
+        "step": "p3",
+        "repository": "wiki-studio",
+        "commit": null,
+        "path": null,
+        "exit": 128,
+        "seconds": 0.009596
+      },
+      {
+        "step": "p3",
+        "repository": "code-copilot-team",
+        "commit": null,
+        "path": null,
+        "exit": 0,
+        "seconds": 0.008791
+      },
+      {
+        "step": "p4",
+        "repository": "code-copilot-team",
+        "commit": "33beb17b242c12b2c91403a696c28703905a9efb",
+        "path": null,
+        "exit": 0,
+        "seconds": 0.010214
+      },
+      {
+        "step": "p5",
+        "repository": "code-copilot-team",
+        "commit": "33beb17b242c12b2c91403a696c28703905a9efb",
+        "path": "scripts/pre-pr-check.sh",
+        "exit": 1,
+        "seconds": 0.009818
+      },
+      {
+        "step": "p6",
+        "repository": "code-copilot-team",
+        "commit": "33beb17b242c12b2c91403a696c28703905a9efb",
+        "path": "scripts/pre-pr-check.sh",
+        "exit": 0,
+        "seconds": 0.010491
+      }
+    ],
+    "steps": {
+      "p1": {
+        "processes": 2,
+        "seconds": 0.019794
+      },
+      "p2": {
+        "processes": 2,
+        "seconds": 0.017122
+      },
+      "p3": {
+        "processes": 2,
+        "seconds": 0.018387
+      },
+      "p4": {
+        "processes": 1,
+        "seconds": 0.010214
+      },
+      "p5": {
+        "processes": 1,
+        "seconds": 0.009818
+      },
+      "p6": {
+        "processes": 1,
+        "seconds": 0.010491
+      },
+      "p7": {
+        "processes": 0,
+        "seconds": 0
+      }
+    },
+    "read_commit": "87bbc6515cf46051bef1c69653607303cdc5e63f"
+  }
+}
