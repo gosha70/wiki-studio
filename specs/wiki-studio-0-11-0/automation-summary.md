@@ -32,3 +32,7 @@ Review: PASS (see specs/wiki-studio-0-11-0/collaboration/build-review-phase-7.md
 
 ### Phase 8 complete — US8: Release preparation for 0.11.0 (S6) (2026-11-23T18:28:53Z)
 Review: PASS (see specs/wiki-studio-0-11-0/collaboration/build-review-phase-8.md).
+
+## Run complete (2026-11-23T18:31:11Z)
+Profile: pr — branch feature/wiki-studio-0-11-0 pushed to origin; a pull request tracks the work (the driver never merges).
+Review artifacts: specs/wiki-studio-0-11-0/collaboration/.
