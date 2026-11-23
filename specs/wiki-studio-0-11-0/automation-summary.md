@@ -23,3 +23,6 @@ Review: PASS (see specs/wiki-studio-0-11-0/collaboration/build-review-phase-4.md
 
 ### Phase 5 complete — US5: The exact finding and the run state (S3) (2026-11-23T16:11:06Z)
 Review: PASS (see specs/wiki-studio-0-11-0/collaboration/build-review-phase-5.md).
+
+### Phase 6 complete — US6: source-revision-changed by the winning candidate, or the recorded cut (S4) (2026-11-23T18:12:42Z)
+Review: PASS (see specs/wiki-studio-0-11-0/collaboration/build-review-phase-6.md).
