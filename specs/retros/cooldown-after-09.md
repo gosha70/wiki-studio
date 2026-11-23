@@ -36,7 +36,7 @@ What shipped to main:
   `vllm-backend-doc`.
 - Post hoc, not binding (found in the external review): C2's frozen anchors
   included fragments. Without them, C2 flags 3 of 10 false pages and does not
-  flag `run-wiki-ingest`. The owner chose on 2026-11-23 to ship C2 without
+  flag `run-wiki-ingest-rules`. The owner chose on 2026-11-23 to ship C2 without
   fragment anchors, recorded as plan departure 23; FR-034's replay test
   asserts the post-hoc figures.
 
@@ -86,7 +86,7 @@ released code: the work is unreleased.
   automation.json; runs used `env -u`.
 - **Main CI on `35aa842`:** attempt 1's Build Check failed on a PyPI read
   timeout; attempt 2 was green.
-- **Every DeepSeek gating review passed in one round.**
+- **Every DeepSeek gating review passed in one round** (steps 1, 2 and 4 to 8). Step 3's review was run by hand, was advisory, and suggested changes.
 - **The driver never updates the hill.** Neither run moved it; set by hand at close.
 
 ## Pitches shaped during cooldown
