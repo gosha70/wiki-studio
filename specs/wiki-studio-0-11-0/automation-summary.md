@@ -20,3 +20,6 @@ Review: PASS (see specs/wiki-studio-0-11-0/collaboration/build-review-phase-2.md
 
 ### Phase 4 complete — US4: The hardened read-only git layer (S3) (2026-11-23T15:52:21Z)
 Review: PASS (see specs/wiki-studio-0-11-0/collaboration/build-review-phase-4.md).
+
+### Phase 5 complete — US5: The exact finding and the run state (S3) (2026-11-23T16:11:06Z)
+Review: PASS (see specs/wiki-studio-0-11-0/collaboration/build-review-phase-5.md).
