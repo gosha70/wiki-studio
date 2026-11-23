@@ -3,7 +3,7 @@ spec_mode: full
 feature_id: wiki-studio-0-11-0
 risk_category: feature
 justification: "A measurement whose value rests on labels frozen before any candidate code and reviewed by the owner, built from real cases in another repository read offline and fenced for closing-keyword text; then a new git-reading path inside findings, the read surface every host and the nightly pass use, over configured repositories that are untrusted input (config-named programs, inherited GIT_ variables, ownership refusals, shallow and partial clones, ambiguous short shas); an additive key in a published JSON format and the MCP trace allowlist; a conditional kind that ships only if the frozen bar is cleared; documents and packaged schema text; and a release. A full spec pins the protocol, the command set, the environment, the ambiguity rule, the cap's provenance, the cut path and the per-phase truth rule before two unattended runs."
-status: draft
+status: approved
 date: 2026-11-22
 collaboration_mode: single
 origin:
