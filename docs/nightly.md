@@ -168,9 +168,10 @@ jobs:
 ## After the run
 
 The verb never commits, pushes or checks out; its findings step reads
-repositories read-only. A curator promotes a draft from a checkout of the repository that holds the
-wiki: `wiki-studio promote <proposal-dir>`. A promotion applies the draft
-only while every page still carries the revision the draft was built from.
+repositories read-only. A curator promotes a draft from a checkout of the
+repository that holds the wiki: `wiki-studio promote <proposal-dir>`. A
+promotion applies the draft only while every page still carries the revision
+the draft was built from.
 
 A person approves a `nightly-*` draft. Review the proposal with the
 [curator persona](https://github.com/gosha70/wiki-studio/blob/main/src/wiki_studio/schema/WIKI_MAINTAINER.md)
