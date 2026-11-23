@@ -86,7 +86,9 @@ Winner: C2
 **What the win rests on.** C2 passes condition 1 at the limit, 5 of 10 false
 pages, with no margin. Without the two built pages the supplementary set has
 3 positives, below the minimum of 4, so that variant of condition 3 is not
-testable; it is reported, not a condition.
+testable; it is reported, not a condition. Whether C2 would still pass
+without the anchor rule's last-component reading (see Limits) was not
+measured: the protocol is frozen, and that rule was its reading.
 
 **Process counts** (study run, from `process_counts`): the exact kind's plan
 (p1-p4) takes 37 git processes in 0.349 s; with each candidate's steps added,
