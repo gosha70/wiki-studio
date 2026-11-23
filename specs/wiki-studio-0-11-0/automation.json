@@ -2,14 +2,14 @@
   "schema_version": 2,
   "profile": "pr",
   "branch": {
-    "name": "feature/wiki-studio-0-11-0-evidence",
+    "name": "feature/wiki-studio-0-11-0",
     "base": "main",
     "remote": "origin"
   },
   "phases": {
     "source": "tasks.md",
     "milestone_every": 0,
-    "max_phases": 3
+    "max_phases": 8
   },
   "build": {
     "max_turns": 120,
@@ -52,7 +52,10 @@
     "command": ""
   },
   "pr": {
-    "title": "research: wiki-studio 0.11.0 evidence — eval/revisions/ with frozen labels, real cases and the candidate measurement"
+    "closes": [
+      120
+    ],
+    "title": "feat: wiki-studio 0.11.0 — revision-aware findings: source-not-at-revision and source-revision-changed over a hardened read-only git layer"
   },
   "merge": {
     "enabled": false,

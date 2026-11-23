@@ -1,19 +1,19 @@
 {
   "pitch_id": "120-revision-aware-stale-check",
   "cycle": "09",
-  "updated_at": "2026-11-22T15:51:17Z",
+  "updated_at": "2026-11-23T14:25:36Z",
   "scopes": [
     {
       "id": "S1",
       "name": "Real cases, labels, candidates and bar, frozen, ~5-6.5h",
-      "status": "uphill",
-      "last_updated": "2026-11-22T15:51:17Z"
+      "status": "done",
+      "last_updated": "2026-11-23T14:25:36Z"
     },
     {
       "id": "S2",
       "name": "The measurement and its recommendation, ~4-5h",
-      "status": "uphill",
-      "last_updated": "2026-11-22T15:51:17Z"
+      "status": "done",
+      "last_updated": "2026-11-23T14:25:36Z"
     },
     {
       "id": "S3",

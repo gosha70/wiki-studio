@@ -226,6 +226,26 @@ Each is recorded so the origin-alignment record at approval can cite it.
     report's header list** name the new kind and the run state (FR-027);
     they enumerate kinds today, and the pitch asks for one line in the
     nightly report.
+23. **The winner ships without fragment anchors** (spec amendment,
+    2026-11-23; owner's decision after seeing the data). The external review
+    of the evidence PR found that C2's frozen anchors include fragments (the
+    last dotted part of backticked items such as `py` or `run`, and short or
+    letterless items) matched anywhere in a changed line; two of C2's five
+    false pages and the `run-wiki-ingest-rules` flag rest on them alone. The
+    evidence PR added a non-binding `post_hoc` block measuring C2 without
+    them: 3 of 10 false pages, the merge entry and all five positives kept.
+    FR-032 ships that measured rule word for word and FR-034 replays it
+    against the `post_hoc` figures, so the shipped behaviour is exactly what
+    was measured. The preregistered verdict and winner stand unchanged; this
+    departure changes only what ships. Two known limits are recorded in
+    FR-032 and the contract, unmeasured: a bare file name's last dotted part
+    (`toml`, `json`) stays an anchor, and an anchor can match inside a
+    longer word.
+24. **Run 1's phase 3 was finished by hand** (process, not scope). The
+    auto-build's sessions could not run Python, so the record could not run
+    in the phase and the phase parked. The build session ran `record.py` and
+    `candidates.py` (owner step 1's fallback), committed the output, filled
+    the report and had DeepSeek review the phase by hand (evidence PR #128).
 
 Close target: issue 120, by run 2's merge (`pr.closes: [120]`) only when
 `source-revision-changed` ships; otherwise it stays open with the measurement
@@ -398,6 +418,18 @@ of 500 lines parked issue 54's data step as inconclusive). US1 commits seven
 case pages with the labels, protocol, README and a test, and US3 the recorded
 hunks: about 830 changed lines across the study's cited files alone, one file
 539 of them.
+
+**Run 2, as set by the spec amendment (2026-11-23).** `automation.json` now
+holds run 2's settings: branch `feature/wiki-studio-0-11-0` from `main`
+(after the amendment merges), phases from `tasks.md` with `milestone_every:
+0` and `max_phases: 8`, started with `--start-phase 4` so US4-US8 run,
+`pr.closes: [120]` (a winner ships), the build PR's title, and
+`review.diff_max_lines: 6000`, which the driver freezes at launch. Run 1's
+ledger (`.cct/auto-build/wiki-studio-0-11-0/`, parked at phase 3) is moved
+aside before run 2 starts, so run 2 begins a fresh ledger. The driver runs
+without an inherited `CCT_REVIEW_DIFF_MAX_LINES` (the owner's shell sets one,
+which would override the frozen value). Run 2 ends with the driver's own PR,
+whose closing line names issue 120.
 
 ## Test strategy
 
