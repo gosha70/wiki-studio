@@ -1,0 +1,35 @@
+{
+  "id": "pre-pr-keyword-set",
+  "repository": "code-copilot-team",
+  "page_origin": "verbatim",
+  "page_from": {
+    "path": "knowledge/wiki/playbooks/pre-pr-close-keyword-audit.md",
+    "commit": "87bbc6515cf46051bef1c69653607303cdc5e63f"
+  },
+  "path": "scripts/pre-pr-check.sh",
+  "sha": "87bbc65",
+  "sha_derived": true,
+  "sha_derivation": "The page cites the path with no sha; 87bbc6515cf46051bef1c69653607303cdc5e63f is the commit of the page's previous revision, the last to touch the page before the correcting commit.",
+  "source_change_commits": [
+    "a9628e506177eb02110f3d7e007c898eda3b8480"
+  ],
+  "read_commit": "a9628e506177eb02110f3d7e007c898eda3b8480",
+  "read_rule": "correcting",
+  "correcting_commit": "a9628e506177eb02110f3d7e007c898eda3b8480",
+  "sha256": {
+    "page_md": "a469f426332bac4760aa552ae7bc2089ca17463daa43df6be9457677cf7ca38b",
+    "source_at_sha": "bc40648eb3864d75e104d1c49939c0349ea35ee942b12d6b2dae20158a623413",
+    "source_at_read": "b973df47e6f899977abf0bfbf374d33647254611dc6f87131f9077270f656427"
+  },
+  "evidence": {
+    "message_of": "a9628e506177eb02110f3d7e007c898eda3b8480",
+    "diff_of": "a9628e506177eb02110f3d7e007c898eda3b8480",
+    "paths": [
+      "scripts/pre-pr-check.sh",
+      "knowledge/wiki/playbooks/pre-pr-close-keyword-audit.md"
+    ]
+  },
+  "negative": false,
+  "should_flag": true,
+  "reason": "The script widened the set of verb forms it matches and made the match ignore letter case; the page's stated rule and its one-line command gave the narrower set and were rewritten in the same commit."
+}

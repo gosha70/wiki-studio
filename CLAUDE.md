@@ -55,6 +55,7 @@ conformance/mcp/           adapter-agnostic MCP conformance suite (run.py, fixtu
 eval/navigation/           frozen runs 1-2 (never edited), discovery.py runner, run3/ development set, heldout/ protocol
 eval/composition/          the measurement design for a governed-composition arm (design only; issue texts beside it)
 eval/patterns/           the reusable-patterns study (issue 54): fixture, labels, scripts, results, report
+eval/revisions/          the revision-check study (issue 120): labels, real cases, candidates, results, report
 examples/correction-loop/  the correction-loop demo, its recorder and its protocol (run by the demo-correction-loop job)
 ```
 

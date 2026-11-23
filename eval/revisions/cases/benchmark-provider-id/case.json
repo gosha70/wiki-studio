@@ -1,0 +1,33 @@
+{
+  "id": "benchmark-provider-id",
+  "repository": "code-copilot-team",
+  "page_origin": "built",
+  "page_from": {
+    "path": "specs/benchmark-adapters-backends/spec.md",
+    "commit": "652917572b604235778c23c7175d54de2d3cd51c"
+  },
+  "path": "specs/benchmark-adapters-backends/spec.md",
+  "sha": "6529175",
+  "sha_derived": false,
+  "source_change_commits": [
+    "e59f7cc5ab8f835b2160d0d89626a0e8c76acaad"
+  ],
+  "read_commit": "e59f7cc5ab8f835b2160d0d89626a0e8c76acaad",
+  "read_rule": "correcting",
+  "correcting_commit": "e59f7cc5ab8f835b2160d0d89626a0e8c76acaad",
+  "sha256": {
+    "page_md": "beb329451d82a5162ed210480cff08b64b5dd6f817dd4381e8f171f79290c160",
+    "source_at_sha": "d74d5e71367d21572a1f1605ec5f596dac09339a078e1c2bb699fcb2e98f2301",
+    "source_at_read": "d95727e5a193cb82369c8ae7c0d71b842fb6f4651c9b93d3c3b23076e01d511d"
+  },
+  "evidence": {
+    "message_of": "e59f7cc5ab8f835b2160d0d89626a0e8c76acaad",
+    "diff_of": "e59f7cc5ab8f835b2160d0d89626a0e8c76acaad",
+    "paths": [
+      "specs/benchmark-adapters-backends/spec.md"
+    ]
+  },
+  "negative": false,
+  "should_flag": true,
+  "reason": "The spec struck through the selected provider id in the backend metadata contract and marked it superseded; the built page names that id as part of its choice."
+}
