@@ -324,6 +324,12 @@ A candidate passes only if all three conditions hold.
 
 Matched negatives are reported and are not part of the bar.
 
+**The two cases labelled `should_flag: false`** (`run-wiki-ingest-rules`, a
+real change to a cited file that called for no review, and
+`vllm-backend-doc`, a citation error that belongs to the exact kind) are
+reported too. For each candidate the report says whether it flags each of
+them. They are reported only and are not part of the bar.
+
 ### Selection and the winner line
 
 Among the candidates that pass, the one with the fewest false pages wins. A

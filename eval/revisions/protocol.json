@@ -241,6 +241,11 @@
       "keep_denominator": 4,
       "rounding": "up",
       "below_minimum": "not testable"
+    },
+    "reported_only": {
+      "binding": false,
+      "cases": ["eval/revisions/cases/run-wiki-ingest-rules", "eval/revisions/cases/vllm-backend-doc"],
+      "what": "cases with should_flag false and negative false; for each candidate, whether it flags each case"
     }
   },
   "selection": [
