@@ -6,6 +6,13 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.11.0]
+
+A feature release: `findings` checks a page's cited sources against git,
+read-only and offline, and reports a source that is not at its cited revision
+or that changed where the page points, with a `revision_check` object saying
+when the check could not run.
+
 ### Added
 
 - `findings` reports a new kind, `source-not-at-revision` (issue 120): a
@@ -68,6 +75,13 @@ uses [Semantic Versioning](https://semver.org/).
   its `decision` section and points to `docs/patterns.md`, so users and
   ingest prompts see it offline (issue 119). No frontmatter key, page type,
   section, lint rule or schema version changes.
+
+### Notes
+
+- No new exit code, MCP tool, frontmatter key, page type, capability or
+  dependency; `findings_version` stays 1 and `lint --health --strict` is
+  unchanged. No scope was cut: the frozen study in `eval/revisions/` named
+  C2 as its winner, so both kinds ship. Issue 120.
 
 ## [0.10.0] — 2026-11-18
 

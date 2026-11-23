@@ -642,12 +642,12 @@ class PatternsDocsTest(unittest.TestCase):
                     result = run_cli(*argv, cwd=root)
                     self.assertEqual(result.returncode, 0, f"{text}\n{result.stderr}")
 
-    def test_the_changelog_unreleased_holds_the_docs_line(self) -> None:
+    def test_the_changelog_0_11_0_holds_the_docs_line(self) -> None:
         changelog = CHANGELOG.read_text(encoding="utf-8")
-        self.assertIn("## [Unreleased]", changelog)
-        unreleased = changelog.split("## [Unreleased]", 1)[1].split("\n## [", 1)[0]
-        self.assertIn("### Docs", unreleased)
-        self.assertIn("docs/patterns.md", unreleased)
+        self.assertIn("## [0.11.0]", changelog)
+        release = changelog.split("## [0.11.0]", 1)[1].split("\n## [", 1)[0]
+        self.assertIn("### Docs", release)
+        self.assertIn("docs/patterns.md", release)
 
 
 if __name__ == "__main__":
