@@ -20,7 +20,14 @@ One read-only pass over the wiki that a host can run at session start:
   ``sha:`` in the matched repository, a ``sha:`` no repository has while every
   repository was usable, or a malformed ``sha:``; ``revision_check`` reports
   whether the check could run, every repository and the sources not checked
-  (FR-026). Git is read only through ``revisions``.
+  (FR-026). Git is read only through ``revisions``;
+* ``source-revision-changed`` (FR-032): a cited file changed in place since
+  its ``sha:`` in a way the page's anchor check flags (a changed line names
+  one of the page's identifiers or ``file:line`` references, or a changed
+  Markdown section's heading occurs in the page; a page that names none is
+  flagged by any change beyond whitespace). The description quotes the
+  page's ``Revisit when:`` line. It flags and still returns: review state,
+  approvals and ``find`` are unchanged.
 
 Nothing here takes a backend or resolves one, takes the wiki lock or writes.
 The result is versioned (``findings_version``) and leads with ``counts`` by
@@ -51,7 +58,9 @@ from .review import (
 from .revisions import (
     CAUSE_COMMIT_NOT_FOUND,
     CAUSE_NOT_AT_COMMIT,
+    OUTCOME_CHANGED,
     OUTCOME_NOT_AT_REVISION,
+    REVISIT_PREFIX,
     check_sources,
 )
 
@@ -60,7 +69,7 @@ if TYPE_CHECKING:
 
     from .paths import WikiPaths
     from .review import ReviewState
-    from .revisions import RevisionCheck
+    from .revisions import Repository, RevisionCheck, SourceCheck
 
 FINDINGS_VERSION = FINDINGS_FORMAT_VERSION
 
@@ -79,6 +88,7 @@ KIND_OPEN_CONFLICT = "open-conflict"
 KIND_CONFLICT_ONE_SIDED = "conflict-one-sided"
 KIND_CONFLICT_DANGLING = "conflict-dangling"
 KIND_SOURCE_NOT_AT_REVISION = "source-not-at-revision"
+KIND_SOURCE_REVISION_CHANGED = "source-revision-changed"
 # Every kind this build can report, in the order a run lists them; ``counts`` names each one.
 FINDING_KINDS: tuple[str, ...] = (
     KIND_STALE_CLAIM,
@@ -94,6 +104,7 @@ FINDING_KINDS: tuple[str, ...] = (
     KIND_CONFLICT_ONE_SIDED,
     KIND_CONFLICT_DANGLING,
     KIND_SOURCE_NOT_AT_REVISION,
+    KIND_SOURCE_REVISION_CHANGED,
 )
 
 # The review state each review kind reports.
@@ -203,14 +214,33 @@ def _page_findings(paths: WikiPaths, pages: list[str]) -> list[Finding]:
     return [*still_indexed, *missing_id]
 
 
+def _revision_changed_description(source: SourceCheck, repository: Repository) -> str:
+    """FR-032: path, ``sha:``, repository, HEAD, and the page's ``Revisit when:`` line quoted (or its absence)."""
+    revisit = (
+        f'the page says "{source.revisit_when}"'
+        if source.revisit_when is not None
+        else f"the page records no `{REVISIT_PREFIX}` line"
+    )
+    return (
+        f"cites {source.path} at {source.sha}; in {repository.path} the file changed between that commit and HEAD "
+        f"{repository.head}, and the change touches what the page names (an identifier, a file:line reference or "
+        f"a section heading; for a page naming none, any change beyond whitespace); {revisit}; review the page "
+        "against the change and update the sha:"
+    )
+
+
 def _revision_findings(check: RevisionCheck) -> list[Finding]:
-    """One ``source-not-at-revision`` per source for FR-025's three causes."""
+    """One ``source-not-at-revision`` per source for FR-025's causes, one ``source-revision-changed`` per flag."""
     searched = ", ".join(str(repository.path) for repository in check.repositories)
     found: list[Finding] = []
     for source in check.sources:
+        repository = source.repository
+        if source.outcome == OUTCOME_CHANGED and source.revision_changed and repository is not None:
+            description = _revision_changed_description(source, repository)
+            found.append(Finding(KIND_SOURCE_REVISION_CHANGED, SEVERITY_WARNING, (source.page,), description))
+            continue
         if source.outcome != OUTCOME_NOT_AT_REVISION:
             continue
-        repository = source.repository
         if source.reason == CAUSE_NOT_AT_COMMIT and repository is not None:
             description = (
                 f"cites {source.path} at {source.sha}, a commit of {repository.path} that does not contain it; "

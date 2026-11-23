@@ -31,6 +31,19 @@ uses [Semantic Versioning](https://semver.org/).
   start (default 500, ten times the count measured on the issue 120 study);
   once it is reached, the remaining sources are reported as not checked,
   never as findings.
+- `findings` reports a second new kind, `source-revision-changed` (issue
+  120): a cited file changed in place since its `sha:`, and a changed line
+  names one of the page's backticked identifiers or `file:line` references,
+  or a changed Markdown section's heading occurs in the page; for a page
+  that names none, any change beyond whitespace counts. Anchors shorter than
+  4 characters, with no letter, or the last dotted part of a backticked path
+  are ignored. This is candidate C2 of the frozen study in `eval/revisions/`
+  ([report](https://github.com/gosha70/wiki-studio/blob/main/eval/revisions/report.md)), with the anchor rule its post-hoc
+  block measured. The description quotes the page's `Revisit when:` line, or
+  says the page records none (ADR-0005). The kind flags and still returns: a
+  flagged page's review state, its approvals and what `find` selects do not
+  change, and `lint --health --strict` does not report it. Superseded pages,
+  sources with `source-not-at-revision` and paths missing at HEAD get none.
 
 ### Docs
 

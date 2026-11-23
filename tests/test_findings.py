@@ -66,6 +66,7 @@ class FindingsCase(ApprovalCase):
         # Promoted before the glossary page below, which the staged-tree lint would reject.
         if GIT:
             pages["source-not-at-revision"] = self.cite_notes_before_they_existed()
+            pages["source-revision-changed"] = self.cite_a_file_changed_since()
         (self.wiki / "glossary").mkdir()
         (self.wiki / "glossary" / "origin-gate.md").write_text(_GLOSSARY, encoding="utf-8")
         self.set_policy(approver_required=True)
@@ -85,6 +86,25 @@ class FindingsCase(ApprovalCase):
         ]
         api.promote(api.propose(edits, self.paths, name="pinned"), self.paths)
         return "decisions/pinned.md"
+
+    def cite_a_file_changed_since(self) -> str:
+        """0.11.0 (FR-033): a page names `retry_ceiling`, which a later commit of its cited file changes."""
+        (self.root / "retry.txt").write_text("retry_ceiling = 8\n", encoding="utf-8")
+        git(self.root, "add", "--", "retry.txt")
+        git(self.root, "commit", "-q", "-m", "the retry settings")
+        cited = git(self.root, "rev-parse", "HEAD")
+        (self.root / "retry.txt").write_text("retry_ceiling = 16\n", encoding="utf-8")
+        git(self.root, "add", "--", "retry.txt")
+        git(self.root, "commit", "-q", "-m", "a higher ceiling")
+        text = page_text("ceiling", body="Cap the waits with `retry_ceiling`.").replace(
+            "  - path: notes.md\n", f"  - path: retry.txt\n    sha: {cited}\n"
+        )
+        edits = [
+            PageEdit("decisions/ceiling.md", "create", text, "why"),
+            PageEdit("index.md", "append-index", "- [ceiling](decisions/ceiling.md)", "why"),
+        ]
+        api.promote(api.propose(edits, self.paths, name="ceiling"), self.paths)
+        return "decisions/ceiling.md"
 
 
 class TestFindingKinds(FindingsCase):
@@ -108,6 +128,7 @@ class TestFindingKinds(FindingsCase):
         self.assertEqual(by_kind["missing-cross-link"][0][0], pages["unapproved"])
         self.assertIn((pages["unapproved"],), by_kind["no-page-id"])
         self.assertEqual(by_kind["source-not-at-revision"], [(pages["source-not-at-revision"],)])
+        self.assertEqual(by_kind["source-revision-changed"], [(pages["source-revision-changed"],)])
         self.assertEqual(result.counts, {kind: len(by_kind[kind]) for kind in FINDING_KINDS})
 
     def test_a_superseded_page_is_never_reported_as_unapproved(self) -> None:

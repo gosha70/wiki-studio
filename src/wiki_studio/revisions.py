@@ -17,6 +17,12 @@ there at that commit, using git as untrusted input:
   (FR-020), matches each distinct ``sha:`` by commit in list order, stopping at
   an ambiguous prefix (FR-021), and asks one ``diff-tree`` per matched
   (repository, commit) for the cited paths' statuses (FR-023).
+* :func:`revision_changed` is the winning candidate's decision (C2, anchor
+  touch, FR-008 and FR-032): a pure function of the page text and the
+  recorded hunks of a changed cited file, separate from the calls that
+  collect them. ``check_sources`` asks for those hunks (p6, and p7 for a
+  Markdown file's headings) only for a page that names an anchor, and for
+  the whitespace-blind comparison (p5) only for a page that names none.
 
 Nothing here writes, reads the index or the working tree, or uses the network;
 a repository git cannot read safely is skipped with its reason, never forced.
@@ -32,6 +38,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from . import fact_diff
 from .errors import ContractViolationError
 from .review import superseded_by
 from .yaml_lite import parse_frontmatter
@@ -154,6 +161,25 @@ STATUS_LETTERS_CHANGED = frozenset({"M", "T"})
 SOURCES_KEY = "sources"
 SOURCE_PATH_KEY = "path"
 SOURCE_SHA_KEY = "sha"
+
+# FR-032: C2's anchor set, by the rule the evidence PR's post-hoc block measured (its ``POST_HOC_RULE``, word
+# for word): "anchors shorter than 4 characters, anchors with no letter, and the last dotted component of a
+# backticked path (an identifier containing '/') are ignored".
+MIN_ANCHOR_LENGTH = 4
+ANCHOR_PATH_SEPARATOR = "/"
+ANCHOR_DOTTED_SEPARATOR = "."
+# FR-008: a Markdown source's hunks are also matched by the heading they fall under.
+MARKDOWN_SUFFIX = ".md"
+CHANGED_LINE_MARKERS = ("+", "-")
+_HUNK_HEADER_RE = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@")
+_ATX_HEADING_RE = re.compile(r"^ {0,3}#{1,6}(?:[ \t]+(.*?))?(?:[ \t]+#+)?[ \t]*$")
+_FENCE_OPEN_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
+MAX_FENCE_INDENT = 3
+# FR-008's parse rule for the optional body line a ``source-revision-changed`` finding quotes.
+REVISIT_PREFIX = "Revisit when:"
+_LIST_MARKER_RE = re.compile(r"^(?:[-*+]|\d+[.)])[ \t]+")
+P5_SAME = 0
+P5_DIFFERS = 1
 
 
 class GitRefusedError(ValueError):
@@ -281,6 +307,121 @@ class GitRunner:
 
 
 @dataclass(frozen=True)
+class Hunk:
+    """One hunk of a cited file's ``git diff -U0``: its first old-side line, its ``+``/``-`` lines (marker kept).
+
+    ``heading`` is the nearest ATX heading at or above ``old_start`` in the
+    file at the cited commit, for a Markdown file; None otherwise.
+    """
+
+    old_start: int
+    lines: tuple[str, ...]
+    heading: str | None = None
+
+
+def parse_hunks(diff: str) -> list[Hunk]:
+    """The hunks of one file's ``git diff -U0``, hunk and file headers excluded (FR-008's changed lines)."""
+    hunks: list[tuple[int, list[str]]] = []
+    for line in diff.split("\n"):
+        header = _HUNK_HEADER_RE.match(line)
+        if header:
+            hunks.append((int(header.group(1)), []))
+        elif hunks and line[:1] in CHANGED_LINE_MARKERS:
+            hunks[-1][1].append(line)
+    return [Hunk(old_start, tuple(lines)) for old_start, lines in hunks]
+
+
+def heading_above(source_lines: Sequence[str], line_number: int) -> str | None:
+    """The text of the nearest ATX heading at or above 1-based ``line_number``, outside fenced code.
+
+    For a pure insertion ``git diff -U0`` gives the old-side line the insertion
+    follows, which is ``line_number`` here too; 0 means "before the first line"
+    and has no heading above it.
+    """
+    nearest: str | None = None
+    fence: str | None = None
+    for line in source_lines[:line_number]:
+        if fence is not None:
+            stripped = line.strip()
+            indent = len(line) - len(line.lstrip(" "))
+            if indent <= MAX_FENCE_INDENT and stripped and set(stripped) == {fence[0]} and len(stripped) >= len(fence):
+                fence = None
+            continue
+        opened = _FENCE_OPEN_RE.match(line)
+        if opened:
+            fence = opened.group(1)
+            continue
+        heading = _ATX_HEADING_RE.match(line)
+        if heading:
+            nearest = (heading.group(1) or "").strip()
+    return nearest
+
+
+def with_headings(hunks: Sequence[Hunk], source_text: str) -> list[Hunk]:
+    """``hunks`` with each one's heading taken from the file's text at the cited commit."""
+    source_lines = source_text.split("\n")
+    return [Hunk(hunk.old_start, hunk.lines, heading_above(source_lines, hunk.old_start)) for hunk in hunks]
+
+
+def _page_body(text: str) -> str:
+    return fact_diff._split_frontmatter(text)[1]
+
+
+def page_anchors(text: str) -> frozenset[str]:
+    """C2's anchors (FR-008) under FR-032's rule: what a changed line must contain to flag the page.
+
+    Backticked identifiers (and, unless the identifier contains ``/``, its last
+    dotted component) and ``file:line`` references, taken from the body with
+    fenced code blanked, by ``fact_diff``'s regexes unchanged; an anchor
+    shorter than ``MIN_ANCHOR_LENGTH`` or with no letter is ignored.
+    """
+    prose = fact_diff._without_fences(_page_body(text))
+    found = {f"{match.group(1)}:{match.group(2)}" for match in fact_diff._PATH_LINE_RE.finditer(prose)}
+    for match in fact_diff._BACKTICK_RE.finditer(prose):
+        identifier = fact_diff._normalize_identifier(match.group(1))
+        found.add(identifier)
+        if ANCHOR_PATH_SEPARATOR not in identifier:
+            found.add(identifier.rsplit(ANCHOR_DOTTED_SEPARATOR, 1)[-1])
+    return frozenset(
+        anchor for anchor in found if len(anchor) >= MIN_ANCHOR_LENGTH and any(char.isalpha() for char in anchor)
+    )
+
+
+def revisit_when(text: str) -> str | None:
+    """The page's ``Revisit when:`` line (FR-008's parse rule), from the prefix to the end of the line, or None.
+
+    The first body line outside fenced code whose text, after leading
+    whitespace and an optional list marker, starts with ``Revisit when:``.
+    """
+    for line in fact_diff._without_fences(_page_body(text)).splitlines():
+        stripped = _LIST_MARKER_RE.sub("", line.lstrip(), count=1)
+        if stripped.startswith(REVISIT_PREFIX):
+            return stripped.rstrip()
+    return None
+
+
+def revision_changed(page_text: str, hunks: Sequence[Hunk], *, markdown: bool, whitespace_differs: bool | None) -> bool:
+    """C2, anchor touch (FR-008, FR-032): whether a changed cited file calls for the page's review.
+
+    A page with no anchor falls back to C1: ``whitespace_differs``, the p5
+    answer (the file differs ignoring whitespace and blank lines). Otherwise
+    the page is flagged when a changed line of ``hunks`` contains one of its
+    anchors, or, for a ``markdown`` file, when a hunk's heading occurs in the
+    page body (case-insensitive). Pure: no git, no file read.
+    """
+    anchors = page_anchors(page_text)
+    if not anchors:
+        return bool(whitespace_differs)
+    changed = [line[1:] for hunk in hunks for line in hunk.lines]
+    if any(anchor in line for line in changed for anchor in anchors):
+        return True
+    if markdown:
+        body = _page_body(page_text).lower()
+        return any(hunk.heading and hunk.heading.lower() in body for hunk in hunks)
+    return False
+
+
+@dataclass(frozen=True)
 class Repository:
     """One repository of the list, as classified (FR-019, FR-026)."""
 
@@ -302,7 +443,12 @@ class Repository:
 
 @dataclass(frozen=True)
 class SourceCheck:
-    """One cited source's outcome: ``OUTCOME_*``, with its reason or cause, matched repository and full commit."""
+    """One cited source's outcome: ``OUTCOME_*``, with its reason or cause, matched repository and full commit.
+
+    For a changed source, ``revision_changed`` is C2's decision (FR-032) and,
+    when it flags the source, ``revisit_when`` is the page's ``Revisit when:``
+    line or None when the page records none.
+    """
 
     page: str
     path: str
@@ -311,6 +457,8 @@ class SourceCheck:
     reason: str | None
     repository: Repository | None
     commit: str | None
+    revision_changed: bool = False
+    revisit_when: str | None = None
 
 
 @dataclass(frozen=True)
@@ -386,14 +534,17 @@ class _Repo:
 class _Source:
     """A cited source while the run decides it; ``outcome`` None until decided."""
 
-    def __init__(self, page: str, path: str, sha: str | None) -> None:
+    def __init__(self, page: str, path: str, sha: str | None, text: str = "") -> None:
         self.page = page
         self.path = path
         self.sha = sha
+        self.text = text
         self.outcome: str | None = None
         self.reason: str | None = None
         self.repo: _Repo | None = None
         self.commit: str | None = None
+        # C2's decision for a changed source; None until made (FR-032).
+        self.revision_changed: bool | None = None
 
     def decide(self, outcome: str, reason: str | None = None) -> None:
         self.outcome, self.reason = outcome, reason
@@ -543,8 +694,90 @@ def _statuses(runner: GitRunner, repo: _Repo, commit: str, sources: Sequence[_So
             source.decide(OUTCOME_UNCHANGED)
 
 
+class _Changes:
+    """The p5-p7 answers for each changed (repository, commit, path), asked once and only as C2 needs them."""
+
+    def __init__(self, runner: GitRunner) -> None:
+        self.runner = runner
+        self.differs: dict[tuple[int, str, str], bool | None] = {}
+        self.hunks: dict[tuple[int, str, str], list[Hunk] | None] = {}
+
+    def _diff(self, repo: _Repo, commit: str, path: str, flags: Sequence[str]) -> CompletedProcess[str] | None:
+        return _call(
+            self.runner, repo, (*DIFF_HEAD, *flags, commit, str(repo.head), PATH_SEPARATOR, path), repo.ceiling
+        )
+
+    def whitespace_differs(self, repo: _Repo, commit: str, path: str) -> bool | None:
+        """p5: whether the file differs ignoring whitespace and blank lines; None when git could not say."""
+        key = (id(repo), commit, path)
+        if key not in self.differs:
+            p5 = self._diff(repo, commit, path, P5_FLAGS)
+            answer: bool | None = None
+            if p5 is not None and p5.returncode in (P5_SAME, P5_DIFFERS):
+                answer = p5.returncode == P5_DIFFERS
+            elif p5 is not None:
+                repo.skip(_message(p5))
+            self.differs[key] = answer
+        return self.differs[key]
+
+    def changed_hunks(self, repo: _Repo, commit: str, path: str, *, markdown: bool) -> list[Hunk] | None:
+        """p6 and, for a Markdown file, p7 for the headings; None when git could not say."""
+        key = (id(repo), commit, path)
+        if key not in self.hunks:
+            self.hunks[key] = self._collect(repo, commit, path, markdown=markdown)
+        return self.hunks[key]
+
+    def _collect(self, repo: _Repo, commit: str, path: str, *, markdown: bool) -> list[Hunk] | None:
+        p6 = self._diff(repo, commit, path, P6_FLAGS)
+        if p6 is None or p6.returncode != 0:
+            if p6 is not None:
+                repo.skip(_message(p6))
+            return None
+        hunks = parse_hunks(p6.stdout)
+        if not markdown:
+            return hunks
+        p7 = _call(self.runner, repo, (*P7_HEAD, f"{commit}{BLOB_PATH_SEPARATOR}{path}"), repo.ceiling)
+        if p7 is None or p7.returncode != 0:
+            if p7 is not None:
+                repo.skip(_message(p7))
+            return None
+        return with_headings(hunks, p7.stdout)
+
+
+def _decide_changed(runner: GitRunner, sources: Sequence[_Source]) -> None:
+    """C2 for every changed source (FR-032): p6/p7 for a page with an anchor, p5 for one with none.
+
+    A source git could not answer for is *not checked* with its repository's
+    reason; the runner's cap and missing git propagate to ``check_sources``.
+    """
+    changes = _Changes(runner)
+    for source in sources:
+        if source.outcome != OUTCOME_CHANGED:
+            continue
+        repo, commit = source.repo, source.commit
+        if repo is None or commit is None or not repo.usable or repo.head is None:
+            source.not_checked((repo.reason if repo is not None else None) or REASON_NOT_FOUND_SKIPPED)
+            continue
+        path = str(contained_path(source.path))
+        markdown = path.endswith(MARKDOWN_SUFFIX)
+        hunks: list[Hunk] = []
+        differs: bool | None = None
+        if page_anchors(source.text):
+            answer = changes.changed_hunks(repo, commit, path, markdown=markdown)
+            if answer is None:
+                source.not_checked(repo.reason or REASON_TIMED_OUT)
+                continue
+            hunks = answer
+        else:
+            differs = changes.whitespace_differs(repo, commit, path)
+            if differs is None:
+                source.not_checked(repo.reason or REASON_TIMED_OUT)
+                continue
+        source.revision_changed = revision_changed(source.text, hunks, markdown=markdown, whitespace_differs=differs)
+
+
 def _run_plan(runner: GitRunner, repos: Sequence[_Repo], sources: Sequence[_Source]) -> None:
-    """Classify, match and batch (FR-019, FR-021, FR-023); exceptions of the runner propagate."""
+    """Classify, match, batch and decide (FR-019, FR-021, FR-023, FR-032); exceptions of the runner propagate."""
     for repo in repos:
         _classify(runner, repo)
     pending = [source for source in sources if source.outcome is None]
@@ -570,6 +803,7 @@ def _run_plan(runner: GitRunner, repos: Sequence[_Repo], sources: Sequence[_Sour
         groups.setdefault((repos.index(probe.repo), probe.commit), []).append(source)
     for (index, commit), grouped in groups.items():
         _statuses(runner, repos[index], commit, grouped)
+    _decide_changed(runner, sources)
 
 
 def _repositories(paths: WikiPaths) -> list[_Repo]:
@@ -591,7 +825,7 @@ def _cited_sources(paths: WikiPaths, pages: Sequence[str]) -> list[_Source]:
         entries = frontmatter.get(SOURCES_KEY)
         for entry in entries if isinstance(entries, list) else ():
             if isinstance(entry, dict) and entry.get(SOURCE_PATH_KEY):
-                found.append(_Source(page, str(entry[SOURCE_PATH_KEY]), entry.get(SOURCE_SHA_KEY) or None))
+                found.append(_Source(page, str(entry[SOURCE_PATH_KEY]), entry.get(SOURCE_SHA_KEY) or None, text))
     return found
 
 
@@ -626,10 +860,12 @@ def check_sources(paths: WikiPaths, pages: Sequence[str], *, runner: GitRunner |
     frozen = {id(repo): repo.frozen() for repo in repos}
     checks: list[SourceCheck] = []
     for source in sources:
-        if source.outcome is None:
+        if source.outcome is None or (source.outcome == OUTCOME_CHANGED and source.revision_changed is None):
+            # Undecided when the run stopped (the cap, or git gone): not checked, and never a finding.
             source.not_checked(leftover or REASON_NOT_FOUND_SKIPPED)
         if reason is not None and source.outcome != OUTCOME_NOT_CHECKED:
             source.not_checked(reason)
+        flagged = source.outcome == OUTCOME_CHANGED and bool(source.revision_changed)
         checks.append(
             SourceCheck(
                 page=source.page,
@@ -639,6 +875,8 @@ def check_sources(paths: WikiPaths, pages: Sequence[str], *, runner: GitRunner |
                 reason=source.reason,
                 repository=frozen[id(source.repo)] if source.repo is not None else None,
                 commit=source.commit,
+                revision_changed=flagged,
+                revisit_when=revisit_when(source.text) if flagged else None,
             )
         )
     return RevisionCheck(
