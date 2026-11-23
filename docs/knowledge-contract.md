@@ -396,7 +396,9 @@ The JSON form, `findings_version: 1`:
 report curation debt at session start without reading the findings.
 `pages_checked` is the number of pages in scope. Each finding has `kind`,
 `severity`, `pages` (wiki-relative) and `description`, the shape memkernel's
-`HealthItem` mirrors. Key order carries no meaning: read keys by name.
+`HealthItem` mirrors. `revision_check` reports whether the
+revision check ran; it is described under "The revision check" below. Key
+order carries no meaning: read keys by name.
 
 Kinds may be added within `findings_version: 1`: `counts` names every kind
 this build reports (zero-valued kinds included), so a consumer reads kinds by
@@ -416,12 +418,134 @@ name and treats an unknown kind as a warning it does not classify.
 | `open-conflict` | `warning` | Two pages each carry a `> [!conflict]` callout naming the other (`citation-rules.md`, When sources disagree); one finding per pair. |
 | `conflict-one-sided` | `warning` | A callout names a page that carries no callout naming it back. |
 | `conflict-dangling` | `warning` | A callout names no wiki page, a page outside the wiki, a missing page, a page that is not a content page, the page itself, or a superseded page. |
+| `source-not-at-revision` | `warning` | A cited source with `path:` and `sha:` names a path absent at that commit while the path exists at the matched repository's HEAD, names a commit none of the repositories has while every one of them was usable, or carries a malformed `sha:`. One finding per source. |
+| `source-revision-changed` | `warning` | A cited file changed in place between its `sha:` and the matched repository's HEAD, and the change touches what the page names (the anchor rule below). One finding per page and source; the description quotes the page's `Revisit when:` line or says the page records none. |
 
 Cardinality: one callout yields at most one finding, because a marker line
 names only its first `.md` link — a callout naming both a valid page and a
 dangling target is classified by that first link. Repeated callouts from one
 page to the same target count once, and `open-conflict` is one finding per
 pair.
+
+### The revision check
+
+The two revision kinds read each `sources:` entry that carries both `path:`
+and `sha:` on the in-scope pages that do not carry `superseded_by`; a
+superseded page is never examined, and a `path:` with no `sha:` is not
+checked. The check reads git and nothing else, read-only and offline.
+
+**Which repository has the commit.** The repositories are the root's own
+repository (its git toplevel, so `--root` may name a subdirectory), then each
+source root in configured order (`--source-root`, else
+`WIKI_STUDIO_SOURCE_ROOTS`; the flag replaces the variable). A source root is
+used only when it is the top of its own git work tree. Each repository is
+classified once per run, and one that cannot be used is skipped with its
+reason: `not a git work tree`, `not the top of a git work tree`,
+`shallow clone`, `partial clone`, `refused by git: repository ownership`
+(never forced), `no HEAD commit`, `git call timed out` (skipped for the rest
+of the run) or `git call limit (<N>) reached`. A repository has a commit when
+`git rev-parse --verify <sha>^{commit}` resolves it offline there. The
+repositories are probed in order and the first usable one that has the commit
+is the source's repository and is named in the finding. With no match, the
+source is `source-not-at-revision` when every repository was usable, listing
+the repositories searched; when at least one was skipped it is not checked,
+reason `commit not found in the usable repositories`, and is no finding.
+
+**What reaches git.** A `sha:` is 7 to 40 lowercase hex characters. A
+lowercase hex value shorter than 7 is not checked (`too short`); any other
+non-conforming value (uppercase, non-hex, longer than 40, option-shaped) is
+`source-not-at-revision` (malformed) with no git call. A prefix that git
+reports as ambiguous among commits in a repository stops the search there:
+the source is not checked, reason `ambiguous in <repo>`, no later repository
+is consulted, and it is never `source-not-at-revision`. A `path:` must be
+relative and stay inside the matched directory, else it is not checked
+(`path outside <dir>`). After a match every call uses the full commit. Git
+missing from PATH turns the check off (`git not found`), and so does a run
+with no usable repository (`no usable repository`); with the check off, no
+revision kind appears.
+
+**How git is called.** Only a fixed set of read-only plumbing commands
+(`rev-parse`, `config --get extensions.partialclone`, `diff-tree`, `diff`
+between two commits and `cat-file blob`), each as an argument list with no
+shell, under a timeout, with `--no-pager -c core.fsmonitor=false
+-c core.hooksPath=<null device> -c protocol.allow=never`, and with
+`--no-ext-diff --no-textconv` on every diff. Every inherited `GIT_` variable
+is dropped except `GIT_CONFIG_GLOBAL`, `GIT_CONFIG_SYSTEM` and
+`GIT_CONFIG_NOSYSTEM`; system and global config are kept and `safe.directory`
+is never overridden. Nothing reads the index or the working tree, writes,
+fetches, or runs a configured program, so a shallow or partial clone is
+skipped rather than completed.
+
+**The anchor rule** of `source-revision-changed`. For a file whose path
+`diff-tree` marks changed (`M` or `T`), the changed lines are the `+` and `-`
+lines of `git diff -U0` between the cited commit and HEAD. The page's anchors
+are its backticked identifiers (each also by its last dotted component) and
+its `file:line` references, taken from the body outside fenced code; anchors
+shorter than 4 characters, anchors with no letter, and the last dotted
+component of a backticked path (an identifier containing `/`) are ignored.
+The source is flagged when a changed line contains an anchor or, for a
+Markdown source, when a hunk lies under a heading (the nearest ATX heading at
+or above it in the file at the cited commit) whose text occurs in the page
+body, case-insensitive. A page with no anchor is flagged by any change beyond
+whitespace and blank lines. This is candidate C2 of the frozen study in
+`eval/revisions/`, with the anchor rule its post-hoc block measured
+([report](https://github.com/gosha70/wiki-studio/blob/main/eval/revisions/report.md)).
+Two known limits, not measured: a bare file name such as `config.toml` still
+yields its last dotted part (`toml`) as an anchor, since it contains no `/`;
+and an anchor matches anywhere inside a changed line, so a whole anchor can
+match inside a longer word (`test` in `latest`). A source with
+`source-not-at-revision`, or whose path is missing at HEAD, gets no
+`source-revision-changed`. The kind flags and still returns: the page's
+review state, its approvals and what `find` and `query` select do not change,
+and `lint --health --strict` does not report it. The `Revisit when:` line it
+quotes is registered by
+[ADR-0005](adr/0005-revisit-when-line.md).
+
+**The `revision_check` object.** Every findings result carries it, additive
+within `findings_version: 1` (no capability names it):
+
+```json
+{
+  "revision_check": {
+    "state": "on",
+    "reason": null,
+    "repositories": [
+      {"path": "/srv/project", "role": "root", "status": "used", "reason": null,
+       "head": "0123456789abcdef0123456789abcdef01234567"},
+      {"path": "/srv/upstream", "role": "source-root", "status": "skipped", "reason": "shallow clone",
+       "head": null}
+    ],
+    "sources_checked": 21,
+    "sources_not_checked": 4,
+    "not_checked": {"no sha": 3, "commit not found in the usable repositories": 1}
+  }
+}
+```
+
+`state` is `on` when at least one repository is usable, else `off` with
+`reason` `git not found` or `no usable repository`. `repositories` lists every
+repository in search order with its `role` (`root` or `source-root`),
+`status` (`used` or `skipped`), the skip `reason` and the full `head` commit
+of a used one. `not_checked` counts the sources not checked by reason. The
+text output prints the same as one line after the counts,
+`revision check: on (1 of 2 repositories used); 21 sources checked, 4 not checked`
+or `revision check: off (<reason>)`, and the `nightly` report carries it as
+its `Revision check:` header line.
+
+**The call cap.** `WIKI_STUDIO_GIT_CALL_LIMIT` is the most git processes one
+revision check may start: a non-negative integer, default 500 (an invalid
+value exits 1, as an invalid lock timeout does). The default is ten times the
+50 processes the shipped call plan made on the issue 120 study run, rounded
+up to the next multiple of 100. Each repository costs up to two calls to classify;
+each distinct cited commit costs one lookup per repository probed and one
+`diff-tree` once matched, so about three calls when its repository is second
+in the list, and the default covers about 165 distinct commits for the exact
+kind alone. Each changed source the anchor rule reads adds one or two calls
+(`git diff -U0`, and `git cat-file` for a Markdown source), so a wiki whose
+cited files changed often reaches the cap sooner. When the cap is reached no
+further git call runs, and every source not yet checked is not checked with
+reason `git call limit (<N>) reached`; none of them is a finding. Raise the
+limit when `not_checked` reports that reason.
 
 The health checks run without a backend, so `contradiction` never appears;
 run `lint --health --backend NAME` for it. A disagreement a curator has

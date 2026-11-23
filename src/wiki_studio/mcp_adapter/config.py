@@ -111,7 +111,8 @@ def build_parser() -> argparse.ArgumentParser:
         action="append",
         default=None,
         metavar="PATH",
-        help="A directory outside the root pages may link into; repeatable (WIKI_STUDIO_SOURCE_ROOTS).",
+        help="A directory outside the root pages may link into; repeatable (WIKI_STUDIO_SOURCE_ROOTS). "
+        "It is also a repository findings searches for cited commits (docs/knowledge-contract.md, Findings).",
     )
     parser.add_argument(
         "--lock-timeout", type=float, default=None, metavar="SECONDS", help="Wiki lock wait (WIKI_STUDIO_LOCK_TIMEOUT)."

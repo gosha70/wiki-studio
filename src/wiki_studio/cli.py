@@ -109,6 +109,8 @@ def _add_path_options(parser: argparse.ArgumentParser, *, suppress_defaults: boo
         metavar="PATH",
         help="A directory outside the root whose files pages may reference with local links (images, data, "
         "source files); repeatable. A local link target must otherwise resolve inside the root. "
+        "A source root is also a repository findings searches for cited commits, after the root's own "
+        "(docs/knowledge-contract.md, Findings). "
         f"Default: {ENV_SOURCE_ROOTS} ({os.pathsep!r}-separated), else none.",
     )
     parser.add_argument(
@@ -965,7 +967,9 @@ def _do_info(args: argparse.Namespace) -> int:
     print(f"audit-log: {paths.audit_log}")
     print(f"schema: {schema}" + (f" copy at {paths.schema_dir}" if schema == _SCHEMA_PROJECT else ""))
     print(f"lock-file: {lock_path_for(paths.wiki_dir)}  (timeout {paths.lock_timeout:g}s)")
-    print("source-roots: " + (", ".join(str(p) for p in paths.source_roots) or "(none; links stay inside the root)"))
+    roots = ", ".join(str(p) for p in paths.source_roots)
+    roots_note = "link targets, and repositories searched for cited commits: docs/knowledge-contract.md"
+    print(f"source-roots: {roots}  ({roots_note})" if roots else "source-roots: (none; links stay inside the root)")
     print(f"package-version: {contract.package_version}")
     sc = contract.schema_contract
     print(f"schema-contract: {sc.schema_id} version {sc.version} ({sc.source} rules)")

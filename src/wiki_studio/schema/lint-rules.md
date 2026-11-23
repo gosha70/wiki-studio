@@ -73,7 +73,9 @@ filesystem links and are not checked.
   image, a data file, a source file), is a source reference and must
   resolve inside the project root or a directory admitted with
   `--source-root` / `WIKI_STUDIO_SOURCE_ROOTS`. `../` targets that
-  stay inside the root are legal.
+  stay inside the root are legal. (A source root is also a repository
+  `findings` searches for cited commits, outside lint; see
+  `docs/knowledge-contract.md`, Findings.)
 - An absolute target, a target that leaves the root, and a target
   that passes through a symlink are violations.
 - An `index.md` entry whose target resolves outside the wiki is a

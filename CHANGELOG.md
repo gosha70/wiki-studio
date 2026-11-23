@@ -45,6 +45,20 @@ uses [Semantic Versioning](https://semver.org/).
   change, and `lint --health --strict` does not report it. Superseded pages,
   sources with `source-not-at-revision` and paths missing at HEAD get none.
 
+### Changed
+
+- The packaged `citation-rules.md` no longer says drift is not detected: it
+  says what `findings` now checks for a `path:` with a `sha:` (the two
+  revision kinds) and what it does not (whether the cited bytes still say
+  what the page says; ticket and URL sources). A project's schema override is
+  not touched, and the fingerprint covers overrides only, so no manifest
+  drifts.
+- The nightly GitHub Actions recipe in `docs/nightly.md` checks out with
+  `fetch-depth: 0` in both workflows, because the revision check skips a
+  shallow clone. The pages that said the nightly pass never runs git now say
+  it never commits, pushes or checks out, and that its findings step reads
+  repositories read-only.
+
 ### Docs
 
 - `docs/patterns.md`: the `decision`-page pattern convention the issue 54

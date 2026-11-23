@@ -46,7 +46,7 @@ code-copilot-team layout under the git toplevel of the current directory:
 | root (confines sources and proposals; anchors `path:` citations) | git toplevel of the current directory, else the current directory | `--root` | `WIKI_STUDIO_ROOT` |
 | wiki directory | `<root>/knowledge/wiki` | `--wiki-dir` | `WIKI_STUDIO_WIKI_DIR` |
 | proposals directory | `<root>/doc_internal/proposals` | `--proposals-dir` | `WIKI_STUDIO_PROPOSALS_DIR` |
-| allowed source roots (directories outside the root that local links in pages may reference) | none | `--source-root` (repeatable) | `WIKI_STUDIO_SOURCE_ROOTS` (`os.pathsep`-separated) |
+| allowed source roots (directories outside the root that local links in pages may reference; each is also a repository `findings` searches for cited commits, see `docs/knowledge-contract.md`) | none | `--source-root` (repeatable) | `WIKI_STUDIO_SOURCE_ROOTS` (`os.pathsep`-separated) |
 | query log | `<root>/doc_internal/wiki-query-log.jsonl` | | |
 | ingest audit log | `<wiki-dir>/.audit/ingest-log.md` | | |
 | schema override | `<wiki-dir>/schema/` (used when present) | | |
@@ -256,14 +256,26 @@ and the conflict kinds `open-conflict` (two pages each mark a conflict with
 the other), `conflict-one-sided` (a callout names a page that carries none
 back) and `conflict-dangling` (a callout names no wiki page, or one that
 cannot be its other page), written in the form of
-[`citation-rules.md`'s "When sources disagree"](https://github.com/gosha70/wiki-studio/blob/main/src/wiki_studio/schema/citation-rules.md#when-sources-disagree).
-It takes no backend, reads only, takes no lock, and exits 0 on a
+[`citation-rules.md`'s "When sources disagree"](https://github.com/gosha70/wiki-studio/blob/main/src/wiki_studio/schema/citation-rules.md#when-sources-disagree),
+and the revision kinds, which compare each cited `path:` and `sha:` with git
+in the root's repository and then the source roots: `source-not-at-revision`
+(the path is absent at its `sha:`, no repository has the commit, or the
+`sha:` is malformed) and `source-revision-changed` (the file changed since
+its `sha:` on a line naming one of the page's identifiers or `file:line`
+references, or under a heading the page names; the description quotes the
+page's `Revisit when:` line, and the page's review state and approvals are
+unchanged). After the counts, one line says whether that check ran:
+`revision check: on (1 of 2 repositories used); 21 sources checked, 4 not checked`,
+or `revision check: off (git not found)`. Shallow and partial clones are
+skipped, never fetched into.
+It takes no backend, reads only (git included), takes no lock, and exits 0 on a
 completed run whatever it finds; `lint --health --strict` stays the CI gate.
-The JSON format is in `docs/knowledge-contract.md`.
+The JSON format, the repository search order and the
+`WIKI_STUDIO_GIT_CALL_LIMIT` cap are in `docs/knowledge-contract.md`.
 
 | Flag | Effect |
 |---|---|
-| `--json` | print `findings_version`, `counts`, `pages_checked` and `findings` as one JSON object |
+| `--json` | print `findings_version`, `counts`, `pages_checked`, `findings` and `revision_check` (whether the revision check ran, each repository used or skipped, the sources not checked by reason) as one JSON object |
 | `--paths P [P ...]` | scope every kind to these wiki-relative pages |
 
 ### `wiki-studio nightly`
@@ -272,8 +284,9 @@ Runs the wiki's routine checks unattended and writes one report: structural
 lint (with the audit-format errors reported beside it), the model-free
 `findings` with their counts by kind, and the proposal directories still
 pending under the proposals directory, each with its edit count. It never
-promotes or approves a proposal, never runs git and writes nothing in the
-wiki directory; its only writes are the report and, with drafting on, the
+promotes or approves a proposal, never commits, pushes or checks out (its
+findings step reads repositories read-only) and writes nothing in the wiki
+directory; its only writes are the report and, with drafting on, the
 proposal directories `api.propose` creates.
 
 Synopsis: `wiki-studio nightly [--report PATH] [--json] [--backend NAME] [--max-proposals N] [--by NAME]`.
@@ -499,7 +512,7 @@ redacted fingerprint of it unless `--debug-unsafe-output` is given.
 | `WIKI_STUDIO_ROOT` | project root (see Layout) |
 | `WIKI_STUDIO_WIKI_DIR` | wiki directory |
 | `WIKI_STUDIO_PROPOSALS_DIR` | proposals directory |
-| `WIKI_STUDIO_SOURCE_ROOTS` | `os.pathsep`-separated directories outside the root that local links in pages may reference (see Layout) |
+| `WIKI_STUDIO_SOURCE_ROOTS` | `os.pathsep`-separated directories outside the root that local links in pages may reference (see Layout); each is also a repository `findings` searches for cited commits (`docs/knowledge-contract.md`, Findings) |
 | `WIKI_STUDIO_RANKER` | the ranker `find` and `query` use when `--ranker` is not given: `fts5` or `index-first` (default `fts5`) |
 | `WIKI_STUDIO_SEARCH_CACHE` | where the `fts5` ranker keeps its search cache when `--search-cache` is not given (default beside the lock file; never inside the wiki; see Layout) |
 | `WIKI_STUDIO_ACTOR` | who proposes or promotes when `--by` is not given, recorded with source `env` (attribution, not authentication) |

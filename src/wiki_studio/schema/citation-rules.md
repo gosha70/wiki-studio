@@ -20,8 +20,18 @@ sources:
 - `path` is repo-relative.
 - `sha` is the commit SHA at which the page was grounded
   (`git log -1 --format=%h <path>`). When the source file changes
-  meaningfully, bump the SHA *and* `last_reviewed`. The lint script
-  does not auto-detect drift; that is a curator pass.
+  meaningfully, bump the SHA *and* `last_reviewed`. `wiki-studio
+  findings` checks a `path:` with a `sha:` against git, read-only and
+  offline, in the root's repository and then the source roots:
+  `source-not-at-revision` reports a path absent at its `sha:`, a
+  `sha:` no repository has, or a malformed `sha:`;
+  `source-revision-changed` reports a file that changed since its
+  `sha:` on a line naming one of the page's identifiers or `file:line`
+  references, or under a heading the page names (any change beyond
+  whitespace for a page naming none), and quotes the page's
+  `Revisit when:` line. It does not check whether the cited bytes
+  still say what the page says, nor ticket or URL sources; that stays
+  a curator pass. Lint does not run this check.
 
 ### 2. Ticket (issue / PR)
 

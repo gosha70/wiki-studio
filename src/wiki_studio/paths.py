@@ -36,7 +36,8 @@ ENV_PROPOSALS_DIR = "WIKI_STUDIO_PROPOSALS_DIR"
 ENV_LOCK_TIMEOUT = "WIKI_STUDIO_LOCK_TIMEOUT"
 # The most git processes one revision check may start (FR-022).
 ENV_GIT_CALL_LIMIT = "WIKI_STUDIO_GIT_CALL_LIMIT"
-# ``os.pathsep``-separated directories outside the root that page links may reference (``--source-root``).
+# ``os.pathsep``-separated directories outside the root that page links may reference (``--source-root``);
+# each is also a repository ``findings`` searches for cited commits (``docs/knowledge-contract.md``, Findings).
 ENV_SOURCE_ROOTS = "WIKI_STUDIO_SOURCE_ROOTS"
 # Who proposes, promotes or approves when no ``--by`` is given (attribution, never authentication).
 ENV_ACTOR = "WIKI_STUDIO_ACTOR"
@@ -266,7 +267,9 @@ class WikiPaths:
         Directories outside the root whose files a page may reference with a
         local link (``--source-root``, ``WIKI_STUDIO_SOURCE_ROOTS``); empty by
         default. A local link target must resolve inside the root or one of
-        these (the source boundary of FR-012).
+        these (the source boundary of FR-012). Each is also a repository
+        ``findings`` searches for cited commits, after the root's own
+        (``docs/knowledge-contract.md``, Findings).
     search_cache : Path | None
         An explicit location for the ``fts5`` search cache (``--search-cache``,
         ``WIKI_STUDIO_SEARCH_CACHE``); None derives it beside the lock file

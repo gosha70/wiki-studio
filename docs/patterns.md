@@ -124,13 +124,29 @@ that a curator saw those bytes, not that the pattern applies.
 ## Revisiting and superseding
 
 - Cite what the pattern relies on as `sources:` entries with `path:` and
-  `sha:`. `stale-claim` checks that a cited path exists; it does not compare
-  the `sha:` with git, and no shipped check reports a source that changed in
-  place or a new revision of a spec.
+  `sha:`. `stale-claim` checks that a cited path exists; `findings` also
+  compares the `sha:` with git, read-only, in the root's repository and then
+  the source roots. `source-not-at-revision` means the citation itself is
+  wrong: the path is absent at that commit, no repository has the commit, or
+  the `sha:` is malformed; correct the `sha:` or the path.
+  `source-revision-changed` means the cited file changed since its `sha:` on
+  a line that names one of the page's backticked identifiers or `file:line`
+  references, or under a heading the page names. Read it against the page's
+  `Revisit when:` line, which the finding quotes: when the condition has
+  arrived, review the pattern; when it has not, update the `sha:` and keep
+  the page. The flagged page stays approved and `find` still returns it.
+  `revision_check` in `findings --json` says whether the check ran and which
+  sources it could not check (no `sha:`, a shallow clone, a commit in no
+  usable repository).
 - Write `Revisit when:` so a curator can recognise the condition. In the
   study's corpus 13 pages cited a file that had changed since its `sha:` and
   12 of them needed no review under their own `Revisit when:` line — a change
-  is a reason to look, not a verdict.
+  is a reason to look, not a verdict. Of those 12, one sits on a superseded
+  page the check skips and one is a citation error that
+  `source-not-at-revision` reports instead; on the other 10, the anchor rule
+  of `source-revision-changed` flags 3, and it keeps the one true flag, read
+  on a copy of that page as it stood before its successor
+  ([revision study](https://github.com/gosha70/wiki-studio/blob/main/eval/revisions/report.md)).
 - When a pattern is replaced, write the successor page, give the old page
   `superseded_by: decisions/<successor>.md` and `status: deprecated`, and
   point the successor at the old one's evidence. `find` then lists the old
