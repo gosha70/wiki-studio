@@ -34,6 +34,8 @@ ENV_ROOT = "WIKI_STUDIO_ROOT"
 ENV_WIKI_DIR = "WIKI_STUDIO_WIKI_DIR"
 ENV_PROPOSALS_DIR = "WIKI_STUDIO_PROPOSALS_DIR"
 ENV_LOCK_TIMEOUT = "WIKI_STUDIO_LOCK_TIMEOUT"
+# The most git processes one revision check may start (FR-022).
+ENV_GIT_CALL_LIMIT = "WIKI_STUDIO_GIT_CALL_LIMIT"
 # ``os.pathsep``-separated directories outside the root that page links may reference (``--source-root``).
 ENV_SOURCE_ROOTS = "WIKI_STUDIO_SOURCE_ROOTS"
 # Who proposes, promotes or approves when no ``--by`` is given (attribution, never authentication).
@@ -54,9 +56,15 @@ CONTAIN_OUTSIDE = "outside"
 
 # A Windows drive or UNC prefix: absolute on any platform for the purpose of a link target.
 _WINDOWS_ABSOLUTE_RE = re.compile(r"^(?:[A-Za-z]:[\\/]|\\\\)")
+# A ``WIKI_STUDIO_GIT_CALL_LIMIT`` value: ASCII digits only (no sign, no underscore).
+_NON_NEGATIVE_INTEGER_RE = re.compile(r"[0-9]+")
 
 # Seconds a writer waits for the wiki lock (``--lock-timeout`` / ``WIKI_STUDIO_LOCK_TIMEOUT``).
 DEFAULT_LOCK_TIMEOUT = 30.0
+# Git processes one revision check may start (``WIKI_STUDIO_GIT_CALL_LIMIT``; FR-022): the study run recorded
+# 50 processes for the shipped call plan (p1-p4 plus the C2 winner's steps, ``process_counts`` of the revision
+# study's ``results/candidates.json``), times the headroom 10, rounded up to the next multiple of 100.
+DEFAULT_GIT_CALL_LIMIT = 500
 
 # Defaults, relative to the root. These names are the documented layout and
 # must not be spelled anywhere else in the package.
@@ -263,6 +271,10 @@ class WikiPaths:
         An explicit location for the ``fts5`` search cache (``--search-cache``,
         ``WIKI_STUDIO_SEARCH_CACHE``); None derives it beside the lock file
         (:meth:`search_cache_file`). Never inside the wiki.
+    git_call_limit : int
+        The most git processes one revision check may start
+        (``WIKI_STUDIO_GIT_CALL_LIMIT``); sources left when it is reached are
+        not checked (FR-022).
     """
 
     root: Path
@@ -274,6 +286,7 @@ class WikiPaths:
     lock_timeout: float = DEFAULT_LOCK_TIMEOUT
     source_roots: tuple[Path, ...] = ()
     search_cache: Path | None = None
+    git_call_limit: int = DEFAULT_GIT_CALL_LIMIT
 
     @classmethod
     def for_root(
@@ -285,6 +298,7 @@ class WikiPaths:
         lock_timeout: float | None = None,
         source_roots: Sequence[Path | str] | None = None,
         search_cache: Path | str | None = None,
+        git_call_limit: int | None = None,
     ) -> WikiPaths:
         """Build the layout under ``root`` with the defaults, optionally overriding the two directories.
 
@@ -308,6 +322,7 @@ class WikiPaths:
             lock_timeout=DEFAULT_LOCK_TIMEOUT if lock_timeout is None else float(lock_timeout),
             source_roots=tuple(Path(p).absolute() for p in (source_roots or ())),
             search_cache=cache,
+            git_call_limit=DEFAULT_GIT_CALL_LIMIT if git_call_limit is None else git_call_limit,
         )
 
     @classmethod
@@ -320,6 +335,7 @@ class WikiPaths:
         lock_timeout: float | None = None,
         source_roots: Sequence[str | os.PathLike[str]] | None = None,
         search_cache: str | os.PathLike[str] | None = None,
+        git_call_limit: int | None = None,
         env: Mapping[str, str] | None = None,
         cwd: Path | None = None,
     ) -> WikiPaths:
@@ -327,7 +343,9 @@ class WikiPaths:
 
         Explicit values (flag or variable) that are relative are taken relative
         to ``cwd``; defaults are relative to the resolved root. A lock timeout
-        that is not a non-negative number raises ``ValueError``. ``source_roots``
+        that is not a non-negative number raises ``ValueError``, and so does a
+        git call limit (``WIKI_STUDIO_GIT_CALL_LIMIT``) that is not a
+        non-negative integer. ``source_roots``
         (the repeatable ``--source-root``) replaces the ``os.pathsep``-separated
         list in ``WIKI_STUDIO_SOURCE_ROOTS``; both default to none. A search
         cache (``--search-cache``, ``WIKI_STUDIO_SEARCH_CACHE``) inside the wiki
@@ -364,6 +382,16 @@ class WikiPaths:
         if timeout is not None and not timeout >= 0:  # also rejects NaN
             raise ValueError(f"lock timeout must be a non-negative number of seconds, got {timeout!r}")
 
+        limit = git_call_limit
+        if limit is None:
+            limit_value = environ.get(ENV_GIT_CALL_LIMIT)
+            if limit_value:
+                if not _NON_NEGATIVE_INTEGER_RE.fullmatch(limit_value.strip()):
+                    raise ValueError(f"{ENV_GIT_CALL_LIMIT} must be a non-negative integer, got {limit_value!r}")
+                limit = int(limit_value)
+        if limit is not None and limit < 0:
+            raise ValueError(f"git call limit must be a non-negative integer, got {limit!r}")
+
         return cls.for_root(
             root_path,
             wiki_dir=wiki_path,
@@ -371,6 +399,7 @@ class WikiPaths:
             lock_timeout=timeout,
             source_roots=roots,
             search_cache=cache_path,
+            git_call_limit=limit,
         )
 
     def with_wiki_dir(self, wiki_dir: Path) -> WikiPaths:
