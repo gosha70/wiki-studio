@@ -1,0 +1,374 @@
+{
+  "study": "issue 120 revision check: the candidates scored",
+  "inputs": {
+    "protocol_sha256": "3185dc62cb71e5f4522e37e9d2a0c51a87e1e65f4eb096a2c7c959caab4ceedf",
+    "hunks_sha256": "b37b42cc695d498f90f05a9fa353c41f6779961af8654cc51fe99c0a0bf3d8cb",
+    "case_hunks_sha256": {
+      "pre-pr-doc-audit": "7f10fbd867858f39c252b0cfa503649dc51fccc82bb11ec3c814f58366c1f1f9",
+      "pre-pr-keyword-set": "23b9438a2a27ca92043647aff56f1dd6f38d491f3118cbdd0208dd0ce8ef5d88",
+      "pre-pr-strict-mode": "4cf98aa4f8c0d4c48090254d621439026b3acf183332a70f9378211a63b6d382"
+    },
+    "cases": [
+      "eval/revisions/cases/vllm-backend-doc",
+      "eval/revisions/cases/run-wiki-ingest-rules",
+      "eval/revisions/cases/provider-config-guarantee",
+      "eval/revisions/cases/benchmark-provider-id",
+      "eval/revisions/cases/keyword-quoting/pre-pr-strict-mode",
+      "eval/revisions/cases/keyword-quoting/pre-pr-keyword-set",
+      "eval/revisions/cases/keyword-quoting/pre-pr-doc-audit"
+    ]
+  },
+  "candidates": {
+    "C0": {
+      "name": "plain change",
+      "study": {
+        "pages_flagged": [
+          "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+          "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+          "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md",
+          "decisions/never-bypass-a-git-lock-with-an-alternate-index.md",
+          "decisions/never-archive-raw-jsonl.md",
+          "decisions/the-clusters-view-is-not-an-explorer.md",
+          "decisions/config-redaction-is-not-free-text-redaction.md",
+          "decisions/destructive-git-commands-require-confirmation.md",
+          "decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md",
+          "decisions/merge-require-green-ci-was-never-read-and-was-removed.md"
+        ],
+        "entries_flagged": 11,
+        "false_pages_flagged": [
+          "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+          "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+          "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md",
+          "decisions/never-bypass-a-git-lock-with-an-alternate-index.md",
+          "decisions/never-archive-raw-jsonl.md",
+          "decisions/the-clusters-view-is-not-an-explorer.md",
+          "decisions/config-redaction-is-not-free-text-redaction.md",
+          "decisions/destructive-git-commands-require-confirmation.md",
+          "decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md",
+          "decisions/merge-require-green-ci-was-never-read-and-was-removed.md"
+        ],
+        "false_pages_flagged_count": 10,
+        "false_pages_of": 10,
+        "false_entries_flagged_count": 11,
+        "false_entries_of": 11
+      },
+      "true_entry": "kept",
+      "supplementary": {
+        "kept": 5,
+        "of": 5,
+        "required": 4,
+        "kept_cases": [
+          "provider-config-guarantee",
+          "benchmark-provider-id",
+          "pre-pr-strict-mode",
+          "pre-pr-keyword-set",
+          "pre-pr-doc-audit"
+        ],
+        "kept_without_built": 3,
+        "of_without_built": 3
+      },
+      "negatives": {
+        "flagged": 0,
+        "of": 0
+      },
+      "reported_only": {
+        "vllm-backend-doc": false,
+        "run-wiki-ingest-rules": true
+      },
+      "cost": {
+        "study_processes": 37,
+        "study_seconds": 0.348962
+      },
+      "bar": {
+        "false_pages": "fail",
+        "true_entry": "pass",
+        "recall": "pass",
+        "overall": "fail"
+      }
+    },
+    "C1": {
+      "name": "change ignoring whitespace",
+      "study": {
+        "pages_flagged": [
+          "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+          "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+          "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md",
+          "decisions/never-bypass-a-git-lock-with-an-alternate-index.md",
+          "decisions/never-archive-raw-jsonl.md",
+          "decisions/the-clusters-view-is-not-an-explorer.md",
+          "decisions/config-redaction-is-not-free-text-redaction.md",
+          "decisions/destructive-git-commands-require-confirmation.md",
+          "decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md",
+          "decisions/merge-require-green-ci-was-never-read-and-was-removed.md"
+        ],
+        "entries_flagged": 11,
+        "false_pages_flagged": [
+          "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+          "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+          "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md",
+          "decisions/never-bypass-a-git-lock-with-an-alternate-index.md",
+          "decisions/never-archive-raw-jsonl.md",
+          "decisions/the-clusters-view-is-not-an-explorer.md",
+          "decisions/config-redaction-is-not-free-text-redaction.md",
+          "decisions/destructive-git-commands-require-confirmation.md",
+          "decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md",
+          "decisions/merge-require-green-ci-was-never-read-and-was-removed.md"
+        ],
+        "false_pages_flagged_count": 10,
+        "false_pages_of": 10,
+        "false_entries_flagged_count": 11,
+        "false_entries_of": 11
+      },
+      "true_entry": "kept",
+      "supplementary": {
+        "kept": 5,
+        "of": 5,
+        "required": 4,
+        "kept_cases": [
+          "provider-config-guarantee",
+          "benchmark-provider-id",
+          "pre-pr-strict-mode",
+          "pre-pr-keyword-set",
+          "pre-pr-doc-audit"
+        ],
+        "kept_without_built": 3,
+        "of_without_built": 3
+      },
+      "negatives": {
+        "flagged": 0,
+        "of": 0
+      },
+      "reported_only": {
+        "vllm-backend-doc": false,
+        "run-wiki-ingest-rules": true
+      },
+      "cost": {
+        "study_processes": 45,
+        "study_seconds": 0.433361
+      },
+      "bar": {
+        "false_pages": "fail",
+        "true_entry": "pass",
+        "recall": "pass",
+        "overall": "fail"
+      }
+    },
+    "C2": {
+      "name": "anchor touch",
+      "study": {
+        "pages_flagged": [
+          "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+          "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+          "decisions/never-archive-raw-jsonl.md",
+          "decisions/config-redaction-is-not-free-text-redaction.md",
+          "decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md"
+        ],
+        "entries_flagged": 6,
+        "false_pages_flagged": [
+          "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+          "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+          "decisions/never-archive-raw-jsonl.md",
+          "decisions/config-redaction-is-not-free-text-redaction.md",
+          "decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md"
+        ],
+        "false_pages_flagged_count": 5,
+        "false_pages_of": 10,
+        "false_entries_flagged_count": 6,
+        "false_entries_of": 11
+      },
+      "true_entry": "kept",
+      "supplementary": {
+        "kept": 5,
+        "of": 5,
+        "required": 4,
+        "kept_cases": [
+          "provider-config-guarantee",
+          "benchmark-provider-id",
+          "pre-pr-strict-mode",
+          "pre-pr-keyword-set",
+          "pre-pr-doc-audit"
+        ],
+        "kept_without_built": 3,
+        "of_without_built": 3
+      },
+      "negatives": {
+        "flagged": 0,
+        "of": 0
+      },
+      "reported_only": {
+        "vllm-backend-doc": false,
+        "run-wiki-ingest-rules": true
+      },
+      "cost": {
+        "study_processes": 50,
+        "study_seconds": 0.478727
+      },
+      "bar": {
+        "false_pages": "pass",
+        "true_entry": "pass",
+        "recall": "pass",
+        "overall": "pass"
+      }
+    },
+    "C3": {
+      "name": "Revisit-when tokens",
+      "study": {
+        "pages_flagged": [
+          "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+          "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+          "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md",
+          "decisions/never-bypass-a-git-lock-with-an-alternate-index.md",
+          "decisions/never-archive-raw-jsonl.md",
+          "decisions/config-redaction-is-not-free-text-redaction.md",
+          "decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md",
+          "decisions/merge-require-green-ci-was-never-read-and-was-removed.md"
+        ],
+        "entries_flagged": 9,
+        "false_pages_flagged": [
+          "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+          "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+          "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md",
+          "decisions/never-bypass-a-git-lock-with-an-alternate-index.md",
+          "decisions/never-archive-raw-jsonl.md",
+          "decisions/config-redaction-is-not-free-text-redaction.md",
+          "decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md",
+          "decisions/merge-require-green-ci-was-never-read-and-was-removed.md"
+        ],
+        "false_pages_flagged_count": 8,
+        "false_pages_of": 10,
+        "false_entries_flagged_count": 9,
+        "false_entries_of": 11
+      },
+      "true_entry": "kept",
+      "supplementary": {
+        "kept": 5,
+        "of": 5,
+        "required": 4,
+        "kept_cases": [
+          "provider-config-guarantee",
+          "benchmark-provider-id",
+          "pre-pr-strict-mode",
+          "pre-pr-keyword-set",
+          "pre-pr-doc-audit"
+        ],
+        "kept_without_built": 3,
+        "of_without_built": 3
+      },
+      "negatives": {
+        "flagged": 0,
+        "of": 0
+      },
+      "reported_only": {
+        "vllm-backend-doc": false,
+        "run-wiki-ingest-rules": true
+      },
+      "cost": {
+        "study_processes": 47,
+        "study_seconds": 0.45277
+      },
+      "bar": {
+        "false_pages": "fail",
+        "true_entry": "pass",
+        "recall": "pass",
+        "overall": "fail"
+      }
+    },
+    "C4": {
+      "name": "anchor touch and Revisit-when tokens",
+      "study": {
+        "pages_flagged": [
+          "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+          "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+          "decisions/never-archive-raw-jsonl.md",
+          "decisions/config-redaction-is-not-free-text-redaction.md",
+          "decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md"
+        ],
+        "entries_flagged": 6,
+        "false_pages_flagged": [
+          "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+          "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+          "decisions/never-archive-raw-jsonl.md",
+          "decisions/config-redaction-is-not-free-text-redaction.md",
+          "decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md"
+        ],
+        "false_pages_flagged_count": 5,
+        "false_pages_of": 10,
+        "false_entries_flagged_count": 6,
+        "false_entries_of": 11
+      },
+      "true_entry": "kept",
+      "supplementary": {
+        "kept": 5,
+        "of": 5,
+        "required": 4,
+        "kept_cases": [
+          "provider-config-guarantee",
+          "benchmark-provider-id",
+          "pre-pr-strict-mode",
+          "pre-pr-keyword-set",
+          "pre-pr-doc-audit"
+        ],
+        "kept_without_built": 3,
+        "of_without_built": 3
+      },
+      "negatives": {
+        "flagged": 0,
+        "of": 0
+      },
+      "reported_only": {
+        "vllm-backend-doc": false,
+        "run-wiki-ingest-rules": true
+      },
+      "cost": {
+        "study_processes": 53,
+        "study_seconds": 0.50958
+      },
+      "bar": {
+        "false_pages": "pass",
+        "true_entry": "pass",
+        "recall": "pass",
+        "overall": "pass"
+      }
+    }
+  },
+  "winner": "C2",
+  "process_counts": {
+    "exact_kind_plan": {
+      "steps": [
+        "p1",
+        "p2",
+        "p3",
+        "p4"
+      ],
+      "processes": 37,
+      "seconds": 0.348962
+    },
+    "with_candidate": {
+      "C0": {
+        "processes": 37,
+        "seconds": 0.348962
+      },
+      "C1": {
+        "processes": 45,
+        "seconds": 0.433361
+      },
+      "C2": {
+        "processes": 50,
+        "seconds": 0.478727
+      },
+      "C3": {
+        "processes": 47,
+        "seconds": 0.45277
+      },
+      "C4": {
+        "processes": 53,
+        "seconds": 0.50958
+      }
+    },
+    "slowest_call": {
+      "run": "study",
+      "step": "p4",
+      "seconds": 0.012195
+    }
+  }
+}
