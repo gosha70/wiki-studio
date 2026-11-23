@@ -102,6 +102,8 @@ STATUS_USED = "used"
 STATUS_SKIPPED = "skipped"
 STATE_ON = "on"
 STATE_OFF = "off"
+# FR-027: the text output's line starts with this; the nightly header names it itself.
+SUMMARY_PREFIX = "revision check: "
 
 # FR-019: why a repository is skipped, and FR-026: why the check is off.
 REASON_NOT_A_WORK_TREE = "not a git work tree"
@@ -351,10 +353,10 @@ class RevisionCheck:
     def summary(self) -> str:
         """FR-027's one line."""
         if self.state == STATE_OFF:
-            return f"revision check: off ({self.reason})"
+            return f"{SUMMARY_PREFIX}{STATE_OFF} ({self.reason})"
         used = sum(1 for repository in self.repositories if repository.status == STATUS_USED)
         return (
-            f"revision check: on ({used} of {len(self.repositories)} repositories used); "
+            f"{SUMMARY_PREFIX}{STATE_ON} ({used} of {len(self.repositories)} repositories used); "
             f"{self.sources_checked} sources checked, {self.sources_not_checked} not checked"
         )
 

@@ -6,9 +6,11 @@ from __future__ import annotations
 
 import inspect
 import json
+import unittest
 from unittest.mock import patch
 
 from tests.test_approve import ApprovalCase, page_text
+from tests.test_revisions import GIT, git, make_repo
 from wiki_studio import api
 from wiki_studio.errors import BackendNotFoundError
 from wiki_studio.findings import FINDING_KINDS
@@ -60,13 +62,33 @@ class FindingsCase(ApprovalCase):
         api.promote(api.propose(pair, self.paths, name="pair"), self.paths)
         self.create("one-sided", body="One side.\n\n> [!conflict] [the other page](pair-left.md)")
         self.create("dangling", body="Bad target.\n\n> [!conflict] [itself](dangling.md)")
+        pages = {"unapproved": gamma, "approval-stale": stale, "approval-policy-changed": changed, "superseded": old}
+        # Promoted before the glossary page below, which the staged-tree lint would reject.
+        if GIT:
+            pages["source-not-at-revision"] = self.cite_notes_before_they_existed()
         (self.wiki / "glossary").mkdir()
         (self.wiki / "glossary" / "origin-gate.md").write_text(_GLOSSARY, encoding="utf-8")
         self.set_policy(approver_required=True)
-        return {"unapproved": gamma, "approval-stale": stale, "approval-policy-changed": changed, "superseded": old}
+        return pages
+
+    def cite_notes_before_they_existed(self) -> str:
+        """0.11.0 (FR-029): the root becomes a git repository and a page cites notes.md at a commit lacking it."""
+        make_repo(self.root)
+        git(self.root, "commit", "-q", "--allow-empty", "-m", "before the notes")
+        before = git(self.root, "rev-parse", "HEAD")
+        git(self.root, "add", "--", "notes.md")
+        git(self.root, "commit", "-q", "-m", "the notes")
+        text = page_text("pinned").replace("  - path: notes.md\n", f"  - path: notes.md\n    sha: {before}\n")
+        edits = [
+            PageEdit("decisions/pinned.md", "create", text, "why"),
+            PageEdit("index.md", "append-index", "- [pinned](decisions/pinned.md)", "why"),
+        ]
+        api.promote(api.propose(edits, self.paths, name="pinned"), self.paths)
+        return "decisions/pinned.md"
 
 
 class TestFindingKinds(FindingsCase):
+    @unittest.skipUnless(GIT, "git is not installed")
     def test_every_kind_is_produced_on_a_fixture_wiki(self) -> None:
         pages = self.build_fixture_wiki()
         result = api.findings(self.paths)
@@ -85,6 +107,7 @@ class TestFindingKinds(FindingsCase):
         self.assertEqual(by_kind["avoid-format"], [("glossary/origin-gate.md",)])
         self.assertEqual(by_kind["missing-cross-link"][0][0], pages["unapproved"])
         self.assertIn((pages["unapproved"],), by_kind["no-page-id"])
+        self.assertEqual(by_kind["source-not-at-revision"], [(pages["source-not-at-revision"],)])
         self.assertEqual(result.counts, {kind: len(by_kind[kind]) for kind in FINDING_KINDS})
 
     def test_a_superseded_page_is_never_reported_as_unapproved(self) -> None:
@@ -123,7 +146,7 @@ class TestFindingsFormat(FindingsCase):
         result = self.cli("findings", "--json")
         self.assertEqual(result.returncode, 0, result.stderr)
         data = json.loads(result.stdout)
-        self.assertEqual(set(data), {"findings_version", "counts", "pages_checked", "findings"})
+        self.assertEqual(set(data), {"findings_version", "counts", "pages_checked", "findings", "revision_check"})
         self.assertEqual(data["findings_version"], 1)
         self.assertEqual(set(data["counts"]), set(FINDING_KINDS))
         self.assertGreater(sum(data["counts"].values()), 0)

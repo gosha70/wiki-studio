@@ -15,7 +15,12 @@ One read-only pass over the wiki that a host can run at session start:
 * the conflict kinds of ``conflicts``: ``open-conflict`` (two pages each
   carry a conflict callout naming the other), ``conflict-one-sided``
   (a callout names a page that carries none back) and ``conflict-dangling``
-  (a callout names no wiki page, or one that cannot be its other page).
+  (a callout names no wiki page, or one that cannot be its other page);
+* ``source-not-at-revision`` (FR-025): a cited ``path:`` absent at its
+  ``sha:`` in the matched repository, a ``sha:`` no repository has while every
+  repository was usable, or a malformed ``sha:``; ``revision_check`` reports
+  whether the check could run, every repository and the sources not checked
+  (FR-026). Git is read only through ``revisions``.
 
 Nothing here takes a backend or resolves one, takes the wiki lock or writes.
 The result is versioned (``findings_version``) and leads with ``counts`` by
@@ -43,12 +48,19 @@ from .review import (
     review_states,
     superseded_by,
 )
+from .revisions import (
+    CAUSE_COMMIT_NOT_FOUND,
+    CAUSE_NOT_AT_COMMIT,
+    OUTCOME_NOT_AT_REVISION,
+    check_sources,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from .paths import WikiPaths
     from .review import ReviewState
+    from .revisions import RevisionCheck
 
 FINDINGS_VERSION = FINDINGS_FORMAT_VERSION
 
@@ -66,6 +78,7 @@ KIND_NO_PAGE_ID = "no-page-id"
 KIND_OPEN_CONFLICT = "open-conflict"
 KIND_CONFLICT_ONE_SIDED = "conflict-one-sided"
 KIND_CONFLICT_DANGLING = "conflict-dangling"
+KIND_SOURCE_NOT_AT_REVISION = "source-not-at-revision"
 # Every kind this build can report, in the order a run lists them; ``counts`` names each one.
 FINDING_KINDS: tuple[str, ...] = (
     KIND_STALE_CLAIM,
@@ -80,6 +93,7 @@ FINDING_KINDS: tuple[str, ...] = (
     KIND_OPEN_CONFLICT,
     KIND_CONFLICT_ONE_SIDED,
     KIND_CONFLICT_DANGLING,
+    KIND_SOURCE_NOT_AT_REVISION,
 )
 
 # The review state each review kind reports.
@@ -112,12 +126,16 @@ class Finding:
 
 @dataclass(frozen=True)
 class FindingsResult:
-    """What ``api.findings`` reports: ``counts`` by kind (zero included), the pages checked, the findings."""
+    """What ``api.findings`` reports: ``counts`` by kind (zero included), the pages checked, the findings.
+
+    ``revision_check`` is the run state of the revision check (FR-026).
+    """
 
     findings_version: int
     counts: Mapping[str, int]
     pages_checked: int
     findings: tuple[Finding, ...]
+    revision_check: RevisionCheck
 
     def as_dict(self) -> dict[str, Any]:
         """The JSON form (``docs/knowledge-contract.md``); consumers read keys by name, not by order."""
@@ -126,6 +144,7 @@ class FindingsResult:
             "counts": dict(self.counts),
             "pages_checked": self.pages_checked,
             "findings": [finding.as_dict() for finding in self.findings],
+            "revision_check": self.revision_check.as_dict(),
         }
 
 
@@ -184,6 +203,33 @@ def _page_findings(paths: WikiPaths, pages: list[str]) -> list[Finding]:
     return [*still_indexed, *missing_id]
 
 
+def _revision_findings(check: RevisionCheck) -> list[Finding]:
+    """One ``source-not-at-revision`` per source for FR-025's three causes."""
+    searched = ", ".join(str(repository.path) for repository in check.repositories)
+    found: list[Finding] = []
+    for source in check.sources:
+        if source.outcome != OUTCOME_NOT_AT_REVISION:
+            continue
+        repository = source.repository
+        if source.reason == CAUSE_NOT_AT_COMMIT and repository is not None:
+            description = (
+                f"cites {source.path} at {source.sha}, a commit of {repository.path} that does not contain it; "
+                f"the path exists at that repository's HEAD {repository.head}; correct the sha: or the path"
+            )
+        elif source.reason == CAUSE_COMMIT_NOT_FOUND:
+            description = (
+                f"cites {source.path} at {source.sha}, a commit none of the repositories searched has "
+                f"({searched}); correct the sha: or add the repository that has it as a source root"
+            )
+        else:
+            description = (
+                f"cites {source.path} with a malformed sha: {source.sha!r} (expected 7-40 lowercase hex "
+                "characters); correct it"
+            )
+        found.append(Finding(KIND_SOURCE_NOT_AT_REVISION, SEVERITY_WARNING, (source.page,), description))
+    return found
+
+
 def findings(paths: WikiPaths, *, pages: list[str] | None = None) -> FindingsResult:
     """Collect the findings; reads only, takes no lock and no backend (FR-037).
 
@@ -192,6 +238,8 @@ def findings(paths: WikiPaths, *, pages: list[str] | None = None) -> FindingsRes
     every kind to those wiki-relative pages. Either way a finding reports
     only its pages inside the scope, and ``pages_checked`` counts the scope.
     The graph-based health checks still read the whole wiki to count edges.
+    The revision check reads the cited sources of the in-scope pages that do
+    not carry ``superseded_by``, read-only, through ``revisions``.
     """
     states = review_states(paths, default_review_pages(paths) if pages is None else list(pages))
     canonical = [state.path for state in states]
@@ -217,6 +265,8 @@ def findings(paths: WikiPaths, *, pages: list[str] | None = None) -> FindingsRes
         scoped = tuple(page for page in conflict.pages if page in in_scope)
         if scoped:
             found.append(Finding(conflict.kind, conflict.severity, scoped, conflict.description))
+    revision_check = check_sources(paths, canonical)
+    found.extend(_revision_findings(revision_check))
     counts = dict.fromkeys(FINDING_KINDS, 0)
     for finding in found:
         counts[finding.kind] += 1
@@ -225,4 +275,5 @@ def findings(paths: WikiPaths, *, pages: list[str] | None = None) -> FindingsRes
         counts=MappingProxyType(counts),
         pages_checked=len(canonical),
         findings=tuple(found),
+        revision_check=revision_check,
     )

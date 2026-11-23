@@ -6,6 +6,32 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `findings` reports a new kind, `source-not-at-revision` (issue 120): a
+  page cites a `path:` at a `sha:` that does not contain it while the path
+  exists at the matched repository's HEAD, cites a commit none of the
+  repositories has while every one of them was usable, or cites a malformed
+  `sha:`. Superseded pages are skipped and a `path:` without `sha:` is not
+  checked. Git is read read-only and offline through a fixed set of
+  plumbing calls, with inherited `GIT_` variables dropped and a timeout.
+- `findings` results carry a `revision_check` object (and the text output
+  and the `nightly` report one line) saying whether the check ran (`on` or
+  `off` with its reason), each repository used or skipped with why (shallow
+  or partial clones, directories that are not the top of a work tree,
+  ownership refusals and others), and the sources checked and not checked by
+  reason. It is additive: `findings_version` stays 1 and no capability is
+  added. The MCP `findings` tool carries it too.
+- Source roots (`--source-root`, `WIKI_STUDIO_SOURCE_ROOTS`) are also
+  searched for cited commits, after the root's own repository and in the
+  configured order; the first usable repository that has the commit is
+  named in the finding. A source root is used only when it is the top of its
+  own git work tree.
+- `WIKI_STUDIO_GIT_CALL_LIMIT` caps the git processes one revision check may
+  start (default 500, ten times the count measured on the issue 120 study);
+  once it is reached, the remaining sources are reported as not checked,
+  never as findings.
+
 ### Docs
 
 - `docs/patterns.md`: the `decision`-page pattern convention the issue 54

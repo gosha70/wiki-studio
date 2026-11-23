@@ -417,7 +417,11 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         "unapproved, approval-stale, approval-policy-changed (review state), superseded-still-indexed, "
         "no-page-id, and the conflict kinds open-conflict (two pages each carry a callout naming the other), "
         "conflict-one-sided (a callout names a page that carries none back) and conflict-dangling "
-        "(a callout names no wiki page, or one that cannot be its other page). Read-only; takes no lock; "
+        "(a callout names no wiki page, or one that cannot be its other page), and source-not-at-revision "
+        "(a cited path absent at its sha: in the matched repository, a sha: no repository has, or a malformed "
+        "sha:; the root's repository is searched first, then the source roots). A revision check line after the "
+        "counts (revision_check in --json) says whether that check ran, which repositories it used and how many "
+        "sources it could not check. Read-only, git included; takes no lock; "
         "exits 0 on a completed run whatever it finds (lint --health --strict is the CI gate)."
     )
     p_findings = sub.add_parser(
@@ -429,7 +433,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     p_findings.add_argument(
         "--json",
         action="store_true",
-        help="Print findings_version, counts, pages_checked and findings as one JSON object.",
+        help="Print findings_version, counts, pages_checked, findings and revision_check as one JSON object.",
     )
     p_findings.add_argument(
         "--paths", nargs="+", default=None, metavar="PAGE", help="Scope every kind to these wiki-relative pages."
@@ -846,6 +850,7 @@ def _do_findings(args: argparse.Namespace) -> int:
         return 0
     counts = ", ".join(f"{kind} {n}" for kind, n in result.counts.items() if n)
     print(f"findings: {len(result.findings)} across {result.pages_checked} pages" + (f" ({counts})" if counts else ""))
+    print(result.revision_check.summary())
     for finding in result.findings:
         print(f"  [{finding.kind} / {finding.severity}] {', '.join(finding.pages)}: {finding.description}")
     return 0
