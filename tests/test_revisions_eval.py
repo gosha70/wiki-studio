@@ -123,6 +123,21 @@ class RecordedResultsTest(unittest.TestCase):
         self.assertIn(str(counts["exact_kind_plan"]["processes"]), report)
         self.assertIn(SECONDS_FORMAT.format(counts["slowest_call"]["seconds"]), report)
 
+    def test_the_report_states_the_post_hoc_figures_as_recorded(self) -> None:
+        report = REPORT.read_text(encoding="utf-8")
+        post_hoc = self.committed()["post_hoc"]
+        self.assertIs(post_hoc["binding"], False)
+        self.assertIn(post_hoc["rule"], " ".join(report.split()))
+        for cid, result in post_hoc["candidates"].items():
+            flagged = "yes" if result["reported_only"]["run-wiki-ingest-rules"] else "no"
+            row = (
+                f"| {cid} | {result['false_pages_flagged_count']} of {result['false_pages_of']} "
+                f"| {result['false_entries_flagged_count']} of {result['false_entries_of']} "
+                f"| {result['true_entry']} | {result['supplementary_kept']} of {result['supplementary_of']} "
+                f"| {flagged} |"
+            )
+            self.assertIn(row, report, "the report's post-hoc table must state the recorded figures")
+
     def test_c0_keeps_every_supplementary_positive(self) -> None:
         supplementary = self.committed()["candidates"]["C0"]["supplementary"]
         self.assertGreater(supplementary["of"], 0)
@@ -353,6 +368,23 @@ class RecordFunctionTest(unittest.TestCase):
         self.assertEqual(env["GIT_CONFIG_GLOBAL"], "/dev/null")
         self.assertEqual(env["GIT_CEILING_DIRECTORIES"], "/ceiling")
         self.assertEqual((env["GIT_TERMINAL_PROMPT"], env["LC_ALL"]), ("0", "C"))
+
+
+class FragmentAnchorTest(unittest.TestCase):
+    """The post-hoc anchor rule leaves out fragments and keeps whole anchors."""
+
+    PAGE = (
+        "---\ntitle: t\n---\n\n## Decision\n\n"
+        'Uses `correlate.run`, `scripts/tool.py`, `merge.require_green_ci`, `"`, `0` and `gh`.\n'
+    )
+
+    def test_frozen_anchors_include_fragments(self) -> None:
+        found = candidates.anchors(self.PAGE)
+        self.assertTrue({"run", "py", "0", "gh", "merge.require_green_ci", "require_green_ci"} <= found)
+
+    def test_post_hoc_anchors_leave_out_fragments(self) -> None:
+        found = candidates.anchors(self.PAGE, fragments=False)
+        self.assertEqual(found, {"correlate.run", "scripts/tool.py", "merge.require_green_ci", "require_green_ci"})
 
 
 class HeadingRuleTest(unittest.TestCase):

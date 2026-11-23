@@ -370,5 +370,81 @@
       "step": "p4",
       "seconds": 0.012195
     }
+  },
+  "post_hoc": {
+    "binding": false,
+    "rule": "anchors shorter than 4 characters, anchors with no letter, and the last dotted component of a backticked path (an identifier containing '/') are ignored",
+    "candidates": {
+      "C2": {
+        "false_pages_flagged_count": 3,
+        "false_pages_of": 10,
+        "false_entries_flagged_count": 3,
+        "false_entries_of": 11,
+        "true_entry": "kept",
+        "supplementary_kept": 5,
+        "supplementary_of": 5,
+        "reported_only": {
+          "vllm-backend-doc": false,
+          "run-wiki-ingest-rules": false
+        },
+        "flags_from_fragments_only": {
+          "study_entries": [
+            [
+              "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+              "scripts/session_analytics/api/server.py",
+              "2325480"
+            ],
+            [
+              "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+              "specs/session-analytics-benchmark-step/spec.md",
+              "2325480"
+            ],
+            [
+              "decisions/config-redaction-is-not-free-text-redaction.md",
+              "scripts/lib/analytics_layers.py",
+              "8dbceaf"
+            ]
+          ],
+          "cases": [
+            "run-wiki-ingest-rules"
+          ]
+        }
+      },
+      "C4": {
+        "false_pages_flagged_count": 3,
+        "false_pages_of": 10,
+        "false_entries_flagged_count": 3,
+        "false_entries_of": 11,
+        "true_entry": "kept",
+        "supplementary_kept": 5,
+        "supplementary_of": 5,
+        "reported_only": {
+          "vllm-backend-doc": false,
+          "run-wiki-ingest-rules": false
+        },
+        "flags_from_fragments_only": {
+          "study_entries": [
+            [
+              "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+              "scripts/session_analytics/api/server.py",
+              "2325480"
+            ],
+            [
+              "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+              "specs/session-analytics-benchmark-step/spec.md",
+              "2325480"
+            ],
+            [
+              "decisions/config-redaction-is-not-free-text-redaction.md",
+              "scripts/lib/analytics_layers.py",
+              "8dbceaf"
+            ]
+          ],
+          "cases": [
+            "run-wiki-ingest-rules"
+          ]
+        }
+      }
+    }
   }
 }

@@ -86,15 +86,47 @@ Winner: C2
 **What the win rests on.** C2 passes condition 1 at the limit, 5 of 10 false
 pages, with no margin. Without the two built pages the supplementary set has
 3 positives, below the minimum of 4, so that variant of condition 3 is not
-testable; it is reported, not a condition. Whether C2 would still pass
-without the anchor rule's last-component reading (see Limits) was not
-measured: the protocol is frozen, and that rule was its reading.
+testable; it is reported, not a condition. How much of the win rests on
+fragment anchors is measured post hoc, below.
 
 **Process counts** (study run, from `process_counts`): the exact kind's plan
 (p1-p4) takes 37 git processes in 0.349 s; with each candidate's steps added,
 C0 37, C1 45, C2 50, C3 47 and C4 53. The slowest single recorded call is a
 p4 of the study run, 0.012 s. FR-022 derives the shipped call cap and the
 per-call timeout from these counts.
+
+## Post hoc: fragment anchors (not binding)
+
+Found after the freeze, by the external review of this PR. It changes no
+verdict, no condition of the bar and not the winner line; `candidates.py`
+computes it in its own `post_hoc` block of `results/candidates.json`, marked
+`"binding": false`, and CI checks the figures below against it.
+
+As frozen, C2's anchors include fragments: the last dotted component of every
+backticked item (`py`, `sh`, `ts`, `md` from file names, `run` from
+`correlate.run`) and short or letterless items (`"`, `0`, `1`, `2`), each
+matched anywhere inside a changed line. Some of the winner's flags rest on
+nothing else:
+
+- the benchmark-step page (both its entries) and the config-redaction page,
+  2 of C2's 5 false pages;
+- the `run-wiki-ingest-rules` case.
+
+None of the true flags depends on a fragment: the merge entry and all five
+supplementary positives are also caught by whole anchors.
+
+Re-scored with the rule "anchors shorter than 4 characters, anchors with no
+letter, and the last dotted component of a backticked path (an identifier
+containing '/') are ignored":
+
+| Candidate (post hoc) | False pages flagged | False entries flagged | `a24a00e` on the pre-successor copy | Supplementary positives kept | `run-wiki-ingest-rules` flagged |
+|---|---|---|---|---|---|
+| C2 | 3 of 10 | 3 of 11 | kept | 5 of 5 | no |
+| C4 | 3 of 10 | 3 of 11 | kept | 5 of 5 | no |
+
+The rule was chosen after seeing the data, so these numbers are evidence for
+the spec amendment's choice of what ships (FR-032 builds the winner exactly
+as FR-008 defines it), not a result of the preregistered study.
 
 ## Limits
 
@@ -116,7 +148,8 @@ per-call timeout from these counts.
 - **The anchor rule is literal.** An identifier also counts by its last
   dotted component, so a backticked file name such as `spec.md` also counts
   as `md`, and an anchor matches any changed line that contains it as a
-  substring. Both are the frozen protocol's reading and were not adjusted.
+  substring. Both are the frozen protocol's reading and were not adjusted; how much
+  of the result rests on them is measured post hoc, above.
 - **No agent behaviour is measured**, and no repository other than
   code-copilot-team.
 

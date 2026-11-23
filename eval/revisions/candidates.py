@@ -61,6 +61,14 @@ WINNER_NONE = "none"
 REVISIT_PREFIX = "Revisit when:"
 LIST_MARKER_RE = re.compile(r"^(?:[-*+]|\d+[.)])[ \t]+")
 NOT_RECORDED = "not recorded"
+# Post hoc, not binding (found after the freeze, external review of the evidence PR): the anchor-based
+# candidates re-scored without fragment anchors. It never changes a verdict, the bar or the winner.
+POST_HOC_CANDIDATES = ("C2", "C4")
+POST_HOC_MIN_ANCHOR_LENGTH = 4
+POST_HOC_RULE = (
+    "anchors shorter than 4 characters, anchors with no letter, and the last dotted component of a"
+    " backticked path (an identifier containing '/') are ignored"
+)
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -79,19 +87,28 @@ def page_body(text: str) -> str:
     return fact_diff._split_frontmatter(text)[1]
 
 
-def anchors(text: str) -> set[str]:
+def anchors(text: str, *, fragments: bool = True) -> set[str]:
     """C2's anchors: backticked identifiers (also by their last dotted component) and ``file:line`` references.
 
     Taken over the body with fenced code blanked, with ``fact_diff``'s regexes
-    and normalisation unchanged. An empty string is no anchor.
+    and normalisation unchanged. An empty string is no anchor. With
+    ``fragments=False`` (post hoc only), the anchors ``POST_HOC_RULE`` names are
+    left out.
     """
     prose = fact_diff._without_fences(page_body(text))
     found = {f"{m.group(1)}:{m.group(2)}" for m in fact_diff._PATH_LINE_RE.finditer(prose)}
     for match in fact_diff._BACKTICK_RE.finditer(prose):
         identifier = fact_diff._normalize_identifier(match.group(1))
         found.add(identifier)
-        found.add(identifier.rsplit(".", 1)[-1])
+        if fragments or "/" not in identifier:
+            found.add(identifier.rsplit(".", 1)[-1])
+    if not fragments:
+        found = {anchor for anchor in found if _not_a_fragment(anchor)}
     return {anchor for anchor in found if anchor}
+
+
+def _not_a_fragment(anchor: str) -> bool:
+    return len(anchor) >= POST_HOC_MIN_ANCHOR_LENGTH and any(char.isalpha() for char in anchor)
 
 
 def revisit_when(text: str) -> str | None:
@@ -119,9 +136,9 @@ def changed_lines(path_record: dict[str, Any]) -> list[str]:
 class PageView:
     """What the candidates read from one page: its body, anchors and Revisit-when tokens."""
 
-    def __init__(self, text: str) -> None:
+    def __init__(self, text: str, *, fragments: bool = True) -> None:
         self.body_lower = page_body(text).lower()
-        self.anchors = anchors(text)
+        self.anchors = anchors(text, fragments=fragments)
         self.tokens = revisit_tokens(text)
 
 
@@ -181,7 +198,7 @@ def _source_key(source: dict[str, Any]) -> tuple[str, str, str]:
 
 
 def score_run(
-    candidate: str, run: dict[str, Any], texts: dict[str, str]
+    candidate: str, run: dict[str, Any], texts: dict[str, str], *, fragments: bool = True
 ) -> tuple[set[tuple[str, str, str]], set[tuple[tuple[str, str, str], str]]]:
     """The (page, path, sha) entries ``candidate`` flags in one run, and the (path key, step) calls it needs.
 
@@ -195,7 +212,7 @@ def score_run(
     for page in run["pages"]:
         if page["superseded"]:
             continue
-        view = PageView(texts[page["page"]])
+        view = PageView(texts[page["page"]], fragments=fragments)
         for source in page["sources"]:
             if source["state"] != STATE_CHECKED or source["status"] not in CHANGED_STATUSES:
                 continue
@@ -278,12 +295,7 @@ def score() -> dict[str, Any]:
         cid = spec["id"]
         flagged, needed = score_run(cid, study_run, texts)
         pre_flagged, _ = score_run(cid, pre_run, texts)
-        flagged_cases: list[str] = []
-        for case_id, case in cases.items():
-            case_texts = {case_id: (REPO_ROOT / case["directory"] / "page.md").read_text(encoding="utf-8")}
-            case_flags, _ = score_run(cid, case_runs[case_id], case_texts)
-            if (case_id, case["path"], case["sha"]) in case_flags:
-                flagged_cases.append(case_id)
+        flagged_cases = _flagged_cases(cid, cases, case_runs)
         pages_flagged = [
             page["page"] for page in study_run["pages"] if any(entry[0] == page["page"] for entry in flagged)
         ]
@@ -323,13 +335,50 @@ def score() -> dict[str, Any]:
             "cost": {"study_processes": processes, "study_seconds": seconds},
             "bar": bar,
         }
+    post_hoc: dict[str, Any] = {"binding": False, "rule": POST_HOC_RULE, "candidates": {}}
+    for cid in POST_HOC_CANDIDATES:
+        flagged, _ = score_run(cid, study_run, texts, fragments=False)
+        pre_flagged, _ = score_run(cid, pre_run, texts, fragments=False)
+        frozen_flagged, _ = score_run(cid, study_run, texts)
+        flagged_cases = _flagged_cases(cid, cases, case_runs, fragments=False)
+        frozen_cases = _flagged_cases(cid, cases, case_runs)
+        pages_flagged = {entry[0] for entry in flagged}
+        false_pages_flagged = [page for page in false_pages if page in pages_flagged]
+        post_hoc["candidates"][cid] = {
+            "false_pages_flagged_count": len(false_pages_flagged),
+            "false_pages_of": len(false_pages),
+            "false_entries_flagged_count": len(flagged & false_entries),
+            "false_entries_of": len(false_entries),
+            "true_entry": KEPT if true_key in pre_flagged else LOST,
+            "supplementary_kept": len([case_id for case_id in positives if case_id in flagged_cases]),
+            "supplementary_of": len(positives),
+            "reported_only": {case_id: case_id in flagged_cases for case_id in reported_only},
+            "flags_from_fragments_only": {
+                "study_entries": [list(entry) for entry in sorted(frozen_flagged - flagged)],
+                "cases": [case_id for case_id in frozen_cases if case_id not in flagged_cases],
+            },
+        }
     return {
         "study": STUDY,
         "inputs": _input_hashes(protocol, hunks),
         "candidates": results,
         "winner": select(protocol, results),
         "process_counts": process_counts(hunks, case_runs, results),
+        "post_hoc": post_hoc,
     }
+
+
+def _flagged_cases(
+    cid: str, cases: dict[str, dict[str, Any]], case_runs: dict[str, dict[str, Any]], *, fragments: bool = True
+) -> list[str]:
+    """The cases whose own source ``cid`` flags, in the cases' order."""
+    flagged: list[str] = []
+    for case_id, case in cases.items():
+        case_texts = {case_id: (REPO_ROOT / case["directory"] / "page.md").read_text(encoding="utf-8")}
+        case_flags, _ = score_run(cid, case_runs[case_id], case_texts, fragments=fragments)
+        if (case_id, case["path"], case["sha"]) in case_flags:
+            flagged.append(case_id)
+    return flagged
 
 
 def select(protocol: dict[str, Any], results: dict[str, Any]) -> str:
