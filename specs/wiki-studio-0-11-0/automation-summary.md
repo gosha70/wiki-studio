@@ -17,3 +17,6 @@ approved-by: gosha70 2026-11-23 (labelling commit af53cef reviewed with the exte
 
 ### Phase 2 complete — US2: The freeze (S1) (2026-11-23T12:59:20Z)
 Review: PASS (see specs/wiki-studio-0-11-0/collaboration/build-review-phase-2.md).
+
+### Phase 4 complete — US4: The hardened read-only git layer (S3) (2026-11-23T15:52:21Z)
+Review: PASS (see specs/wiki-studio-0-11-0/collaboration/build-review-phase-4.md).
