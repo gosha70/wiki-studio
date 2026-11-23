@@ -14,3 +14,6 @@ To resume: append a line 'approved-by: <name> <date>' below, then run:
 
 <!-- checkpoint-after-phase: 1 -->
 approved-by: gosha70 2026-11-23 (labelling commit af53cef reviewed with the external reviewer; the reported-only addition 78dca54 committed first)
+
+### Phase 2 complete — US2: The freeze (S1) (2026-11-23T12:59:20Z)
+Review: PASS (see specs/wiki-studio-0-11-0/collaboration/build-review-phase-2.md).
