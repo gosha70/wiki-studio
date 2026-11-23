@@ -29,3 +29,6 @@ Review: PASS (see specs/wiki-studio-0-11-0/collaboration/build-review-phase-6.md
 
 ### Phase 7 complete — US7: Contract, documents and the recipe (S5) (2026-11-23T18:22:27Z)
 Review: PASS (see specs/wiki-studio-0-11-0/collaboration/build-review-phase-7.md).
+
+### Phase 8 complete — US8: Release preparation for 0.11.0 (S6) (2026-11-23T18:28:53Z)
+Review: PASS (see specs/wiki-studio-0-11-0/collaboration/build-review-phase-8.md).
