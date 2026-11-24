@@ -1,0 +1,43 @@
+{
+  "binding": false,
+  "disputed_pair": [
+    "decisions/never-bypass-a-git-lock-with-an-alternate-index.md",
+    "incidents/git-safety-bypasses.md"
+  ],
+  "eligible_pages": 32,
+  "inputs": {
+    "labels_sha256": "96da1b5a7553096ca38e7f0491692b61018c6735cc70d1dcf5c1afc478f39a7e",
+    "manifest_sha256": "1f1a4bf3b4908ec9549b3717685d772182858486e996f6aaa4250fd994360b29"
+  },
+  "pages": 34,
+  "pairs": 496,
+  "readings": {
+    "as recorded": {
+      "B0": {
+        "false_candidates": 1,
+        "found": 2
+      },
+      "B1": {
+        "false_candidates": 2,
+        "found": 0
+      },
+      "true_pairs": 3
+    },
+    "disputed pair as companion": {
+      "B0": {
+        "false_candidates": 1,
+        "found": 2
+      },
+      "B1": {
+        "false_candidates": 2,
+        "found": 0
+      },
+      "true_pairs": 2
+    }
+  },
+  "study": "issue 121 near-duplicate study: the issue 54 fixture re-scored (not binding)",
+  "true_dispositions": [
+    "conflicting",
+    "redundant"
+  ]
+}

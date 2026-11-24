@@ -1,0 +1,155 @@
+{
+  "candidates": {
+    "B0": {
+      "bar": {
+        "enough_true_pairs": true,
+        "false_not_above_true": true,
+        "overall": "fail",
+        "recall": false
+      },
+      "by_repository": {
+        "code-copilot-team": {
+          "false": 3,
+          "true": 3
+        },
+        "cross-repository": {
+          "false": 0,
+          "true": 0
+        },
+        "memkernel": {
+          "false": 0,
+          "true": 0
+        }
+      },
+      "by_scope": {
+        "cross-family": {
+          "false": 0,
+          "true": 0
+        },
+        "cross-repository": {
+          "false": 0,
+          "true": 0
+        },
+        "within-family": {
+          "false": 3,
+          "true": 3
+        }
+      },
+      "candidate_pairs": [
+        "code-copilot-team/llm-catalog/cct-llm-catalog-spec-05.md code-copilot-team/llm-catalog/cct-llm-catalog-spec-13.md 7/27 unrelated within-family",
+        "code-copilot-team/llm-catalog/cct-llm-catalog-spec-13.md code-copilot-team/llm-catalog/cct-llm-catalog-spec-15.md 6/23 unrelated within-family",
+        "code-copilot-team/routing/cct-routing-effective-endpoint-plan-01.md code-copilot-team/routing/cct-routing-effective-endpoint-spec-01.md 4/10 redundant within-family",
+        "code-copilot-team/routing/cct-routing-effective-endpoint-plan-02.md code-copilot-team/routing/cct-routing-effective-endpoint-spec-02.md 33/66 redundant within-family",
+        "code-copilot-team/routing/cct-routing-effective-endpoint-plan-03.md code-copilot-team/routing/cct-routing-effective-endpoint-spec-03.md 15/34 redundant within-family",
+        "code-copilot-team/routing/cct-routing-eval-plan-10.md code-copilot-team/routing/cct-routing-shadow-plan-11.md 21/56 companion within-family"
+      ],
+      "false_by_disposition": {
+        "companion": 1,
+        "distinct-by-precondition": 0,
+        "unrelated": 2
+      },
+      "false_candidates": 3,
+      "false_per_100_pages": "1.00",
+      "found_out_of_n": "3 of 8",
+      "true_candidates": 3,
+      "true_pairs": 8,
+      "true_pairs_found": 3
+    },
+    "B1": {
+      "bar": {
+        "enough_true_pairs": true,
+        "false_not_above_true": true,
+        "overall": "fail",
+        "recall": false
+      },
+      "by_repository": {
+        "code-copilot-team": {
+          "false": 3,
+          "true": 3
+        },
+        "cross-repository": {
+          "false": 0,
+          "true": 0
+        },
+        "memkernel": {
+          "false": 0,
+          "true": 0
+        }
+      },
+      "by_scope": {
+        "cross-family": {
+          "false": 0,
+          "true": 0
+        },
+        "cross-repository": {
+          "false": 0,
+          "true": 0
+        },
+        "within-family": {
+          "false": 3,
+          "true": 3
+        }
+      },
+      "candidate_pairs": [
+        "code-copilot-team/llm-catalog/cct-llm-catalog-spec-05.md code-copilot-team/llm-catalog/cct-llm-catalog-spec-13.md 7/27 unrelated within-family",
+        "code-copilot-team/llm-catalog/cct-llm-catalog-spec-13.md code-copilot-team/llm-catalog/cct-llm-catalog-spec-15.md 6/22 unrelated within-family",
+        "code-copilot-team/routing/cct-routing-effective-endpoint-plan-01.md code-copilot-team/routing/cct-routing-effective-endpoint-spec-01.md 3/7 redundant within-family",
+        "code-copilot-team/routing/cct-routing-effective-endpoint-plan-02.md code-copilot-team/routing/cct-routing-effective-endpoint-spec-02.md 31/64 redundant within-family",
+        "code-copilot-team/routing/cct-routing-effective-endpoint-plan-03.md code-copilot-team/routing/cct-routing-effective-endpoint-spec-03.md 15/33 redundant within-family",
+        "code-copilot-team/routing/cct-routing-eval-plan-10.md code-copilot-team/routing/cct-routing-shadow-plan-11.md 19/53 companion within-family"
+      ],
+      "false_by_disposition": {
+        "companion": 1,
+        "distinct-by-precondition": 0,
+        "unrelated": 2
+      },
+      "false_candidates": 3,
+      "false_per_100_pages": "1.00",
+      "found_out_of_n": "3 of 8",
+      "true_candidates": 3,
+      "true_pairs": 8,
+      "true_pairs_found": 3
+    }
+  },
+  "inputs": {
+    "corpus_sha256": "fc0f710ab994dd4a57a9bb23e700bd61b2ffde58f66a54bb30353c6cc5bbc4de",
+    "labels_sha256": "e1c34ca9533aedb39482d628fd8704752035fba3ca34f132d730f8a555082287",
+    "protocol_sha256": "5daac7f4605038fc98284cd0e055aecdc33459cd4a51aa24b1cdc1e4e9ddde51"
+  },
+  "pages": 299,
+  "pairs": {
+    "by_scope": {
+      "cross-family": 14799,
+      "cross-repository": 19998,
+      "within-family": 9754
+    },
+    "total": 44551
+  },
+  "study": "issue 121 near-duplicate study: the candidates scored",
+  "true_pair_scores": [
+    "code-copilot-team/one-harness-home/cct-one-harness-home-spec-01.md code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md supersedes cross-family B0 1/52 missed B1 1/51 missed",
+    "code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md code-copilot-team/pi/cct-pi-project-config-spec-01.md supersedes within-family B0 2/44 missed B1 2/43 missed",
+    "code-copilot-team/routing/cct-routing-context-limit-plan-07.md code-copilot-team/routing/cct-routing-context-limit-plan-08.md redundant within-family B0 4/74 missed B1 3/73 missed",
+    "code-copilot-team/routing/cct-routing-effective-endpoint-plan-01.md code-copilot-team/routing/cct-routing-effective-endpoint-spec-01.md redundant within-family B0 4/10 found B1 3/7 found",
+    "code-copilot-team/routing/cct-routing-effective-endpoint-plan-02.md code-copilot-team/routing/cct-routing-effective-endpoint-spec-02.md redundant within-family B0 33/66 found B1 31/64 found",
+    "code-copilot-team/routing/cct-routing-effective-endpoint-plan-03.md code-copilot-team/routing/cct-routing-effective-endpoint-spec-03.md redundant within-family B0 15/34 found B1 15/33 found",
+    "code-copilot-team/routing/cct-routing-shadow-plan-07.md code-copilot-team/routing/cct-routing-shadow-plan-11.md redundant within-family B0 8/92 missed B1 7/89 missed",
+    "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-05.md memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-06.md supersedes within-family B0 4/32 missed B1 4/27 missed"
+  ],
+  "true_pairs": {
+    "by_disposition": {
+      "conflicting": 0,
+      "redundant": 5,
+      "supersedes": 3
+    },
+    "by_scope": {
+      "cross-family": 1,
+      "cross-repository": 0,
+      "within-family": 7
+    },
+    "total": 8
+  },
+  "verdict": "no candidate clears the bar",
+  "winner": "none",
+  "winner_line": "Winner: none"
+}
