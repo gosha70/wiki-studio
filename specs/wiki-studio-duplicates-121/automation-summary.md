@@ -39,3 +39,16 @@ Review: PASS (see specs/wiki-studio-duplicates-121/collaboration/build-review-ph
 
 ### Phase 5 complete — US5: The scorer (S3) (2026-11-24T19:54:15Z)
 Review: PASS (see specs/wiki-studio-duplicates-121/collaboration/build-review-phase-5.md).
+
+## Milestone checkpoint — after phase 5 (US5: The scorer (S3))
+
+Paused 2026-11-24T19:54:16Z for batched manual testing + retro.
+
+- [ ] Manual testing of phases up to 5 complete
+- [ ] Retro notes recorded
+
+To resume: append a line 'approved-by: <name> <date>' below, then run:
+`scripts/auto-build-loop.sh wiki-studio-duplicates-121 --resume`
+
+<!-- checkpoint-after-phase: 5 -->
+approved-by: gosha70 2026-11-24 ("sign off" in the build session at the pause after US5; the scoring run is committed as 12dac68, Winner: none)
