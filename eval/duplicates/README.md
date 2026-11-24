@@ -350,7 +350,9 @@ pairs against the minimum of 8, it ran the extension rule's first step
 `api` family, and committed the added pages and `corpus.json` with these
 counts updated. The `api` family added no true pair, so it ran the second
 step, `python -m eval.duplicates.extract --extend 2`, which adds the
-`llm-catalog` family (`extend` 2, `cut_1` false, as `corpus.json` now
+`llm-catalog` family, committed the same way. That family added no true pair
+either, so it ran the third step, `--extend 3`, which adds the
+`wiki-studio-adoption` family (`extend` 3, `cut_1` false, as `corpus.json` now
 records), committed the same way. Every
 number below is read from `corpus.json`, and
 `tests/test_duplicates_corpus.py` recomputes each one from it.
@@ -363,7 +365,7 @@ be measured on this corpus.
 
 ### Pages per repository, family and form
 
-The corpus holds **248 pages**: 147 from code-copilot-team and 101 from
+The corpus holds **262 pages**: 161 from code-copilot-team and 101 from
 memkernel.
 
 | Repository | Family | Form | Pages |
@@ -374,12 +376,14 @@ memkernel.
 | code-copilot-team | pi | list-item | 23 |
 | code-copilot-team | routing | bold-paragraph | 21 |
 | code-copilot-team | routing | list-item | 67 |
+| code-copilot-team | wiki-studio-adoption | h3 | 14 |
 | memkernel | memkernel | bold-paragraph | 37 |
 | memkernel | memkernel | h3-adr | 14 |
 | memkernel | memkernel | list-item | 50 |
 
-No page has the plain `h3` form: every H3 item written as a page holds a
-`**Decision**:` line.
+The plain `h3` form appears only in the `wiki-studio-adoption` extension
+family (14 pages); every H3 item of the base families holds a `**Decision**:`
+line and is written in the `h3-adr` form.
 
 ### Against the pitch's counts
 
@@ -391,6 +395,7 @@ tuned to remove them.
 |---|---|---|---|
 | code-copilot-team | api | 15 | (extension family, not in the base count) |
 | code-copilot-team | llm-catalog | 15 | (extension family, not in the base count) |
+| code-copilot-team | wiki-studio-adoption | 14 | (extension family, not in the base count) |
 | code-copilot-team | pi | 29 | 29 |
 | code-copilot-team | routing | 88 | 84 |
 | memkernel | memkernel | 101 | 102 |
@@ -398,6 +403,7 @@ tuned to remove them.
 | Repository | Form | Pages | The pitch's count |
 |---|---|---|---|
 | code-copilot-team | bold-paragraph | 21 | 17 |
+| code-copilot-team | h3 | 14 | 0 (only the `wiki-studio-adoption` extension family) |
 | code-copilot-team | h3-adr | 6 | 6 (H3) |
 | code-copilot-team | list-item | 120 | 90 (base families; `api` and `llm-catalog` add 15 each) |
 | memkernel | bold-paragraph | 37 | 37 |
@@ -418,7 +424,8 @@ tuned to remove them.
   extension family (`api-host-origin-guard`, `api-probe-dsn-constraints`,
   `api-probe-error-hardening`, all list items from `plan.md`) and 15 from the
   `llm-catalog` extension family (`specs/llm-catalog/spec.md`, all list
-  items): 248 pages.
+  items) and 14 from the `wiki-studio-adoption` extension family
+  (`specs/wiki-studio-adoption/plan.md`, all plain H3 items): 262 pages.
 
 ### Items left out
 
@@ -436,6 +443,7 @@ them, so B0 scores them on their title alone, as the issue 54 study did.
 | Repository | Form | Pages with an empty first paragraph |
 |---|---|---|
 | code-copilot-team | bold-paragraph | 2 |
+| code-copilot-team | h3 | 0 |
 | code-copilot-team | h3-adr | 0 |
 | code-copilot-team | list-item | 0 |
 | memkernel | bold-paragraph | 0 |
@@ -463,6 +471,7 @@ even number of pages is the mean of the two middle values.
 | Repository | Form | Pages | `title_tokens` min | `title_tokens` median | `title_tokens` max | `paragraph_tokens` min | `paragraph_tokens` median | `paragraph_tokens` max |
 |---|---|---|---|---|---|---|---|---|
 | code-copilot-team | bold-paragraph | 21 | 2 | 5 | 9 | 0 | 31 | 70 |
+| code-copilot-team | h3 | 14 | 3 | 5 | 7 | 14 | 34.5 | 70 |
 | code-copilot-team | h3-adr | 6 | 3 | 6 | 7 | 19 | 29 | 37 |
 | code-copilot-team | list-item | 120 | 1 | 5 | 18 | 5 | 36.5 | 285 |
 | memkernel | bold-paragraph | 37 | 1 | 3 | 10 | 6 | 69 | 221 |

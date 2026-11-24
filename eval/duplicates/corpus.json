@@ -13,7 +13,7 @@
     }
   ],
   "options": {
-    "extend": 2,
+    "extend": 3,
     "cut_1": false
   },
   "families": [
@@ -90,6 +90,16 @@
       ],
       "with_decision_sections": [
         "llm-catalog"
+      ]
+    },
+    {
+      "repository": "code-copilot-team",
+      "family": "wiki-studio-adoption",
+      "directories": [
+        "wiki-studio-adoption"
+      ],
+      "with_decision_sections": [
+        "wiki-studio-adoption"
       ]
     },
     {
@@ -2200,6 +2210,202 @@
       "sha256": "4ad11015ea2ed9a86be7b5304e67fdd318f800f6408f75a00ac5344dd0dad0c8",
       "title_tokens": 5,
       "paragraph_tokens": 24,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-01.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-studio-adoption",
+      "spec_path": "specs/wiki-studio-adoption/plan.md",
+      "line_start": 50,
+      "line_end": 61,
+      "form": "h3",
+      "title": "Pin the artifact, not only the version",
+      "sha256": "f290df50d26ee3f39456699cbdb874ffc376d31c1902d6272ef49f523e062a21",
+      "title_tokens": 5,
+      "paragraph_tokens": 70,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-02.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-studio-adoption",
+      "spec_path": "specs/wiki-studio-adoption/plan.md",
+      "line_start": 63,
+      "line_end": 83,
+      "form": "h3",
+      "title": "Share the venv physically; separate dependency ownership logically",
+      "sha256": "fd8c07e8b584dd399ad7263b00c8f3e67873ccc9ffb99dd78d289a1dc4a1c467",
+      "title_tokens": 7,
+      "paragraph_tokens": 36,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-03.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-studio-adoption",
+      "spec_path": "specs/wiki-studio-adoption/plan.md",
+      "line_start": 85,
+      "line_end": 94,
+      "form": "h3",
+      "title": "The launcher chooses the bytes",
+      "sha256": "614996a862131f77bff5f2e627d5e11afbc0d65cc3b38dc47087a71a553277b2",
+      "title_tokens": 3,
+      "paragraph_tokens": 43,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-04.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-studio-adoption",
+      "spec_path": "specs/wiki-studio-adoption/plan.md",
+      "line_start": 96,
+      "line_end": 105,
+      "form": "h3",
+      "title": "Installation coverage is explicit, not implied by adapter support",
+      "sha256": "5f8f2c0e44771e335fd03c5d2e0a19394f48a442d94cb8854c0883d791a302c8",
+      "title_tokens": 7,
+      "paragraph_tokens": 40,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-05.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-studio-adoption",
+      "spec_path": "specs/wiki-studio-adoption/plan.md",
+      "line_start": 107,
+      "line_end": 113,
+      "form": "h3",
+      "title": "Delete both duplicate engines",
+      "sha256": "717a2f61e0b866222913b4a4a1bfe7aecff60a540feba096364a7323878e34e2",
+      "title_tokens": 4,
+      "paragraph_tokens": 34,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-06.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-studio-adoption",
+      "spec_path": "specs/wiki-studio-adoption/plan.md",
+      "line_start": 115,
+      "line_end": 132,
+      "form": "h3",
+      "title": "CCT proves its contract, not upstream internals",
+      "sha256": "b49cc74229a788fa1e3c46fcc348a330d4a1b96be5fc015cc660e2fcf6457289",
+      "title_tokens": 6,
+      "paragraph_tokens": 33,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-07.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-studio-adoption",
+      "spec_path": "specs/wiki-studio-adoption/plan.md",
+      "line_start": 134,
+      "line_end": 147,
+      "form": "h3",
+      "title": "Reconcile the schema by category, then pin it",
+      "sha256": "e5ce4ac0cf8245a2bf3cf9f014507bb38c281500bca5cc043d0460fd8941cbb7",
+      "title_tokens": 5,
+      "paragraph_tokens": 14,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-08.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-studio-adoption",
+      "spec_path": "specs/wiki-studio-adoption/plan.md",
+      "line_start": 149,
+      "line_end": 154,
+      "form": "h3",
+      "title": "The package swap is not a governance migration",
+      "sha256": "365cc8ba9b9e18dbd795ce105e1f73d9d778fb878d1ec3256824af439d8d6089",
+      "title_tokens": 5,
+      "paragraph_tokens": 27,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-09.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-studio-adoption",
+      "spec_path": "specs/wiki-studio-adoption/plan.md",
+      "line_start": 156,
+      "line_end": 165,
+      "form": "h3",
+      "title": "Preserve the assistant workflows' semantics",
+      "sha256": "6555604911d4608ce320e1b640a7f66d0311514d217ff65abc859171f1933130",
+      "title_tokens": 4,
+      "paragraph_tokens": 22,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-10.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-studio-adoption",
+      "spec_path": "specs/wiki-studio-adoption/plan.md",
+      "line_start": 167,
+      "line_end": 173,
+      "form": "h3",
+      "title": "Doctor reports the actual execution boundary",
+      "sha256": "df50111318d7857a0902bb2158a6926eea7f2f3182ac8088874498d1074f7b68",
+      "title_tokens": 5,
+      "paragraph_tokens": 36,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-11.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-studio-adoption",
+      "spec_path": "specs/wiki-studio-adoption/plan.md",
+      "line_start": 175,
+      "line_end": 185,
+      "form": "h3",
+      "title": "CI installs what production runs",
+      "sha256": "a77dbcc1974da0bb0f19e78b4c68bc2771472a5735413efccd2f29214ea42eaf",
+      "title_tokens": 5,
+      "paragraph_tokens": 35,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-12.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-studio-adoption",
+      "spec_path": "specs/wiki-studio-adoption/plan.md",
+      "line_start": 187,
+      "line_end": 193,
+      "form": "h3",
+      "title": "Catalogue and docs state reach, not aspiration",
+      "sha256": "3ec2df060b052bfd6ffe23c996d2fe0b6959a0bc73994c693c57ec7861d628ac",
+      "title_tokens": 6,
+      "paragraph_tokens": 35,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-13.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-studio-adoption",
+      "spec_path": "specs/wiki-studio-adoption/plan.md",
+      "line_start": 195,
+      "line_end": 201,
+      "form": "h3",
+      "title": "A pin bump is a reviewed CCT feature-maintenance change",
+      "sha256": "3ecb6108193613257ff83d876ba327565d2fbfe905b2cbeba5dfade90ecf0b39",
+      "title_tokens": 6,
+      "paragraph_tokens": 34,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-14.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-studio-adoption",
+      "spec_path": "specs/wiki-studio-adoption/plan.md",
+      "line_start": 203,
+      "line_end": 216,
+      "form": "h3",
+      "title": "Land one coherent boundary, in green internal stages",
+      "sha256": "7445fc0310d850b5a8331ca41e9b6736c39e29916d2dcd11125149d9aa2db914",
+      "title_tokens": 7,
+      "paragraph_tokens": 27,
       "paragraph_empty": false
     },
     {
