@@ -586,6 +586,15 @@ MCP-server and per-tool pages beside it for a decision the two repositories
 state from both sides, and the wiki-studio-adoption pages for CCT's other
 package adoption. It changed no existing label of any family.
 
+The `one-harness-home` family, added by the sixth step, was labelled the same
+way by a seventh session: it read the family's 6 pages (code-copilot-team's
+spec for one harness home), grouped them by question (`one-harness-home-01`
+and `one-harness-home-02`), and redid the summary pass over all nine
+families, reading beside it the pi project-configuration and harness pages,
+the llm-catalog user-home and file pages, the routing pages that name a path
+in the user home, and memkernel's state-directory and harness pages. It
+changed no existing label of any family.
+
 ### Grouping by question
 
 Per family, pages that answer **the same question** form a group, and the
@@ -694,12 +703,31 @@ instructions live), and three with `wiki-studio-adoption` (how CCT checks a
 sibling package is usable, which artifact its setup installs, and whether the
 replaced in-repo system is removed in the same change).
 
+The `one-harness-home` family added no true pair either: its two groups hold
+two `companion` pairs (the user home's `~/.cct/` and the ruling that renames
+the project side too; the delivery rule that makes the project half its own
+issue if D5 says yes and D5's yes), and no decision restates, reverses or
+replaces another. The redone summary pass added eleven cross pairs, all
+false: three `companion` with `llm-catalog`, whose user-home decision was
+amended on record to `${CCT_HOME:-~/.cct}` after the user-home change landed
+first; and eight with `pi`'s project-configuration spec and harness plan,
+six `companion` (the project-side issue that the one-harness-home ruling
+deferred, supplying its location, gitignore guidance, fallback and manifest
+rule; the project fallback set with the user-home fallback; the ruling's
+renaming of the harness plan's `.code-copilot-team/` project files) and two
+`distinct-by-precondition` (an explicit migrate command, for the user home
+and for the project). The user home's new name was not labelled against the
+pages that name a file under `~/.code-copilot-team/` (pi's harness plan, the
+routing registry and its state store): the rename moves the directory
+through one resolver and replaces none of those pages' decisions, so those
+pairs stay `unrelated`; the owner reviews this reading with the labels.
+
 **Status: open, below the minimum; main-session and owner action required at
 the pause.** The count is still below the minimum after the extension
-order's fifth step, so the study cannot be frozen yet. The extension rule
+order's sixth step, so the study cannot be frozen yet. The extension rule
 (FR-016) applies again before anything else: the main session extracts the
-next family of FR-003's extension order (`one-harness-home`,
-`--extend 6`), and a fresh labelling session labels that family and redoes
+next family of FR-003's extension order (`plugin-generate-from-sources`,
+`--extend 7`), and a fresh labelling session labels that family and redoes
 the summary pass.
 This repeats until the count reaches 8 or the order is used up; if the order
 runs out first, the verdict will be "not testable", never a pass. The

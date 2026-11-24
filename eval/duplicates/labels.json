@@ -1,5 +1,5 @@
 {
-  "corpus_sha256": "8824a69d1ab5ea61bb608332b69cfc039c0e3c9ea3a72f8c00f0bccd3258de70",
+  "corpus_sha256": "7190ce6c6312e0a1f2819e65c1a8df8fa5484e301d72b59e8b5085d8b1f00dd1",
   "families": [
     {"name": "routing", "repository": "code-copilot-team", "pages": 88},
     {"name": "pi", "repository": "code-copilot-team", "pages": 29},
@@ -8,6 +8,7 @@
     {"name": "wiki-studio-adoption", "repository": "code-copilot-team", "pages": 14},
     {"name": "wiki-audit", "repository": "code-copilot-team", "pages": 16},
     {"name": "memkernel-integration", "repository": "code-copilot-team", "pages": 7},
+    {"name": "one-harness-home", "repository": "code-copilot-team", "pages": 6},
     {"name": "memkernel", "repository": "memkernel", "pages": 101}
   ],
   "groups": [
@@ -626,6 +627,24 @@
       "pages": [
         "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-06.md",
         "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-07.md"
+      ]
+    },
+    {
+      "id": "one-harness-home-01",
+      "family": "one-harness-home",
+      "question": "Does the harness use the one .cct name in the user home and in the project?",
+      "pages": [
+        "code-copilot-team/one-harness-home/cct-one-harness-home-spec-01.md",
+        "code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md"
+      ]
+    },
+    {
+      "id": "one-harness-home-02",
+      "family": "one-harness-home",
+      "question": "Is the per-project rename delivered with the user home or as its own issue and PR?",
+      "pages": [
+        "code-copilot-team/one-harness-home/cct-one-harness-home-spec-04.md",
+        "code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md"
       ]
     },
     {
@@ -1554,6 +1573,18 @@
       "reason": "How existing setups pick up memkernel: setup.sh's --sync path copies the hooks and merges settings for an existing install (plan-06); claude-code sync registers the MCP server for an existing project (plan-07); each for its own target."
     },
     {
+      "pair": ["code-copilot-team/one-harness-home/cct-one-harness-home-spec-01.md", "code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md"],
+      "group": "one-harness-home-01",
+      "disposition": "companion",
+      "reason": "Whether the one .cct name holds at home and in the project: spec-01 makes ~/.cct/ the user home so its name matches the project's .cct/; spec-05 rules the project side renamed too, as a separate issue; it extends spec-01's direction to the project."
+    },
+    {
+      "pair": ["code-copilot-team/one-harness-home/cct-one-harness-home-spec-04.md", "code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md"],
+      "group": "one-harness-home-02",
+      "disposition": "companion",
+      "reason": "How the per-project rename is delivered: spec-04 makes the project half its own issue and PR if D5 says yes; spec-05, D5, says yes, after this feature's PR; it settles spec-04's condition."
+    },
+    {
       "pair": ["memkernel/memkernel/mk-memkernel-0-7-spec-01.md", "memkernel/memkernel/mk-memkernel-0-7-spec-03.md"],
       "group": "memkernel-01",
       "disposition": "companion",
@@ -1913,6 +1944,11 @@
     {"kind": "group", "ref": "memkernel-integration-03", "line": "How do existing CCT installs and projects pick up memkernel?"},
     {"kind": "page", "ref": "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-02.md", "line": "Direct Python hooks with two-layer shell guards"},
     {"kind": "page", "ref": "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-04.md", "line": "Pre-publication via `pip install -e`"},
+    {"kind": "group", "ref": "one-harness-home-01", "line": "Does the harness use the one .cct name in the user home and in the project?"},
+    {"kind": "group", "ref": "one-harness-home-02", "line": "Is the per-project rename delivered with the user home or as its own issue and PR?"},
+    {"kind": "page", "ref": "code-copilot-team/one-harness-home/cct-one-harness-home-spec-02.md", "line": "One override"},
+    {"kind": "page", "ref": "code-copilot-team/one-harness-home/cct-one-harness-home-spec-03.md", "line": "Migration mechanics"},
+    {"kind": "page", "ref": "code-copilot-team/one-harness-home/cct-one-harness-home-spec-06.md", "line": "#400 coupling"},
     {"kind": "group", "ref": "memkernel-01", "line": "When is a page's memory withdrawn, and how is it marked?"},
     {"kind": "group", "ref": "memkernel-02", "line": "What happens to the memory of a renamed page?"},
     {"kind": "group", "ref": "memkernel-03", "line": "How does the import find a page's previous memory?"},
@@ -2002,6 +2038,24 @@
       "reason": "How a failure's class is derived from its raw error output: the probe matches substrings of the exception text, type signals first; the routing classifier maps exit code and output to a cause taxonomy; each for its own system."
     },
     {
+      "pair": ["code-copilot-team/llm-catalog/cct-llm-catalog-spec-02.md", "code-copilot-team/one-harness-home/cct-one-harness-home-spec-01.md"],
+      "scope": "cross-family",
+      "disposition": "companion",
+      "reason": "Which directory is CCT's user home: the one-harness-home ruling makes it ~/.cct/; the catalog's home, first ~/.code-copilot-team/ through one helper so #411 moves it later, is amended to ${CCT_HOME:-~/.cct} through #411's resolver; the amendment follows the ruling."
+    },
+    {
+      "pair": ["code-copilot-team/llm-catalog/cct-llm-catalog-spec-02.md", "code-copilot-team/one-harness-home/cct-one-harness-home-spec-02.md"],
+      "scope": "cross-family",
+      "disposition": "companion",
+      "reason": "How a CCT tool's user home is overridden: the one-harness-home ruling makes CCT_HOME the override for every tool; the catalog's amended home is ${CCT_HOME:-~/.cct}; it applies the one override to the catalog's files."
+    },
+    {
+      "pair": ["code-copilot-team/llm-catalog/cct-llm-catalog-spec-02.md", "code-copilot-team/one-harness-home/cct-one-harness-home-spec-06.md"],
+      "scope": "cross-family",
+      "disposition": "companion",
+      "reason": "How the catalog and the user-home move are sequenced: the one-harness-home ruling lets whichever lands first move llms.toml, with the #400 spec amended on record; the catalog's user-home decision carries that amendment, made because #411 landed first; it records the coupling's outcome."
+    },
+    {
       "pair": ["code-copilot-team/llm-catalog/cct-llm-catalog-spec-02.md", "code-copilot-team/routing/cct-routing-profile-foundation-plan-01.md"],
       "scope": "cross-family",
       "disposition": "distinct-by-precondition",
@@ -2048,6 +2102,54 @@
       "scope": "cross-family",
       "disposition": "distinct-by-precondition",
       "reason": "Whether the in-repo system a package replaces is removed in the same change: every GCC remnant leaves both adapter trees; both duplicate wiki engines are deleted, with a guard against their return; each for its own replaced system."
+    },
+    {
+      "pair": ["code-copilot-team/one-harness-home/cct-one-harness-home-spec-03.md", "code-copilot-team/pi/cct-pi-project-config-spec-03.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "How files reach a renamed location: the user home moves only by the explicit cct home migrate, never overwriting; the project configuration by an explicit command only, nothing moved silently; each for its own location."
+    },
+    {
+      "pair": ["code-copilot-team/one-harness-home/cct-one-harness-home-spec-03.md", "code-copilot-team/pi/cct-pi-project-config-spec-04.md"],
+      "scope": "cross-family",
+      "disposition": "companion",
+      "reason": "How long the old location is still read: the user home's fallback runs through 2.1.x and goes in the first 2.2 change; the project configuration's fallback is set with the user-home fallback, so both legacy names go together in 2.2 when both ship in 2.1.0; it builds on the user-home window."
+    },
+    {
+      "pair": ["code-copilot-team/one-harness-home/cct-one-harness-home-spec-03.md", "code-copilot-team/pi/cct-pi-project-config-spec-05.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "Which command moves files to the new location: cct home migrate is the only mover for the user home; pi-code migrate, beside init and sync, moves the project's files; each for its own files."
+    },
+    {
+      "pair": ["code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md", "code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md"],
+      "scope": "cross-family",
+      "disposition": "companion",
+      "reason": "Where the committed per-project configuration lives: the harness plan put it in trusted .code-copilot-team/ project files; the one-harness-home ruling names that file and has it renamed in a separate issue, without setting the new location; it builds on the plan's placement."
+    },
+    {
+      "pair": ["code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md", "code-copilot-team/pi/cct-pi-project-config-spec-01.md"],
+      "scope": "cross-family",
+      "disposition": "companion",
+      "reason": "Where the renamed project configuration lives: the one-harness-home ruling renames the project side in a separate issue, noting that a committed file inside the untracked .cct/ needs a gitignore exception; the project-config spec puts it in .cct.toml at the root, not .cct/config.toml; it is that issue's location ruling."
+    },
+    {
+      "pair": ["code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md", "code-copilot-team/pi/cct-pi-project-config-spec-02.md"],
+      "scope": "cross-family",
+      "disposition": "companion",
+      "reason": "Whether the renamed project configuration needs a gitignore exception: the one-harness-home ruling leaves the gitignore guidance to the project-side issue; the project-config spec needs none, init keeps .cct/ ignored and doctor warns if .cct.toml is ignored; it gives the deferred guidance."
+    },
+    {
+      "pair": ["code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md", "code-copilot-team/pi/cct-pi-project-config-spec-04.md"],
+      "scope": "cross-family",
+      "disposition": "companion",
+      "reason": "Which fallback the project-side rename carries: the one-harness-home ruling leaves it to the project-side issue; the project-config spec reads the old location through 2.1.x and removes it in 2.2; it supplies the deferred fallback."
+    },
+    {
+      "pair": ["code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md", "code-copilot-team/pi/cct-pi-project-config-spec-05.md"],
+      "scope": "cross-family",
+      "disposition": "companion",
+      "reason": "Which manifest rule the project-side rename carries: the one-harness-home ruling notes that pi-code init's manifest records the path and hash and leaves the rule to the project-side issue; the project-config spec puts the manifest at .cct-init.json beside .cct.toml; it supplies the deferred rule."
     },
     {
       "pair": ["code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md", "code-copilot-team/routing/cct-routing-profile-foundation-plan-04.md"],
