@@ -1,11 +1,12 @@
 {
-  "corpus_sha256": "e07cec7effcf374bcba3d44abbbe119d050d996a3f6303b002b755621728f62a",
+  "corpus_sha256": "b85ab28f40cd01fd4488bca4036502b05bf85765ce565e51304ef8307f0ee1d5",
   "families": [
     {"name": "routing", "repository": "code-copilot-team", "pages": 88},
     {"name": "pi", "repository": "code-copilot-team", "pages": 29},
     {"name": "api", "repository": "code-copilot-team", "pages": 15},
     {"name": "llm-catalog", "repository": "code-copilot-team", "pages": 15},
     {"name": "wiki-studio-adoption", "repository": "code-copilot-team", "pages": 14},
+    {"name": "wiki-audit", "repository": "code-copilot-team", "pages": 16},
     {"name": "memkernel", "repository": "memkernel", "pages": 101}
   ],
   "groups": [
@@ -492,6 +493,111 @@
         "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-07.md",
         "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-10.md",
         "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-13.md"
+      ]
+    },
+    {
+      "id": "wiki-audit-01",
+      "family": "wiki-audit",
+      "question": "Is audit-flush its own command, apart from ingest and promote?",
+      "pages": [
+        "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-01.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-05.md"
+      ]
+    },
+    {
+      "id": "wiki-audit-02",
+      "family": "wiki-audit",
+      "question": "When does audit-flush refuse rather than commit?",
+      "pages": [
+        "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-02.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-06.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-07.md"
+      ]
+    },
+    {
+      "id": "wiki-audit-03",
+      "family": "wiki-audit",
+      "question": "What does audit-flush's pathspec commit capture?",
+      "pages": [
+        "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-03.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-06.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-07.md"
+      ]
+    },
+    {
+      "id": "wiki-audit-04",
+      "family": "wiki-audit",
+      "question": "How is the working ingest log checked against its append-only v1 format?",
+      "pages": [
+        "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-02.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-07.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md"
+      ]
+    },
+    {
+      "id": "wiki-audit-05",
+      "family": "wiki-audit",
+      "question": "What does the accepted-proposal archive hold, and how is it written?",
+      "pages": [
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-01.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-02.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-05.md"
+      ]
+    },
+    {
+      "id": "wiki-audit-06",
+      "family": "wiki-audit",
+      "question": "How does an ingest-log line name the archive of its proposal?",
+      "pages": [
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-01.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-09.md"
+      ]
+    },
+    {
+      "id": "wiki-audit-07",
+      "family": "wiki-audit",
+      "question": "What fields does an ingest-log record carry?",
+      "pages": [
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-08.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-09.md"
+      ]
+    },
+    {
+      "id": "wiki-audit-08",
+      "family": "wiki-audit",
+      "question": "Is an ingest-log line cross-checked against the archives in v1?",
+      "pages": [
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-04.md"
+      ]
+    },
+    {
+      "id": "wiki-audit-09",
+      "family": "wiki-audit",
+      "question": "Which wiki ingest runs write an ingest-log line, and at what point?",
+      "pages": [
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-04.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-05.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-08.md"
+      ]
+    },
+    {
+      "id": "wiki-audit-10",
+      "family": "wiki-audit",
+      "question": "How is a rejected ingest recorded in the ingest log?",
+      "pages": [
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-04.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-09.md"
+      ]
+    },
+    {
+      "id": "wiki-audit-11",
+      "family": "wiki-audit",
+      "question": "How is the ingest log's unreviewed reason field bounded?",
+      "pages": [
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-06.md"
       ]
     },
     {
@@ -1276,6 +1382,132 @@
       "reason": "How the schema's divergence is kept current: a pin bump updates the fingerprint and the doctor statements plan-10 reports (plan-13); the bump procedure builds on the doctor report."
     },
     {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-01.md", "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-05.md"],
+      "group": "wiki-audit-01",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether flushing is tied to another command: a verb, not a flag on ingest, so no coupling to an ingest run (flush spec-01); independent of promote, with no hook or auto-invoke (flush spec-05); each for its own neighbour."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-02.md", "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-06.md"],
+      "group": "wiki-audit-02",
+      "disposition": "distinct-by-precondition",
+      "reason": "When flush refuses: a log whose committed blob is not a byte prefix of the working file is refused (flush spec-02); a detached HEAD or an unrelated dirty tree is not (flush spec-06); each for its own state."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-02.md", "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-07.md"],
+      "group": "wiki-audit-02",
+      "disposition": "companion",
+      "reason": "When flush refuses: flush spec-07 adds the v1 validation to the pending detection flush spec-02 defines, with the same refusal and the same rule that the ledger is never edited."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-06.md", "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-07.md"],
+      "group": "wiki-audit-02",
+      "disposition": "distinct-by-precondition",
+      "reason": "When flush refuses: unrelated dirty state is tolerated (flush spec-06); a torn or invalid line in the log itself is refused (flush spec-07); each for its own state."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-03.md", "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-06.md"],
+      "group": "wiki-audit-03",
+      "disposition": "companion",
+      "reason": "What the pathspec commit captures: only the ingest log's working state (flush spec-03), so flush spec-06 tolerates a detached HEAD and other changes by construction."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-03.md", "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-07.md"],
+      "group": "wiki-audit-03",
+      "disposition": "companion",
+      "reason": "What the pathspec commit captures: the whole file's bytes, as flush spec-03 commits it, so flush spec-07 refuses a malformed log rather than persist it."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-02.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md"],
+      "group": "wiki-audit-04",
+      "disposition": "companion",
+      "reason": "How the working log is checked: trail spec-03 makes it append-only NDJSON after a fixed marker line; flush spec-02 builds on that to count pending lines after the committed prefix."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-07.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md"],
+      "group": "wiki-audit-04",
+      "disposition": "companion",
+      "reason": "How the working log is checked: flush spec-07 runs the v1 format validation trail spec-03 gives wiki lint over the working log before counting or committing."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-01.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-02.md"],
+      "group": "wiki-audit-05",
+      "disposition": "companion",
+      "reason": "What the archive holds: trail spec-01 lays out the directory with plan.json and proposal.md; trail spec-02 adds curator-delta.md to it only when the curator edited the proposal."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-01.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-05.md"],
+      "group": "wiki-audit-05",
+      "disposition": "companion",
+      "reason": "How the archive is written: trail spec-05 makes it atomic with the wiki write because trail spec-01 places .audit/ under knowledge/wiki/."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-02.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-05.md"],
+      "group": "wiki-audit-05",
+      "disposition": "companion",
+      "reason": "How the archive is written: the curator delta trail spec-02 writes at promote is part of the archive trail spec-05 stages into promote's temporary tree."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-01.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-09.md"],
+      "group": "wiki-audit-06",
+      "disposition": "companion",
+      "reason": "How a log line names its archive: trail spec-01 names the archive by the proposal directory's name, reused verbatim; trail spec-09 records that basename as proposal_dir."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-08.md"],
+      "group": "wiki-audit-07",
+      "disposition": "companion",
+      "reason": "What the record carries: trail spec-08 moves the append after materialization so the proposal_hash trail spec-03 defines hashes the written proposal directory."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-09.md"],
+      "group": "wiki-audit-07",
+      "disposition": "companion",
+      "reason": "What the record carries: trail spec-03 fixes the format, source and hash fields; trail spec-09 adds the patch-set fields (derived disposition, proposal_dir, target_paths, page_types)."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-08.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-09.md"],
+      "group": "wiki-audit-07",
+      "disposition": "companion",
+      "reason": "What the record carries: trail spec-08's build_log_record derives the one record shape trail spec-09 defines from a WikiPatchSet or an IngestProposal."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-04.md"],
+      "group": "wiki-audit-08",
+      "disposition": "companion",
+      "reason": "Whether lines are cross-checked against archives: trail spec-03 defers the semantic checks; trail spec-04 names an accept line with no matching archive as the hook point for that deferred pass."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-04.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-05.md"],
+      "group": "wiki-audit-09",
+      "disposition": "companion",
+      "reason": "Which runs write a line: trail spec-05 keeps the append out of promote's atomic unit because it must record the rejects trail spec-04 puts in scope."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-04.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-08.md"],
+      "group": "wiki-audit-09",
+      "disposition": "distinct-by-precondition",
+      "reason": "Which runs write a line: every ingest call, a reject included, but not a run that dies before ingest finishes (trail spec-04); not --check, which returns before materialization (trail spec-08); each for its own kind of run."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-05.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-08.md"],
+      "group": "wiki-audit-09",
+      "disposition": "companion",
+      "reason": "At what point the line is written: trail spec-08 places the standalone fail-closed write trail spec-05 keeps out of promote in the CLI ingest handlers, after materialization."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-04.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-09.md"],
+      "group": "wiki-audit-10",
+      "disposition": "companion",
+      "reason": "How a reject is recorded: trail spec-04 writes a reject line for every gate reject; trail spec-09 derives that disposition as reject when the patch set's edits are empty."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-06.md"],
+      "group": "wiki-audit-11",
+      "disposition": "companion",
+      "reason": "How the unreviewed reason is bounded: trail spec-03 truncates it to 240 codepoints and lint checks its length; trail spec-06 leaves it unscrubbed because of that bound."
+    },
+    {
       "pair": ["memkernel/memkernel/mk-memkernel-0-7-spec-01.md", "memkernel/memkernel/mk-memkernel-0-7-spec-03.md"],
       "group": "memkernel-01",
       "disposition": "companion",
@@ -1617,6 +1849,19 @@
     {"kind": "group", "ref": "wiki-studio-adoption-10", "line": "Does the package swap take on wiki-studio's governance?"},
     {"kind": "group", "ref": "wiki-studio-adoption-11", "line": "How is the project schema's divergence from upstream recorded, checked and kept current?"},
     {"kind": "page", "ref": "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-09.md", "line": "Preserve the assistant workflows' semantics"},
+    {"kind": "group", "ref": "wiki-audit-01", "line": "Is audit-flush its own command, apart from ingest and promote?"},
+    {"kind": "group", "ref": "wiki-audit-02", "line": "When does audit-flush refuse rather than commit?"},
+    {"kind": "group", "ref": "wiki-audit-03", "line": "What does audit-flush's pathspec commit capture?"},
+    {"kind": "group", "ref": "wiki-audit-04", "line": "How is the working ingest log checked against its append-only v1 format?"},
+    {"kind": "group", "ref": "wiki-audit-05", "line": "What does the accepted-proposal archive hold, and how is it written?"},
+    {"kind": "group", "ref": "wiki-audit-06", "line": "How does an ingest-log line name the archive of its proposal?"},
+    {"kind": "group", "ref": "wiki-audit-07", "line": "What fields does an ingest-log record carry?"},
+    {"kind": "group", "ref": "wiki-audit-08", "line": "Is an ingest-log line cross-checked against the archives in v1?"},
+    {"kind": "group", "ref": "wiki-audit-09", "line": "Which wiki ingest runs write an ingest-log line, and at what point?"},
+    {"kind": "group", "ref": "wiki-audit-10", "line": "How is a rejected ingest recorded in the ingest log?"},
+    {"kind": "group", "ref": "wiki-audit-11", "line": "How is the ingest log's unreviewed reason field bounded?"},
+    {"kind": "page", "ref": "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-04.md", "line": "4 — No-op is success"},
+    {"kind": "page", "ref": "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-07.md", "line": "7 — Backfill"},
     {"kind": "group", "ref": "memkernel-01", "line": "When is a page's memory withdrawn, and how is it marked?"},
     {"kind": "group", "ref": "memkernel-02", "line": "What happens to the memory of a renamed page?"},
     {"kind": "group", "ref": "memkernel-03", "line": "How does the import find a page's previous memory?"},
@@ -1746,6 +1991,36 @@
       "scope": "cross-repository",
       "disposition": "distinct-by-precondition",
       "reason": "Who supplies an agent's identity: the team controller takes a declared id and memkernel takes the harness's id, each in its own system."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-eval-plan-08.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-06.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether stored records are scrubbed when written: routing evidence scrubs secrets at the point the record is written; the audit archive gets no scrubber and is held to the curator's review like any wiki page; each for its own records."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-recovery-plan-04.md", "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-04.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether a second immediate run is a no-op: routing tick's second run finds nothing due, a byte-level state no-op; audit-flush's second flush finds nothing to flush and exits 0; each for its own command."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-03.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-06.md"],
+      "scope": "cross-family",
+      "disposition": "companion",
+      "reason": "What an audit-flush commit holds: the flush spec commits only the ingest log by pathspec; CCT's contract test proves a real run committed only the ingest log; the test builds on the flush rule."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-04.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-06.md"],
+      "scope": "cross-family",
+      "disposition": "companion",
+      "reason": "Whether a flush right after a flush is a no-op: the flush spec makes it nothing to flush; CCT's contract test proves a second dry-run reported nothing pending; the test builds on the flush rule."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md", "memkernel/memkernel/mk-memkernel-0-7-governed-spec-06.md"],
+      "scope": "cross-repository",
+      "disposition": "distinct-by-precondition",
+      "reason": "Who verifies the ingest log's proposal-hash recipe: CCT records it verbatim for its deferred cross-referential lint; memkernel reads no ingest log, so it has no consumer; each for its own system."
     },
     {
       "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-01.md", "memkernel/memkernel/mk-memkernel-0-9-mcp2-spec-01.md"],

@@ -558,6 +558,14 @@ question (`wiki-studio-adoption-01` to `wiki-studio-adoption-11`), and redid
 the summary pass over all six families, reading memkernel's wiki-bridge pages
 beside it. It changed no existing label of any family.
 
+The `wiki-audit` family, added by the fourth step, was labelled the same way
+by a fifth session: it read the family's 16 pages (the audit-trail and
+audit-flush specs' decisions), grouped them by question (`wiki-audit-01` to
+`wiki-audit-11`), looked across the two specs for a decision one restates,
+reverses or replaces, and redid the summary pass over all seven families,
+reading the routing, wiki-studio-adoption and memkernel pages it found
+beside it. It changed no existing label of any family.
+
 ### Grouping by question
 
 Per family, pages that answer **the same question** form a group, and the
@@ -640,12 +648,25 @@ another. The redone summary pass added four cross-repository pairs, between
 this family and memkernel's wiki-bridge, MCP-range and release-exit pages, all
 `distinct-by-precondition`.
 
+The `wiki-audit` family added no true pair either: the audit-flush spec builds
+on the audit-trail spec's log format, and within each spec the decisions build
+on one another, so its eleven groups hold seventeen `companion` pairs (a
+decision and the later one that applies or refines it) and four
+`distinct-by-precondition` pairs; no decision restates, reverses or replaces
+another. The redone summary pass added five cross pairs: two
+`distinct-by-precondition` with `routing` (write-time scrubbing, a second
+immediate run as a no-op), two `companion` with `wiki-studio-adoption` (CCT's
+contract test proving the flush's commit and its no-op), and one
+cross-repository `distinct-by-precondition` with memkernel (who consumes the
+ingest log's hash recipe).
+
 **Status: open, below the minimum; main-session and owner action required at
 the pause.** The count is still below the minimum after the extension
-order's third step, so the study cannot be frozen yet. The extension rule
+order's fourth step, so the study cannot be frozen yet. The extension rule
 (FR-016) applies again before anything else: the main session extracts the
-next family of FR-003's extension order (`wiki-audit`, `--extend 4`), and a
-fresh labelling session labels that family and redoes the summary pass.
+next family of FR-003's extension order (`memkernel-integration`,
+`--extend 5`), and a fresh labelling session labels that family and redoes
+the summary pass.
 This repeats until the count reaches 8 or the order is used up; if the order
 runs out first, the verdict will be "not testable", never a pass. The
 labelling session runs no script, so it does not extend the corpus itself,
