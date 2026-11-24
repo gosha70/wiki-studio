@@ -55,3 +55,15 @@ approved-by: gosha70 2026-11-24 ("sign off" in the build session at the pause af
 
 ### Phase 6 complete — US6: The report and the evidence PR (S3) (2026-11-24T21:13:11Z)
 Review: PASS (see specs/wiki-studio-duplicates-121/collaboration/build-review-phase-6.md).
+
+## Milestone checkpoint — after phase 6 (US6: The report and the evidence PR (S3))
+
+Paused 2026-11-24T21:13:12Z for batched manual testing + retro.
+
+- [ ] Manual testing of phases up to 6 complete
+- [ ] Retro notes recorded
+
+To resume: append a line 'approved-by: <name> <date>' below, then run:
+`scripts/auto-build-loop.sh wiki-studio-duplicates-121 --resume`
+
+<!-- checkpoint-after-phase: 6 -->
