@@ -36,3 +36,6 @@ approved-by: gosha70 2026-11-24 ("sign off" in the build session, after the labe
 
 ### Phase 4 complete — US4: The freeze (S2) (2026-11-24T19:40:22Z)
 Review: PASS (see specs/wiki-studio-duplicates-121/collaboration/build-review-phase-4.md).
+
+### Phase 5 complete — US5: The scorer (S3) (2026-11-24T19:54:15Z)
+Review: PASS (see specs/wiki-studio-duplicates-121/collaboration/build-review-phase-5.md).
