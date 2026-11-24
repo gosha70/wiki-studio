@@ -202,7 +202,11 @@ class TruePairsTest(LabelsTestCase):
 
 
 class ReviewSampleTest(LabelsTestCase):
-    """FR-008: the review sample, drawn at the pause: 20 distinct false within-family pairs of the base families."""
+    """FR-008: the review sample, drawn at the pause: 20 distinct false within-family pairs of the base families.
+
+    The sample's ``labels_sha256`` is deliberately not compared with the current ``labels.json``: FR-016(c) lets the
+    owner change labels by commit after the sample is drawn, so the hash only records which labels it came from.
+    """
 
     def setUp(self) -> None:
         if not SAMPLE_JSON.exists():

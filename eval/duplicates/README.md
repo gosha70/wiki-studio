@@ -575,7 +575,8 @@ in `labels.json`: the pairs labelled `redundant`, `conflicting` or
 `supersedes` in `pairs` and `cross_pairs`. Every commit that changes a label
 updates `true_pairs` and this count together.
 
-The count is below the minimum, so the study cannot be frozen yet. At the
+**Status: open, below the minimum; main-session and owner action required at
+the pause.** The count is below the minimum, so the study cannot be frozen yet. At the
 pause after this step, the extension rule (FR-016) applies before anything
 else: the main session extracts the next family of FR-003's extension order,
 and a fresh labelling session labels that family and redoes the summary pass.
