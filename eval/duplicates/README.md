@@ -602,6 +602,16 @@ the llm-catalog user-home and file pages, the routing pages that name a path
 in the user home, and memkernel's state-directory and harness pages. It
 changed no existing label of any family.
 
+The `plugin-generate-from-sources` family, added by the seventh step, was
+labelled the same way by an eighth session: it read the family's 5 pages
+(code-copilot-team's plan for generating the plugin from its sources),
+grouped them by question (`plugin-generate-from-sources-01`), and redid the
+summary pass over all ten families, reading beside it the
+wiki-studio-adoption pages on plugin-only installations and setup, the
+memkernel-integration pages on hooks, setup and on-demand rules, pi's
+harness and worktree pages, and memkernel's session-start, hook and release
+pages. It changed no existing label of any family.
+
 ### Grouping by question
 
 Per family, pages that answer **the same question** form a group, and the
@@ -729,15 +739,30 @@ routing registry and its state store): the rename moves the directory
 through one resolver and replaces none of those pages' decisions, so those
 pairs stay `unrelated`; the owner reviews this reading with the labels.
 
+The `plugin-generate-from-sources` family added no true pair either: its one
+group holds one `distinct-by-precondition` pair (the six always-on skills
+shipped as ordinary plugin skills, and the templates and helper script
+shipped inside the plugin with rewritten paths, each rather than leaving
+out what the agents and commands refer to), and no decision restates,
+reverses or replaces another. The owner's ruling page ("D1–D4 approved as
+recommended") was not grouped with the four decision pages: none of them
+carries its D number, so their text does not tie the ruling to any one of
+them, and those pairs stay `unrelated`; the owner reviews this reading with
+the labels. The redone summary pass added one cross pair, labelled
+`distinct-by-precondition`: the templates decision with the
+wiki-studio-adoption page that claims no automatic installation parity for
+plugin-only installs (whether a plugin-only installation works as far as a
+`setup.sh` install, each for its own components).
+
 **Status: open, below the minimum; main-session and owner action required at
 the pause.** The count is still below the minimum after the extension
-order's sixth step, so the study cannot be frozen yet. The extension rule
-(FR-016) applies again before anything else: the main session extracts the
-next family of FR-003's extension order (`plugin-generate-from-sources`,
-`--extend 7`), and a fresh labelling session labels that family and redoes
-the summary pass.
-This repeats until the count reaches 8 or the order is used up; if the order
-runs out first, the verdict will be "not testable", never a pass. The
+order's seventh step, so the study cannot be frozen yet. The extension rule
+(FR-016) applies once more before anything else: the main session extracts
+the next and last family of FR-003's extension order
+(`simplest-complete-change`, `--extend 8`), and a fresh labelling session
+labels that family and redoes the summary pass.
+If the count is still below 8 after that step, the order is used up and the
+verdict will be "not testable", never a pass. The
 labelling session runs no script, so it does not extend the corpus itself,
 and no label is changed to reach the minimum.
 

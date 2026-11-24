@@ -1,5 +1,5 @@
 {
-  "corpus_sha256": "7190ce6c6312e0a1f2819e65c1a8df8fa5484e301d72b59e8b5085d8b1f00dd1",
+  "corpus_sha256": "c3a815e30bf2f6e5328ba44c9ffa2e6b1cc333bc17d4c4a614f3adfb8c878fb4",
   "families": [
     {"name": "routing", "repository": "code-copilot-team", "pages": 88},
     {"name": "pi", "repository": "code-copilot-team", "pages": 29},
@@ -9,6 +9,7 @@
     {"name": "wiki-audit", "repository": "code-copilot-team", "pages": 16},
     {"name": "memkernel-integration", "repository": "code-copilot-team", "pages": 7},
     {"name": "one-harness-home", "repository": "code-copilot-team", "pages": 6},
+    {"name": "plugin-generate-from-sources", "repository": "code-copilot-team", "pages": 5},
     {"name": "memkernel", "repository": "memkernel", "pages": 101}
   ],
   "groups": [
@@ -645,6 +646,15 @@
       "pages": [
         "code-copilot-team/one-harness-home/cct-one-harness-home-spec-04.md",
         "code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md"
+      ]
+    },
+    {
+      "id": "plugin-generate-from-sources-01",
+      "family": "plugin-generate-from-sources",
+      "question": "Does the plugin ship what its agents and commands refer to, or only what stands alone?",
+      "pages": [
+        "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-02.md",
+        "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-04.md"
       ]
     },
     {
@@ -1585,6 +1595,12 @@
       "reason": "How the per-project rename is delivered: spec-04 makes the project half its own issue and PR if D5 says yes; spec-05, D5, says yes, after this feature's PR; it settles spec-04's condition."
     },
     {
+      "pair": ["code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-02.md", "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-04.md"],
+      "group": "plugin-generate-from-sources-01",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether the plugin ships what its agents and commands refer to: plan-02 ships the six always-on skills as ordinary plugin skills that load on a matching description, said plainly in docs/install.md, rather than leaving them out; plan-04 ships templates/sdd/ and review-decide.sh inside the plugin with rewritten paths, rather than packaging only the self-contained components; each for its own components."
+    },
+    {
       "pair": ["memkernel/memkernel/mk-memkernel-0-7-spec-01.md", "memkernel/memkernel/mk-memkernel-0-7-spec-03.md"],
       "group": "memkernel-01",
       "disposition": "companion",
@@ -1949,6 +1965,10 @@
     {"kind": "page", "ref": "code-copilot-team/one-harness-home/cct-one-harness-home-spec-02.md", "line": "One override"},
     {"kind": "page", "ref": "code-copilot-team/one-harness-home/cct-one-harness-home-spec-03.md", "line": "Migration mechanics"},
     {"kind": "page", "ref": "code-copilot-team/one-harness-home/cct-one-harness-home-spec-06.md", "line": "#400 coupling"},
+    {"kind": "group", "ref": "plugin-generate-from-sources-01", "line": "Does the plugin ship what its agents and commands refer to, or only what stands alone?"},
+    {"kind": "page", "ref": "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-01.md", "line": "Decided by the owner, 2026-09-19"},
+    {"kind": "page", "ref": "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-03.md", "line": "duplicate hooks when both installs exist"},
+    {"kind": "page", "ref": "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-05.md", "line": "version 1.1.0"},
     {"kind": "group", "ref": "memkernel-01", "line": "When is a page's memory withdrawn, and how is it marked?"},
     {"kind": "group", "ref": "memkernel-02", "line": "What happens to the memory of a renamed page?"},
     {"kind": "group", "ref": "memkernel-03", "line": "How does the import find a page's previous memory?"},
@@ -2168,6 +2188,12 @@
       "scope": "cross-repository",
       "disposition": "distinct-by-precondition",
       "reason": "Who supplies an agent's identity: the team controller takes a declared id and memkernel takes the harness's id, each in its own system."
+    },
+    {
+      "pair": ["code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-04.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-04.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether a plugin-only installation works as far as a setup.sh install: the plugin plan ships templates/sdd/ and review-decide.sh inside the plugin so every command does; the wiki-studio adoption claims no automatic installation parity for plugin-only installs, whose guidance names the external prerequisite and refuses without it, a portable plugin tool environment left to a successor; each for its own components."
     },
     {
       "pair": ["code-copilot-team/routing/cct-routing-eval-plan-08.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-06.md"],
