@@ -1,0 +1,171 @@
+{
+  "seed": 121,
+  "split": {
+    "routing": 8,
+    "pi": 1,
+    "memkernel": 11
+  },
+  "labels_sha256": "35d2c5ef674ea3cdea08f946bc8c2c19013073acbbaa173413b644bb632f7992",
+  "pairs": [
+    {
+      "pair": [
+        "code-copilot-team/routing/cct-routing-calibration-plan-05.md",
+        "code-copilot-team/routing/cct-routing-effective-endpoint-plan-02.md"
+      ],
+      "family": "routing",
+      "label": "unrelated"
+    },
+    {
+      "pair": [
+        "code-copilot-team/routing/cct-routing-calibration-plan-11.md",
+        "code-copilot-team/routing/cct-routing-tier2-delegation-plan-08.md"
+      ],
+      "family": "routing",
+      "label": "unrelated"
+    },
+    {
+      "pair": [
+        "code-copilot-team/routing/cct-routing-eval-plan-08.md",
+        "code-copilot-team/routing/cct-routing-usage-evidence-plan-05.md"
+      ],
+      "family": "routing",
+      "label": "unrelated"
+    },
+    {
+      "pair": [
+        "code-copilot-team/routing/cct-routing-tier1-failover-plan-03.md",
+        "code-copilot-team/routing/cct-routing-tier2-delegation-plan-02.md"
+      ],
+      "family": "routing",
+      "label": "unrelated"
+    },
+    {
+      "pair": [
+        "code-copilot-team/routing/cct-routing-effective-endpoint-plan-03.md",
+        "code-copilot-team/routing/cct-routing-profile-foundation-plan-03.md"
+      ],
+      "family": "routing",
+      "label": "unrelated"
+    },
+    {
+      "pair": [
+        "code-copilot-team/routing/cct-routing-profile-foundation-plan-02.md",
+        "code-copilot-team/routing/cct-routing-recovery-plan-09.md"
+      ],
+      "family": "routing",
+      "label": "unrelated"
+    },
+    {
+      "pair": [
+        "code-copilot-team/routing/cct-routing-tier2-delegation-plan-04.md",
+        "code-copilot-team/routing/cct-routing-tier2-delegation-plan-06.md"
+      ],
+      "family": "routing",
+      "label": "unrelated"
+    },
+    {
+      "pair": [
+        "code-copilot-team/routing/cct-routing-calibration-plan-09.md",
+        "code-copilot-team/routing/cct-routing-tier1-failover-plan-01.md"
+      ],
+      "family": "routing",
+      "label": "unrelated"
+    },
+    {
+      "pair": [
+        "code-copilot-team/pi/cct-pi-harness-adoption-plan-02.md",
+        "code-copilot-team/pi/cct-pi-team-controller-plan-03.md"
+      ],
+      "family": "pi",
+      "label": "unrelated"
+    },
+    {
+      "pair": [
+        "memkernel/memkernel/mk-memkernel-0-10-recall-log-spec-02.md",
+        "memkernel/memkernel/mk-memkernel-0-16-lifecycle-corrections-spec-05.md"
+      ],
+      "family": "memkernel",
+      "label": "unrelated"
+    },
+    {
+      "pair": [
+        "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-06.md",
+        "memkernel/memkernel/mk-memkernel-0-7-store-locks-spec-04.md"
+      ],
+      "family": "memkernel",
+      "label": "unrelated"
+    },
+    {
+      "pair": [
+        "memkernel/memkernel/mk-memkernel-0-7-store-locks-spec-02.md",
+        "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-08.md"
+      ],
+      "family": "memkernel",
+      "label": "unrelated"
+    },
+    {
+      "pair": [
+        "memkernel/memkernel/mk-memkernel-0-16-lifecycle-corrections-spec-01.md",
+        "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-01.md"
+      ],
+      "family": "memkernel",
+      "label": "unrelated"
+    },
+    {
+      "pair": [
+        "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-02.md",
+        "memkernel/memkernel/mk-memkernel-0-7-release-b-exit-plan-03.md"
+      ],
+      "family": "memkernel",
+      "label": "unrelated"
+    },
+    {
+      "pair": [
+        "memkernel/memkernel/mk-memkernel-0-8-untrusted-memory-spec-04.md",
+        "memkernel/memkernel/mk-memkernel-0-9-mcp2-spec-03.md"
+      ],
+      "family": "memkernel",
+      "label": "unrelated"
+    },
+    {
+      "pair": [
+        "memkernel/memkernel/mk-memkernel-0-7-hooks-spec-02.md",
+        "memkernel/memkernel/mk-memkernel-0-7-spec-03.md"
+      ],
+      "family": "memkernel",
+      "label": "unrelated"
+    },
+    {
+      "pair": [
+        "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-02.md",
+        "memkernel/memkernel/mk-memkernel-0-7-spec-03.md"
+      ],
+      "family": "memkernel",
+      "label": "unrelated"
+    },
+    {
+      "pair": [
+        "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-06.md",
+        "memkernel/memkernel/mk-memkernel-0-15-harness-foundations-spec-04.md"
+      ],
+      "family": "memkernel",
+      "label": "unrelated"
+    },
+    {
+      "pair": [
+        "memkernel/memkernel/mk-memkernel-0-13-one-store-across-tools-spec-05.md",
+        "memkernel/memkernel/mk-memkernel-0-8-untrusted-memory-spec-03.md"
+      ],
+      "family": "memkernel",
+      "label": "unrelated"
+    },
+    {
+      "pair": [
+        "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-03.md",
+        "memkernel/memkernel/mk-memkernel-0-3-plan-04.md"
+      ],
+      "family": "memkernel",
+      "label": "unrelated"
+    }
+  ]
+}

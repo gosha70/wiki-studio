@@ -1,0 +1,2277 @@
+{
+  "corpus_sha256": "fc0f710ab994dd4a57a9bb23e700bd61b2ffde58f66a54bb30353c6cc5bbc4de",
+  "families": [
+    {"name": "routing", "repository": "code-copilot-team", "pages": 88},
+    {"name": "pi", "repository": "code-copilot-team", "pages": 29},
+    {"name": "api", "repository": "code-copilot-team", "pages": 15},
+    {"name": "llm-catalog", "repository": "code-copilot-team", "pages": 15},
+    {"name": "wiki-studio-adoption", "repository": "code-copilot-team", "pages": 14},
+    {"name": "wiki-audit", "repository": "code-copilot-team", "pages": 16},
+    {"name": "memkernel-integration", "repository": "code-copilot-team", "pages": 7},
+    {"name": "one-harness-home", "repository": "code-copilot-team", "pages": 6},
+    {"name": "plugin-generate-from-sources", "repository": "code-copilot-team", "pages": 5},
+    {"name": "simplest-complete-change", "repository": "code-copilot-team", "pages": 3},
+    {"name": "memkernel", "repository": "memkernel", "pages": 101}
+  ],
+  "groups": [
+    {
+      "id": "routing-01",
+      "family": "routing",
+      "question": "Which option governs the effective-endpoint requirement: O4, with O1 only completing telemetry?",
+      "pages": [
+        "code-copilot-team/routing/cct-routing-effective-endpoint-plan-01.md",
+        "code-copilot-team/routing/cct-routing-effective-endpoint-plan-04.md",
+        "code-copilot-team/routing/cct-routing-effective-endpoint-spec-01.md"
+      ]
+    },
+    {
+      "id": "routing-02",
+      "family": "routing",
+      "question": "Is O2, a proxy that observes the endpoint, adopted?",
+      "pages": [
+        "code-copilot-team/routing/cct-routing-effective-endpoint-plan-02.md",
+        "code-copilot-team/routing/cct-routing-effective-endpoint-spec-02.md"
+      ]
+    },
+    {
+      "id": "routing-03",
+      "family": "routing",
+      "question": "Is O3, a provider-reported effective-upstream signal, relied on?",
+      "pages": [
+        "code-copilot-team/routing/cct-routing-effective-endpoint-plan-03.md",
+        "code-copilot-team/routing/cct-routing-effective-endpoint-spec-03.md"
+      ]
+    },
+    {
+      "id": "routing-04",
+      "family": "routing",
+      "question": "Is the minimum-context filter applied on the reconcile path as well as the delegate path?",
+      "pages": [
+        "code-copilot-team/routing/cct-routing-context-limit-plan-07.md",
+        "code-copilot-team/routing/cct-routing-context-limit-plan-08.md"
+      ]
+    },
+    {
+      "id": "routing-05",
+      "family": "routing",
+      "question": "Does the increment take any execution authority over production routing?",
+      "pages": [
+        "code-copilot-team/routing/cct-routing-calibration-plan-09.md",
+        "code-copilot-team/routing/cct-routing-eval-plan-10.md",
+        "code-copilot-team/routing/cct-routing-profile-foundation-plan-07.md",
+        "code-copilot-team/routing/cct-routing-shadow-plan-07.md",
+        "code-copilot-team/routing/cct-routing-shadow-plan-11.md"
+      ]
+    },
+    {
+      "id": "routing-06",
+      "family": "routing",
+      "question": "Where is secret redaction applied to routing evidence?",
+      "pages": [
+        "code-copilot-team/routing/cct-routing-eval-plan-08.md",
+        "code-copilot-team/routing/cct-routing-shadow-plan-08.md"
+      ]
+    },
+    {
+      "id": "routing-07",
+      "family": "routing",
+      "question": "Where does the code that consumes routing evidence live?",
+      "pages": [
+        "code-copilot-team/routing/cct-routing-calibration-plan-01.md",
+        "code-copilot-team/routing/cct-routing-shadow-plan-01.md"
+      ]
+    },
+    {
+      "id": "routing-08",
+      "family": "routing",
+      "question": "How is the increment's Studio surface built and verified?",
+      "pages": [
+        "code-copilot-team/routing/cct-routing-calibration-plan-10.md",
+        "code-copilot-team/routing/cct-routing-shadow-plan-10.md"
+      ]
+    },
+    {
+      "id": "routing-09",
+      "family": "routing",
+      "question": "What do E1's evidence sets gain so the calibration metrics have their inputs?",
+      "pages": [
+        "code-copilot-team/routing/cct-routing-calibration-plan-01.md",
+        "code-copilot-team/routing/cct-routing-calibration-plan-11.md"
+      ]
+    },
+    {
+      "id": "routing-10",
+      "family": "routing",
+      "question": "When is an evaluation report current enough to satisfy a gate?",
+      "pages": [
+        "code-copilot-team/routing/cct-routing-calibration-plan-02.md",
+        "code-copilot-team/routing/cct-routing-calibration-plan-03.md"
+      ]
+    },
+    {
+      "id": "routing-11",
+      "family": "routing",
+      "question": "How is a measure or an arm with missing evidence carried in E1's results?",
+      "pages": [
+        "code-copilot-team/routing/cct-routing-eval-plan-04.md",
+        "code-copilot-team/routing/cct-routing-eval-plan-09.md"
+      ]
+    },
+    {
+      "id": "routing-12",
+      "family": "routing",
+      "question": "When may a router score be reported?",
+      "pages": [
+        "code-copilot-team/routing/cct-routing-eval-plan-06.md",
+        "code-copilot-team/routing/cct-routing-eval-plan-09.md"
+      ]
+    },
+    {
+      "id": "routing-13",
+      "family": "routing",
+      "question": "How is a cost that no backend reported recorded?",
+      "pages": [
+        "code-copilot-team/routing/cct-routing-eval-plan-04.md",
+        "code-copilot-team/routing/cct-routing-usage-evidence-plan-02.md",
+        "code-copilot-team/routing/cct-routing-usage-evidence-plan-05.md"
+      ]
+    },
+    {
+      "id": "routing-14",
+      "family": "routing",
+      "question": "How does a new routing field stay compatible with documents written before it?",
+      "pages": [
+        "code-copilot-team/routing/cct-routing-context-limit-plan-05.md",
+        "code-copilot-team/routing/cct-routing-usage-evidence-plan-06.md"
+      ]
+    },
+    {
+      "id": "routing-15",
+      "family": "routing",
+      "question": "What does each backend failure class mean, and which routing action follows from it?",
+      "pages": [
+        "code-copilot-team/routing/cct-routing-profile-foundation-plan-05.md",
+        "code-copilot-team/routing/cct-routing-tier1-failover-plan-03.md"
+      ]
+    },
+    {
+      "id": "routing-16",
+      "family": "routing",
+      "question": "Is a requested model ever recorded as the effective one when the backend does not report it?",
+      "pages": [
+        "code-copilot-team/routing/cct-routing-profile-foundation-plan-05.md",
+        "code-copilot-team/routing/cct-routing-tier1-failover-plan-06.md"
+      ]
+    },
+    {
+      "id": "routing-17",
+      "family": "routing",
+      "question": "What does the routing state store hold, and how do its entries decay?",
+      "pages": [
+        "code-copilot-team/routing/cct-routing-recovery-plan-01.md",
+        "code-copilot-team/routing/cct-routing-tier1-failover-plan-04.md"
+      ]
+    },
+    {
+      "id": "routing-18",
+      "family": "routing",
+      "question": "How does an auth-disabled profile become eligible again?",
+      "pages": [
+        "code-copilot-team/routing/cct-routing-recovery-plan-06.md",
+        "code-copilot-team/routing/cct-routing-tier1-failover-plan-03.md"
+      ]
+    },
+    {
+      "id": "routing-19",
+      "family": "routing",
+      "question": "Are the increment's timing and limit numbers configuration?",
+      "pages": [
+        "code-copilot-team/routing/cct-routing-calibration-plan-08.md",
+        "code-copilot-team/routing/cct-routing-recovery-plan-03.md",
+        "code-copilot-team/routing/cct-routing-tier1-failover-plan-03.md",
+        "code-copilot-team/routing/cct-routing-tier2-delegation-plan-06.md"
+      ]
+    },
+    {
+      "id": "routing-20",
+      "family": "routing",
+      "question": "May the repository's routing block widen the user's policy?",
+      "pages": [
+        "code-copilot-team/routing/cct-routing-profile-foundation-plan-04.md",
+        "code-copilot-team/routing/cct-routing-recovery-plan-08.md"
+      ]
+    },
+    {
+      "id": "routing-21",
+      "family": "routing",
+      "question": "Which routing commands stay pure, and which may write?",
+      "pages": [
+        "code-copilot-team/routing/cct-routing-profile-foundation-plan-06.md",
+        "code-copilot-team/routing/cct-routing-recovery-plan-04.md",
+        "code-copilot-team/routing/cct-routing-tier2-delegation-plan-10.md"
+      ]
+    },
+    {
+      "id": "routing-22",
+      "family": "routing",
+      "question": "What scope binds the Tier-1 reconciler's edits?",
+      "pages": [
+        "code-copilot-team/routing/cct-routing-tier2-delegation-plan-05.md",
+        "code-copilot-team/routing/cct-routing-tier2-delegation-plan-09.md"
+      ]
+    },
+    {
+      "id": "routing-23",
+      "family": "routing",
+      "question": "What happens when the independence of builder and reviewer cannot be established?",
+      "pages": [
+        "code-copilot-team/routing/cct-routing-tier1-failover-plan-08.md",
+        "code-copilot-team/routing/cct-routing-tier2-delegation-plan-09.md"
+      ]
+    },
+    {
+      "id": "routing-24",
+      "family": "routing",
+      "question": "What does the routing-run record carry?",
+      "pages": [
+        "code-copilot-team/routing/cct-routing-eval-plan-04.md",
+        "code-copilot-team/routing/cct-routing-eval-plan-07.md"
+      ]
+    },
+    {
+      "id": "routing-25",
+      "family": "routing",
+      "question": "Does a task's routing requirement ride in the immutable packet envelope?",
+      "pages": [
+        "code-copilot-team/routing/cct-routing-context-limit-plan-06.md",
+        "code-copilot-team/routing/cct-routing-tier2-delegation-plan-03.md"
+      ]
+    },
+    {
+      "id": "routing-26",
+      "family": "routing",
+      "question": "May a Tier-2 profile be selected?",
+      "pages": [
+        "code-copilot-team/routing/cct-routing-tier1-failover-plan-02.md",
+        "code-copilot-team/routing/cct-routing-tier2-delegation-plan-08.md"
+      ]
+    },
+    {
+      "id": "pi-01",
+      "family": "pi",
+      "question": "How is a team member's identity established?",
+      "pages": [
+        "code-copilot-team/pi/cct-pi-team-controller-plan-03.md",
+        "code-copilot-team/pi/cct-pi-team-controller-plan-08.md"
+      ]
+    },
+    {
+      "id": "pi-02",
+      "family": "pi",
+      "question": "Which lock serialises ledger mutations, and how is it shared?",
+      "pages": [
+        "code-copilot-team/pi/cct-pi-team-controller-plan-06.md",
+        "code-copilot-team/pi/cct-pi-worktree-lifecycle-plan-05.md"
+      ]
+    },
+    {
+      "id": "pi-03",
+      "family": "pi",
+      "question": "Which configuration scopes may loosen a security setting?",
+      "pages": [
+        "code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md",
+        "code-copilot-team/pi/cct-pi-sandbox-hardening-plan-01.md",
+        "code-copilot-team/pi/cct-pi-sandbox-hardening-plan-05.md"
+      ]
+    },
+    {
+      "id": "pi-04",
+      "family": "pi",
+      "question": "What does init put in the ignore lines for the configuration files?",
+      "pages": [
+        "code-copilot-team/pi/cct-pi-project-config-spec-02.md",
+        "code-copilot-team/pi/cct-pi-project-config-spec-05.md"
+      ]
+    },
+    {
+      "id": "pi-05",
+      "family": "pi",
+      "question": "How does a project move to the new configuration location?",
+      "pages": [
+        "code-copilot-team/pi/cct-pi-project-config-spec-03.md",
+        "code-copilot-team/pi/cct-pi-project-config-spec-04.md",
+        "code-copilot-team/pi/cct-pi-project-config-spec-05.md"
+      ]
+    },
+    {
+      "id": "pi-06",
+      "family": "pi",
+      "question": "Where does the project-level configuration live?",
+      "pages": [
+        "code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md",
+        "code-copilot-team/pi/cct-pi-project-config-spec-01.md",
+        "code-copilot-team/pi/cct-pi-project-config-spec-05.md"
+      ]
+    },
+    {
+      "id": "api-01",
+      "family": "api",
+      "question": "Which requests must pass the Origin check?",
+      "pages": [
+        "code-copilot-team/api/cct-api-host-origin-guard-plan-02.md",
+        "code-copilot-team/api/cct-api-host-origin-guard-plan-04.md"
+      ]
+    },
+    {
+      "id": "api-02",
+      "family": "api",
+      "question": "Does a rejection's error response echo the offending text?",
+      "pages": [
+        "code-copilot-team/api/cct-api-host-origin-guard-plan-05.md",
+        "code-copilot-team/api/cct-api-probe-error-hardening-plan-02.md"
+      ]
+    },
+    {
+      "id": "api-03",
+      "family": "api",
+      "question": "Which SQLite DSNs does the connection probe accept?",
+      "pages": [
+        "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-03.md",
+        "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-04.md"
+      ]
+    },
+    {
+      "id": "api-04",
+      "family": "api",
+      "question": "How does the probe's error response name the failure class?",
+      "pages": [
+        "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-01.md",
+        "code-copilot-team/api/cct-api-probe-error-hardening-plan-01.md"
+      ]
+    },
+    {
+      "id": "api-05",
+      "family": "api",
+      "question": "Does the studio change to show the probe's error messages?",
+      "pages": [
+        "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-06.md",
+        "code-copilot-team/api/cct-api-probe-error-hardening-plan-01.md",
+        "code-copilot-team/api/cct-api-probe-error-hardening-plan-03.md"
+      ]
+    },
+    {
+      "id": "api-06",
+      "family": "api",
+      "question": "Does the probe's response change for its existing consumers?",
+      "pages": [
+        "code-copilot-team/api/cct-api-probe-error-hardening-plan-01.md",
+        "code-copilot-team/api/cct-api-probe-error-hardening-plan-04.md"
+      ]
+    },
+    {
+      "id": "llm-catalog-01",
+      "family": "llm-catalog",
+      "question": "Does a capture of the installed CLI settle a harness's launch integration?",
+      "pages": [
+        "code-copilot-team/llm-catalog/cct-llm-catalog-spec-10.md",
+        "code-copilot-team/llm-catalog/cct-llm-catalog-spec-11.md",
+        "code-copilot-team/llm-catalog/cct-llm-catalog-spec-12.md"
+      ]
+    },
+    {
+      "id": "llm-catalog-02",
+      "family": "llm-catalog",
+      "question": "What does the catalog reuse from routing's scripts?",
+      "pages": [
+        "code-copilot-team/llm-catalog/cct-llm-catalog-spec-04.md",
+        "code-copilot-team/llm-catalog/cct-llm-catalog-spec-06.md"
+      ]
+    },
+    {
+      "id": "llm-catalog-03",
+      "family": "llm-catalog",
+      "question": "What may count as evidence that a binding is supported?",
+      "pages": [
+        "code-copilot-team/llm-catalog/cct-llm-catalog-spec-07.md",
+        "code-copilot-team/llm-catalog/cct-llm-catalog-spec-08.md"
+      ]
+    },
+    {
+      "id": "wiki-studio-adoption-01",
+      "family": "wiki-studio-adoption",
+      "question": "Which wiki-studio artifact do CCT's setup, launcher and CI install and run?",
+      "pages": [
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-01.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-03.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-11.md"
+      ]
+    },
+    {
+      "id": "wiki-studio-adoption-02",
+      "family": "wiki-studio-adoption",
+      "question": "How may upstream wiki-studio change what CCT runs?",
+      "pages": [
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-01.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-13.md"
+      ]
+    },
+    {
+      "id": "wiki-studio-adoption-03",
+      "family": "wiki-studio-adoption",
+      "question": "Which Python versions does the wiki tooling need, and does that narrow the rest of CCT?",
+      "pages": [
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-02.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-11.md"
+      ]
+    },
+    {
+      "id": "wiki-studio-adoption-04",
+      "family": "wiki-studio-adoption",
+      "question": "What does doctor check to call the wiki tooling healthy?",
+      "pages": [
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-03.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-10.md"
+      ]
+    },
+    {
+      "id": "wiki-studio-adoption-05",
+      "family": "wiki-studio-adoption",
+      "question": "What happens when the wiki-studio prerequisite is missing or the wrong version?",
+      "pages": [
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-02.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-03.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-04.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-10.md"
+      ]
+    },
+    {
+      "id": "wiki-studio-adoption-06",
+      "family": "wiki-studio-adoption",
+      "question": "Which installations does CCT claim to set up wiki-studio for?",
+      "pages": [
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-04.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-12.md"
+      ]
+    },
+    {
+      "id": "wiki-studio-adoption-07",
+      "family": "wiki-studio-adoption",
+      "question": "How are CCT's in-repo duplicate wiki engines retired?",
+      "pages": [
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-05.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-14.md"
+      ]
+    },
+    {
+      "id": "wiki-studio-adoption-08",
+      "family": "wiki-studio-adoption",
+      "question": "What does CCT's wiki contract test run against?",
+      "pages": [
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-06.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-11.md"
+      ]
+    },
+    {
+      "id": "wiki-studio-adoption-09",
+      "family": "wiki-studio-adoption",
+      "question": "Is the legacy manifest-less mode kept, and what proves it?",
+      "pages": [
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-06.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-08.md"
+      ]
+    },
+    {
+      "id": "wiki-studio-adoption-10",
+      "family": "wiki-studio-adoption",
+      "question": "Does the package swap take on wiki-studio's governance?",
+      "pages": [
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-08.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-12.md"
+      ]
+    },
+    {
+      "id": "wiki-studio-adoption-11",
+      "family": "wiki-studio-adoption",
+      "question": "How is the project schema's divergence from upstream recorded, checked and kept current?",
+      "pages": [
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-07.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-10.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-13.md"
+      ]
+    },
+    {
+      "id": "wiki-audit-01",
+      "family": "wiki-audit",
+      "question": "Is audit-flush its own command, apart from ingest and promote?",
+      "pages": [
+        "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-01.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-05.md"
+      ]
+    },
+    {
+      "id": "wiki-audit-02",
+      "family": "wiki-audit",
+      "question": "When does audit-flush refuse rather than commit?",
+      "pages": [
+        "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-02.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-06.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-07.md"
+      ]
+    },
+    {
+      "id": "wiki-audit-03",
+      "family": "wiki-audit",
+      "question": "What does audit-flush's pathspec commit capture?",
+      "pages": [
+        "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-03.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-06.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-07.md"
+      ]
+    },
+    {
+      "id": "wiki-audit-04",
+      "family": "wiki-audit",
+      "question": "How is the working ingest log checked against its append-only v1 format?",
+      "pages": [
+        "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-02.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-07.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md"
+      ]
+    },
+    {
+      "id": "wiki-audit-05",
+      "family": "wiki-audit",
+      "question": "What does the accepted-proposal archive hold, and how is it written?",
+      "pages": [
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-01.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-02.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-05.md"
+      ]
+    },
+    {
+      "id": "wiki-audit-06",
+      "family": "wiki-audit",
+      "question": "How does an ingest-log line name the archive of its proposal?",
+      "pages": [
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-01.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-09.md"
+      ]
+    },
+    {
+      "id": "wiki-audit-07",
+      "family": "wiki-audit",
+      "question": "What fields does an ingest-log record carry?",
+      "pages": [
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-08.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-09.md"
+      ]
+    },
+    {
+      "id": "wiki-audit-08",
+      "family": "wiki-audit",
+      "question": "Is an ingest-log line cross-checked against the archives in v1?",
+      "pages": [
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-04.md"
+      ]
+    },
+    {
+      "id": "wiki-audit-09",
+      "family": "wiki-audit",
+      "question": "Which wiki ingest runs write an ingest-log line, and at what point?",
+      "pages": [
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-04.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-05.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-08.md"
+      ]
+    },
+    {
+      "id": "wiki-audit-10",
+      "family": "wiki-audit",
+      "question": "How is a rejected ingest recorded in the ingest log?",
+      "pages": [
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-04.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-09.md"
+      ]
+    },
+    {
+      "id": "wiki-audit-11",
+      "family": "wiki-audit",
+      "question": "How is the ingest log's unreviewed reason field bounded?",
+      "pages": [
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-06.md"
+      ]
+    },
+    {
+      "id": "memkernel-integration-01",
+      "family": "memkernel-integration",
+      "question": "How is CCT's GCC memory setup retired?",
+      "pages": [
+        "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-01.md",
+        "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-05.md"
+      ]
+    },
+    {
+      "id": "memkernel-integration-02",
+      "family": "memkernel-integration",
+      "question": "How does a project get memkernel's MCP server registered?",
+      "pages": [
+        "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-03.md",
+        "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-07.md"
+      ]
+    },
+    {
+      "id": "memkernel-integration-03",
+      "family": "memkernel-integration",
+      "question": "How do existing CCT installs and projects pick up memkernel?",
+      "pages": [
+        "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-06.md",
+        "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-07.md"
+      ]
+    },
+    {
+      "id": "one-harness-home-01",
+      "family": "one-harness-home",
+      "question": "Does the harness use the one .cct name in the user home and in the project?",
+      "pages": [
+        "code-copilot-team/one-harness-home/cct-one-harness-home-spec-01.md",
+        "code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md"
+      ]
+    },
+    {
+      "id": "one-harness-home-02",
+      "family": "one-harness-home",
+      "question": "Is the per-project rename delivered with the user home or as its own issue and PR?",
+      "pages": [
+        "code-copilot-team/one-harness-home/cct-one-harness-home-spec-04.md",
+        "code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md"
+      ]
+    },
+    {
+      "id": "plugin-generate-from-sources-01",
+      "family": "plugin-generate-from-sources",
+      "question": "Does the plugin ship what its agents and commands refer to, or only what stands alone?",
+      "pages": [
+        "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-02.md",
+        "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-04.md"
+      ]
+    },
+    {
+      "id": "memkernel-01",
+      "family": "memkernel",
+      "question": "When is a page's memory withdrawn, and how is it marked?",
+      "pages": [
+        "memkernel/memkernel/mk-memkernel-0-7-spec-01.md",
+        "memkernel/memkernel/mk-memkernel-0-7-spec-03.md",
+        "memkernel/memkernel/mk-memkernel-0-7-spec-04.md",
+        "memkernel/memkernel/mk-memkernel-0-7-spec-05.md"
+      ]
+    },
+    {
+      "id": "memkernel-02",
+      "family": "memkernel",
+      "question": "What happens to the memory of a renamed page?",
+      "pages": [
+        "memkernel/memkernel/mk-memkernel-0-7-governed-spec-05.md",
+        "memkernel/memkernel/mk-memkernel-0-7-spec-03.md"
+      ]
+    },
+    {
+      "id": "memkernel-03",
+      "family": "memkernel",
+      "question": "How does the import find a page's previous memory?",
+      "pages": [
+        "memkernel/memkernel/mk-memkernel-0-7-governed-spec-05.md",
+        "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-04.md"
+      ]
+    },
+    {
+      "id": "memkernel-04",
+      "family": "memkernel",
+      "question": "When is a retain a dedup hit?",
+      "pages": [
+        "memkernel/memkernel/mk-copilot-memory-mvp-plan-05.md",
+        "memkernel/memkernel/mk-memkernel-0-4-plan-03.md",
+        "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-03.md"
+      ]
+    },
+    {
+      "id": "memkernel-05",
+      "family": "memkernel",
+      "question": "How is a stale code memory detected and marked?",
+      "pages": [
+        "memkernel/memkernel/mk-memkernel-0-4-plan-01.md",
+        "memkernel/memkernel/mk-memkernel-0-4-plan-02.md"
+      ]
+    },
+    {
+      "id": "memkernel-06",
+      "family": "memkernel",
+      "question": "What serialises wiki imports on one store?",
+      "pages": [
+        "memkernel/memkernel/mk-memkernel-0-7-store-locks-spec-02.md",
+        "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-09.md"
+      ]
+    },
+    {
+      "id": "memkernel-07",
+      "family": "memkernel",
+      "question": "Who may write a record's tags, and under which lock?",
+      "pages": [
+        "memkernel/memkernel/mk-memkernel-0-7-store-locks-spec-03.md",
+        "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-09.md"
+      ]
+    },
+    {
+      "id": "memkernel-08",
+      "family": "memkernel",
+      "question": "Which operations may set a memory's identity tags?",
+      "pages": [
+        "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-06.md",
+        "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-09.md"
+      ]
+    },
+    {
+      "id": "memkernel-09",
+      "family": "memkernel",
+      "question": "What runs where fcntl is unavailable?",
+      "pages": [
+        "memkernel/memkernel/mk-memkernel-0-10-recall-log-spec-01.md",
+        "memkernel/memkernel/mk-memkernel-0-7-store-locks-spec-04.md",
+        "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-09.md"
+      ]
+    },
+    {
+      "id": "memkernel-10",
+      "family": "memkernel",
+      "question": "What are a memory's wiki identity tags?",
+      "pages": [
+        "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-01.md",
+        "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-02.md"
+      ]
+    },
+    {
+      "id": "memkernel-11",
+      "family": "memkernel",
+      "question": "When is a legacy memory a candidate for a page?",
+      "pages": [
+        "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-04.md",
+        "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-05.md"
+      ]
+    },
+    {
+      "id": "memkernel-12",
+      "family": "memkernel",
+      "question": "How is a 0.6 store's legacy memory adopted on the upgrade to 0.7?",
+      "pages": [
+        "memkernel/memkernel/mk-memkernel-0-7-release-b-exit-plan-07.md",
+        "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-05.md"
+      ]
+    },
+    {
+      "id": "memkernel-13",
+      "family": "memkernel",
+      "question": "What keys a wiki's sync ledger, and what happens to it when the wiki's identity changes?",
+      "pages": [
+        "memkernel/memkernel/mk-memkernel-0-7-spec-02.md",
+        "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-07.md"
+      ]
+    },
+    {
+      "id": "memkernel-14",
+      "family": "memkernel",
+      "question": "Where does memkernel keep its own state files?",
+      "pages": [
+        "memkernel/memkernel/mk-memkernel-0-7-hooks-spec-04.md",
+        "memkernel/memkernel/mk-memkernel-0-7-spec-02.md"
+      ]
+    },
+    {
+      "id": "memkernel-15",
+      "family": "memkernel",
+      "question": "How does the session spool record and drain sessions?",
+      "pages": [
+        "memkernel/memkernel/mk-memkernel-0-7-hooks-spec-04.md",
+        "memkernel/memkernel/mk-memkernel-0-7-wiring-spool-spec-02.md"
+      ]
+    },
+    {
+      "id": "memkernel-16",
+      "family": "memkernel",
+      "question": "Which injected text is quoted as stored data?",
+      "pages": [
+        "memkernel/memkernel/mk-memkernel-0-8-untrusted-memory-spec-01.md",
+        "memkernel/memkernel/mk-memkernel-0-8-untrusted-memory-spec-05.md"
+      ]
+    },
+    {
+      "id": "memkernel-17",
+      "family": "memkernel",
+      "question": "Which recalls and hook blocks are logged?",
+      "pages": [
+        "memkernel/memkernel/mk-memkernel-0-10-recall-log-spec-01.md",
+        "memkernel/memkernel/mk-memkernel-0-10-recall-log-spec-02.md",
+        "memkernel/memkernel/mk-memkernel-0-10-recall-log-spec-03.md"
+      ]
+    },
+    {
+      "id": "memkernel-18",
+      "family": "memkernel",
+      "question": "Which captured records may be promotion candidates?",
+      "pages": [
+        "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-05.md",
+        "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-06.md"
+      ]
+    },
+    {
+      "id": "memkernel-19",
+      "family": "memkernel",
+      "question": "What caps bound a capture run?",
+      "pages": [
+        "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-03.md",
+        "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-05.md"
+      ]
+    },
+    {
+      "id": "memkernel-20",
+      "family": "memkernel",
+      "question": "Which extractors does capture ship, chosen by their yield?",
+      "pages": [
+        "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-08.md",
+        "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-01.md"
+      ]
+    },
+    {
+      "id": "memkernel-21",
+      "family": "memkernel",
+      "question": "Is a memory's scope a metadata filter or a separate collection?",
+      "pages": [
+        "memkernel/memkernel/mk-copilot-memory-mvp-plan-06.md",
+        "memkernel/memkernel/mk-memkernel-0-15-harness-foundations-spec-01.md"
+      ]
+    },
+    {
+      "id": "memkernel-22",
+      "family": "memkernel",
+      "question": "Who supplies the agent or task id?",
+      "pages": [
+        "memkernel/memkernel/mk-memkernel-0-15-harness-foundations-spec-02.md",
+        "memkernel/memkernel/mk-memkernel-0-15-harness-foundations-spec-06.md"
+      ]
+    },
+    {
+      "id": "memkernel-23",
+      "family": "memkernel",
+      "question": "How many correction chains does the comparison use?",
+      "pages": [
+        "memkernel/memkernel/mk-memkernel-0-16-lifecycle-corrections-spec-01.md",
+        "memkernel/memkernel/mk-memkernel-0-16-lifecycle-corrections-spec-07.md"
+      ]
+    },
+    {
+      "id": "memkernel-24",
+      "family": "memkernel",
+      "question": "Which curator drives the governed arm of the comparison?",
+      "pages": [
+        "memkernel/memkernel/mk-memkernel-0-16-lifecycle-corrections-spec-02.md",
+        "memkernel/memkernel/mk-memkernel-0-16-lifecycle-corrections-spec-03.md"
+      ]
+    },
+    {
+      "id": "memkernel-25",
+      "family": "memkernel",
+      "question": "How is the session-start block's 9,000-character budget shared?",
+      "pages": [
+        "memkernel/memkernel/mk-memkernel-0-7-governed-spec-02.md",
+        "memkernel/memkernel/mk-memkernel-0-8-untrusted-memory-spec-04.md"
+      ]
+    },
+    {
+      "id": "memkernel-26",
+      "family": "memkernel",
+      "question": "On which wheels is the release exit evidence recorded?",
+      "pages": [
+        "memkernel/memkernel/mk-memkernel-0-7-release-b-exit-plan-01.md",
+        "memkernel/memkernel/mk-memkernel-0-7-release-b-exit-plan-05.md"
+      ]
+    }
+  ],
+  "pairs": [
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-effective-endpoint-plan-01.md", "code-copilot-team/routing/cct-routing-effective-endpoint-plan-04.md"],
+      "group": "routing-01",
+      "disposition": "companion",
+      "reason": "Which option governs: plan-01 records that O4 governs; plan-04 records what O4's truthfulness contract keeps in place of a configured value."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-effective-endpoint-plan-01.md", "code-copilot-team/routing/cct-routing-effective-endpoint-spec-01.md"],
+      "group": "routing-01",
+      "disposition": "redundant",
+      "reason": "Which option governs: the plan and the spec each record that O4 governs and that O1 is telemetry completion."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-effective-endpoint-plan-04.md", "code-copilot-team/routing/cct-routing-effective-endpoint-spec-01.md"],
+      "group": "routing-01",
+      "disposition": "companion",
+      "reason": "Which option governs: the spec records that O4 governs; plan-04 records what O4's truthfulness contract requires."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-effective-endpoint-plan-02.md", "code-copilot-team/routing/cct-routing-effective-endpoint-spec-02.md"],
+      "group": "routing-02",
+      "disposition": "redundant",
+      "reason": "Is O2 adopted: the plan and the spec each reject the proxy as architecturally insufficient, since it cannot see the gateway's later hop."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-effective-endpoint-plan-03.md", "code-copilot-team/routing/cct-routing-effective-endpoint-spec-03.md"],
+      "group": "routing-03",
+      "disposition": "redundant",
+      "reason": "Is O3 relied on: the plan and the spec each keep it opportunistic, since no standard signal exists and nothing depends on it."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-context-limit-plan-07.md", "code-copilot-team/routing/cct-routing-context-limit-plan-08.md"],
+      "group": "routing-04",
+      "disposition": "redundant",
+      "reason": "Is the filter applied on the reconcile path: both pages record the one decision that it is wired to both paths, plan-08 finishing plan-07's reversal."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-calibration-plan-09.md", "code-copilot-team/routing/cct-routing-eval-plan-10.md"],
+      "group": "routing-05",
+      "disposition": "distinct-by-precondition",
+      "reason": "Execution authority over production routing: E3 and E1 each decide for their own increment that it holds none."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-calibration-plan-09.md", "code-copilot-team/routing/cct-routing-profile-foundation-plan-07.md"],
+      "group": "routing-05",
+      "disposition": "distinct-by-precondition",
+      "reason": "Execution authority over production routing: E3's guard and increment A's inertness proof, each for its own increment."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-calibration-plan-09.md", "code-copilot-team/routing/cct-routing-shadow-plan-07.md"],
+      "group": "routing-05",
+      "disposition": "companion",
+      "reason": "Execution authority over production routing: E3 extends E2's standing authority-guard test to its own modules."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-calibration-plan-09.md", "code-copilot-team/routing/cct-routing-shadow-plan-11.md"],
+      "group": "routing-05",
+      "disposition": "companion",
+      "reason": "Execution authority over production routing: E3 holds none by extending E2's guard, which E2 records as adding no runtime authority."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-eval-plan-10.md", "code-copilot-team/routing/cct-routing-profile-foundation-plan-07.md"],
+      "group": "routing-05",
+      "disposition": "distinct-by-precondition",
+      "reason": "Execution authority over production routing: E1 adds none and increment A edits no driver path, each for its own increment."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-eval-plan-10.md", "code-copilot-team/routing/cct-routing-shadow-plan-07.md"],
+      "group": "routing-05",
+      "disposition": "companion",
+      "reason": "Execution authority over production routing: E2's guard extends E1's diff guard to its own branch."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-eval-plan-10.md", "code-copilot-team/routing/cct-routing-shadow-plan-11.md"],
+      "group": "routing-05",
+      "disposition": "companion",
+      "reason": "Execution authority over production routing: E2 adds none and proves it the same way E1 did, in nearly E1's words."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-profile-foundation-plan-07.md", "code-copilot-team/routing/cct-routing-shadow-plan-07.md"],
+      "group": "routing-05",
+      "disposition": "distinct-by-precondition",
+      "reason": "Execution authority over production routing: increment A's inertness proof and E2's guard, each for its own increment."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-profile-foundation-plan-07.md", "code-copilot-team/routing/cct-routing-shadow-plan-11.md"],
+      "group": "routing-05",
+      "disposition": "distinct-by-precondition",
+      "reason": "Execution authority over production routing: increment A's inertness proof and E2's no-authority rule, each for its own increment."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-shadow-plan-07.md", "code-copilot-team/routing/cct-routing-shadow-plan-11.md"],
+      "group": "routing-05",
+      "disposition": "redundant",
+      "reason": "Execution authority over production routing: two decisions of the one E2 plan each record that E2 holds none, proven by the diff guard."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-eval-plan-08.md", "code-copilot-team/routing/cct-routing-shadow-plan-08.md"],
+      "group": "routing-06",
+      "disposition": "companion",
+      "reason": "Where redaction is applied: E1 scrubs at the writer; E2 renders E1's scrubbed artifacts verbatim and proves the chain."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-calibration-plan-01.md", "code-copilot-team/routing/cct-routing-shadow-plan-01.md"],
+      "group": "routing-07",
+      "disposition": "distinct-by-precondition",
+      "reason": "Where the evidence consumer lives: E3 and E2 each place their own module in session analytics, read-only over E1."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-calibration-plan-10.md", "code-copilot-team/routing/cct-routing-shadow-plan-10.md"],
+      "group": "routing-08",
+      "disposition": "distinct-by-precondition",
+      "reason": "How the Studio surface is built and verified: E3's calibration panel and E2's routing tab, each verified in a browser for its own increment."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-calibration-plan-01.md", "code-copilot-team/routing/cct-routing-calibration-plan-11.md"],
+      "group": "routing-09",
+      "disposition": "companion",
+      "reason": "What E1's evidence sets gain: plan-01 names the two labelled additions as decision 11; plan-11 specifies them."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-calibration-plan-02.md", "code-copilot-team/routing/cct-routing-calibration-plan-03.md"],
+      "group": "routing-10",
+      "disposition": "companion",
+      "reason": "When a report is current: plan-03 binds reports to corpus and policy; plan-02's gates G3 and G5 require that binding."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-eval-plan-04.md", "code-copilot-team/routing/cct-routing-eval-plan-09.md"],
+      "group": "routing-11",
+      "disposition": "companion",
+      "reason": "How missing evidence is carried: plan-04 propagates an unavailable measure as insufficient evidence; plan-09 carries an arm that cannot run the same way."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-eval-plan-06.md", "code-copilot-team/routing/cct-routing-eval-plan-09.md"],
+      "group": "routing-12",
+      "disposition": "companion",
+      "reason": "When a router score may be reported: plan-06 requires the complete control set; plan-09 says an insufficient arm never satisfies it."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-eval-plan-04.md", "code-copilot-team/routing/cct-routing-usage-evidence-plan-02.md"],
+      "group": "routing-13",
+      "disposition": "distinct-by-precondition",
+      "reason": "How an unreported cost is recorded: E1's run record and increment G's usage block each state it explicitly, never as zero, for their own record."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-eval-plan-04.md", "code-copilot-team/routing/cct-routing-usage-evidence-plan-05.md"],
+      "group": "routing-13",
+      "disposition": "distinct-by-precondition",
+      "reason": "How an unreported cost is recorded: E1's unavailable provenance and increment G's unavailable basis, each for its own record."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-usage-evidence-plan-02.md", "code-copilot-team/routing/cct-routing-usage-evidence-plan-05.md"],
+      "group": "routing-13",
+      "disposition": "companion",
+      "reason": "How an unreported cost is recorded: plan-02 sets the four states; plan-05 fixes what unavailable means and that 0.00 is never written."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-context-limit-plan-05.md", "code-copilot-team/routing/cct-routing-usage-evidence-plan-06.md"],
+      "group": "routing-14",
+      "disposition": "companion",
+      "reason": "How a new field stays compatible: increment G's usage block follows increment F, additive and optional so older documents keep loading."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-profile-foundation-plan-05.md", "code-copilot-team/routing/cct-routing-tier1-failover-plan-03.md"],
+      "group": "routing-15",
+      "disposition": "companion",
+      "reason": "What a failure class means and does: increment A classifies cause only and leaves the action to B; B's table maps each class to its action."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-profile-foundation-plan-05.md", "code-copilot-team/routing/cct-routing-tier1-failover-plan-06.md"],
+      "group": "routing-16",
+      "disposition": "companion",
+      "reason": "Whether a requested model stands in for the effective one: A's result never sets them equal; B's launch keeps the never-assumed rule as a tri-state."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-recovery-plan-01.md", "code-copilot-team/routing/cct-routing-tier1-failover-plan-04.md"],
+      "group": "routing-17",
+      "disposition": "companion",
+      "reason": "What the state store holds: D extends B's store under the same schema with probe states and keeps B's decay to unknown."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-recovery-plan-06.md", "code-copilot-team/routing/cct-routing-tier1-failover-plan-03.md"],
+      "group": "routing-18",
+      "disposition": "companion",
+      "reason": "How an auth-disabled profile returns: B leaves it to the operator; D's enable command moves it to probe_due, never straight to eligible."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-calibration-plan-08.md", "code-copilot-team/routing/cct-routing-recovery-plan-03.md"],
+      "group": "routing-19",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether the numbers are configuration: E3's thresholds are configuration, D's backoff numbers are named defaults, each for its own numbers."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-calibration-plan-08.md", "code-copilot-team/routing/cct-routing-tier1-failover-plan-03.md"],
+      "group": "routing-19",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether the numbers are configuration: E3's thresholds are configuration, B's cooldowns are named defaults, each for its own numbers."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-calibration-plan-08.md", "code-copilot-team/routing/cct-routing-tier2-delegation-plan-06.md"],
+      "group": "routing-19",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether the numbers are configuration: E3's thresholds are configuration, C's repair limits are named defaults, each for its own numbers."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-recovery-plan-03.md", "code-copilot-team/routing/cct-routing-tier1-failover-plan-03.md"],
+      "group": "routing-19",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether the numbers are configuration: D's backoff and B's cooldowns are each named defaults, journaled, not configuration."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-recovery-plan-03.md", "code-copilot-team/routing/cct-routing-tier2-delegation-plan-06.md"],
+      "group": "routing-19",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether the numbers are configuration: D's backoff and C's repair limits are each named defaults, journaled, not configuration."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-tier1-failover-plan-03.md", "code-copilot-team/routing/cct-routing-tier2-delegation-plan-06.md"],
+      "group": "routing-19",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether the numbers are configuration: B's cooldowns and C's repair limits are each named defaults, journaled, not configuration."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-profile-foundation-plan-04.md", "code-copilot-team/routing/cct-routing-recovery-plan-08.md"],
+      "group": "routing-20",
+      "disposition": "companion",
+      "reason": "Whether the repository block may widen policy: D's routing.recovery object applies increment A's restriction-only rule."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-profile-foundation-plan-06.md", "code-copilot-team/routing/cct-routing-recovery-plan-04.md"],
+      "group": "routing-21",
+      "disposition": "companion",
+      "reason": "Which commands stay pure: D keeps A's validate, status and explain pure and adds tick and enable as the commands that write."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-profile-foundation-plan-06.md", "code-copilot-team/routing/cct-routing-tier2-delegation-plan-10.md"],
+      "group": "routing-21",
+      "disposition": "companion",
+      "reason": "Which commands stay pure: C's task-addressed explain extends A's explain and stays pure configuration resolution."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-recovery-plan-04.md", "code-copilot-team/routing/cct-routing-tier2-delegation-plan-10.md"],
+      "group": "routing-21",
+      "disposition": "distinct-by-precondition",
+      "reason": "Which commands stay pure: D's tick and C's task-addressed explain each extend A's commands for their own increment, explain staying pure."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-tier2-delegation-plan-05.md", "code-copilot-team/routing/cct-routing-tier2-delegation-plan-09.md"],
+      "group": "routing-22",
+      "disposition": "companion",
+      "reason": "What scope binds the reconciler: plan-05's cumulative allowlist binds the reconciler too; plan-09 applies it to reconciliation."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-tier1-failover-plan-08.md", "code-copilot-team/routing/cct-routing-tier2-delegation-plan-09.md"],
+      "group": "routing-23",
+      "disposition": "distinct-by-precondition",
+      "reason": "When independence cannot be established: B's flows keep their non-blocking disposition; C's reconciliation fails closed with its own."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-eval-plan-04.md", "code-copilot-team/routing/cct-routing-eval-plan-07.md"],
+      "group": "routing-24",
+      "disposition": "companion",
+      "reason": "What the routing-run record carries: plan-04 adds the telemetry fields per attempt; plan-07 defines the versioned schema around them."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-context-limit-plan-06.md", "code-copilot-team/routing/cct-routing-tier2-delegation-plan-03.md"],
+      "group": "routing-25",
+      "disposition": "companion",
+      "reason": "Whether a requirement rides in the packet: F reads the context requirement beside the packet because C's envelope is frozen and digest-bound."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-tier1-failover-plan-02.md", "code-copilot-team/routing/cct-routing-tier2-delegation-plan-08.md"],
+      "group": "routing-26",
+      "disposition": "companion",
+      "reason": "Whether a Tier-2 profile may be selected: C's route classes unlock it under its legality rules; with no route class B's filter stands."
+    },
+    {
+      "pair": ["code-copilot-team/pi/cct-pi-team-controller-plan-03.md", "code-copilot-team/pi/cct-pi-team-controller-plan-08.md"],
+      "group": "pi-01",
+      "disposition": "companion",
+      "reason": "How a member's identity is established: plan-03 takes a declared identity, attribution not authentication; plan-08 leaves authentication to the epic."
+    },
+    {
+      "pair": ["code-copilot-team/pi/cct-pi-team-controller-plan-06.md", "code-copilot-team/pi/cct-pi-worktree-lifecycle-plan-05.md"],
+      "group": "pi-02",
+      "disposition": "companion",
+      "reason": "Which lock serialises ledger mutations: the worktree plan's repo-scoped lock, which the team controller extracts and shares by lock name."
+    },
+    {
+      "pair": ["code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md", "code-copilot-team/pi/cct-pi-sandbox-hardening-plan-01.md"],
+      "group": "pi-03",
+      "disposition": "companion",
+      "reason": "Which scopes may loosen security: the env scrub's opt-out is honoured only from trusted scopes, under the harness's monotonic security floor."
+    },
+    {
+      "pair": ["code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md", "code-copilot-team/pi/cct-pi-sandbox-hardening-plan-05.md"],
+      "group": "pi-03",
+      "disposition": "companion",
+      "reason": "Which scopes may loosen security: the scrub's tighten-only in-repo layers apply the harness's monotonic security floor to one setting."
+    },
+    {
+      "pair": ["code-copilot-team/pi/cct-pi-sandbox-hardening-plan-01.md", "code-copilot-team/pi/cct-pi-sandbox-hardening-plan-05.md"],
+      "group": "pi-03",
+      "disposition": "companion",
+      "reason": "Which scopes may loosen security: plan-01 defers which scopes may opt out of the scrub to decision 5, which plan-05 records."
+    },
+    {
+      "pair": ["code-copilot-team/pi/cct-pi-project-config-spec-02.md", "code-copilot-team/pi/cct-pi-project-config-spec-05.md"],
+      "group": "pi-04",
+      "disposition": "companion",
+      "reason": "What init ignores: spec-02 keeps .cct/ ignored and needs no exception; spec-05 adds the personal override file beside it."
+    },
+    {
+      "pair": ["code-copilot-team/pi/cct-pi-project-config-spec-03.md", "code-copilot-team/pi/cct-pi-project-config-spec-04.md"],
+      "group": "pi-05",
+      "disposition": "companion",
+      "reason": "How a project moves its configuration: an explicit command only, and the fallback window during which the old location is still read."
+    },
+    {
+      "pair": ["code-copilot-team/pi/cct-pi-project-config-spec-03.md", "code-copilot-team/pi/cct-pi-project-config-spec-05.md"],
+      "group": "pi-05",
+      "disposition": "companion",
+      "reason": "How a project moves its configuration: spec-05 names the explicit command spec-03 requires."
+    },
+    {
+      "pair": ["code-copilot-team/pi/cct-pi-project-config-spec-04.md", "code-copilot-team/pi/cct-pi-project-config-spec-05.md"],
+      "group": "pi-05",
+      "disposition": "companion",
+      "reason": "How a project moves its configuration: the migrate command of spec-05 and the fallback window of spec-04 serve the same move."
+    },
+    {
+      "pair": ["code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md", "code-copilot-team/pi/cct-pi-project-config-spec-01.md"],
+      "group": "pi-06",
+      "disposition": "supersedes",
+      "reason": "Where project configuration lives: the later ruling puts it in .cct.toml at the repository root, replacing the earlier trusted project files as its location."
+    },
+    {
+      "pair": ["code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md", "code-copilot-team/pi/cct-pi-project-config-spec-05.md"],
+      "group": "pi-06",
+      "disposition": "companion",
+      "reason": "Where project configuration lives: spec-05 places the personal override and the manifest, which the harness plan does not name."
+    },
+    {
+      "pair": ["code-copilot-team/pi/cct-pi-project-config-spec-01.md", "code-copilot-team/pi/cct-pi-project-config-spec-05.md"],
+      "group": "pi-06",
+      "disposition": "companion",
+      "reason": "Where project configuration lives: spec-05 puts the companion files beside spec-01's .cct.toml at the repository root."
+    },
+    {
+      "pair": ["code-copilot-team/api/cct-api-host-origin-guard-plan-02.md", "code-copilot-team/api/cct-api-host-origin-guard-plan-04.md"],
+      "group": "api-01",
+      "disposition": "distinct-by-precondition",
+      "reason": "Which requests must pass the Origin check: every non-GET method, by method not by route list (plan-04); a request with no Origin header passes, for non-browser clients (plan-02)."
+    },
+    {
+      "pair": ["code-copilot-team/api/cct-api-host-origin-guard-plan-05.md", "code-copilot-team/api/cct-api-probe-error-hardening-plan-02.md"],
+      "group": "api-02",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether a rejection echoes the offending text: neither does, each for its own response: the guard's 403 is a constant message, the probe never returns the matched exception text."
+    },
+    {
+      "pair": ["code-copilot-team/api/cct-api-probe-dsn-constraints-plan-03.md", "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-04.md"],
+      "group": "api-03",
+      "disposition": "distinct-by-precondition",
+      "reason": "Which SQLite DSNs the probe accepts: a file DSN whose file is missing is rejected, not created (plan-03); the in-memory form, touching no path, is accepted (plan-04)."
+    },
+    {
+      "pair": ["code-copilot-team/api/cct-api-probe-dsn-constraints-plan-01.md", "code-copilot-team/api/cct-api-probe-error-hardening-plan-01.md"],
+      "group": "api-04",
+      "disposition": "companion",
+      "reason": "How the error response names the failure class: the DSN plan adds three codes to the closed code set rather than folding them into bad_dsn, building on the error_code field the error-hardening plan adds beside error."
+    },
+    {
+      "pair": ["code-copilot-team/api/cct-api-probe-dsn-constraints-plan-06.md", "code-copilot-team/api/cct-api-probe-error-hardening-plan-01.md"],
+      "group": "api-05",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether the studio changes: the DSN plan confirms the settings page renders any string; the error-hardening plan keeps error so no UI change is needed; each for its own slice."
+    },
+    {
+      "pair": ["code-copilot-team/api/cct-api-probe-dsn-constraints-plan-06.md", "code-copilot-team/api/cct-api-probe-error-hardening-plan-03.md"],
+      "group": "api-05",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether the studio changes: the settings page renders any string (DSN plan) and the studio stays untouched since it renders the curated message (error-hardening plan), each for its own slice."
+    },
+    {
+      "pair": ["code-copilot-team/api/cct-api-probe-error-hardening-plan-01.md", "code-copilot-team/api/cct-api-probe-error-hardening-plan-03.md"],
+      "group": "api-05",
+      "disposition": "companion",
+      "reason": "Whether the studio changes: plan-03 leaves the studio untouched because plan-01 keeps error beside the new error_code; plan-01's decision is the response field, plan-03 applies it to the studio."
+    },
+    {
+      "pair": ["code-copilot-team/api/cct-api-probe-error-hardening-plan-01.md", "code-copilot-team/api/cct-api-probe-error-hardening-plan-04.md"],
+      "group": "api-06",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether the response changes for its consumers: the error response keeps error and only adds error_code (plan-01); the success response is unchanged (plan-04); each for its own response."
+    },
+    {
+      "pair": ["code-copilot-team/llm-catalog/cct-llm-catalog-spec-10.md", "code-copilot-team/llm-catalog/cct-llm-catalog-spec-11.md"],
+      "group": "llm-catalog-01",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether a capture of the installed CLI settles the launch integration: Codex's -c overrides are adopted only once the capture proves nested keys; Pi's overlay form waits for slice D's capture; each for its own harness."
+    },
+    {
+      "pair": ["code-copilot-team/llm-catalog/cct-llm-catalog-spec-10.md", "code-copilot-team/llm-catalog/cct-llm-catalog-spec-12.md"],
+      "group": "llm-catalog-01",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether a capture of the installed CLI settles the launch integration: Codex's overlay form is adopted only after its capture; Kiro's model ids, resume and headless details come from slice E's capture; each for its own harness."
+    },
+    {
+      "pair": ["code-copilot-team/llm-catalog/cct-llm-catalog-spec-11.md", "code-copilot-team/llm-catalog/cct-llm-catalog-spec-12.md"],
+      "group": "llm-catalog-01",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether a capture of the installed CLI settles the launch integration: Pi's overlay form is ruled at slice D's capture, Kiro's launch details at slice E's; each for its own harness."
+    },
+    {
+      "pair": ["code-copilot-team/llm-catalog/cct-llm-catalog-spec-04.md", "code-copilot-team/llm-catalog/cct-llm-catalog-spec-06.md"],
+      "group": "llm-catalog-02",
+      "disposition": "distinct-by-precondition",
+      "reason": "What the catalog reuses from routing's scripts: routing-config.sh's line lexer, extracted into a shared library (spec-04); routing-probe.sh's canary primitives and tri-state, not its accounting (spec-06); each for its own component."
+    },
+    {
+      "pair": ["code-copilot-team/llm-catalog/cct-llm-catalog-spec-07.md", "code-copilot-team/llm-catalog/cct-llm-catalog-spec-08.md"],
+      "group": "llm-catalog-03",
+      "disposition": "distinct-by-precondition",
+      "reason": "What may count as evidence that a binding is supported: an unverified launch never records supported (spec-07); an endpoint's quirk declaration is never evidence (spec-08); each for its own case."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-01.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-03.md"],
+      "group": "wiki-studio-adoption-01",
+      "disposition": "companion",
+      "reason": "Which artifact CCT runs: the launcher runs only the venv's exact 0.9.0 (plan-03), enforcing at run time the hashed-wheel pin of plan-01; it builds on the pin."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-01.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-11.md"],
+      "group": "wiki-studio-adoption-01",
+      "disposition": "companion",
+      "reason": "Which artifact CCT runs: CI installs the exact wheel plan-01 pins, so it tests what production runs (plan-11); it applies the pin to CI."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-01.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-13.md"],
+      "group": "wiki-studio-adoption-02",
+      "disposition": "companion",
+      "reason": "How upstream may change what CCT runs: only by a CCT commit; plan-01 pins the artifact for that reason, plan-13 makes each pin bump a reviewed atomic CCT change; the bump procedure builds on the pin."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-02.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-03.md"],
+      "group": "wiki-studio-adoption-05",
+      "disposition": "distinct-by-precondition",
+      "reason": "What a missing or mismatched prerequisite does: setup warns with the cause and remedy and exits 0 unless the wiki was requested (plan-02); the launcher stops before side effects and names the setup command (plan-03); each for its own step."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-02.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-04.md"],
+      "group": "wiki-studio-adoption-05",
+      "disposition": "distinct-by-precondition",
+      "reason": "What a missing prerequisite does: checkout setup installs the lock or warns (plan-02); plugin-only and copied-adapter guidance names the external prerequisite and refuses lint rather than skip it (plan-04); each for its own installation mode."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-02.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-10.md"],
+      "group": "wiki-studio-adoption-05",
+      "disposition": "distinct-by-precondition",
+      "reason": "What a missing or mismatched prerequisite does: setup warns and reports a distinct incomplete result (plan-02); doctor gives a missing venv, a missing distribution and a version mismatch separate outcomes and remedies (plan-10); each for its own command."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-02.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-11.md"],
+      "group": "wiki-studio-adoption-03",
+      "disposition": "companion",
+      "reason": "Which Python versions the wiki needs: setup keeps non-wiki CCT usable on a 3.10-only or 3.14-only host with the wiki unavailable (plan-02); CI tests the wiki on 3.11–3.13 without dropping 3.10 for other features and names setup as where that shows (plan-11); it builds on setup's distinction."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-03.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-04.md"],
+      "group": "wiki-studio-adoption-05",
+      "disposition": "distinct-by-precondition",
+      "reason": "What a missing or mismatched prerequisite does: the managed launcher stops before side effects (plan-03); unmanaged guidance verifies the version before lint and refuses (plan-04); each for its own installation mode."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-03.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-10.md"],
+      "group": "wiki-studio-adoption-04",
+      "disposition": "companion",
+      "reason": "What doctor checks to call the tooling healthy: plan-03 shares the launcher's resolver with doctor so healthy means the bytes the next command runs; plan-10 names D3's resolver and builds its report on it."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-03.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-11.md"],
+      "group": "wiki-studio-adoption-01",
+      "disposition": "companion",
+      "reason": "Which artifact CCT runs: wiki-lint CI is retargeted to the same artifact and launcher plan-03 defines (plan-11); it applies the launcher to CI."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-04.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-10.md"],
+      "group": "wiki-studio-adoption-05",
+      "disposition": "distinct-by-precondition",
+      "reason": "What a missing or mismatched prerequisite does: unmanaged guidance refuses lint (plan-04); doctor reports each failure with its own outcome and remedy (plan-10); each for its own surface."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-04.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-12.md"],
+      "group": "wiki-studio-adoption-06",
+      "disposition": "companion",
+      "reason": "Which installations CCT claims to set up: plan-04 limits managed setup to checkouts and names the external prerequisite for the rest; the catalogue and docs state that same reach (plan-12); it applies plan-04's boundary to the documents."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-05.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-14.md"],
+      "group": "wiki-studio-adoption-07",
+      "disposition": "companion",
+      "reason": "How the duplicate engines are retired: plan-05 deletes both and retargets every caller; plan-14 makes that deletion the last green stage, after the launcher, package and CI replacement; it sequences plan-05's deletion."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-06.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-08.md"],
+      "group": "wiki-studio-adoption-09",
+      "disposition": "companion",
+      "reason": "Whether the legacy manifest-less mode is kept: plan-06's rewritten test proves the verbs and audit-flush in manifest-less mode; plan-08 keeps the wiki manifest-less on the strength of that round trip; it builds on plan-06's proof."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-06.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-11.md"],
+      "group": "wiki-studio-adoption-08",
+      "disposition": "companion",
+      "reason": "What the contract test runs against: plan-06 rewrites it around the exact package launcher; CI runs that thin contract on the exact wheel (plan-11); it applies plan-06's test to CI."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-07.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-10.md"],
+      "group": "wiki-studio-adoption-11",
+      "disposition": "companion",
+      "reason": "How the schema's divergence is checked: plan-07 pins the reconciled project fingerprint in the thin contract; doctor reports the schema source and fingerprint and gives drift its own outcome (plan-10); it checks plan-07's pin."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-07.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-13.md"],
+      "group": "wiki-studio-adoption-11",
+      "disposition": "companion",
+      "reason": "How the schema's divergence is kept current: a pin bump updates plan-07's classification, delta and fingerprint atomically (plan-13); the bump procedure builds on plan-07's record."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-08.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-12.md"],
+      "group": "wiki-studio-adoption-10",
+      "disposition": "companion",
+      "reason": "Whether the swap takes on governance: plan-08 runs no init and adds no manifest, approvals or findings; the documents keep governance explicitly out of scope (plan-12); it states plan-08's boundary in the docs."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-10.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-13.md"],
+      "group": "wiki-studio-adoption-11",
+      "disposition": "companion",
+      "reason": "How the schema's divergence is kept current: a pin bump updates the fingerprint and the doctor statements plan-10 reports (plan-13); the bump procedure builds on the doctor report."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-01.md", "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-05.md"],
+      "group": "wiki-audit-01",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether flushing is tied to another command: a verb, not a flag on ingest, so no coupling to an ingest run (flush spec-01); independent of promote, with no hook or auto-invoke (flush spec-05); each for its own neighbour."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-02.md", "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-06.md"],
+      "group": "wiki-audit-02",
+      "disposition": "distinct-by-precondition",
+      "reason": "When flush refuses: a log whose committed blob is not a byte prefix of the working file is refused (flush spec-02); a detached HEAD or an unrelated dirty tree is not (flush spec-06); each for its own state."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-02.md", "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-07.md"],
+      "group": "wiki-audit-02",
+      "disposition": "companion",
+      "reason": "When flush refuses: flush spec-07 adds the v1 validation to the pending detection flush spec-02 defines, with the same refusal and the same rule that the ledger is never edited."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-06.md", "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-07.md"],
+      "group": "wiki-audit-02",
+      "disposition": "distinct-by-precondition",
+      "reason": "When flush refuses: unrelated dirty state is tolerated (flush spec-06); a torn or invalid line in the log itself is refused (flush spec-07); each for its own state."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-03.md", "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-06.md"],
+      "group": "wiki-audit-03",
+      "disposition": "companion",
+      "reason": "What the pathspec commit captures: only the ingest log's working state (flush spec-03), so flush spec-06 tolerates a detached HEAD and other changes by construction."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-03.md", "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-07.md"],
+      "group": "wiki-audit-03",
+      "disposition": "companion",
+      "reason": "What the pathspec commit captures: the whole file's bytes, as flush spec-03 commits it, so flush spec-07 refuses a malformed log rather than persist it."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-02.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md"],
+      "group": "wiki-audit-04",
+      "disposition": "companion",
+      "reason": "How the working log is checked: trail spec-03 makes it append-only NDJSON after a fixed marker line; flush spec-02 builds on that to count pending lines after the committed prefix."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-07.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md"],
+      "group": "wiki-audit-04",
+      "disposition": "companion",
+      "reason": "How the working log is checked: flush spec-07 runs the v1 format validation trail spec-03 gives wiki lint over the working log before counting or committing."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-01.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-02.md"],
+      "group": "wiki-audit-05",
+      "disposition": "companion",
+      "reason": "What the archive holds: trail spec-01 lays out the directory with plan.json and proposal.md; trail spec-02 adds curator-delta.md to it only when the curator edited the proposal."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-01.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-05.md"],
+      "group": "wiki-audit-05",
+      "disposition": "companion",
+      "reason": "How the archive is written: trail spec-05 makes it atomic with the wiki write because trail spec-01 places .audit/ under knowledge/wiki/."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-02.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-05.md"],
+      "group": "wiki-audit-05",
+      "disposition": "companion",
+      "reason": "How the archive is written: the curator delta trail spec-02 writes at promote is part of the archive trail spec-05 stages into promote's temporary tree."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-01.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-09.md"],
+      "group": "wiki-audit-06",
+      "disposition": "companion",
+      "reason": "How a log line names its archive: trail spec-01 names the archive by the proposal directory's name, reused verbatim; trail spec-09 records that basename as proposal_dir."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-08.md"],
+      "group": "wiki-audit-07",
+      "disposition": "companion",
+      "reason": "What the record carries: trail spec-08 moves the append after materialization so the proposal_hash trail spec-03 defines hashes the written proposal directory."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-09.md"],
+      "group": "wiki-audit-07",
+      "disposition": "companion",
+      "reason": "What the record carries: trail spec-03 fixes the format, source and hash fields; trail spec-09 adds the patch-set fields (derived disposition, proposal_dir, target_paths, page_types)."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-08.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-09.md"],
+      "group": "wiki-audit-07",
+      "disposition": "companion",
+      "reason": "What the record carries: trail spec-08's build_log_record derives the one record shape trail spec-09 defines from a WikiPatchSet or an IngestProposal."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-04.md"],
+      "group": "wiki-audit-08",
+      "disposition": "companion",
+      "reason": "Whether lines are cross-checked against archives: trail spec-03 defers the semantic checks; trail spec-04 names an accept line with no matching archive as the hook point for that deferred pass."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-04.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-05.md"],
+      "group": "wiki-audit-09",
+      "disposition": "companion",
+      "reason": "Which runs write a line: trail spec-05 keeps the append out of promote's atomic unit because it must record the rejects trail spec-04 puts in scope."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-04.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-08.md"],
+      "group": "wiki-audit-09",
+      "disposition": "distinct-by-precondition",
+      "reason": "Which runs write a line: every ingest call, a reject included, but not a run that dies before ingest finishes (trail spec-04); not --check, which returns before materialization (trail spec-08); each for its own kind of run."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-05.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-08.md"],
+      "group": "wiki-audit-09",
+      "disposition": "companion",
+      "reason": "At what point the line is written: trail spec-08 places the standalone fail-closed write trail spec-05 keeps out of promote in the CLI ingest handlers, after materialization."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-04.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-09.md"],
+      "group": "wiki-audit-10",
+      "disposition": "companion",
+      "reason": "How a reject is recorded: trail spec-04 writes a reject line for every gate reject; trail spec-09 derives that disposition as reject when the patch set's edits are empty."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-06.md"],
+      "group": "wiki-audit-11",
+      "disposition": "companion",
+      "reason": "How the unreviewed reason is bounded: trail spec-03 truncates it to 240 codepoints and lint checks its length; trail spec-06 leaves it unscrubbed because of that bound."
+    },
+    {
+      "pair": ["code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-01.md", "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-05.md"],
+      "group": "memkernel-integration-01",
+      "disposition": "companion",
+      "reason": "How the GCC memory setup is retired: plan-01 replaces the per-agent GCC sections with one on-demand memkernel rule; plan-05 removes every remaining GCC remnant from both trees; the cleanup completes the replacement."
+    },
+    {
+      "pair": ["code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-03.md", "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-07.md"],
+      "group": "memkernel-integration-02",
+      "disposition": "companion",
+      "reason": "How a project gets the MCP server registered: plan-03 registers it per project in the uncommitted settings.local.json with its own MEMKERNEL_PROJECT_ID; plan-07 adds that registration step to claude-code sync so existing projects, not just init, get it; it applies plan-03 to one more case."
+    },
+    {
+      "pair": ["code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-06.md", "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-07.md"],
+      "group": "memkernel-integration-03",
+      "disposition": "distinct-by-precondition",
+      "reason": "How existing setups pick up memkernel: setup.sh's --sync path copies the hooks and merges settings for an existing install (plan-06); claude-code sync registers the MCP server for an existing project (plan-07); each for its own target."
+    },
+    {
+      "pair": ["code-copilot-team/one-harness-home/cct-one-harness-home-spec-01.md", "code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md"],
+      "group": "one-harness-home-01",
+      "disposition": "companion",
+      "reason": "Whether the one .cct name holds at home and in the project: spec-01 makes ~/.cct/ the user home so its name matches the project's .cct/; spec-05 rules the project side renamed too, as a separate issue; it extends spec-01's direction to the project."
+    },
+    {
+      "pair": ["code-copilot-team/one-harness-home/cct-one-harness-home-spec-04.md", "code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md"],
+      "group": "one-harness-home-02",
+      "disposition": "companion",
+      "reason": "How the per-project rename is delivered: spec-04 makes the project half its own issue and PR if D5 says yes; spec-05, D5, says yes, after this feature's PR; it settles spec-04's condition."
+    },
+    {
+      "pair": ["code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-02.md", "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-04.md"],
+      "group": "plugin-generate-from-sources-01",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether the plugin ships what its agents and commands refer to: plan-02 ships the six always-on skills as ordinary plugin skills that load on a matching description, said plainly in docs/install.md, rather than leaving them out; plan-04 ships templates/sdd/ and review-decide.sh inside the plugin with rewritten paths, rather than packaging only the self-contained components; each for its own components."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-7-spec-01.md", "memkernel/memkernel/mk-memkernel-0-7-spec-03.md"],
+      "group": "memkernel-01",
+      "disposition": "companion",
+      "reason": "When a memory is withdrawn: spec-01 defines the withdrawn marker; spec-03 decides when a deleted page's memory gets it."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-7-spec-01.md", "memkernel/memkernel/mk-memkernel-0-7-spec-04.md"],
+      "group": "memkernel-01",
+      "disposition": "companion",
+      "reason": "When a memory is withdrawn: spec-04's withdrawal with reason superseded and its late link use spec-01's two markers."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-7-spec-01.md", "memkernel/memkernel/mk-memkernel-0-7-spec-05.md"],
+      "group": "memkernel-01",
+      "disposition": "companion",
+      "reason": "When a memory is withdrawn: spec-05 withdraws a deprecated page's memory with spec-01's marker once the revision is approved."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-7-spec-03.md", "memkernel/memkernel/mk-memkernel-0-7-spec-04.md"],
+      "group": "memkernel-01",
+      "disposition": "distinct-by-precondition",
+      "reason": "When a memory is withdrawn: deletion and supersession are two causes, each with its own rule."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-7-spec-03.md", "memkernel/memkernel/mk-memkernel-0-7-spec-05.md"],
+      "group": "memkernel-01",
+      "disposition": "distinct-by-precondition",
+      "reason": "When a memory is withdrawn: deletion and deprecation are two causes, each with its own rule."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-7-spec-04.md", "memkernel/memkernel/mk-memkernel-0-7-spec-05.md"],
+      "group": "memkernel-01",
+      "disposition": "distinct-by-precondition",
+      "reason": "When a memory is withdrawn: supersession and deprecation are two causes, each with its own rule."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-7-governed-spec-05.md", "memkernel/memkernel/mk-memkernel-0-7-spec-03.md"],
+      "group": "memkernel-02",
+      "disposition": "companion",
+      "reason": "What happens to a renamed page's memory: spec-03 says a rename that kept its page_id is no deletion; the governed spec makes the import supersede it at the new path."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-7-governed-spec-05.md", "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-04.md"],
+      "group": "memkernel-03",
+      "disposition": "companion",
+      "reason": "How the import finds a page's previous memory: by page key at another path (governed spec), and only among this wiki's memories (wiki scope)."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-copilot-memory-mvp-plan-05.md", "memkernel/memkernel/mk-memkernel-0-4-plan-03.md"],
+      "group": "memkernel-04",
+      "disposition": "distinct-by-precondition",
+      "reason": "When a retain is a dedup hit: the content-and-type key holds for memories in general; sourced code dedups per path."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-copilot-memory-mvp-plan-05.md", "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-03.md"],
+      "group": "memkernel-04",
+      "disposition": "distinct-by-precondition",
+      "reason": "When a retain is a dedup hit: the content-and-type key in general; a wiki memory only for the wiki that owns it."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-4-plan-03.md", "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-03.md"],
+      "group": "memkernel-04",
+      "disposition": "distinct-by-precondition",
+      "reason": "When a retain is a dedup hit: per path for sourced code; by wiki membership for wiki memories."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-4-plan-01.md", "memkernel/memkernel/mk-memkernel-0-4-plan-02.md"],
+      "group": "memkernel-05",
+      "disposition": "companion",
+      "reason": "How a stale code memory is detected and marked: plan-01 compares content hashes; plan-02 marks the result as a needs_review flag."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-7-store-locks-spec-02.md", "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-09.md"],
+      "group": "memkernel-06",
+      "disposition": "companion",
+      "reason": "What serialises wiki imports: the store-locks spec provides the named wiki-import lock; the wiki-scope spec holds it for every import."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-7-store-locks-spec-03.md", "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-09.md"],
+      "group": "memkernel-07",
+      "disposition": "companion",
+      "reason": "Who writes tags: merge_tags is the one tag writer; the wiki-scope spec writes identity tags through it."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-06.md", "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-09.md"],
+      "group": "memkernel-08",
+      "disposition": "companion",
+      "reason": "Which operations set identity tags: set_wiki_identity changes only those tags; spec-09 reserves them to it and to the import's retain keyword."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-10-recall-log-spec-01.md", "memkernel/memkernel/mk-memkernel-0-7-store-locks-spec-04.md"],
+      "group": "memkernel-09",
+      "disposition": "companion",
+      "reason": "What runs without fcntl: the recall log runs unlocked with one warning, like the store locks it names."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-10-recall-log-spec-01.md", "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-09.md"],
+      "group": "memkernel-09",
+      "disposition": "distinct-by-precondition",
+      "reason": "What runs without fcntl: the recall log and the wiki import each run unlocked with one warning, for their own lock."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-7-store-locks-spec-04.md", "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-09.md"],
+      "group": "memkernel-09",
+      "disposition": "companion",
+      "reason": "What runs without fcntl: the wiki import's unlocked run follows the store-locks platform rule and lists the races it leaves."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-01.md", "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-02.md"],
+      "group": "memkernel-10",
+      "disposition": "companion",
+      "reason": "What the identity tags are: spec-01 defines the terms; spec-02 decides the two tags and membership by them."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-04.md", "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-05.md"],
+      "group": "memkernel-11",
+      "disposition": "companion",
+      "reason": "When a legacy memory is a candidate: only when no owned candidate exists (spec-04), and it is adopted only on the owner's word (spec-05)."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-7-release-b-exit-plan-07.md", "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-05.md"],
+      "group": "memkernel-12",
+      "disposition": "companion",
+      "reason": "How a 0.6 store is adopted on upgrade: the upgrade run checks the wiki-scope rule, nothing written by default and adopt_legacy adopting without duplicates."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-7-spec-02.md", "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-07.md"],
+      "group": "memkernel-13",
+      "disposition": "companion",
+      "reason": "What keys the sync ledger: spec-02 keys it by wiki_id or the path hash; spec-07 migrates it when a manifest is added."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-7-hooks-spec-04.md", "memkernel/memkernel/mk-memkernel-0-7-spec-02.md"],
+      "group": "memkernel-14",
+      "disposition": "companion",
+      "reason": "Where memkernel keeps its state: the session spool sits in the same state directory spec-02 creates for the ledger."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-7-hooks-spec-04.md", "memkernel/memkernel/mk-memkernel-0-7-wiring-spool-spec-02.md"],
+      "group": "memkernel-15",
+      "disposition": "companion",
+      "reason": "How the spool records and drains sessions: the hooks spec writes and drains it; the wiring spec prunes sessions that never ended."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-8-untrusted-memory-spec-01.md", "memkernel/memkernel/mk-memkernel-0-8-untrusted-memory-spec-05.md"],
+      "group": "memkernel-16",
+      "disposition": "companion",
+      "reason": "Which injected text is quoted: spec-01 lists the pieces of text; spec-05 lists the blocks where the quoting applies."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-10-recall-log-spec-01.md", "memkernel/memkernel/mk-memkernel-0-10-recall-log-spec-02.md"],
+      "group": "memkernel-17",
+      "disposition": "companion",
+      "reason": "Which recalls are logged: spec-02 logs the tool and the hook blocks; spec-01 logs on_post_compact's block only when given a session id."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-10-recall-log-spec-01.md", "memkernel/memkernel/mk-memkernel-0-10-recall-log-spec-03.md"],
+      "group": "memkernel-17",
+      "disposition": "companion",
+      "reason": "Which hook blocks are logged: each block that shows memories (spec-03), the post-compact one only with a session id (spec-01)."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-10-recall-log-spec-02.md", "memkernel/memkernel/mk-memkernel-0-10-recall-log-spec-03.md"],
+      "group": "memkernel-17",
+      "disposition": "companion",
+      "reason": "Which recalls are logged: spec-03 gives the reason spec-02 logs hook blocks, since a session start shows memories without recall."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-05.md", "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-06.md"],
+      "group": "memkernel-18",
+      "disposition": "supersedes",
+      "reason": "Which captured records may be candidates: 0.14 replaces 0.12's rule that every captured record stays out; at most 2 owner answers may now be candidates."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-03.md", "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-05.md"],
+      "group": "memkernel-19",
+      "disposition": "companion",
+      "reason": "What caps bound a capture run: 0.14 keeps 0.12's per-run record cap and adds the owner-answer cap."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-08.md", "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-01.md"],
+      "group": "memkernel-20",
+      "disposition": "companion",
+      "reason": "Which extractors ship by yield: 0.12 ships one and leaves the extractors with yield to S3; 0.14 names S3's first two."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-copilot-memory-mvp-plan-06.md", "memkernel/memkernel/mk-memkernel-0-15-harness-foundations-spec-01.md"],
+      "group": "memkernel-21",
+      "disposition": "distinct-by-precondition",
+      "reason": "Filter or collection: session scoping in the MVP and agent or task scope in 0.15 each choose a metadata filter over separate collections."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-15-harness-foundations-spec-02.md", "memkernel/memkernel/mk-memkernel-0-15-harness-foundations-spec-06.md"],
+      "group": "memkernel-22",
+      "disposition": "companion",
+      "reason": "Who supplies the agent or task id: the caller, never memkernel (spec-06), passed per call or per process (spec-02)."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-16-lifecycle-corrections-spec-01.md", "memkernel/memkernel/mk-memkernel-0-16-lifecycle-corrections-spec-07.md"],
+      "group": "memkernel-23",
+      "disposition": "companion",
+      "reason": "How many chains: spec-01 adopts the eight chains, extended to 12 by D7; spec-07 is D7 and its arithmetic."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-16-lifecycle-corrections-spec-02.md", "memkernel/memkernel/mk-memkernel-0-16-lifecycle-corrections-spec-03.md"],
+      "group": "memkernel-24",
+      "disposition": "companion",
+      "reason": "Which curator drives the governed arm: the scripted curator is the primary arm (spec-03); the oracle curator is the upper bound (spec-02)."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-7-governed-spec-02.md", "memkernel/memkernel/mk-memkernel-0-8-untrusted-memory-spec-04.md"],
+      "group": "memkernel-25",
+      "disposition": "distinct-by-precondition",
+      "reason": "How the 9,000-character budget is shared: the curation debt section and the stored-memory tags each fit inside it by their own rule."
+    },
+    {
+      "pair": ["memkernel/memkernel/mk-memkernel-0-7-release-b-exit-plan-01.md", "memkernel/memkernel/mk-memkernel-0-7-release-b-exit-plan-05.md"],
+      "group": "memkernel-26",
+      "disposition": "companion",
+      "reason": "On which wheels the evidence is recorded: released wheels, so 0.7.0 ships first (plan-01); a CI run on a PR wheel is only a signal (plan-05)."
+    }
+  ],
+  "summary": [
+    {"kind": "group", "ref": "routing-01", "line": "Which option governs the effective-endpoint requirement: O4, with O1 only completing telemetry?"},
+    {"kind": "group", "ref": "routing-02", "line": "Is O2, a proxy that observes the endpoint, adopted?"},
+    {"kind": "group", "ref": "routing-03", "line": "Is O3, a provider-reported effective-upstream signal, relied on?"},
+    {"kind": "group", "ref": "routing-04", "line": "Is the minimum-context filter applied on the reconcile path as well as the delegate path?"},
+    {"kind": "group", "ref": "routing-05", "line": "Does the increment take any execution authority over production routing?"},
+    {"kind": "group", "ref": "routing-06", "line": "Where is secret redaction applied to routing evidence?"},
+    {"kind": "group", "ref": "routing-07", "line": "Where does the code that consumes routing evidence live?"},
+    {"kind": "group", "ref": "routing-08", "line": "How is the increment's Studio surface built and verified?"},
+    {"kind": "group", "ref": "routing-09", "line": "What do E1's evidence sets gain so the calibration metrics have their inputs?"},
+    {"kind": "group", "ref": "routing-10", "line": "When is an evaluation report current enough to satisfy a gate?"},
+    {"kind": "group", "ref": "routing-11", "line": "How is a measure or an arm with missing evidence carried in E1's results?"},
+    {"kind": "group", "ref": "routing-12", "line": "When may a router score be reported?"},
+    {"kind": "group", "ref": "routing-13", "line": "How is a cost that no backend reported recorded?"},
+    {"kind": "group", "ref": "routing-14", "line": "How does a new routing field stay compatible with documents written before it?"},
+    {"kind": "group", "ref": "routing-15", "line": "What does each backend failure class mean, and which routing action follows from it?"},
+    {"kind": "group", "ref": "routing-16", "line": "Is a requested model ever recorded as the effective one when the backend does not report it?"},
+    {"kind": "group", "ref": "routing-17", "line": "What does the routing state store hold, and how do its entries decay?"},
+    {"kind": "group", "ref": "routing-18", "line": "How does an auth-disabled profile become eligible again?"},
+    {"kind": "group", "ref": "routing-19", "line": "Are the increment's timing and limit numbers configuration?"},
+    {"kind": "group", "ref": "routing-20", "line": "May the repository's routing block widen the user's policy?"},
+    {"kind": "group", "ref": "routing-21", "line": "Which routing commands stay pure, and which may write?"},
+    {"kind": "group", "ref": "routing-22", "line": "What scope binds the Tier-1 reconciler's edits?"},
+    {"kind": "group", "ref": "routing-23", "line": "What happens when the independence of builder and reviewer cannot be established?"},
+    {"kind": "group", "ref": "routing-24", "line": "What does the routing-run record carry?"},
+    {"kind": "group", "ref": "routing-25", "line": "Does a task's routing requirement ride in the immutable packet envelope?"},
+    {"kind": "group", "ref": "routing-26", "line": "May a Tier-2 profile be selected?"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-calibration-plan-04.md", "line": "Features are PRE-ROUTING only — the label's ingredients never enter the query vector"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-calibration-plan-05.md", "line": "The classifier is FULLY specified — two conforming implementations cannot disagree"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-calibration-plan-06.md", "line": "Held-out evaluation: leave-one-task-out, leakage-free, durable"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-calibration-plan-07.md", "line": "False downgrade, exactly — against the SAFETY BASELINE tier"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-context-limit-plan-01.md", "line": "the executable-identity tuple is a KEY, not a carrier"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-context-limit-plan-02.md", "line": "an observation is an UPPER BOUND, never a capacity proof"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-context-limit-plan-03.md", "line": "fail-closed only where a requirement exists"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-context-limit-plan-04.md", "line": "one numeric-extraction pattern, named and separate"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-eval-plan-01.md", "line": "The comparison unit is a routing policy, and it is a new preset kind — not a new candidate shape"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-eval-plan-02.md", "line": "Injection drives the existing test-only seams; production routing code is untouched"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-eval-plan-03.md", "line": "The matrix is `task × profile × trial`, and its reuse is fingerprint-gated"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-eval-plan-05.md", "line": "`quality_fn: v1` orders arms; it does not redefine the metrics"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-profile-foundation-plan-01.md", "line": "Registry location and format — a constrained TOML dialect"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-profile-foundation-plan-02.md", "line": "Closed profile shape"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-profile-foundation-plan-03.md", "line": "Credential and endpoint hygiene — structural first"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-recovery-plan-02.md", "line": "The probe engine is a lib with honest per-backend canaries"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-recovery-plan-05.md", "line": "Failback lives in the supervisor loop, boundary-only"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-recovery-plan-07.md", "line": "Reconcile-on-recovery"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-recovery-plan-09.md", "line": "Scope honesty"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-shadow-plan-02.md", "line": "gains ONE production orchestration entrypoint that publishes the complete evidence set — the labeled E1 change"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-shadow-plan-03.md", "line": "Report contract v1: versioned, schema'd, task-resolved, source-bound"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-shadow-plan-04.md", "line": "Evidence-set identity, discovery, and binding validation"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-shadow-plan-05.md", "line": "Recommendation derivation v1 — positive observed-evidence dominance, per"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-shadow-plan-06.md", "line": "Versioned recommendation record"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-shadow-plan-09.md", "line": "The figure-provenance gate"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-tier1-failover-plan-01.md", "line": "The seam is the supervisor, opt-in by flag"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-tier1-failover-plan-05.md", "line": "Checkpoint + the FROZEN crash-ordering contract"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-tier1-failover-plan-07.md", "line": "Codex is NOT in this increment — B makes NO codex-support claim"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-tier1-failover-plan-09.md", "line": "Exhaustion + caps"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-tier2-delegation-plan-01.md", "line": "Task route metadata is a constrained artifact, validated like everything else"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-tier2-delegation-plan-02.md", "line": "The safety floor is structural, evaluated twice, and cannot be annotated away"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-tier2-delegation-plan-04.md", "line": "Packet execution rides B's supervisor machinery — one new bounded mode, legacy and B byte-identical without it"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-tier2-delegation-plan-07.md", "line": "`verified_provisional` is a ledger state that satisfies nothing"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-usage-evidence-plan-01.md", "line": "one price table, read not copied"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-usage-evidence-plan-03.md", "line": "the cost cap is not a usage source"},
+    {"kind": "page", "ref": "code-copilot-team/routing/cct-routing-usage-evidence-plan-04.md", "line": "aliases are fixed by observation"},
+    {"kind": "group", "ref": "pi-01", "line": "How is a team member's identity established?"},
+    {"kind": "group", "ref": "pi-02", "line": "Which lock serialises ledger mutations, and how is it shared?"},
+    {"kind": "group", "ref": "pi-03", "line": "Which configuration scopes may loosen a security setting?"},
+    {"kind": "group", "ref": "pi-04", "line": "What does init put in the ignore lines for the configuration files?"},
+    {"kind": "group", "ref": "pi-05", "line": "How does a project move to the new configuration location?"},
+    {"kind": "group", "ref": "pi-06", "line": "Where does the project-level configuration live?"},
+    {"kind": "page", "ref": "code-copilot-team/pi/cct-pi-harness-adoption-plan-01.md", "line": "Advisory package / enforced runtime split"},
+    {"kind": "page", "ref": "code-copilot-team/pi/cct-pi-harness-adoption-plan-02.md", "line": "In-process trust gating; launcher stays trust-ignorant"},
+    {"kind": "page", "ref": "code-copilot-team/pi/cct-pi-harness-adoption-plan-03.md", "line": "Dedicated non-recursive `peer-reviewer` profile + adapter script"},
+    {"kind": "page", "ref": "code-copilot-team/pi/cct-pi-harness-adoption-plan-04.md", "line": "Launcher symmetry with `claude-code`"},
+    {"kind": "page", "ref": "code-copilot-team/pi/cct-pi-harness-adoption-plan-06.md", "line": "Behavioral parity via neutral schemas + contract tests"},
+    {"kind": "page", "ref": "code-copilot-team/pi/cct-pi-sandbox-hardening-plan-02.md", "line": "Keep-list defaults"},
+    {"kind": "page", "ref": "code-copilot-team/pi/cct-pi-sandbox-hardening-plan-03.md", "line": "Capability status"},
+    {"kind": "page", "ref": "code-copilot-team/pi/cct-pi-sandbox-hardening-plan-04.md", "line": "Handoff mechanism"},
+    {"kind": "page", "ref": "code-copilot-team/pi/cct-pi-team-controller-plan-01.md", "line": "Scope"},
+    {"kind": "page", "ref": "code-copilot-team/pi/cct-pi-team-controller-plan-02.md", "line": "Canonical root"},
+    {"kind": "page", "ref": "code-copilot-team/pi/cct-pi-team-controller-plan-04.md", "line": "Authz"},
+    {"kind": "page", "ref": "code-copilot-team/pi/cct-pi-team-controller-plan-05.md", "line": "Create safety + bootstrap"},
+    {"kind": "page", "ref": "code-copilot-team/pi/cct-pi-team-controller-plan-07.md", "line": "CLI gate"},
+    {"kind": "page", "ref": "code-copilot-team/pi/cct-pi-worktree-lifecycle-plan-01.md", "line": "Lifecycle model"},
+    {"kind": "page", "ref": "code-copilot-team/pi/cct-pi-worktree-lifecycle-plan-02.md", "line": "Isolation failure"},
+    {"kind": "page", "ref": "code-copilot-team/pi/cct-pi-worktree-lifecycle-plan-03.md", "line": "Path"},
+    {"kind": "page", "ref": "code-copilot-team/pi/cct-pi-worktree-lifecycle-plan-04.md", "line": "Reconcile"},
+    {"kind": "group", "ref": "api-01", "line": "Which requests must pass the Origin check?"},
+    {"kind": "group", "ref": "api-02", "line": "Does a rejection's error response echo the offending text?"},
+    {"kind": "group", "ref": "api-03", "line": "Which SQLite DSNs does the connection probe accept?"},
+    {"kind": "group", "ref": "api-04", "line": "How does the probe's error response name the failure class?"},
+    {"kind": "group", "ref": "api-05", "line": "Does the studio change to show the probe's error messages?"},
+    {"kind": "group", "ref": "api-06", "line": "Does the probe's response change for its existing consumers?"},
+    {"kind": "page", "ref": "code-copilot-team/api/cct-api-host-origin-guard-plan-01.md", "line": "Host + Origin only."},
+    {"kind": "page", "ref": "code-copilot-team/api/cct-api-host-origin-guard-plan-03.md", "line": "tests point `TestClient` at `http://127.0.0.1:<port>` rather than adding `testserver` to the production default allowlist."},
+    {"kind": "page", "ref": "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-02.md", "line": "extract the sqlite path rule into db.py and use it from both `connect()` and the validator."},
+    {"kind": "page", "ref": "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-05.md", "line": "the allowlist is loopback + the host parsed from the CONFIGURED DSN only."},
+    {"kind": "group", "ref": "llm-catalog-01", "line": "Does a capture of the installed CLI settle a harness's launch integration?"},
+    {"kind": "group", "ref": "llm-catalog-02", "line": "What does the catalog reuse from routing's scripts?"},
+    {"kind": "group", "ref": "llm-catalog-03", "line": "What may count as evidence that a binding is supported?"},
+    {"kind": "page", "ref": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-01.md", "line": "Slicing"},
+    {"kind": "page", "ref": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-02.md", "line": "User home"},
+    {"kind": "page", "ref": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-03.md", "line": "Three files"},
+    {"kind": "page", "ref": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-05.md", "line": "Bindings"},
+    {"kind": "page", "ref": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-09.md", "line": "Session keys"},
+    {"kind": "page", "ref": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-13.md", "line": "Project policy"},
+    {"kind": "page", "ref": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-14.md", "line": "Studio"},
+    {"kind": "page", "ref": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-15.md", "line": "Unified entry"},
+    {"kind": "group", "ref": "wiki-studio-adoption-01", "line": "Which wiki-studio artifact do CCT's setup, launcher and CI install and run?"},
+    {"kind": "group", "ref": "wiki-studio-adoption-02", "line": "How may upstream wiki-studio change what CCT runs?"},
+    {"kind": "group", "ref": "wiki-studio-adoption-03", "line": "Which Python versions does the wiki tooling need, and does that narrow the rest of CCT?"},
+    {"kind": "group", "ref": "wiki-studio-adoption-04", "line": "What does doctor check to call the wiki tooling healthy?"},
+    {"kind": "group", "ref": "wiki-studio-adoption-05", "line": "What happens when the wiki-studio prerequisite is missing or the wrong version?"},
+    {"kind": "group", "ref": "wiki-studio-adoption-06", "line": "Which installations does CCT claim to set up wiki-studio for?"},
+    {"kind": "group", "ref": "wiki-studio-adoption-07", "line": "How are CCT's in-repo duplicate wiki engines retired?"},
+    {"kind": "group", "ref": "wiki-studio-adoption-08", "line": "What does CCT's wiki contract test run against?"},
+    {"kind": "group", "ref": "wiki-studio-adoption-09", "line": "Is the legacy manifest-less mode kept, and what proves it?"},
+    {"kind": "group", "ref": "wiki-studio-adoption-10", "line": "Does the package swap take on wiki-studio's governance?"},
+    {"kind": "group", "ref": "wiki-studio-adoption-11", "line": "How is the project schema's divergence from upstream recorded, checked and kept current?"},
+    {"kind": "page", "ref": "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-09.md", "line": "Preserve the assistant workflows' semantics"},
+    {"kind": "group", "ref": "wiki-audit-01", "line": "Is audit-flush its own command, apart from ingest and promote?"},
+    {"kind": "group", "ref": "wiki-audit-02", "line": "When does audit-flush refuse rather than commit?"},
+    {"kind": "group", "ref": "wiki-audit-03", "line": "What does audit-flush's pathspec commit capture?"},
+    {"kind": "group", "ref": "wiki-audit-04", "line": "How is the working ingest log checked against its append-only v1 format?"},
+    {"kind": "group", "ref": "wiki-audit-05", "line": "What does the accepted-proposal archive hold, and how is it written?"},
+    {"kind": "group", "ref": "wiki-audit-06", "line": "How does an ingest-log line name the archive of its proposal?"},
+    {"kind": "group", "ref": "wiki-audit-07", "line": "What fields does an ingest-log record carry?"},
+    {"kind": "group", "ref": "wiki-audit-08", "line": "Is an ingest-log line cross-checked against the archives in v1?"},
+    {"kind": "group", "ref": "wiki-audit-09", "line": "Which wiki ingest runs write an ingest-log line, and at what point?"},
+    {"kind": "group", "ref": "wiki-audit-10", "line": "How is a rejected ingest recorded in the ingest log?"},
+    {"kind": "group", "ref": "wiki-audit-11", "line": "How is the ingest log's unreviewed reason field bounded?"},
+    {"kind": "page", "ref": "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-04.md", "line": "4 — No-op is success"},
+    {"kind": "page", "ref": "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-07.md", "line": "7 — Backfill"},
+    {"kind": "group", "ref": "memkernel-integration-01", "line": "How is CCT's GCC memory setup retired?"},
+    {"kind": "group", "ref": "memkernel-integration-02", "line": "How does a project get memkernel's MCP server registered?"},
+    {"kind": "group", "ref": "memkernel-integration-03", "line": "How do existing CCT installs and projects pick up memkernel?"},
+    {"kind": "page", "ref": "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-02.md", "line": "Direct Python hooks with two-layer shell guards"},
+    {"kind": "page", "ref": "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-04.md", "line": "Pre-publication via `pip install -e`"},
+    {"kind": "group", "ref": "one-harness-home-01", "line": "Does the harness use the one .cct name in the user home and in the project?"},
+    {"kind": "group", "ref": "one-harness-home-02", "line": "Is the per-project rename delivered with the user home or as its own issue and PR?"},
+    {"kind": "page", "ref": "code-copilot-team/one-harness-home/cct-one-harness-home-spec-02.md", "line": "One override"},
+    {"kind": "page", "ref": "code-copilot-team/one-harness-home/cct-one-harness-home-spec-03.md", "line": "Migration mechanics"},
+    {"kind": "page", "ref": "code-copilot-team/one-harness-home/cct-one-harness-home-spec-06.md", "line": "#400 coupling"},
+    {"kind": "group", "ref": "plugin-generate-from-sources-01", "line": "Does the plugin ship what its agents and commands refer to, or only what stands alone?"},
+    {"kind": "page", "ref": "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-01.md", "line": "Decided by the owner, 2026-09-19"},
+    {"kind": "page", "ref": "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-03.md", "line": "duplicate hooks when both installs exist"},
+    {"kind": "page", "ref": "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-05.md", "line": "version 1.1.0"},
+    {"kind": "page", "ref": "code-copilot-team/simplest-complete-change/cct-simplest-complete-change-plan-01.md", "line": "Native CCT Policy Without a Ponytail Dependency"},
+    {"kind": "page", "ref": "code-copilot-team/simplest-complete-change/cct-simplest-complete-change-plan-02.md", "line": "Single Home for the Reuse Ladder (`copilot-conventions`) vs Config Boundary"},
+    {"kind": "page", "ref": "code-copilot-team/simplest-complete-change/cct-simplest-complete-change-plan-03.md", "line": "Selective Decision Memory via Existing MemKernel Interfaces"},
+    {"kind": "group", "ref": "memkernel-01", "line": "When is a page's memory withdrawn, and how is it marked?"},
+    {"kind": "group", "ref": "memkernel-02", "line": "What happens to the memory of a renamed page?"},
+    {"kind": "group", "ref": "memkernel-03", "line": "How does the import find a page's previous memory?"},
+    {"kind": "group", "ref": "memkernel-04", "line": "When is a retain a dedup hit?"},
+    {"kind": "group", "ref": "memkernel-05", "line": "How is a stale code memory detected and marked?"},
+    {"kind": "group", "ref": "memkernel-06", "line": "What serialises wiki imports on one store?"},
+    {"kind": "group", "ref": "memkernel-07", "line": "Who may write a record's tags, and under which lock?"},
+    {"kind": "group", "ref": "memkernel-08", "line": "Which operations may set a memory's identity tags?"},
+    {"kind": "group", "ref": "memkernel-09", "line": "What runs where fcntl is unavailable?"},
+    {"kind": "group", "ref": "memkernel-10", "line": "What are a memory's wiki identity tags?"},
+    {"kind": "group", "ref": "memkernel-11", "line": "When is a legacy memory a candidate for a page?"},
+    {"kind": "group", "ref": "memkernel-12", "line": "How is a 0.6 store's legacy memory adopted on the upgrade to 0.7?"},
+    {"kind": "group", "ref": "memkernel-13", "line": "What keys a wiki's sync ledger, and what happens to it when the wiki's identity changes?"},
+    {"kind": "group", "ref": "memkernel-14", "line": "Where does memkernel keep its own state files?"},
+    {"kind": "group", "ref": "memkernel-15", "line": "How does the session spool record and drain sessions?"},
+    {"kind": "group", "ref": "memkernel-16", "line": "Which injected text is quoted as stored data?"},
+    {"kind": "group", "ref": "memkernel-17", "line": "Which recalls and hook blocks are logged?"},
+    {"kind": "group", "ref": "memkernel-18", "line": "Which captured records may be promotion candidates?"},
+    {"kind": "group", "ref": "memkernel-19", "line": "What caps bound a capture run?"},
+    {"kind": "group", "ref": "memkernel-20", "line": "Which extractors does capture ship, chosen by their yield?"},
+    {"kind": "group", "ref": "memkernel-21", "line": "Is a memory's scope a metadata filter or a separate collection?"},
+    {"kind": "group", "ref": "memkernel-22", "line": "Who supplies the agent or task id?"},
+    {"kind": "group", "ref": "memkernel-23", "line": "How many correction chains does the comparison use?"},
+    {"kind": "group", "ref": "memkernel-24", "line": "Which curator drives the governed arm of the comparison?"},
+    {"kind": "group", "ref": "memkernel-25", "line": "How is the session-start block's 9,000-character budget shared?"},
+    {"kind": "group", "ref": "memkernel-26", "line": "On which wheels is the release exit evidence recorded?"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-copilot-memory-mvp-plan-01.md", "line": "MCP-first, FastAPI secondary"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-copilot-memory-mvp-plan-02.md", "line": "ChromaDB for MVP with application-level BM25"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-copilot-memory-mvp-plan-03.md", "line": "Embedding model selection"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-copilot-memory-mvp-plan-04.md", "line": "Reference-based returns"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-10-recall-log-spec-04.md", "line": "Which session a recall belongs to"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-10-recall-log-spec-05.md", "line": "Size limit"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-10-recall-log-spec-06.md", "line": "Query text"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-10-recall-log-spec-07.md", "line": "What counts as a stored error, and as a repeat"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-10-recall-log-spec-08.md", "line": "What the report says about each repeat"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-01.md", "line": "Key"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-02.md", "line": "Default"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-04.md", "line": "Redaction"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-06.md", "line": "Values"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-07.md", "line": "Rerun and pass"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-13-one-store-across-tools-spec-01.md", "line": "Several stdio servers: support them"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-13-one-store-across-tools-spec-02.md", "line": "A `session-start` subcommand on `memkernel`"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-13-one-store-across-tools-spec-03.md", "line": "Where a hook replaces the instruction"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-13-one-store-across-tools-spec-04.md", "line": "The tools"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-13-one-store-across-tools-spec-05.md", "line": "Codex's cap: `--max-chars 6000`"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-02.md", "line": "The owner's own text in an answer"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-03.md", "line": "Record type for an owner answer: `episode`"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-04.md", "line": "Session outcome contents"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-07.md", "line": "A recall limit per origin session"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-15-harness-foundations-spec-03.md", "line": "Receipts in the recall log"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-15-harness-foundations-spec-04.md", "line": "No OpenTelemetry now"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-15-harness-foundations-spec-05.md", "line": "Three slices"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-16-lifecycle-corrections-spec-04.md", "line": "Both correction kinds"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-16-lifecycle-corrections-spec-05.md", "line": "Two steps"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-3-plan-01.md", "line": "Two ports, both with LLM-free defaults"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-3-plan-02.md", "line": "Documents reuse the canonical-plus-chunks pattern"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-3-plan-03.md", "line": "`forget_expired` leaves the MCP surface"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-3-plan-04.md", "line": "`MemoryLifecycle` returns text, performs no I/O beyond the service"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-4-plan-04.md", "line": "Health is read-only and split into quick and full"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-7-governed-spec-01.md", "line": "One setting picks the wiki mode: `MEMKERNEL_WIKI_MODE` = `auto` (default) | `governed` | `ungated`"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-7-governed-spec-03.md", "line": "Bounded export batches"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-7-governed-spec-04.md", "line": "Source revision and content hash on exported pages"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-7-governed-spec-06.md", "line": "The gate checklist items only the bridge can tick"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-7-hooks-spec-01.md", "line": "What context to inject"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-7-hooks-spec-02.md", "line": "\"The latest checkpoint\" for agents"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-7-hooks-spec-03.md", "line": "The pinned \"Minimal setup\" block"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-7-release-b-exit-plan-02.md", "line": "Where it lives"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-7-release-b-exit-plan-03.md", "line": "Scope"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-7-release-b-exit-plan-04.md", "line": "Retries R1–R4"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-7-release-b-exit-plan-06.md", "line": "Closing"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-7-store-locks-spec-01.md", "line": "Lock identity is the store's own, never a setting"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-08.md", "line": "The ledger's rebuild follows the scope"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-7-wiring-spool-spec-01.md", "line": "The wiring check runs both paths"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-8-untrusted-memory-spec-02.md", "line": "The delimiter: named tags"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-8-untrusted-memory-spec-03.md", "line": "One notice line, once per block"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-8-untrusted-memory-spec-06.md", "line": "The permissions example"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-8-untrusted-memory-spec-07.md", "line": "Not in this spec"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-9-mcp2-spec-01.md", "line": "Range"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-9-mcp2-spec-02.md", "line": "Transport tests: both"},
+    {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-9-mcp2-spec-03.md", "line": "Release"}
+  ],
+  "cross_pairs": [
+    {
+      "pair": ["code-copilot-team/api/cct-api-probe-error-hardening-plan-02.md", "code-copilot-team/routing/cct-routing-profile-foundation-plan-05.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "How a failure's class is derived from its raw error output: the probe matches substrings of the exception text, type signals first; the routing classifier maps exit code and output to a cause taxonomy; each for its own system."
+    },
+    {
+      "pair": ["code-copilot-team/llm-catalog/cct-llm-catalog-spec-02.md", "code-copilot-team/one-harness-home/cct-one-harness-home-spec-01.md"],
+      "scope": "cross-family",
+      "disposition": "companion",
+      "reason": "Which directory is CCT's user home: the one-harness-home ruling makes it ~/.cct/; the catalog's home, first ~/.code-copilot-team/ through one helper so #411 moves it later, is amended to ${CCT_HOME:-~/.cct} through #411's resolver; the amendment follows the ruling."
+    },
+    {
+      "pair": ["code-copilot-team/llm-catalog/cct-llm-catalog-spec-02.md", "code-copilot-team/one-harness-home/cct-one-harness-home-spec-02.md"],
+      "scope": "cross-family",
+      "disposition": "companion",
+      "reason": "How a CCT tool's user home is overridden: the one-harness-home ruling makes CCT_HOME the override for every tool; the catalog's amended home is ${CCT_HOME:-~/.cct}; it applies the one override to the catalog's files."
+    },
+    {
+      "pair": ["code-copilot-team/llm-catalog/cct-llm-catalog-spec-02.md", "code-copilot-team/one-harness-home/cct-one-harness-home-spec-06.md"],
+      "scope": "cross-family",
+      "disposition": "companion",
+      "reason": "How the catalog and the user-home move are sequenced: the one-harness-home ruling lets whichever lands first move llms.toml, with the #400 spec amended on record; the catalog's user-home decision carries that amendment, made because #411 landed first; it records the coupling's outcome."
+    },
+    {
+      "pair": ["code-copilot-team/llm-catalog/cct-llm-catalog-spec-02.md", "code-copilot-team/routing/cct-routing-profile-foundation-plan-01.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "Where in the user's home CCT's registry files live: routing.toml under ~/.code-copilot-team/; the catalog's files there too, amended to ${CCT_HOME:-~/.cct} through one resolver; each for its own files."
+    },
+    {
+      "pair": ["code-copilot-team/llm-catalog/cct-llm-catalog-spec-03.md", "code-copilot-team/routing/cct-routing-profile-foundation-plan-01.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether a new registry gets its own file beside providers.toml: routing.toml and llms.toml each do, and providers.toml stays the reviewer profile; each for its own registry."
+    },
+    {
+      "pair": ["code-copilot-team/llm-catalog/cct-llm-catalog-spec-04.md", "code-copilot-team/routing/cct-routing-profile-foundation-plan-01.md"],
+      "scope": "cross-family",
+      "disposition": "companion",
+      "reason": "How a CCT TOML registry is parsed: the catalog extracts the line lexer of routing-config.sh, the one parser the routing registry introduced, into a library both registries share; it builds on the routing parser."
+    },
+    {
+      "pair": ["code-copilot-team/llm-catalog/cct-llm-catalog-spec-06.md", "code-copilot-team/routing/cct-routing-recovery-plan-02.md"],
+      "scope": "cross-family",
+      "disposition": "companion",
+      "reason": "How a backend canary is probed and classified: the catalog shares routing-probe.sh's canary primitives and closed tri-state, without its accounting, caps or state runner; it builds on the routing probe engine."
+    },
+    {
+      "pair": ["code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-01.md", "memkernel/memkernel/mk-memkernel-0-13-one-store-across-tools-spec-03.md"],
+      "scope": "cross-repository",
+      "disposition": "distinct-by-precondition",
+      "reason": "Where an agent tool's memkernel memory instructions live: CCT puts all of them in one on-demand rule its agents reference; memkernel's 0.13 spec picks per tool a SessionStart hook or an always-applied rule (Codex, Cursor, Antigravity); each for its own tools."
+    },
+    {
+      "pair": ["code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-02.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-03.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "How CCT checks a sibling package is usable before running it: memkernel's hook guards check the CLI on PATH and that python3 imports the package; the wiki launcher checks the repo venv's distribution metadata for exactly 0.9.0 and never uses a PATH binary or system interpreter; each for its own package."
+    },
+    {
+      "pair": ["code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-04.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-01.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "Which artifact of a sibling package CCT's setup installs: memkernel, before its publication, editable from a local path, with PyPI named for later; wiki-studio as the exact 0.9.0 wheel with its published SHA-256; each for its own package and its publication state."
+    },
+    {
+      "pair": ["code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-05.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-05.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether the in-repo system a package replaces is removed in the same change: every GCC remnant leaves both adapter trees; both duplicate wiki engines are deleted, with a guard against their return; each for its own replaced system."
+    },
+    {
+      "pair": ["code-copilot-team/one-harness-home/cct-one-harness-home-spec-01.md", "code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md"],
+      "scope": "cross-family",
+      "disposition": "supersedes",
+      "reason": "Where the user-level configuration lives: the harness plan put it under ~/.code-copilot-team/; the one-harness-home ruling moves the user home to ~/.cct/, replacing that location. Labelled by the owner at the review (2026-11-24): a ruling that only changes where a file lives supersedes the earlier location, the same reading as the existing harness-plan and project-config pair."
+    },
+    {
+      "pair": ["code-copilot-team/one-harness-home/cct-one-harness-home-spec-03.md", "code-copilot-team/pi/cct-pi-project-config-spec-03.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "How files reach a renamed location: the user home moves only by the explicit cct home migrate, never overwriting; the project configuration by an explicit command only, nothing moved silently; each for its own location."
+    },
+    {
+      "pair": ["code-copilot-team/one-harness-home/cct-one-harness-home-spec-03.md", "code-copilot-team/pi/cct-pi-project-config-spec-04.md"],
+      "scope": "cross-family",
+      "disposition": "companion",
+      "reason": "How long the old location is still read: the user home's fallback runs through 2.1.x and goes in the first 2.2 change; the project configuration's fallback is set with the user-home fallback, so both legacy names go together in 2.2 when both ship in 2.1.0; it builds on the user-home window."
+    },
+    {
+      "pair": ["code-copilot-team/one-harness-home/cct-one-harness-home-spec-03.md", "code-copilot-team/pi/cct-pi-project-config-spec-05.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "Which command moves files to the new location: cct home migrate is the only mover for the user home; pi-code migrate, beside init and sync, moves the project's files; each for its own files."
+    },
+    {
+      "pair": ["code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md", "code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md"],
+      "scope": "cross-family",
+      "disposition": "companion",
+      "reason": "Where the committed per-project configuration lives: the harness plan put it in trusted .code-copilot-team/ project files; the one-harness-home ruling names that file and has it renamed in a separate issue, without setting the new location; it builds on the plan's placement."
+    },
+    {
+      "pair": ["code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md", "code-copilot-team/pi/cct-pi-project-config-spec-01.md"],
+      "scope": "cross-family",
+      "disposition": "companion",
+      "reason": "Where the renamed project configuration lives: the one-harness-home ruling renames the project side in a separate issue, noting that a committed file inside the untracked .cct/ needs a gitignore exception; the project-config spec puts it in .cct.toml at the root, not .cct/config.toml; it is that issue's location ruling."
+    },
+    {
+      "pair": ["code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md", "code-copilot-team/pi/cct-pi-project-config-spec-02.md"],
+      "scope": "cross-family",
+      "disposition": "companion",
+      "reason": "Whether the renamed project configuration needs a gitignore exception: the one-harness-home ruling leaves the gitignore guidance to the project-side issue; the project-config spec needs none, init keeps .cct/ ignored and doctor warns if .cct.toml is ignored; it gives the deferred guidance."
+    },
+    {
+      "pair": ["code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md", "code-copilot-team/pi/cct-pi-project-config-spec-04.md"],
+      "scope": "cross-family",
+      "disposition": "companion",
+      "reason": "Which fallback the project-side rename carries: the one-harness-home ruling leaves it to the project-side issue; the project-config spec reads the old location through 2.1.x and removes it in 2.2; it supplies the deferred fallback."
+    },
+    {
+      "pair": ["code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md", "code-copilot-team/pi/cct-pi-project-config-spec-05.md"],
+      "scope": "cross-family",
+      "disposition": "companion",
+      "reason": "Which manifest rule the project-side rename carries: the one-harness-home ruling notes that pi-code init's manifest records the path and hash and leaves the rule to the project-side issue; the project-config spec puts the manifest at .cct-init.json beside .cct.toml; it supplies the deferred rule."
+    },
+    {
+      "pair": ["code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md", "code-copilot-team/routing/cct-routing-profile-foundation-plan-04.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "May an in-repo configuration layer widen policy: Pi's protected-security chain and the routing repository block each answer no, for their own configuration."
+    },
+    {
+      "pair": ["code-copilot-team/pi/cct-pi-sandbox-hardening-plan-05.md", "code-copilot-team/routing/cct-routing-profile-foundation-plan-04.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "May an in-repo configuration layer widen policy: the scrub's tighten-only repo layers and the restriction-only routing block, each for its own setting."
+    },
+    {
+      "pair": ["code-copilot-team/pi/cct-pi-team-controller-plan-03.md", "memkernel/memkernel/mk-memkernel-0-15-harness-foundations-spec-06.md"],
+      "scope": "cross-repository",
+      "disposition": "distinct-by-precondition",
+      "reason": "Who supplies an agent's identity: the team controller takes a declared id and memkernel takes the harness's id, each in its own system."
+    },
+    {
+      "pair": ["code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-04.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-04.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether a plugin-only installation works as far as a setup.sh install: the plugin plan ships templates/sdd/ and review-decide.sh inside the plugin so every command does; the wiki-studio adoption claims no automatic installation parity for plugin-only installs, whose guidance names the external prerequisite and refuses without it, a portable plugin tool environment left to a successor; each for its own components."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-eval-plan-08.md", "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-06.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether stored records are scrubbed when written: routing evidence scrubs secrets at the point the record is written; the audit archive gets no scrubber and is held to the curator's review like any wiki page; each for its own records."
+    },
+    {
+      "pair": ["code-copilot-team/routing/cct-routing-recovery-plan-04.md", "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-04.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether a second immediate run is a no-op: routing tick's second run finds nothing due, a byte-level state no-op; audit-flush's second flush finds nothing to flush and exits 0; each for its own command."
+    },
+    {
+      "pair": ["code-copilot-team/simplest-complete-change/cct-simplest-complete-change-plan-01.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-01.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "How an upstream project's changes may reach what CCT runs: Ponytail's never do, since CCT takes no dependency on it and re-expresses its ideas natively; wiki-studio's only by a CCT commit, since CCT pins the exact wheel rather than a version floor; each for its own upstream."
+    },
+    {
+      "pair": ["code-copilot-team/simplest-complete-change/cct-simplest-complete-change-plan-01.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-13.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "How an upstream project's changes may reach what CCT runs: Ponytail's do not flow into CCT automatically, its ideas re-expressed under CCT's requirements; wiki-studio's arrive only through a reviewed, atomic CCT pin bump; each for its own upstream."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-03.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-06.md"],
+      "scope": "cross-family",
+      "disposition": "companion",
+      "reason": "What an audit-flush commit holds: the flush spec commits only the ingest log by pathspec; CCT's contract test proves a real run committed only the ingest log; the test builds on the flush rule."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-04.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-06.md"],
+      "scope": "cross-family",
+      "disposition": "companion",
+      "reason": "Whether a flush right after a flush is a no-op: the flush spec makes it nothing to flush; CCT's contract test proves a second dry-run reported nothing pending; the test builds on the flush rule."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md", "memkernel/memkernel/mk-memkernel-0-7-governed-spec-06.md"],
+      "scope": "cross-repository",
+      "disposition": "distinct-by-precondition",
+      "reason": "Who verifies the ingest log's proposal-hash recipe: CCT records it verbatim for its deferred cross-referential lint; memkernel reads no ingest log, so it has no consumer; each for its own system."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-01.md", "memkernel/memkernel/mk-memkernel-0-9-mcp2-spec-01.md"],
+      "scope": "cross-repository",
+      "disposition": "distinct-by-precondition",
+      "reason": "How a package installed beside wiki-studio settles its mcp extra's MCP 2.x requirement: CCT forbids the extra because Session Analytics targets MCP 1.x; memkernel moves to mcp>=2.3,<3 to co-install with it; each for its own environment."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-03.md", "memkernel/memkernel/mk-memkernel-0-7-governed-spec-01.md"],
+      "scope": "cross-repository",
+      "disposition": "distinct-by-precondition",
+      "reason": "What happens when wiki-studio is missing or the wrong version: CCT's launcher stops and names the setup command; memkernel's auto mode uses its direct writer when wiki-studio is absent and refuses when it is broken or too old; each in its own system."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-08.md", "memkernel/memkernel/mk-memkernel-0-7-governed-spec-01.md"],
+      "scope": "cross-repository",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether a wiki moves to wiki-studio's governed mode: CCT runs no init and keeps its wiki manifest-less; memkernel's governed setting refuses a legacy wiki and names wiki-studio init, while auto keeps today's path; each for its own deployment."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-11.md", "memkernel/memkernel/mk-memkernel-0-7-release-b-exit-plan-05.md"],
+      "scope": "cross-repository",
+      "disposition": "distinct-by-precondition",
+      "reason": "Which wiki-studio release CI installs: CCT's CI installs the exact pinned wheel production runs; memkernel's informational workflow installs the newest release in range so an upstream change shows; each for its own purpose."
+    }
+  ],
+  "defaults": {"within_family": "unrelated", "cross": "unrelated"},
+  "true_pairs": 8
+}

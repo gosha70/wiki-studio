@@ -1,0 +1,147 @@
+{
+  "study": "issue 121 near-duplicate study: the frozen protocol",
+  "pages": {
+    "source": "corpus.json",
+    "rule": "Every page listed in corpus.json is scored. No page carries superseded_by, so none is ineligible."
+  },
+  "pairs": {
+    "rule": "Every unordered pair of pages, each pair once, its two page paths in sorted order.",
+    "scopes": {
+      "within-family": "the two pages have the same family",
+      "cross-family": "the same repository, different families",
+      "cross-repository": "different repositories"
+    },
+    "scope_order": ["within-family", "cross-family", "cross-repository"]
+  },
+  "labels": {
+    "source": "labels.json",
+    "rule": "A pair's label is its disposition in labels.json pairs or cross_pairs, else unrelated.",
+    "default": "unrelated",
+    "true": ["redundant", "conflicting", "supersedes"],
+    "false": ["companion", "distinct-by-precondition", "unrelated"]
+  },
+  "candidates": {
+    "order": ["B0", "B1"],
+    "B0": {
+      "definition": "wiki_state._tokenise(title + ' ' + paragraph): the issue 54 signal (b) exactly.",
+      "title": "eval.patterns.duplicates._title (the frontmatter title)",
+      "paragraph": "eval.patterns.duplicates._first_paragraph",
+      "tokenise": "wiki_studio.wiki_state._tokenise",
+      "separator": " "
+    },
+    "B1": {
+      "definition": "B0 with a text normalisation: text_rules are applied in order to title + ' ' + paragraph before wiki_state._tokenise, each as re.sub(pattern, replacement, text); then every token is dropped that fully matches a token rule (re.fullmatch) or is one of its words.",
+      "base": "B0",
+      "text_rules": [
+        {
+          "rule": 1,
+          "what": "a Markdown link or image link keeps its text and loses its target",
+          "pattern": "!?\\[([^\\]]*)\\]\\([^)]*\\)",
+          "replacement": "\\1"
+        },
+        {
+          "rule": 2,
+          "what": "a bare URL is replaced by a space",
+          "pattern": "[A-Za-z][A-Za-z0-9+.-]*://[^\\s)>\\]]*",
+          "replacement": " "
+        }
+      ],
+      "token_rules": [
+        {
+          "rule": 3,
+          "what": "a token of digits only",
+          "fullmatch": "[0-9]+"
+        },
+        {
+          "rule": 4,
+          "what": "a hexadecimal token of 7 to 40 characters holding at least one digit",
+          "fullmatch": "(?=[0-9a-f]*[0-9])[0-9a-f]{7,40}"
+        },
+        {
+          "rule": 5,
+          "what": "a template word: the non-stop-words of page-types.md's fixed template text, lines 130-131",
+          "words": ["context", "we", "chose", "over", "reason"]
+        },
+        {
+          "rule": 6,
+          "what": "an item label: one letter and one or two digits, or a us, fr-, nfr- or adr- number (owner, 2026-11-23; plan departure 23)",
+          "fullmatch": "[a-z][0-9]{1,2}|us[0-9]+|(?:fr|nfr|adr)-[0-9]+"
+        }
+      ]
+    }
+  },
+  "threshold": {
+    "metric": "jaccard",
+    "operator": ">=",
+    "value": 0.25,
+    "integer_form": "4 * shared >= union",
+    "numerator": 1,
+    "denominator": 4,
+    "empty_union": "Two pages whose token sets are both empty are never a candidate: the union must be non-empty.",
+    "applies_to": ["B0", "B1"],
+    "varied": false
+  },
+  "bar": {
+    "rule": "A candidate passes when all three conditions hold.",
+    "conditions": [
+      {
+        "condition": 1,
+        "what": "The frozen labels hold at least 8 true pairs; otherwise the verdict is not testable, never a pass.",
+        "minimum_true_pairs": 8
+      },
+      {
+        "condition": 2,
+        "what": "The candidate finds at least three quarters of the true pairs, rounded up.",
+        "integer_form": "4 * found >= 3 * n",
+        "numerator": 3,
+        "denominator": 4
+      },
+      {
+        "condition": 3,
+        "what": "Its false candidates do not outnumber its true candidates across every pair in scope.",
+        "integer_form": "false <= true"
+      }
+    ]
+  },
+  "selection": {
+    "rule": "Among the candidates that pass, the one with the fewest false candidates wins; a tie goes to B0.",
+    "tie": "B0"
+  },
+  "verdicts": ["winner", "no candidate clears the bar", "not testable"],
+  "winner_lines": {
+    "B0": "Winner: B0",
+    "B1": "Winner: B1",
+    "none": "Winner: none"
+  },
+  "winner_line_rule": "report.md holds exactly one winner line. Winner: none goes with the verdicts no candidate clears the bar and not testable.",
+  "reporting_splits": {
+    "by_disposition": ["companion", "distinct-by-precondition", "unrelated"],
+    "by_scope": ["within-family", "cross-family", "cross-repository"],
+    "by_repository": ["code-copilot-team", "memkernel", "cross-repository"],
+    "per_100_pages": "false candidates * 100 / pages, given to two decimals"
+  },
+  "corpus_options": {
+    "extend": 8,
+    "cut_1": false
+  },
+  "review_sample": {
+    "file": "review-sample.json",
+    "script": "sample.py",
+    "seed": 121,
+    "size": 20,
+    "families": ["routing", "pi", "memkernel"],
+    "split": {"routing": 8, "pi": 1, "memkernel": 11},
+    "drawn_from_labels_sha256": "35d2c5ef674ea3cdea08f946bc8c2c19013073acbbaa173413b644bb632f7992",
+    "owner_changed_labels_after_the_draw": true
+  },
+  "issue_54_disputed_pair": {
+    "pair": ["decisions/never-bypass-a-git-lock-with-an-alternate-index.md", "incidents/git-safety-bypasses.md"],
+    "fixture": "eval/patterns/wiki/",
+    "recorded": "redundant",
+    "second_reading": "companion",
+    "binding": false,
+    "use": "The secondary re-score reads the issue 54 fixture twice, with this pair as recorded and as companion (false); counts only, no verdict."
+  },
+  "corpus_sha256": "fc0f710ab994dd4a57a9bb23e700bd61b2ffde58f66a54bb30353c6cc5bbc4de",
+  "labels_sha256": "e1c34ca9533aedb39482d628fd8704752035fba3ca34f132d730f8a555082287"
+}

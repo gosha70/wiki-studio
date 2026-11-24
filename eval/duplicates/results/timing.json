@@ -1,0 +1,10 @@
+{
+  "clock": "time.perf_counter",
+  "pages": 299,
+  "pairs": 44551,
+  "seconds": {
+    "B0": 0.149689,
+    "B1": 0.155755
+  },
+  "study": "issue 121 near-duplicate study: the wall time of each candidate's scoring pass"
+}
