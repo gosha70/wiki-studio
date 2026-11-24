@@ -575,6 +575,15 @@ in `labels.json`: the pairs labelled `redundant`, `conflicting` or
 `supersedes` in `pairs` and `cross_pairs`. Every commit that changes a label
 updates `true_pairs` and this count together.
 
+The count is below the minimum, so the study cannot be frozen yet. At the
+pause after this step, the extension rule (FR-016) applies before anything
+else: the main session extracts the next family of FR-003's extension order,
+and a fresh labelling session labels that family and redoes the summary pass.
+This repeats until the count reaches 8 or the order is used up; if the order
+runs out first, the verdict will be "not testable", never a pass. The
+labelling session runs no script, so it does not extend the corpus itself,
+and no label is changed to reach the minimum.
+
 `tests/test_duplicates_labels.py` checks the labels' structure: the keys, the
 groups, every in-group pair labelled once, the dispositions and reasons, the
 cross pairs' scopes, the summary, the true-pair count here and in the file,
