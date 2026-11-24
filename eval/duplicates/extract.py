@@ -233,7 +233,7 @@ def verify_pin(checkout: Path, pin: str) -> None:
     result = _git(checkout, ["rev-parse", "--verify", f"{pin}{COMMIT_PEEL}"])
     resolved = result.stdout.decode("utf-8", errors="replace").strip()
     if result.returncode != 0 or resolved != pin:
-        raise PinError(f"pin {pin} does not resolve to a commit in {checkout}")
+        raise PinError(f"pin {pin} does not resolve to exactly that commit in {checkout} (got {resolved or 'nothing'})")
 
 
 def read_snapshot(repository: str, checkout: Path, pin: str) -> Snapshot:
@@ -651,6 +651,7 @@ def write_corpus(out: Path, corpus: Corpus, document: Mapping[str, Any]) -> None
         )
         if stale:
             raise StaleCorpusError(f"{corpus_dir} holds files this run would not write: {', '.join(stale)}")
+    out.mkdir(parents=True, exist_ok=True)
     for rel, data in sorted(corpus.pages.items()):
         target = corpus_dir / rel
         target.parent.mkdir(parents=True, exist_ok=True)

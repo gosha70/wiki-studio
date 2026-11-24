@@ -72,7 +72,10 @@ either repository. The script writes only under `--out`. The exit codes:
 - 4: `<out>/corpus/` holds a file this run would not rewrite. The script
   deletes nothing, so a narrower rerun over a wider corpus stops here.
 
-In each of these cases nothing is written.
+In each of these cases nothing is written. An argument error (such as an
+`--extend` out of range) also exits 2, argparse's usage-error code, before any
+git call. `corpus.json` is rewritten on every successful run; only files under
+`corpus/` are checked.
 
 ### Families (FR-003)
 

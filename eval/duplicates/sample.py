@@ -72,7 +72,9 @@ def largest_remainder(counts: Mapping[str, int], size: int = SAMPLE_SIZE) -> dic
 
 def draw(labels: Mapping[str, Any], corpus: Mapping[str, Any]) -> tuple[dict[str, int], list[dict[str, Any]]]:
     """The split and the drawn pairs, in family order and, within a family, in draw order."""
-    stated = {(str(row["pair"][0]), str(row["pair"][1])): str(row["disposition"]) for row in labels["pairs"]}
+    stated: dict[tuple[str, ...], str] = {
+        tuple(sorted((str(row["pair"][0]), str(row["pair"][1])))): str(row["disposition"]) for row in labels["pairs"]
+    }
     pairs = within_family_pairs(corpus["pages"])
     split = largest_remainder({family: len(family_pairs) for family, family_pairs in pairs.items()})
     drawn: list[dict[str, Any]] = []
@@ -112,7 +114,7 @@ def main(argv: Sequence[str] | None = None, *, duplicates_dir: Path | None = Non
         labels_bytes = (directory / LABELS_NAME).read_bytes()
         corpus = json.loads((directory / CORPUS_JSON_NAME).read_text(encoding="utf-8"))
         split, drawn = draw(json.loads(labels_bytes.decode("utf-8")), corpus)
-    except (OSError, SampleError) as exc:
+    except (OSError, ValueError, SampleError) as exc:
         sys.stderr.write(f"{exc}; nothing was written\n")
         return SAMPLE_FAILED
     document = {

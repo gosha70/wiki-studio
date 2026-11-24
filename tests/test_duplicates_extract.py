@@ -947,6 +947,11 @@ class GitReadingTest(unittest.TestCase):
         self.assertEqual(self.run_main(), extract.STALE_CORPUS)
         self.assertEqual(sorted(path.name for path in self.out.rglob("*") if path.is_file()), ["old.md"])
 
+    def test_an_empty_corpus_writes_corpus_json_into_a_new_out(self) -> None:
+        out = self.out / "new"
+        extract.write_corpus(out, extract.Corpus(), {"pages": []})
+        self.assertEqual(json.loads((out / "corpus.json").read_text(encoding="utf-8")), {"pages": []})
+
     def test_a_rerun_rewrites_the_same_bytes(self) -> None:
         self.assertEqual(self.run_main(), 0)
         first = tree_digest(self.out)
@@ -1040,6 +1045,24 @@ class SampleTest(unittest.TestCase):
         routing = sorted(pair for pair in combinations(self.pages["routing"], 2) if pair not in self.true_pairs)
         expected = [list(pair) for pair in random.Random(121).sample(routing, 8)]
         self.assertEqual([row["pair"] for row in first["pairs"] if row["family"] == "routing"], expected)
+
+    def test_a_label_row_in_reversed_order_still_names_its_pair(self) -> None:
+        sorted_rows = self.run_sample(self.tmp / "sorted.json")
+        labels = json.loads((self.tmp / "labels.json").read_text(encoding="utf-8"))
+        for row in labels["pairs"]:
+            row["pair"].reverse()
+        (self.tmp / "labels.json").write_text(json.dumps(labels), encoding="utf-8")
+        reversed_rows = self.run_sample(self.tmp / "reversed.json")
+        self.assertEqual(reversed_rows["pairs"], sorted_rows["pairs"])
+        for row in reversed_rows["pairs"]:
+            self.assertNotIn(tuple(row["pair"]), self.true_pairs)
+
+    def test_a_malformed_labels_file_writes_nothing(self) -> None:
+        (self.tmp / "labels.json").write_text("{not json", encoding="utf-8")
+        out = self.tmp / "none.json"
+        with contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(sample.main(["--out", str(out)], duplicates_dir=self.tmp), sample.SAMPLE_FAILED)
+        self.assertFalse(out.exists())
 
     def test_too_few_false_pairs_writes_nothing(self) -> None:
         (self.tmp / "corpus.json").write_text(
