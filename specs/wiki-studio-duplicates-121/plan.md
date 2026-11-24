@@ -216,6 +216,23 @@ Each is recorded so the origin-alignment record at approval can cite it.
     is now one letter and one or two digits, or a `us`, `fr-`, `nfr-` or
     `adr-` number: about 334 dropped, about 164 more than before. Settled before the freeze (FR-018,
     FR-022).
+24. **Run 1's phase 3 review was bypassed by the owner** (process, not scope).
+    DeepSeek blocked US3 for three rounds because the labels held 7 true
+    pairs, under 8; FR-016(a) handles that shortfall at the pause by adding
+    families. The owner ran `/review-decide approve` (`1e2f7d3`, with
+    `collaboration/build-review.md` marked `bypass: true`).
+25. **One family was labelled in a reused session** (process). The
+    `llm-catalog` family (`d6d372b`) was labelled by continuing an earlier
+    labelling session, not a fresh one; every other family had a fresh
+    session. Recorded in the evidence PR (#137), not relabelled. The external
+    review of #137 found that it cannot change the verdict, and read its two
+    false candidates as correctly unrelated.
+26. **The winner is none** (spec amendment, 2026-11-24). B0 and B1 each found
+    3 of 8 true pairs, against the 6 the bar needs (`eval/duplicates/report.md`).
+    Trigger 3 fired: US7-US9 are cut and there is no run 2, so nothing under
+    `src/` changes, no CHANGELOG entry is written, FR-035's time bound is not
+    set, and `automation.json` keeps run 1's settings. The pitch's hill chart
+    marks S1-S3 done; S4-S6 were not started.
 
 Close target: issue 121, by run 2's merge (`pr.closes: [121]`) only when the
 kind ships; otherwise it stays open with the measurement as its evidence

@@ -1,25 +1,25 @@
 {
   "pitch_id": "121-near-duplicate-finding",
   "cycle": "10",
-  "updated_at": "2026-11-23T23:51:00Z",
+  "updated_at": "2026-11-24T22:41:02Z",
   "scopes": [
     {
       "id": "S1",
       "name": "The corpus, extracted verbatim from two repositories and pinned, ~4.5-5.5h",
-      "status": "uphill",
-      "last_updated": "2026-11-23T23:51:00Z"
+      "status": "done",
+      "last_updated": "2026-11-24T22:41:02Z"
     },
     {
       "id": "S2",
       "name": "Labels, candidates and bar, frozen, ~6-8h plus the owner's review",
-      "status": "uphill",
-      "last_updated": "2026-11-23T23:51:00Z"
+      "status": "done",
+      "last_updated": "2026-11-24T22:41:02Z"
     },
     {
       "id": "S3",
       "name": "The measurement and the evidence PR, ~3.5-4.5h",
-      "status": "uphill",
-      "last_updated": "2026-11-23T23:51:00Z"
+      "status": "done",
+      "last_updated": "2026-11-24T22:41:02Z"
     },
     {
       "id": "S4",
