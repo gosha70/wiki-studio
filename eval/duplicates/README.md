@@ -121,8 +121,8 @@ pitch's 18: `copilot-memory-mvp`, `memkernel-0-3`, `memkernel-0-4`,
 `memkernel-0-15-harness-foundations`, `memkernel-0-16-lifecycle-corrections`.
 
 These are directory counts; the page counts come from the extraction run.
-Any difference from the pitch's page counts will be reported, and the rule
-will not be tuned to remove it.
+Their differences from the pitch's page counts are reported under "The
+extracted corpus" below, and the rule is not tuned to remove them.
 
 ### Exclusions (FR-003; pitch finding 11)
 
@@ -337,6 +337,146 @@ under cut 1 the last item below is outside the corpus.
 | `mk-memkernel-0-12-capture-core-spec-01` | memkernel | list item | `specs/memkernel-0-12-capture-core/spec.md` lines 306-308 | Key |
 | `mk-memkernel-0-7-wiring-spool-spec-02` | memkernel | bold paragraph | `specs/memkernel-0-7-wiring-spool/spec.md` lines 32-39 | Spool pruning |
 | `mk-memkernel-0-3-plan-03` | memkernel | `h3-adr` | `specs/memkernel-0-3/plan.md` lines 72-76 | `forget_expired` leaves the MCP surface |
+
+## The extracted corpus (FR-011)
+
+The main session ran `python -m eval.duplicates.extract` once, with no option
+(`extend` 0, `cut_1` false, as `corpus.json` records), at the pause after the
+extraction code, and committed `corpus/` and `corpus.json` as written. Every
+number below is read from `corpus.json`, and
+`tests/test_duplicates_corpus.py` recomputes each one from it.
+
+The pages are extracted from specs, not curated (pitch finding 14). Each one
+is a decision item copied by the rule above, not a page a curator wrote from
+the wiki's templates. B1's drop of the template words (FR-018) is meant for
+curated template pages, and this corpus holds none, so that part of B1 cannot
+be measured on this corpus.
+
+### Pages per repository, family and form
+
+The corpus holds **218 pages**: 117 from code-copilot-team and 101 from
+memkernel.
+
+| Repository | Family | Form | Pages |
+|---|---|---|---|
+| code-copilot-team | pi | h3-adr | 6 |
+| code-copilot-team | pi | list-item | 23 |
+| code-copilot-team | routing | bold-paragraph | 21 |
+| code-copilot-team | routing | list-item | 67 |
+| memkernel | memkernel | bold-paragraph | 37 |
+| memkernel | memkernel | h3-adr | 14 |
+| memkernel | memkernel | list-item | 50 |
+
+No page has the plain `h3` form: every H3 item written as a page holds a
+`**Decision**:` line.
+
+### Against the pitch's counts
+
+The pitch counted about 215 items: code-copilot-team 113 (routing 84, pi 29)
+and memkernel 102. The differences are reported here, and the rule was not
+tuned to remove them.
+
+| Repository | Family | Pages | The pitch's count |
+|---|---|---|---|
+| code-copilot-team | pi | 29 | 29 |
+| code-copilot-team | routing | 88 | 84 |
+| memkernel | memkernel | 101 | 102 |
+
+| Repository | Form | Pages | The pitch's count |
+|---|---|---|---|
+| code-copilot-team | bold-paragraph | 21 | 17 |
+| code-copilot-team | h3-adr | 6 | 6 (H3) |
+| code-copilot-team | list-item | 90 | 90 |
+| memkernel | bold-paragraph | 37 | 37 |
+| memkernel | h3-adr | 14 | 14 (H3) |
+| memkernel | list-item | 50 | 51 |
+
+- **routing: 88 pages against 84**, four more bold-paragraph items. The
+  pitch's per-family counts by form are not given, so the four cannot be
+  named against it. The routing bold-paragraph pages come from
+  `routing-context-limit` (8), `routing-effective-endpoint` (4 from
+  `plan.md`, 3 from `spec.md`) and `routing-usage-evidence` (6).
+- **memkernel: 101 pages against 102 items.** The one item left out for
+  closing-keyword text (below) is a memkernel item, so the rule finds 102
+  memkernel items and writes 101 of them as pages. The list-item count is the
+  one that differs (50 against 51). The left-out item's form is not recorded,
+  since its text is copied nowhere.
+- **In all: 218 pages against about 215.**
+
+### Items left out
+
+| Repository | Spec path | Lines | Slug | Reason |
+|---|---|---|---|---|
+| memkernel | `specs/memkernel-0-16-lifecycle-corrections/spec.md` | 109-110 | `mk-memkernel-0-16-lifecycle-corrections-spec-06` | closing-keyword text |
+
+This is the one the pitch knew of. It is listed by id only (FR-007).
+
+### Pages with an empty first paragraph
+
+These pages stay in the corpus. `_first_paragraph` reads an empty string from
+them, so B0 scores them on their title alone, as the issue 54 study did.
+
+| Repository | Form | Pages with an empty first paragraph |
+|---|---|---|
+| code-copilot-team | bold-paragraph | 2 |
+| code-copilot-team | h3-adr | 0 |
+| code-copilot-team | list-item | 0 |
+| memkernel | bold-paragraph | 0 |
+| memkernel | h3-adr | 0 |
+| memkernel | list-item | 0 |
+
+- `code-copilot-team/routing/cct-routing-effective-endpoint-plan-01.md`
+- `code-copilot-team/routing/cct-routing-effective-endpoint-spec-01.md`
+
+Both are items the rule extracts badly, kept as written (FR-004). In each
+one, the whole item is its bold label, so its `## Decision` section is
+empty. Each label starts with an option name (`O1`, `O4`) that the identifier
+pattern of the title rule (FR-005) removes. The titles therefore start in
+mid-sentence: `+ O4. O4 governs; O1 is telemetry completion` and
+`governs; O1 is telemetry completion, not the thing that makes C30
+effective`.
+
+### Input counts per repository and form
+
+The minimum, median and maximum of `title_tokens` and `paragraph_tokens`
+(the size of `wiki_state._tokenise` of the title and of the paragraph the
+scorer reads). Each count reads one page and compares none. A median of an
+even number of pages is the mean of the two middle values.
+
+| Repository | Form | Pages | `title_tokens` min | `title_tokens` median | `title_tokens` max | `paragraph_tokens` min | `paragraph_tokens` median | `paragraph_tokens` max |
+|---|---|---|---|---|---|---|---|---|
+| code-copilot-team | bold-paragraph | 21 | 2 | 5 | 9 | 0 | 31 | 70 |
+| code-copilot-team | h3-adr | 6 | 3 | 6 | 7 | 19 | 29 | 37 |
+| code-copilot-team | list-item | 90 | 1 | 5 | 15 | 5 | 46 | 285 |
+| memkernel | bold-paragraph | 37 | 1 | 3 | 10 | 6 | 69 | 221 |
+| memkernel | h3-adr | 14 | 2 | 5 | 10 | 10 | 24.5 | 64 |
+| memkernel | list-item | 50 | 1 | 2.5 | 19 | 3 | 22.5 | 98 |
+
+### The six fixed items in the corpus
+
+The six items of the table above are these pages. Each one is byte-equal to
+the page `extract.py` builds from the raw text written out in
+`tests/test_duplicates_extract.py`, and its first paragraph is the one written
+out there.
+
+- `code-copilot-team/pi/cct-pi-harness-adoption-plan-04.md`
+- `code-copilot-team/routing/cct-routing-calibration-plan-03.md`
+- `code-copilot-team/routing/cct-routing-context-limit-plan-03.md`
+- `memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-01.md`
+- `memkernel/memkernel/mk-memkernel-0-3-plan-03.md`
+- `memkernel/memkernel/mk-memkernel-0-7-wiring-spool-spec-02.md`
+
+### Structural-lint violations from an item's own text
+
+The test copies every page to `decisions/<slug>.md` in a temporary wiki,
+with an `index.md` that links every page and a `log.md`, and runs
+`wiki_studio.lint`'s structural checks on it. A violation that comes from an
+item's own text, such as a relative link that does not resolve in the
+temporary wiki, is listed below by page and never fixed (plan, O2). The test
+allows exactly the violations listed.
+
+The list is empty: no page holds a Markdown link, so no link target is
+checked, and every page passes the other checks.
 
 ## The review sample (FR-008)
 
