@@ -39,7 +39,8 @@ Files written by this directory's scripts:
 | `review-sample.json` | `sample.py`, run once by hand | the seed, the split, the labels' sha256, 20 false pairs |
 
 `labels.json` is written by hand in the labelling session, with no script
-(see "The labels" below). The protocol, the scorer, its results and the
+(see "The labels" below). `protocol.json` is written by hand at the freeze,
+with no script (see "The protocol" below). The scorer, its results and the
 report are added by later steps of the spec. No driver session runs these
 scripts. The main
 session or the owner runs each one once at a milestone pause and commits its
@@ -802,12 +803,143 @@ labellers set it.
 
 **Status: at the minimum.** With the owner's change the count is 8, the
 minimum of D4, so condition (1)'s minimum is met and recall is testable. The
-next step is the freeze.
+labels are frozen as they stand here (see "The protocol" below).
 
 `tests/test_duplicates_labels.py` checks the labels' structure: the keys, the
 groups, every in-group pair labelled once, the dispositions and reasons, the
 cross pairs' scopes, the summary, the true-pair count here and in the file,
 and `corpus_sha256`.
+
+## The protocol (FR-018, FR-019)
+
+`protocol.json` fixes, before any candidate code exists, what is scored, how
+each candidate reads a page, the threshold, the bar and how the winner is
+chosen. The scorer reads these fields; it does not restate them. This section
+says the same thing in words.
+
+### Pages and pairs
+
+Every page of `corpus.json` is scored. None carries `superseded_by`, so none
+is ineligible. Every unordered pair of pages is scored once, in one of three
+scopes:
+
+- `within-family`: the two pages have the same family;
+- `cross-family`: the same repository, different families;
+- `cross-repository`: the two repositories.
+
+### Labels
+
+A pair's label is its disposition in `labels.json`'s `pairs` or
+`cross_pairs`, and `unrelated` when it is in neither. `redundant`,
+`conflicting` and `supersedes` are true; `companion`,
+`distinct-by-precondition` and `unrelated` are false.
+
+### The two candidates
+
+**B0** is the issue 54 signal (b) exactly: the token set
+`wiki_state._tokenise(title + " " + paragraph)`, where the title is the
+frontmatter title read by `_title` and the paragraph is the one
+`_first_paragraph` reads. Both are imported read-only from
+`eval/patterns/duplicates.py`.
+
+**B1** is B0 with a text normalisation. Two rules rewrite the text
+`title + " " + paragraph` before `_tokenise`, in this order:
+
+1. every match of `!?\[([^\]]*)\]\([^)]*\)` is replaced by its group 1, so a
+   Markdown link or image link keeps its text and loses its target;
+2. every match of `[A-Za-z][A-Za-z0-9+.-]*://[^\s)>\]]*` (a bare URL) is
+   replaced by a space.
+
+Then four rules drop a token after `_tokenise` when the whole token matches:
+
+3. `[0-9]+` (digits only);
+4. `(?=[0-9a-f]*[0-9])[0-9a-f]{7,40}` (a hexadecimal token of 7 to 40
+   characters with at least one digit, such as a commit hash);
+5. one of the template words `context`, `we`, `chose`, `over`, `reason`: the
+   words of `page-types.md`'s fixed template text (lines 130-131) that are not
+   stop words;
+6. `[a-z][0-9]{1,2}|us[0-9]+|(?:fr|nfr|adr)-[0-9]+`: an item label, one
+   letter and one or two digits (`d6`, `e3`, `t12`, `g5`), or a `us`, `fr-`,
+   `nfr-` or `adr-` number. The owner set this rule on 2026-11-23, after the
+   review of the spec, because the earlier letter list (`d`, `s`, `a`, `r`)
+   missed the many other one-letter item labels the specs share (plan,
+   departure 23).
+
+Rule 5 is meant for curated template pages, and this corpus holds none (see
+"The extracted corpus"), so that part of B1 is not measured here.
+
+### The threshold
+
+Two pages are a candidate when the Jaccard similarity of their token sets is
+at least 0.25. It is computed in integers as `4 * shared >= union`, with
+`shared` the size of the intersection and `union` the size of the union, and
+the union must not be empty: two empty token sets are never a candidate. This
+gives the same answer as the issue 54 study's comparison, without rounding.
+The threshold is the same for both candidates and is not varied.
+
+### The bar
+
+A candidate passes when all three conditions hold:
+
+1. the frozen labels hold at least 8 true pairs; with fewer, the verdict is
+   "not testable", never a pass;
+2. it finds at least three quarters of the true pairs, rounded up:
+   `4 * found >= 3 * n`, with n the true pairs;
+3. its false candidates do not outnumber its true candidates, across every
+   pair in scope.
+
+### Selection, the verdict and the winner line
+
+Among the candidates that pass, the one with the fewest false candidates
+wins, and a tie goes to B0. The verdict is one of `winner`,
+`no candidate clears the bar` or `not testable`. The report holds exactly one
+winner line: `Winner: B0`, `Winner: B1` or `Winner: none`. `Winner: none`
+goes with the two verdicts other than `winner`.
+
+### What is reported
+
+For each candidate: the true pairs found out of n, the true and false
+candidates, the false candidates by disposition (`companion`,
+`distinct-by-precondition`, `unrelated`), the true and false candidates by
+pair scope and by repository (`code-copilot-team`, `memkernel`,
+`cross-repository`), and the false candidates per 100 pages
+(`false * 100 / pages`, to two decimals).
+
+### The corpus, the labels and the review sample, as frozen
+
+- `corpus_sha256` is `fc0f710ab994dd4a57a9bb23e700bd61b2ffde58f66a54bb30353c6cc5bbc4de`,
+  the sha256 of `corpus.json`. The corpus is the base with all eight steps of
+  the extension order (`extend` 8). Cut 1 was not invoked, so no family was
+  narrowed.
+- `labels_sha256` is `e1c34ca9533aedb39482d628fd8704752035fba3ca34f132d730f8a555082287`,
+  the sha256 of `labels.json` as the owner reviewed it.
+- The review sample was drawn with the seed 121 and split routing 8, pi 1,
+  memkernel 11. It records the sha256 of the labels it was drawn from, the
+  labelling session's (`35d2c5ef674ea3cdea08f946bc8c2c19013073acbbaa173413b644bb632f7992`).
+  **The owner changed one label after the draw** (see "The owner's review"
+  above), so that hash differs from `labels_sha256`.
+
+### The issue 54 disputed pair
+
+`decisions/never-bypass-a-git-lock-with-an-alternate-index.md` and
+`incidents/git-safety-bypasses.md`, in `eval/patterns/wiki/`, are labelled
+`redundant` in the issue 54 labels, and under this study's rule a decision
+and its incident record are `companion`. A secondary re-score, which does not
+count towards the verdict, reads the issue 54 fixture twice: once with the
+pair as recorded, and once with it read as `companion` (false). It reports
+counts only, with no verdict. The issue 54 files are read and never edited.
+
+### The freeze
+
+`tests/test_duplicates_frozen.py` pins `corpus.json`, `labels.json`,
+`protocol.json`, `review-sample.json` and this README by their sha256,
+computed in a shell. It pins every page through its `corpus.json` entry, and
+checks that the pages present are exactly the entries. It also checks that
+the two hashes in `protocol.json` and the `corpus_sha256` in `labels.json`
+equal the frozen files' hashes. That test is written once and never edited.
+From here on, no commit changes a pinned file. A disagreement found later is
+reported in a separate section of the report that does not count towards the
+verdict, and is never patched into these files.
 
 ## Commands
 
