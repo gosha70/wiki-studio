@@ -13,7 +13,7 @@
     }
   ],
   "options": {
-    "extend": 0,
+    "extend": 1,
     "cut_1": false
   },
   "families": [
@@ -69,6 +69,20 @@
       ]
     },
     {
+      "repository": "code-copilot-team",
+      "family": "api",
+      "directories": [
+        "api-host-origin-guard",
+        "api-probe-dsn-constraints",
+        "api-probe-error-hardening"
+      ],
+      "with_decision_sections": [
+        "api-host-origin-guard",
+        "api-probe-dsn-constraints",
+        "api-probe-error-hardening"
+      ]
+    },
+    {
       "repository": "memkernel",
       "family": "memkernel",
       "directories": [
@@ -120,6 +134,216 @@
     }
   ],
   "pages": [
+    {
+      "page": "code-copilot-team/api/cct-api-host-origin-guard-plan-01.md",
+      "repository": "code-copilot-team",
+      "family": "api",
+      "spec_path": "specs/api-host-origin-guard/plan.md",
+      "line_start": 60,
+      "line_end": 62,
+      "form": "list-item",
+      "title": "Host + Origin only.",
+      "sha256": "605792edfeff3da1ea2f818c4ac480ae287b959174263cae96884c39b36eb9f7",
+      "title_tokens": 3,
+      "paragraph_tokens": 19,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/api/cct-api-host-origin-guard-plan-02.md",
+      "repository": "code-copilot-team",
+      "family": "api",
+      "spec_path": "specs/api-host-origin-guard/plan.md",
+      "line_start": 63,
+      "line_end": 69,
+      "form": "list-item",
+      "title": "a request with NO `Origin` header is ALLOWED even on state-changing routes.",
+      "sha256": "1b58cc527852062f5b1e7cd148cb14f92cacea8ae1a4d7edac5772048fed9b5d",
+      "title_tokens": 8,
+      "paragraph_tokens": 42,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/api/cct-api-host-origin-guard-plan-03.md",
+      "repository": "code-copilot-team",
+      "family": "api",
+      "spec_path": "specs/api-host-origin-guard/plan.md",
+      "line_start": 70,
+      "line_end": 74,
+      "form": "list-item",
+      "title": "tests point `TestClient` at `http://127.0.0.1:<port>` rather than adding `testserver` to the production default allowlist.",
+      "sha256": "a3b707b8ba7bc1ce49744be627dff0770bc56afe0f64d3867d9f7606d5f95e3d",
+      "title_tokens": 15,
+      "paragraph_tokens": 27,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/api/cct-api-host-origin-guard-plan-04.md",
+      "repository": "code-copilot-team",
+      "family": "api",
+      "spec_path": "specs/api-host-origin-guard/plan.md",
+      "line_start": 75,
+      "line_end": 78,
+      "form": "list-item",
+      "title": "the Origin check applies to ALL non-GET methods (POST/PUT/PATCH/DELETE), not a hand-maintained route list.",
+      "sha256": "aa8f857dc74ef8128e192ba033e2e76d7630644cf426060c3667ea8f0182a097",
+      "title_tokens": 14,
+      "paragraph_tokens": 22,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/api/cct-api-host-origin-guard-plan-05.md",
+      "repository": "code-copilot-team",
+      "family": "api",
+      "spec_path": "specs/api-host-origin-guard/plan.md",
+      "line_start": 79,
+      "line_end": 81,
+      "form": "list-item",
+      "title": "Host mismatch → `400` (Starlette's built-in); disallowed Origin → `403` with a short constant message, no echo of the offending value.",
+      "sha256": "44337bcdf0bacdb939d8f90b19a4bb92d4cce3daa20455cb00093c65eab05ca4",
+      "title_tokens": 16,
+      "paragraph_tokens": 17,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-01.md",
+      "repository": "code-copilot-team",
+      "family": "api",
+      "spec_path": "specs/api-probe-dsn-constraints/plan.md",
+      "line_start": 62,
+      "line_end": 66,
+      "form": "list-item",
+      "title": "add `scheme_not_allowed`, `host_not_allowed`, `sqlite_file_missing` to the #100 closed set rather than folding them into `bad_dsn`.",
+      "sha256": "3d9ca2b8a50b3f2718fd6c2fe67ae6f7030a930b1c181beb6ee937d00b6fad3c",
+      "title_tokens": 18,
+      "paragraph_tokens": 32,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-02.md",
+      "repository": "code-copilot-team",
+      "family": "api",
+      "spec_path": "specs/api-probe-dsn-constraints/plan.md",
+      "line_start": 67,
+      "line_end": 70,
+      "form": "list-item",
+      "title": "extract the sqlite path rule into db.py and use it from both `connect()` and the validator.",
+      "sha256": "0e5347d0eeefa45f6a692e3d8c28f126ba4aded4eefe59caeca6d557fa3437d7",
+      "title_tokens": 11,
+      "paragraph_tokens": 23,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-03.md",
+      "repository": "code-copilot-team",
+      "family": "api",
+      "spec_path": "specs/api-probe-dsn-constraints/plan.md",
+      "line_start": 71,
+      "line_end": 76,
+      "form": "list-item",
+      "title": "a missing sqlite file is REJECTED with \"database file does not exist yet — save the configuration and run ingest to create it\", not created.",
+      "sha256": "5f191c7a933f06d6eff0e0d799d0c9fc58fa23ad285b97a86c91b61e0f07b25d",
+      "title_tokens": 15,
+      "paragraph_tokens": 40,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-04.md",
+      "repository": "code-copilot-team",
+      "family": "api",
+      "spec_path": "specs/api-probe-dsn-constraints/plan.md",
+      "line_start": 77,
+      "line_end": 79,
+      "form": "list-item",
+      "title": "`sqlite://` / `sqlite:///` (in-memory) is accepted: it touches no filesystem path and is what the test suite uses.",
+      "sha256": "3edceeef486dca3b4754474671b1b388f75f17f1192ac5583e6d17e619dff594",
+      "title_tokens": 11,
+      "paragraph_tokens": 12,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-05.md",
+      "repository": "code-copilot-team",
+      "family": "api",
+      "spec_path": "specs/api-probe-dsn-constraints/plan.md",
+      "line_start": 80,
+      "line_end": 82,
+      "form": "list-item",
+      "title": "the allowlist is loopback + the host parsed from the CONFIGURED DSN only.",
+      "sha256": "f169b6ab4b7b5c610921a5abd8e626f60d24e4a7cd54f86f38fa20bb3d495970",
+      "title_tokens": 7,
+      "paragraph_tokens": 20,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-06.md",
+      "repository": "code-copilot-team",
+      "family": "api",
+      "spec_path": "specs/api-probe-dsn-constraints/plan.md",
+      "line_start": 83,
+      "line_end": 84,
+      "form": "list-item",
+      "title": "confirmed by reading `settings/page.tsx:71`; the display renders arbitrary strings.",
+      "sha256": "3dff8e477cad5a907dd6a84a5738a351d158842107efe538bbafc4ab482d42ca",
+      "title_tokens": 10,
+      "paragraph_tokens": 11,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/api/cct-api-probe-error-hardening-plan-01.md",
+      "repository": "code-copilot-team",
+      "family": "api",
+      "spec_path": "specs/api-probe-error-hardening/plan.md",
+      "line_start": 85,
+      "line_end": 87,
+      "form": "list-item",
+      "title": "add `error_code` alongside `error` rather than replacing it (the studio keeps rendering `error`; no UI change needed).",
+      "sha256": "68ae24767e7e2172653bbdc2f3e52b174407bef9167002c1ec0abeb891a0cda9",
+      "title_tokens": 14,
+      "paragraph_tokens": 15,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/api/cct-api-probe-error-hardening-plan-02.md",
+      "repository": "code-copilot-team",
+      "family": "api",
+      "spec_path": "specs/api-probe-error-hardening/plan.md",
+      "line_start": 88,
+      "line_end": 92,
+      "form": "list-item",
+      "title": "classify on lowercase substring matching of `str(exc)`; the matched text is NEVER returned.",
+      "sha256": "2f3f45677f834df55110ba34f85fbdc021a6e0b272174fed0586bcd729358561",
+      "title_tokens": 10,
+      "paragraph_tokens": 29,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/api/cct-api-probe-error-hardening-plan-03.md",
+      "repository": "code-copilot-team",
+      "family": "api",
+      "spec_path": "specs/api-probe-error-hardening/plan.md",
+      "line_start": 93,
+      "line_end": 94,
+      "form": "list-item",
+      "title": "studio untouched this slice (`✗ ${r.error}` renders the curated message fine).",
+      "sha256": "44f690b6954e9fc3d59578d6eefd3fd02b123718ed02090f1c035a58dc16b506",
+      "title_tokens": 9,
+      "paragraph_tokens": 10,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/api/cct-api-probe-error-hardening-plan-04.md",
+      "repository": "code-copilot-team",
+      "family": "api",
+      "spec_path": "specs/api-probe-error-hardening/plan.md",
+      "line_start": 95,
+      "line_end": 96,
+      "form": "list-item",
+      "title": "success response unchanged (`ok/dialect/sessions`).",
+      "sha256": "7b5229f6c029e887f117b88d9d3d6dbdefd0f3ab74a9a1c4b0904e7b247f1f7f",
+      "title_tokens": 6,
+      "paragraph_tokens": 10,
+      "paragraph_empty": false
+    },
     {
       "page": "code-copilot-team/pi/cct-pi-harness-adoption-plan-01.md",
       "repository": "code-copilot-team",

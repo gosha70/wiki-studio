@@ -342,9 +342,13 @@ under cut 1 the last item below is outside the corpus.
 
 ## The extracted corpus (FR-011)
 
-The main session ran `python -m eval.duplicates.extract` once, with no option
-(`extend` 0, `cut_1` false, as `corpus.json` records), at the pause after the
-extraction code, and committed `corpus/` and `corpus.json` as written. Every
+The main session ran `python -m eval.duplicates.extract` once, with no option,
+at the pause after the extraction code, and committed `corpus/` and
+`corpus.json` as written: 218 pages. At the pause after the labels, with 7 true
+pairs against the minimum of 8, it ran the extension rule's first step
+(FR-016(a)), `python -m eval.duplicates.extract --extend 1`, which adds the
+`api` family (`extend` 1, `cut_1` false, as `corpus.json` now records), and
+committed the added pages and `corpus.json` with these counts updated. Every
 number below is read from `corpus.json`, and
 `tests/test_duplicates_corpus.py` recomputes each one from it.
 
@@ -356,11 +360,12 @@ be measured on this corpus.
 
 ### Pages per repository, family and form
 
-The corpus holds **218 pages**: 117 from code-copilot-team and 101 from
+The corpus holds **233 pages**: 132 from code-copilot-team and 101 from
 memkernel.
 
 | Repository | Family | Form | Pages |
 |---|---|---|---|
+| code-copilot-team | api | list-item | 15 |
 | code-copilot-team | pi | h3-adr | 6 |
 | code-copilot-team | pi | list-item | 23 |
 | code-copilot-team | routing | bold-paragraph | 21 |
@@ -380,6 +385,7 @@ tuned to remove them.
 
 | Repository | Family | Pages | The pitch's count |
 |---|---|---|---|
+| code-copilot-team | api | 15 | (extension family, not in the base count) |
 | code-copilot-team | pi | 29 | 29 |
 | code-copilot-team | routing | 88 | 84 |
 | memkernel | memkernel | 101 | 102 |
@@ -388,7 +394,7 @@ tuned to remove them.
 |---|---|---|---|
 | code-copilot-team | bold-paragraph | 21 | 17 |
 | code-copilot-team | h3-adr | 6 | 6 (H3) |
-| code-copilot-team | list-item | 90 | 90 |
+| code-copilot-team | list-item | 105 | 90 (base families; `api` adds 15) |
 | memkernel | bold-paragraph | 37 | 37 |
 | memkernel | h3-adr | 14 | 14 (H3) |
 | memkernel | list-item | 50 | 51 |
@@ -403,7 +409,9 @@ tuned to remove them.
   memkernel items and writes 101 of them as pages. The list-item count is the
   one that differs (50 against 51). The left-out item's form is not recorded,
   since its text is copied nowhere.
-- **In all: 218 pages against about 215.**
+- **In all: 218 base pages against about 215**, plus 15 from the `api`
+  extension family (`api-host-origin-guard`, `api-probe-dsn-constraints`,
+  `api-probe-error-hardening`, all list items from `plan.md`): 233 pages.
 
 ### Items left out
 
@@ -449,7 +457,7 @@ even number of pages is the mean of the two middle values.
 |---|---|---|---|---|---|---|---|---|
 | code-copilot-team | bold-paragraph | 21 | 2 | 5 | 9 | 0 | 31 | 70 |
 | code-copilot-team | h3-adr | 6 | 3 | 6 | 7 | 19 | 29 | 37 |
-| code-copilot-team | list-item | 90 | 1 | 5 | 15 | 5 | 46 | 285 |
+| code-copilot-team | list-item | 105 | 1 | 6 | 18 | 5 | 41 | 285 |
 | memkernel | bold-paragraph | 37 | 1 | 3 | 10 | 6 | 69 | 221 |
 | memkernel | h3-adr | 14 | 2 | 5 | 10 | 10 | 24.5 | 64 |
 | memkernel | list-item | 50 | 1 | 2.5 | 19 | 3 | 22.5 | 98 |
