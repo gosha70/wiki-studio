@@ -205,6 +205,16 @@ Each is recorded so the origin-alignment record at approval can cite it.
     issue 121 stays open (FR-027).
 22. **The secondary re-score cross-checks the study**: B0 as recorded must
     reproduce the frozen issue 54 signal b counts (FR-021).
+23. **B1's identifier rule is broader than the pitch's letter list** (owner,
+    2026-11-23, after the external review of this bundle). The pitch's rule
+    (6) dropped only `d`, `s`, `a`, `r`, `us`, `fr-`, `nfr-` and `adr-`
+    numbers; counted over the base decision sections, it dropped about 170
+    identifier-shaped tokens and kept about 211 others (`e1`-`e7`, `g1`-`g5`,
+    `o1`-`o4`, `t1`-`t7`, `h1`-`h3`, `l1`-`l4` and more) that unrelated specs
+    share. Rule (6) is now one letter and one or two digits, or a `us`, `fr-`,
+    `nfr-` or `adr-` number: about 334 dropped, content words such as
+    `sha256`, `bm25` and `utf-8` kept. Settled before the freeze (FR-018,
+    FR-022).
 
 Close target: issue 121, by run 2's merge (`pr.closes: [121]`) only when the
 kind ships; otherwise it stays open with the measurement as its evidence
@@ -337,7 +347,14 @@ S4 and S5 only with a winner, and S6 only on the owner's word outside the runs.
 3. **`--resume` ignores `--start-phase`** (lesson 3). Run 2 is a fresh run:
    run 1's ledger (`.cct/auto-build/wiki-studio-duplicates-121/`) is moved
    aside first, and run 2 starts with `--start-phase 7` on a new branch from
-   `main` after the amendment merges and after the 0.11.0 release.
+   `main` after the amendment merges and after the 0.11.0 release. **A
+   stopped run 2 is never resumed with a plain `--resume`**: run 2's ledger
+   holds no record of steps 1-6, so the loop would start at step 1 and
+   re-run US1 on the run 2 branch (cycle 09's failure). Either set the ledger
+   aside and start a fresh run with `--start-phase <the stopped step>` on the
+   same branch (tested in cycle 09; a fresh run checks out the existing
+   branch as it is), or `--resume --start-phase <the stopped step>`
+   (untested).
 4. **The owner's shell sets `CCT_REVIEW_DIFF_MAX_LINES=4000`** (lesson 4),
    which overrides `review.diff_max_lines`. Both runs and every resume start
    with `env -u CCT_REVIEW_DIFF_MAX_LINES`, and `automation.json` carries
@@ -403,8 +420,12 @@ S4 and S5 only with a winner, and S6 only on the owner's word outside the runs.
 6. **Release 0.11.0** (the owner's own release, a precondition of run 2, not
    part of this bundle): the release PR, the tag, the release page with the
    workflow's wheel and sdist. Run 2 does not start before it.
-7. **Run 2** (with a winner): move run 1's ledger aside; start fresh with
-   `--start-phase 7` and `env -u CCT_REVIEW_DIFF_MAX_LINES`; trigger 4 at the
+7. **Run 2** (with a winner): `git fetch --tags` so the 0.11.0 tag check
+   sees the tag on GitHub; move run 1's ledger aside; start fresh with
+   `--start-phase 7` and `env -u CCT_REVIEW_DIFF_MAX_LINES`; if run 2 stops
+   partway, restart it as plan item 3 says (a fresh run with `--start-phase
+   <the stopped step>`, or `--resume --start-phase <step>`), never a plain
+   `--resume`; trigger 4 at the
    middle of week 4 is the owner's escalation (FR-039). After the run, re-run
    the gate on the branch head before trusting `landed`, check no phase was
    bypassed without its record, and confirm an open PR exists on the branch tip

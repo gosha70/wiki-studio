@@ -24,7 +24,7 @@
 **Checkpoint US1** — verify before continuing:
 - [ ] `git status --porcelain` (this phase's changes) lists only `eval/duplicates/__init__.py`, `README.md`, `extract.py`, `sample.py`, `tests/test_duplicates_extract.py` and `CLAUDE.md`; no `corpus/`, `corpus.json` or any other data file exists yet
 - [ ] `git -C ../code-copilot-team status --porcelain` and `git -C ../memkernel status --porcelain` are as before the phase
-- [ ] `git grep -n -i -E '(close[sd]?|fix(e[sd])?|resolve[sd]?) +#[0-9]' -- eval/duplicates` finds nothing
+- [ ] `git grep -n -i -E '(close[sd]?|fix(e[sd])?|resolve[sd]?):? +([[:alnum:]_.-]+/[[:alnum:]_.-]+)?#[0-9]' -- eval/duplicates` finds nothing
 - [ ] `poetry run pytest -q tests/test_duplicates_extract.py tests/test_patterns_frozen.py` passes
 - [ ] Full gate green
 - [ ] Milestone: the run pauses for the extraction run below
@@ -148,7 +148,7 @@
 
 | # | [P] | Task | File(s) | Owner | Done |
 |---|-----|------|---------|-------|------|
-| 20 | | Read FR-027: the winner is the amended value; if it is `none`, or no 0.11.0 tag exists (`git tag --list '*0.11.0*'` prints nothing), stop and report: this phase does not run (FR-027) | — | build | [ ] |
+| 20 | | Read FR-027: the winner is the amended value; if it is `none`, or no 0.11.0 tag exists (`git fetch --tags` first, then `git tag --list 'v0.11.0'` prints nothing), stop and report: this phase does not run (FR-027) | — | build | [ ] |
 | 21 | | `paths.py`: `ENV_DUPLICATE_CHECK = "WIKI_STUDIO_DUPLICATE_CHECK"` beside `ENV_GIT_CALL_LIMIT`; `WikiPaths.duplicate_check: bool = True` with its docstring entry; `for_root` and `resolve` taking `duplicate_check: bool | None = None`; `resolve` reading the variable per FR-030 (unset or empty on; `off`/`on` in any case after stripping; else `ValueError`) (FR-030) | `src/wiki_studio/paths.py` | build | [ ] |
 | 22 | | `src/wiki_studio/duplicates.py` (EGOGE header; standard library only; no forbidden layout string): `first_paragraph` reimplementing eval's `_body`, `_decision_section` and `_first_paragraph`; the title from `yaml_lite.parse_frontmatter`; `page_tokens` with `_tokenise` imported unchanged (and, for B1, FR-018's normalisation as named constants equal to `protocol.json`'s); `similar` with `4 * shared >= union > 0`; the related-line parser (`RELATED_MARKER`, `RELATED_MARKER_RE`, `related_targets`) reusing `conflicts.py`'s `_body_lines`, `_marker_target`, `_resolve_target` and the prose fence rules; `conflicts.py`'s "only importer" docstring sentence updated, no other line. `CLAUDE.md` Layout gains `src/wiki_studio/duplicates.py   the possible-duplicate rule (title and first paragraph, the measured winner) and the related-line parser; reads only` after the `revisions.py` line (FR-028, FR-029) | `src/wiki_studio/duplicates.py`, `src/wiki_studio/conflicts.py`, `CLAUDE.md` | build | [ ] |
 | 23 | | `tests/test_duplicates_rule.py` (EGOGE header): FR-031 in full: the replay over the frozen corpus equal to the winner's `candidate_pairs`; `first_paragraph` and tokens equal eval's on every corpus page and every `eval/patterns/wiki/` page; B1 constants equal `protocol.json` (if B1 won); the parser cases; the switch cases (FR-031) | `tests/test_duplicates_rule.py` | build | [ ] |
