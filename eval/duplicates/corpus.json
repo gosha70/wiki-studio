@@ -13,7 +13,7 @@
     }
   ],
   "options": {
-    "extend": 6,
+    "extend": 7,
     "cut_1": false
   },
   "families": [
@@ -132,6 +132,16 @@
       ],
       "with_decision_sections": [
         "one-harness-home"
+      ]
+    },
+    {
+      "repository": "code-copilot-team",
+      "family": "plugin-generate-from-sources",
+      "directories": [
+        "plugin-generate-from-sources"
+      ],
+      "with_decision_sections": [
+        "plugin-generate-from-sources"
       ]
     },
     {
@@ -1192,6 +1202,76 @@
       "sha256": "c7d3c809544e085fc121c1ba0d7ccfb4b6bbfa9a39a304865a1a6be4c88c87f2",
       "title_tokens": 1,
       "paragraph_tokens": 17,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-01.md",
+      "repository": "code-copilot-team",
+      "family": "plugin-generate-from-sources",
+      "spec_path": "specs/plugin-generate-from-sources/plan.md",
+      "line_start": 66,
+      "line_end": 70,
+      "form": "bold-paragraph",
+      "title": "Decided by the owner, 2026-09-19",
+      "sha256": "647a027e8bf45c4e3c9aa88bb2bf173130d44e0e66a653356882135042a37fc2",
+      "title_tokens": 3,
+      "paragraph_tokens": 35,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-02.md",
+      "repository": "code-copilot-team",
+      "family": "plugin-generate-from-sources",
+      "spec_path": "specs/plugin-generate-from-sources/plan.md",
+      "line_start": 72,
+      "line_end": 85,
+      "form": "bold-paragraph",
+      "title": "the six always-on skills",
+      "sha256": "82ee5ae94b5941009860fe978b3ff5eee29e40ee468fdeba0bdbfed4bc8cbcf7",
+      "title_tokens": 3,
+      "paragraph_tokens": 15,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-03.md",
+      "repository": "code-copilot-team",
+      "family": "plugin-generate-from-sources",
+      "spec_path": "specs/plugin-generate-from-sources/plan.md",
+      "line_start": 87,
+      "line_end": 105,
+      "form": "bold-paragraph",
+      "title": "duplicate hooks when both installs exist",
+      "sha256": "5f14f1246fead6415cd718e89c204c12872ede6886b7e2633017a8a9f45b4d99",
+      "title_tokens": 6,
+      "paragraph_tokens": 19,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-04.md",
+      "repository": "code-copilot-team",
+      "family": "plugin-generate-from-sources",
+      "spec_path": "specs/plugin-generate-from-sources/plan.md",
+      "line_start": 107,
+      "line_end": 112,
+      "form": "bold-paragraph",
+      "title": "commands and agents that need templates or a helper script",
+      "sha256": "4d145b2ecdf61263fa31a1dc7d7dc386e1157926f78d9ee5b369659f75035679",
+      "title_tokens": 6,
+      "paragraph_tokens": 36,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-05.md",
+      "repository": "code-copilot-team",
+      "family": "plugin-generate-from-sources",
+      "spec_path": "specs/plugin-generate-from-sources/plan.md",
+      "line_start": 114,
+      "line_end": 114,
+      "form": "bold-paragraph",
+      "title": "version 1.1.0",
+      "sha256": "6067e8f87c190c84aefd2bc4e26de7cb234624dbfbdf746cf9d088deef80da46",
+      "title_tokens": 3,
+      "paragraph_tokens": 4,
       "paragraph_empty": false
     },
     {
