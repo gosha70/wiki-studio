@@ -546,6 +546,12 @@ by a third session: it read the family's 15 pages, grouped them by question
 (`llm-catalog-01` to `llm-catalog-03`), and redid the summary pass over all
 five families. It changed no existing label, the `api` family's included.
 
+The `wiki-studio-adoption` family, added by the third step, was labelled the
+same way by a fourth session: it read the family's 14 pages, grouped them by
+question (`wiki-studio-adoption-01` to `wiki-studio-adoption-11`), and redid
+the summary pass over all six families, reading memkernel's wiki-bridge pages
+beside it. It changed no existing label of any family.
+
 ### Grouping by question
 
 Per family, pages that answer **the same question** form a group, and the
@@ -620,12 +626,19 @@ The `llm-catalog` family added no true pair either: its three groups hold five
 pairs (`llm-catalog` and `routing`): two `companion` and two
 `distinct-by-precondition`.
 
+The `wiki-studio-adoption` family added no true pair: the plan's fourteen
+decisions build on one another, so its eleven groups hold fourteen `companion`
+pairs (a decision and the later one that names or applies it) and five
+`distinct-by-precondition` pairs, and none restates, reverses or replaces
+another. The redone summary pass added four cross-repository pairs, between
+this family and memkernel's wiki-bridge, MCP-range and release-exit pages, all
+`distinct-by-precondition`.
+
 **Status: open, below the minimum; main-session and owner action required at
 the pause.** The count is still below the minimum after the extension
-order's second step, so the study cannot be frozen yet. The extension rule
+order's third step, so the study cannot be frozen yet. The extension rule
 (FR-016) applies again before anything else: the main session extracts the
-next family of FR-003's extension order (`wiki-studio-adoption`,
-`--extend 3`), and a
+next family of FR-003's extension order (`wiki-audit`, `--extend 4`), and a
 fresh labelling session labels that family and redoes the summary pass.
 This repeats until the count reaches 8 or the order is used up; if the order
 runs out first, the verdict will be "not testable", never a pass. The

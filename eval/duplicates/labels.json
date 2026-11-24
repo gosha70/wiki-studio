@@ -1,10 +1,11 @@
 {
-  "corpus_sha256": "9c77a893ded901e47fd2e300f2084ad1f8cfd5d481d61f5d3ace67d829d7e984",
+  "corpus_sha256": "e07cec7effcf374bcba3d44abbbe119d050d996a3f6303b002b755621728f62a",
   "families": [
     {"name": "routing", "repository": "code-copilot-team", "pages": 88},
     {"name": "pi", "repository": "code-copilot-team", "pages": 29},
     {"name": "api", "repository": "code-copilot-team", "pages": 15},
     {"name": "llm-catalog", "repository": "code-copilot-team", "pages": 15},
+    {"name": "wiki-studio-adoption", "repository": "code-copilot-team", "pages": 14},
     {"name": "memkernel", "repository": "memkernel", "pages": 101}
   ],
   "groups": [
@@ -388,6 +389,109 @@
       "pages": [
         "code-copilot-team/llm-catalog/cct-llm-catalog-spec-07.md",
         "code-copilot-team/llm-catalog/cct-llm-catalog-spec-08.md"
+      ]
+    },
+    {
+      "id": "wiki-studio-adoption-01",
+      "family": "wiki-studio-adoption",
+      "question": "Which wiki-studio artifact do CCT's setup, launcher and CI install and run?",
+      "pages": [
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-01.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-03.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-11.md"
+      ]
+    },
+    {
+      "id": "wiki-studio-adoption-02",
+      "family": "wiki-studio-adoption",
+      "question": "How may upstream wiki-studio change what CCT runs?",
+      "pages": [
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-01.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-13.md"
+      ]
+    },
+    {
+      "id": "wiki-studio-adoption-03",
+      "family": "wiki-studio-adoption",
+      "question": "Which Python versions does the wiki tooling need, and does that narrow the rest of CCT?",
+      "pages": [
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-02.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-11.md"
+      ]
+    },
+    {
+      "id": "wiki-studio-adoption-04",
+      "family": "wiki-studio-adoption",
+      "question": "What does doctor check to call the wiki tooling healthy?",
+      "pages": [
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-03.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-10.md"
+      ]
+    },
+    {
+      "id": "wiki-studio-adoption-05",
+      "family": "wiki-studio-adoption",
+      "question": "What happens when the wiki-studio prerequisite is missing or the wrong version?",
+      "pages": [
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-02.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-03.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-04.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-10.md"
+      ]
+    },
+    {
+      "id": "wiki-studio-adoption-06",
+      "family": "wiki-studio-adoption",
+      "question": "Which installations does CCT claim to set up wiki-studio for?",
+      "pages": [
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-04.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-12.md"
+      ]
+    },
+    {
+      "id": "wiki-studio-adoption-07",
+      "family": "wiki-studio-adoption",
+      "question": "How are CCT's in-repo duplicate wiki engines retired?",
+      "pages": [
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-05.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-14.md"
+      ]
+    },
+    {
+      "id": "wiki-studio-adoption-08",
+      "family": "wiki-studio-adoption",
+      "question": "What does CCT's wiki contract test run against?",
+      "pages": [
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-06.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-11.md"
+      ]
+    },
+    {
+      "id": "wiki-studio-adoption-09",
+      "family": "wiki-studio-adoption",
+      "question": "Is the legacy manifest-less mode kept, and what proves it?",
+      "pages": [
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-06.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-08.md"
+      ]
+    },
+    {
+      "id": "wiki-studio-adoption-10",
+      "family": "wiki-studio-adoption",
+      "question": "Does the package swap take on wiki-studio's governance?",
+      "pages": [
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-08.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-12.md"
+      ]
+    },
+    {
+      "id": "wiki-studio-adoption-11",
+      "family": "wiki-studio-adoption",
+      "question": "How is the project schema's divergence from upstream recorded, checked and kept current?",
+      "pages": [
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-07.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-10.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-13.md"
       ]
     },
     {
@@ -1058,6 +1162,120 @@
       "reason": "What may count as evidence that a binding is supported: an unverified launch never records supported (spec-07); an endpoint's quirk declaration is never evidence (spec-08); each for its own case."
     },
     {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-01.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-03.md"],
+      "group": "wiki-studio-adoption-01",
+      "disposition": "companion",
+      "reason": "Which artifact CCT runs: the launcher runs only the venv's exact 0.9.0 (plan-03), enforcing at run time the hashed-wheel pin of plan-01; it builds on the pin."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-01.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-11.md"],
+      "group": "wiki-studio-adoption-01",
+      "disposition": "companion",
+      "reason": "Which artifact CCT runs: CI installs the exact wheel plan-01 pins, so it tests what production runs (plan-11); it applies the pin to CI."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-01.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-13.md"],
+      "group": "wiki-studio-adoption-02",
+      "disposition": "companion",
+      "reason": "How upstream may change what CCT runs: only by a CCT commit; plan-01 pins the artifact for that reason, plan-13 makes each pin bump a reviewed atomic CCT change; the bump procedure builds on the pin."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-02.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-03.md"],
+      "group": "wiki-studio-adoption-05",
+      "disposition": "distinct-by-precondition",
+      "reason": "What a missing or mismatched prerequisite does: setup warns with the cause and remedy and exits 0 unless the wiki was requested (plan-02); the launcher stops before side effects and names the setup command (plan-03); each for its own step."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-02.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-04.md"],
+      "group": "wiki-studio-adoption-05",
+      "disposition": "distinct-by-precondition",
+      "reason": "What a missing prerequisite does: checkout setup installs the lock or warns (plan-02); plugin-only and copied-adapter guidance names the external prerequisite and refuses lint rather than skip it (plan-04); each for its own installation mode."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-02.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-10.md"],
+      "group": "wiki-studio-adoption-05",
+      "disposition": "distinct-by-precondition",
+      "reason": "What a missing or mismatched prerequisite does: setup warns and reports a distinct incomplete result (plan-02); doctor gives a missing venv, a missing distribution and a version mismatch separate outcomes and remedies (plan-10); each for its own command."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-02.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-11.md"],
+      "group": "wiki-studio-adoption-03",
+      "disposition": "companion",
+      "reason": "Which Python versions the wiki needs: setup keeps non-wiki CCT usable on a 3.10-only or 3.14-only host with the wiki unavailable (plan-02); CI tests the wiki on 3.11–3.13 without dropping 3.10 for other features and names setup as where that shows (plan-11); it builds on setup's distinction."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-03.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-04.md"],
+      "group": "wiki-studio-adoption-05",
+      "disposition": "distinct-by-precondition",
+      "reason": "What a missing or mismatched prerequisite does: the managed launcher stops before side effects (plan-03); unmanaged guidance verifies the version before lint and refuses (plan-04); each for its own installation mode."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-03.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-10.md"],
+      "group": "wiki-studio-adoption-04",
+      "disposition": "companion",
+      "reason": "What doctor checks to call the tooling healthy: plan-03 shares the launcher's resolver with doctor so healthy means the bytes the next command runs; plan-10 names D3's resolver and builds its report on it."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-03.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-11.md"],
+      "group": "wiki-studio-adoption-01",
+      "disposition": "companion",
+      "reason": "Which artifact CCT runs: wiki-lint CI is retargeted to the same artifact and launcher plan-03 defines (plan-11); it applies the launcher to CI."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-04.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-10.md"],
+      "group": "wiki-studio-adoption-05",
+      "disposition": "distinct-by-precondition",
+      "reason": "What a missing or mismatched prerequisite does: unmanaged guidance refuses lint (plan-04); doctor reports each failure with its own outcome and remedy (plan-10); each for its own surface."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-04.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-12.md"],
+      "group": "wiki-studio-adoption-06",
+      "disposition": "companion",
+      "reason": "Which installations CCT claims to set up: plan-04 limits managed setup to checkouts and names the external prerequisite for the rest; the catalogue and docs state that same reach (plan-12); it applies plan-04's boundary to the documents."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-05.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-14.md"],
+      "group": "wiki-studio-adoption-07",
+      "disposition": "companion",
+      "reason": "How the duplicate engines are retired: plan-05 deletes both and retargets every caller; plan-14 makes that deletion the last green stage, after the launcher, package and CI replacement; it sequences plan-05's deletion."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-06.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-08.md"],
+      "group": "wiki-studio-adoption-09",
+      "disposition": "companion",
+      "reason": "Whether the legacy manifest-less mode is kept: plan-06's rewritten test proves the verbs and audit-flush in manifest-less mode; plan-08 keeps the wiki manifest-less on the strength of that round trip; it builds on plan-06's proof."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-06.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-11.md"],
+      "group": "wiki-studio-adoption-08",
+      "disposition": "companion",
+      "reason": "What the contract test runs against: plan-06 rewrites it around the exact package launcher; CI runs that thin contract on the exact wheel (plan-11); it applies plan-06's test to CI."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-07.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-10.md"],
+      "group": "wiki-studio-adoption-11",
+      "disposition": "companion",
+      "reason": "How the schema's divergence is checked: plan-07 pins the reconciled project fingerprint in the thin contract; doctor reports the schema source and fingerprint and gives drift its own outcome (plan-10); it checks plan-07's pin."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-07.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-13.md"],
+      "group": "wiki-studio-adoption-11",
+      "disposition": "companion",
+      "reason": "How the schema's divergence is kept current: a pin bump updates plan-07's classification, delta and fingerprint atomically (plan-13); the bump procedure builds on plan-07's record."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-08.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-12.md"],
+      "group": "wiki-studio-adoption-10",
+      "disposition": "companion",
+      "reason": "Whether the swap takes on governance: plan-08 runs no init and adds no manifest, approvals or findings; the documents keep governance explicitly out of scope (plan-12); it states plan-08's boundary in the docs."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-10.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-13.md"],
+      "group": "wiki-studio-adoption-11",
+      "disposition": "companion",
+      "reason": "How the schema's divergence is kept current: a pin bump updates the fingerprint and the doctor statements plan-10 reports (plan-13); the bump procedure builds on the doctor report."
+    },
+    {
       "pair": ["memkernel/memkernel/mk-memkernel-0-7-spec-01.md", "memkernel/memkernel/mk-memkernel-0-7-spec-03.md"],
       "group": "memkernel-01",
       "disposition": "companion",
@@ -1387,6 +1605,18 @@
     {"kind": "page", "ref": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-13.md", "line": "Project policy"},
     {"kind": "page", "ref": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-14.md", "line": "Studio"},
     {"kind": "page", "ref": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-15.md", "line": "Unified entry"},
+    {"kind": "group", "ref": "wiki-studio-adoption-01", "line": "Which wiki-studio artifact do CCT's setup, launcher and CI install and run?"},
+    {"kind": "group", "ref": "wiki-studio-adoption-02", "line": "How may upstream wiki-studio change what CCT runs?"},
+    {"kind": "group", "ref": "wiki-studio-adoption-03", "line": "Which Python versions does the wiki tooling need, and does that narrow the rest of CCT?"},
+    {"kind": "group", "ref": "wiki-studio-adoption-04", "line": "What does doctor check to call the wiki tooling healthy?"},
+    {"kind": "group", "ref": "wiki-studio-adoption-05", "line": "What happens when the wiki-studio prerequisite is missing or the wrong version?"},
+    {"kind": "group", "ref": "wiki-studio-adoption-06", "line": "Which installations does CCT claim to set up wiki-studio for?"},
+    {"kind": "group", "ref": "wiki-studio-adoption-07", "line": "How are CCT's in-repo duplicate wiki engines retired?"},
+    {"kind": "group", "ref": "wiki-studio-adoption-08", "line": "What does CCT's wiki contract test run against?"},
+    {"kind": "group", "ref": "wiki-studio-adoption-09", "line": "Is the legacy manifest-less mode kept, and what proves it?"},
+    {"kind": "group", "ref": "wiki-studio-adoption-10", "line": "Does the package swap take on wiki-studio's governance?"},
+    {"kind": "group", "ref": "wiki-studio-adoption-11", "line": "How is the project schema's divergence from upstream recorded, checked and kept current?"},
+    {"kind": "page", "ref": "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-09.md", "line": "Preserve the assistant workflows' semantics"},
     {"kind": "group", "ref": "memkernel-01", "line": "When is a page's memory withdrawn, and how is it marked?"},
     {"kind": "group", "ref": "memkernel-02", "line": "What happens to the memory of a renamed page?"},
     {"kind": "group", "ref": "memkernel-03", "line": "How does the import find a page's previous memory?"},
@@ -1516,6 +1746,30 @@
       "scope": "cross-repository",
       "disposition": "distinct-by-precondition",
       "reason": "Who supplies an agent's identity: the team controller takes a declared id and memkernel takes the harness's id, each in its own system."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-01.md", "memkernel/memkernel/mk-memkernel-0-9-mcp2-spec-01.md"],
+      "scope": "cross-repository",
+      "disposition": "distinct-by-precondition",
+      "reason": "How a package installed beside wiki-studio settles its mcp extra's MCP 2.x requirement: CCT forbids the extra because Session Analytics targets MCP 1.x; memkernel moves to mcp>=2.3,<3 to co-install with it; each for its own environment."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-03.md", "memkernel/memkernel/mk-memkernel-0-7-governed-spec-01.md"],
+      "scope": "cross-repository",
+      "disposition": "distinct-by-precondition",
+      "reason": "What happens when wiki-studio is missing or the wrong version: CCT's launcher stops and names the setup command; memkernel's auto mode uses its direct writer when wiki-studio is absent and refuses when it is broken or too old; each in its own system."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-08.md", "memkernel/memkernel/mk-memkernel-0-7-governed-spec-01.md"],
+      "scope": "cross-repository",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether a wiki moves to wiki-studio's governed mode: CCT runs no init and keeps its wiki manifest-less; memkernel's governed setting refuses a legacy wiki and names wiki-studio init, while auto keeps today's path; each for its own deployment."
+    },
+    {
+      "pair": ["code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-11.md", "memkernel/memkernel/mk-memkernel-0-7-release-b-exit-plan-05.md"],
+      "scope": "cross-repository",
+      "disposition": "distinct-by-precondition",
+      "reason": "Which wiki-studio release CI installs: CCT's CI installs the exact pinned wheel production runs; memkernel's informational workflow installs the newest release in range so an upstream change shows; each for its own purpose."
     }
   ],
   "defaults": {"within_family": "unrelated", "cross": "unrelated"},
