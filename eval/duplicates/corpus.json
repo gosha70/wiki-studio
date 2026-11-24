@@ -13,7 +13,7 @@
     }
   ],
   "options": {
-    "extend": 7,
+    "extend": 8,
     "cut_1": false
   },
   "families": [
@@ -142,6 +142,16 @@
       ],
       "with_decision_sections": [
         "plugin-generate-from-sources"
+      ]
+    },
+    {
+      "repository": "code-copilot-team",
+      "family": "simplest-complete-change",
+      "directories": [
+        "simplest-complete-change"
+      ],
+      "with_decision_sections": [
+        "simplest-complete-change"
       ]
     },
     {
@@ -2504,6 +2514,48 @@
       "sha256": "4ad11015ea2ed9a86be7b5304e67fdd318f800f6408f75a00ac5344dd0dad0c8",
       "title_tokens": 5,
       "paragraph_tokens": 24,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/simplest-complete-change/cct-simplest-complete-change-plan-01.md",
+      "repository": "code-copilot-team",
+      "family": "simplest-complete-change",
+      "spec_path": "specs/simplest-complete-change/plan.md",
+      "line_start": 66,
+      "line_end": 69,
+      "form": "h3",
+      "title": "Native CCT Policy Without a Ponytail Dependency",
+      "sha256": "a92af6e87f0ee139760c08ddbbbca115a1bc5fbca13169c59bdf92ec50066b78",
+      "title_tokens": 6,
+      "paragraph_tokens": 81,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/simplest-complete-change/cct-simplest-complete-change-plan-02.md",
+      "repository": "code-copilot-team",
+      "family": "simplest-complete-change",
+      "spec_path": "specs/simplest-complete-change/plan.md",
+      "line_start": 71,
+      "line_end": 74,
+      "form": "h3",
+      "title": "Single Home for the Reuse Ladder (`copilot-conventions`) vs Config Boundary",
+      "sha256": "5d3193542e8be69e03f164cd4f758ea443fb568fbe3c55e81409140f963b534a",
+      "title_tokens": 8,
+      "paragraph_tokens": 49,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/simplest-complete-change/cct-simplest-complete-change-plan-03.md",
+      "repository": "code-copilot-team",
+      "family": "simplest-complete-change",
+      "spec_path": "specs/simplest-complete-change/plan.md",
+      "line_start": 76,
+      "line_end": 79,
+      "form": "h3",
+      "title": "Selective Decision Memory via Existing MemKernel Interfaces",
+      "sha256": "c93d2ce1c97f23fe4d1af5ddbe9dd928a478c6b57001cea294b5eda7a1052a87",
+      "title_tokens": 7,
+      "paragraph_tokens": 60,
       "paragraph_empty": false
     },
     {

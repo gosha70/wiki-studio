@@ -360,8 +360,10 @@ committed the same way. It added no true pair either, so it ran the sixth
 step, `--extend 6`, which adds the `one-harness-home` family (`extend` 6,
 committed the same way. It added no true pair either, so it ran the seventh
 step, `--extend 7`, which adds the `plugin-generate-from-sources` family
-(`extend` 7, `cut_1` false, as `corpus.json` now records), committed the same
-way. Every
+committed the same way. It added no true pair either, so it ran the eighth and
+last step, `--extend 8`, which adds the `simplest-complete-change` family
+(`extend` 8, `cut_1` false, as `corpus.json` now records), committed the same
+way. The extension order is then used up. Every
 number below is read from `corpus.json`, and
 `tests/test_duplicates_corpus.py` recomputes each one from it.
 
@@ -373,7 +375,7 @@ be measured on this corpus.
 
 ### Pages per repository, family and form
 
-The corpus holds **296 pages**: 195 from code-copilot-team and 101 from
+The corpus holds **299 pages**: 198 from code-copilot-team and 101 from
 memkernel.
 
 | Repository | Family | Form | Pages |
@@ -387,14 +389,15 @@ memkernel.
 | code-copilot-team | pi | list-item | 23 |
 | code-copilot-team | routing | bold-paragraph | 21 |
 | code-copilot-team | routing | list-item | 67 |
+| code-copilot-team | simplest-complete-change | h3 | 3 |
 | code-copilot-team | wiki-audit | bold-paragraph | 16 |
 | code-copilot-team | wiki-studio-adoption | h3 | 14 |
 | memkernel | memkernel | bold-paragraph | 37 |
 | memkernel | memkernel | h3-adr | 14 |
 | memkernel | memkernel | list-item | 50 |
 
-The plain `h3` form appears only in the `wiki-studio-adoption` extension
-family (14 pages); every H3 item of the base families holds a `**Decision**:`
+The plain `h3` form appears only in the `wiki-studio-adoption` (14 pages) and
+`simplest-complete-change` (3 pages) extension families; every H3 item of the base families holds a `**Decision**:`
 line and is written in the `h3-adr` form.
 
 ### Against the pitch's counts
@@ -412,6 +415,7 @@ tuned to remove them.
 | code-copilot-team | memkernel-integration | 7 | (extension family, not in the base count) |
 | code-copilot-team | one-harness-home | 6 | (extension family, not in the base count) |
 | code-copilot-team | plugin-generate-from-sources | 5 | (extension family, not in the base count) |
+| code-copilot-team | simplest-complete-change | 3 | (extension family, not in the base count) |
 | code-copilot-team | pi | 29 | 29 |
 | code-copilot-team | routing | 88 | 84 |
 | memkernel | memkernel | 101 | 102 |
@@ -419,7 +423,7 @@ tuned to remove them.
 | Repository | Form | Pages | The pitch's count |
 |---|---|---|---|
 | code-copilot-team | bold-paragraph | 42 | 17 (base families; `wiki-audit` adds 16, `plugin-generate-from-sources` 5) |
-| code-copilot-team | h3 | 14 | 0 (only the `wiki-studio-adoption` extension family) |
+| code-copilot-team | h3 | 17 | 0 (only the `wiki-studio-adoption` and `simplest-complete-change` extension families) |
 | code-copilot-team | h3-adr | 6 | 6 (H3) |
 | code-copilot-team | list-item | 133 | 90 (base families; `api` and `llm-catalog` add 15 each, `memkernel-integration` 7, `one-harness-home` 6) |
 | memkernel | bold-paragraph | 37 | 37 |
@@ -448,8 +452,9 @@ tuned to remove them.
   (`specs/memkernel-integration/plan.md`, all list items) and 6 from the
   `one-harness-home` extension family (`specs/one-harness-home/spec.md`, all
   list items) and 5 from the `plugin-generate-from-sources` extension family
-  (`specs/plugin-generate-from-sources/plan.md`, all bold paragraphs): 296
-  pages.
+  (`specs/plugin-generate-from-sources/plan.md`, all bold paragraphs) and 3
+  from the `simplest-complete-change` extension family
+  (`specs/simplest-complete-change/plan.md`, all plain H3 items): 299 pages.
 
 ### Items left out
 
@@ -495,7 +500,7 @@ even number of pages is the mean of the two middle values.
 | Repository | Form | Pages | `title_tokens` min | `title_tokens` median | `title_tokens` max | `paragraph_tokens` min | `paragraph_tokens` median | `paragraph_tokens` max |
 |---|---|---|---|---|---|---|---|---|
 | code-copilot-team | bold-paragraph | 42 | 2 | 4.5 | 9 | 0 | 35 | 185 |
-| code-copilot-team | h3 | 14 | 3 | 5 | 7 | 14 | 34.5 | 70 |
+| code-copilot-team | h3 | 17 | 3 | 6 | 8 | 14 | 35 | 81 |
 | code-copilot-team | h3-adr | 6 | 3 | 6 | 7 | 19 | 29 | 37 |
 | code-copilot-team | list-item | 133 | 1 | 4 | 18 | 5 | 34 | 285 |
 | memkernel | bold-paragraph | 37 | 1 | 3 | 10 | 6 | 69 | 221 |
