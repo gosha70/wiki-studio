@@ -1,9 +1,10 @@
 {
-  "corpus_sha256": "a2cff26d7a35ed29dabc085b6110b59bb2938cf7201346c13588378307fb8baf",
+  "corpus_sha256": "9c77a893ded901e47fd2e300f2084ad1f8cfd5d481d61f5d3ace67d829d7e984",
   "families": [
     {"name": "routing", "repository": "code-copilot-team", "pages": 88},
     {"name": "pi", "repository": "code-copilot-team", "pages": 29},
     {"name": "api", "repository": "code-copilot-team", "pages": 15},
+    {"name": "llm-catalog", "repository": "code-copilot-team", "pages": 15},
     {"name": "memkernel", "repository": "memkernel", "pages": 101}
   ],
   "groups": [
@@ -359,6 +360,34 @@
       "pages": [
         "code-copilot-team/api/cct-api-probe-error-hardening-plan-01.md",
         "code-copilot-team/api/cct-api-probe-error-hardening-plan-04.md"
+      ]
+    },
+    {
+      "id": "llm-catalog-01",
+      "family": "llm-catalog",
+      "question": "Does a capture of the installed CLI settle a harness's launch integration?",
+      "pages": [
+        "code-copilot-team/llm-catalog/cct-llm-catalog-spec-10.md",
+        "code-copilot-team/llm-catalog/cct-llm-catalog-spec-11.md",
+        "code-copilot-team/llm-catalog/cct-llm-catalog-spec-12.md"
+      ]
+    },
+    {
+      "id": "llm-catalog-02",
+      "family": "llm-catalog",
+      "question": "What does the catalog reuse from routing's scripts?",
+      "pages": [
+        "code-copilot-team/llm-catalog/cct-llm-catalog-spec-04.md",
+        "code-copilot-team/llm-catalog/cct-llm-catalog-spec-06.md"
+      ]
+    },
+    {
+      "id": "llm-catalog-03",
+      "family": "llm-catalog",
+      "question": "What may count as evidence that a binding is supported?",
+      "pages": [
+        "code-copilot-team/llm-catalog/cct-llm-catalog-spec-07.md",
+        "code-copilot-team/llm-catalog/cct-llm-catalog-spec-08.md"
       ]
     },
     {
@@ -999,6 +1028,36 @@
       "reason": "Whether the response changes for its consumers: the error response keeps error and only adds error_code (plan-01); the success response is unchanged (plan-04); each for its own response."
     },
     {
+      "pair": ["code-copilot-team/llm-catalog/cct-llm-catalog-spec-10.md", "code-copilot-team/llm-catalog/cct-llm-catalog-spec-11.md"],
+      "group": "llm-catalog-01",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether a capture of the installed CLI settles the launch integration: Codex's -c overrides are adopted only once the capture proves nested keys; Pi's overlay form waits for slice D's capture; each for its own harness."
+    },
+    {
+      "pair": ["code-copilot-team/llm-catalog/cct-llm-catalog-spec-10.md", "code-copilot-team/llm-catalog/cct-llm-catalog-spec-12.md"],
+      "group": "llm-catalog-01",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether a capture of the installed CLI settles the launch integration: Codex's overlay form is adopted only after its capture; Kiro's model ids, resume and headless details come from slice E's capture; each for its own harness."
+    },
+    {
+      "pair": ["code-copilot-team/llm-catalog/cct-llm-catalog-spec-11.md", "code-copilot-team/llm-catalog/cct-llm-catalog-spec-12.md"],
+      "group": "llm-catalog-01",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether a capture of the installed CLI settles the launch integration: Pi's overlay form is ruled at slice D's capture, Kiro's launch details at slice E's; each for its own harness."
+    },
+    {
+      "pair": ["code-copilot-team/llm-catalog/cct-llm-catalog-spec-04.md", "code-copilot-team/llm-catalog/cct-llm-catalog-spec-06.md"],
+      "group": "llm-catalog-02",
+      "disposition": "distinct-by-precondition",
+      "reason": "What the catalog reuses from routing's scripts: routing-config.sh's line lexer, extracted into a shared library (spec-04); routing-probe.sh's canary primitives and tri-state, not its accounting (spec-06); each for its own component."
+    },
+    {
+      "pair": ["code-copilot-team/llm-catalog/cct-llm-catalog-spec-07.md", "code-copilot-team/llm-catalog/cct-llm-catalog-spec-08.md"],
+      "group": "llm-catalog-03",
+      "disposition": "distinct-by-precondition",
+      "reason": "What may count as evidence that a binding is supported: an unverified launch never records supported (spec-07); an endpoint's quirk declaration is never evidence (spec-08); each for its own case."
+    },
+    {
       "pair": ["memkernel/memkernel/mk-memkernel-0-7-spec-01.md", "memkernel/memkernel/mk-memkernel-0-7-spec-03.md"],
       "group": "memkernel-01",
       "disposition": "companion",
@@ -1317,6 +1376,17 @@
     {"kind": "page", "ref": "code-copilot-team/api/cct-api-host-origin-guard-plan-03.md", "line": "tests point `TestClient` at `http://127.0.0.1:<port>` rather than adding `testserver` to the production default allowlist."},
     {"kind": "page", "ref": "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-02.md", "line": "extract the sqlite path rule into db.py and use it from both `connect()` and the validator."},
     {"kind": "page", "ref": "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-05.md", "line": "the allowlist is loopback + the host parsed from the CONFIGURED DSN only."},
+    {"kind": "group", "ref": "llm-catalog-01", "line": "Does a capture of the installed CLI settle a harness's launch integration?"},
+    {"kind": "group", "ref": "llm-catalog-02", "line": "What does the catalog reuse from routing's scripts?"},
+    {"kind": "group", "ref": "llm-catalog-03", "line": "What may count as evidence that a binding is supported?"},
+    {"kind": "page", "ref": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-01.md", "line": "Slicing"},
+    {"kind": "page", "ref": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-02.md", "line": "User home"},
+    {"kind": "page", "ref": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-03.md", "line": "Three files"},
+    {"kind": "page", "ref": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-05.md", "line": "Bindings"},
+    {"kind": "page", "ref": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-09.md", "line": "Session keys"},
+    {"kind": "page", "ref": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-13.md", "line": "Project policy"},
+    {"kind": "page", "ref": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-14.md", "line": "Studio"},
+    {"kind": "page", "ref": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-15.md", "line": "Unified entry"},
     {"kind": "group", "ref": "memkernel-01", "line": "When is a page's memory withdrawn, and how is it marked?"},
     {"kind": "group", "ref": "memkernel-02", "line": "What happens to the memory of a renamed page?"},
     {"kind": "group", "ref": "memkernel-03", "line": "How does the import find a page's previous memory?"},
@@ -1404,6 +1474,30 @@
       "scope": "cross-family",
       "disposition": "distinct-by-precondition",
       "reason": "How a failure's class is derived from its raw error output: the probe matches substrings of the exception text, type signals first; the routing classifier maps exit code and output to a cause taxonomy; each for its own system."
+    },
+    {
+      "pair": ["code-copilot-team/llm-catalog/cct-llm-catalog-spec-02.md", "code-copilot-team/routing/cct-routing-profile-foundation-plan-01.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "Where in the user's home CCT's registry files live: routing.toml under ~/.code-copilot-team/; the catalog's files there too, amended to ${CCT_HOME:-~/.cct} through one resolver; each for its own files."
+    },
+    {
+      "pair": ["code-copilot-team/llm-catalog/cct-llm-catalog-spec-03.md", "code-copilot-team/routing/cct-routing-profile-foundation-plan-01.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether a new registry gets its own file beside providers.toml: routing.toml and llms.toml each do, and providers.toml stays the reviewer profile; each for its own registry."
+    },
+    {
+      "pair": ["code-copilot-team/llm-catalog/cct-llm-catalog-spec-04.md", "code-copilot-team/routing/cct-routing-profile-foundation-plan-01.md"],
+      "scope": "cross-family",
+      "disposition": "companion",
+      "reason": "How a CCT TOML registry is parsed: the catalog extracts the line lexer of routing-config.sh, the one parser the routing registry introduced, into a library both registries share; it builds on the routing parser."
+    },
+    {
+      "pair": ["code-copilot-team/llm-catalog/cct-llm-catalog-spec-06.md", "code-copilot-team/routing/cct-routing-recovery-plan-02.md"],
+      "scope": "cross-family",
+      "disposition": "companion",
+      "reason": "How a backend canary is probed and classified: the catalog shares routing-probe.sh's canary primitives and closed tri-state, without its accounting, caps or state runner; it builds on the routing probe engine."
     },
     {
       "pair": ["code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md", "code-copilot-team/routing/cct-routing-profile-foundation-plan-04.md"],

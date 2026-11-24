@@ -532,6 +532,11 @@ candidate code: it read the family's 15 pages, grouped them by question
 (`api-01` to `api-06`), and redid the summary pass over all four families. It
 changed no label of the base families.
 
+The `llm-catalog` family, added by the second step, was labelled the same way
+by a third session: it read the family's 15 pages, grouped them by question
+(`llm-catalog-01` to `llm-catalog-03`), and redid the summary pass over all
+five families. It changed no existing label, the `api` family's included.
+
 ### Grouping by question
 
 Per family, pages that answer **the same question** form a group, and the
@@ -601,11 +606,17 @@ The `api` family added no true pair: its six groups hold seven
 summary pass added one cross pair (`api` and `routing`), labelled
 `distinct-by-precondition`.
 
+The `llm-catalog` family added no true pair either: its three groups hold five
+`distinct-by-precondition` pairs, and the redone summary pass added four cross
+pairs (`llm-catalog` and `routing`): two `companion` and two
+`distinct-by-precondition`.
+
 **Status: open, below the minimum; main-session and owner action required at
 the pause.** The count is still below the minimum after the extension
-order's first step, so the study cannot be frozen yet. The extension rule
+order's second step, so the study cannot be frozen yet. The extension rule
 (FR-016) applies again before anything else: the main session extracts the
-next family of FR-003's extension order (`llm-catalog`, `--extend 2`), and a
+next family of FR-003's extension order (`wiki-studio-adoption`,
+`--extend 3`), and a
 fresh labelling session labels that family and redoes the summary pass.
 This repeats until the count reaches 8 or the order is used up; if the order
 runs out first, the verdict will be "not testable", never a pass. The
