@@ -2128,6 +2128,12 @@
       "reason": "Whether the in-repo system a package replaces is removed in the same change: every GCC remnant leaves both adapter trees; both duplicate wiki engines are deleted, with a guard against their return; each for its own replaced system."
     },
     {
+      "pair": ["code-copilot-team/one-harness-home/cct-one-harness-home-spec-01.md", "code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md"],
+      "scope": "cross-family",
+      "disposition": "supersedes",
+      "reason": "Where the user-level configuration lives: the harness plan put it under ~/.code-copilot-team/; the one-harness-home ruling moves the user home to ~/.cct/, replacing that location. Labelled by the owner at the review (2026-11-24): a ruling that only changes where a file lives supersedes the earlier location, the same reading as the existing harness-plan and project-config pair."
+    },
+    {
       "pair": ["code-copilot-team/one-harness-home/cct-one-harness-home-spec-03.md", "code-copilot-team/pi/cct-pi-project-config-spec-03.md"],
       "scope": "cross-family",
       "disposition": "distinct-by-precondition",
@@ -2267,5 +2273,5 @@
     }
   ],
   "defaults": {"within_family": "unrelated", "cross": "unrelated"},
-  "true_pairs": 7
+  "true_pairs": 8
 }

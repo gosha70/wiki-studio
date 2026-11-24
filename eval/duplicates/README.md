@@ -686,7 +686,7 @@ and counted later, whatever its label.
 
 ### The count
 
-**True pairs: 7**, against the minimum of 8 (D4). The count is `true_pairs`
+**True pairs: 8**, against the minimum of 8 (D4). The count is `true_pairs`
 in `labels.json`: the pairs labelled `redundant`, `conflicting` or
 `supersedes` in `pairs` and `cross_pairs`. Every commit that changes a label
 updates `true_pairs` and this count together.
@@ -783,15 +783,26 @@ owner answers out of the `decision` type: that page settles a record type
 for captured text, not which decisions an agent records, so the pair stays
 `unrelated`; the owner reviews this reading with the labels.
 
-**Status: below the minimum, with the extension order used up; the verdict
-will be "not testable".** The count is still below the minimum after the
-extension order's eighth and last step, so the extension rule (FR-016) has
-no step left and the verdict will be "not testable" (D4), never a pass. No
-label is changed to reach the minimum. The next steps are the main
-session's review sample (`python -m eval.duplicates.sample`, committed as
-its own commit) and then the owner's review of every true and `companion`
-label, every listed cross pair and the 20 sampled false pairs, before the
-freeze.
+**The owner's review (2026-11-24).** After the extension order's eighth and
+last step the count stood at 7, below the minimum. The main session drew the
+review sample (`python -m eval.duplicates.sample`, committed as its own
+commit), and the owner reviewed every true and `companion` label, every
+listed cross pair and the 20 sampled false pairs, with six close calls set
+out first. The owner changed one label. The pair of the harness plan's
+user-level location (`pi/cct-pi-harness-adoption-plan-05.md`) and the
+one-harness-home ruling that moves the user home to `~/.cct/`
+(`one-harness-home/cct-one-harness-home-spec-01.md`), unlabelled before, is
+now a listed cross pair labelled `supersedes`. The owner's reading: a ruling
+that only changes where a file lives supersedes the earlier location. That is
+the reading the existing `supersedes` pair of the same harness plan and
+`pi/cct-pi-project-config-spec-01.md` (the project-level location) already
+took, so the two halves of the moved location are now labelled alike, as the
+external reviewer pointed out they must be. Every other label stands as the
+labellers set it.
+
+**Status: at the minimum.** With the owner's change the count is 8, the
+minimum of D4, so condition (1)'s minimum is met and recall is testable. The
+next step is the freeze.
 
 `tests/test_duplicates_labels.py` checks the labels' structure: the keys, the
 groups, every in-group pair labelled once, the dispositions and reasons, the
