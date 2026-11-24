@@ -13,7 +13,7 @@
     }
   ],
   "options": {
-    "extend": 3,
+    "extend": 4,
     "cut_1": false
   },
   "families": [
@@ -100,6 +100,18 @@
       ],
       "with_decision_sections": [
         "wiki-studio-adoption"
+      ]
+    },
+    {
+      "repository": "code-copilot-team",
+      "family": "wiki-audit",
+      "directories": [
+        "wiki-audit-flush",
+        "wiki-audit-trail"
+      ],
+      "with_decision_sections": [
+        "wiki-audit-flush",
+        "wiki-audit-trail"
       ]
     },
     {
@@ -2210,6 +2222,230 @@
       "sha256": "4ad11015ea2ed9a86be7b5304e67fdd318f800f6408f75a00ac5344dd0dad0c8",
       "title_tokens": 5,
       "paragraph_tokens": 24,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-01.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-audit",
+      "spec_path": "specs/wiki-audit-flush/spec.md",
+      "line_start": 172,
+      "line_end": 177,
+      "form": "bold-paragraph",
+      "title": "1 — Verb, not a flag",
+      "sha256": "a54c2279937388bd20d983f58d8eb72cdba01ca894800040af12c2d38741d440",
+      "title_tokens": 4,
+      "paragraph_tokens": 35,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-02.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-audit",
+      "spec_path": "specs/wiki-audit-flush/spec.md",
+      "line_start": 179,
+      "line_end": 186,
+      "form": "bold-paragraph",
+      "title": "2 — Prefix-based pending detection",
+      "sha256": "aa822389ea8f927491d5dfe3fa8b5459fd79c913c9236d8d2e52b9048b0a980c",
+      "title_tokens": 4,
+      "paragraph_tokens": 46,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-03.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-audit",
+      "spec_path": "specs/wiki-audit-flush/spec.md",
+      "line_start": 188,
+      "line_end": 198,
+      "form": "bold-paragraph",
+      "title": "3 — Pathspec commit, never `git add -A`",
+      "sha256": "dae72b7d58d3f2afa12376e477930064d9282abcb8f77472770c6b1f1a4542d8",
+      "title_tokens": 6,
+      "paragraph_tokens": 61,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-04.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-audit",
+      "spec_path": "specs/wiki-audit-flush/spec.md",
+      "line_start": 200,
+      "line_end": 203,
+      "form": "bold-paragraph",
+      "title": "4 — No-op is success",
+      "sha256": "944b80ee66261c4b944bdb74df384e1284e6ef49b227d32a8d4814ce16d76764",
+      "title_tokens": 3,
+      "paragraph_tokens": 22,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-05.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-audit",
+      "spec_path": "specs/wiki-audit-flush/spec.md",
+      "line_start": 205,
+      "line_end": 209,
+      "form": "bold-paragraph",
+      "title": "5 — Independent of promote; still git-free elsewhere",
+      "sha256": "7ed340705b544a4039d87feb0184ea78261a5839ea2c563da568923f11c27b45",
+      "title_tokens": 6,
+      "paragraph_tokens": 27,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-06.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-audit",
+      "spec_path": "specs/wiki-audit-flush/spec.md",
+      "line_start": 211,
+      "line_end": 215,
+      "form": "bold-paragraph",
+      "title": "6 — Detached HEAD / dirty tree tolerated",
+      "sha256": "0bd03b290e1b2b24513fb1b50a72c41c5423742a74b8527308738bfa21dabb85",
+      "title_tokens": 6,
+      "paragraph_tokens": 24,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-07.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-audit",
+      "spec_path": "specs/wiki-audit-flush/spec.md",
+      "line_start": 217,
+      "line_end": 228,
+      "form": "bold-paragraph",
+      "title": "7 — Fail-closed on a malformed working log",
+      "sha256": "81aeeac33e6faba9f9fe8323140c3668ecef86e9122ce2725b99081582ad623b",
+      "title_tokens": 5,
+      "paragraph_tokens": 73,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-01.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-audit",
+      "spec_path": "specs/wiki-audit-trail/spec.md",
+      "line_start": 356,
+      "line_end": 375,
+      "form": "bold-paragraph",
+      "title": "1 — Audit path layout",
+      "sha256": "afef9c377c1f344b761ee33f5b7d9c2de1b0eea04f936f66364b66850382227e",
+      "title_tokens": 4,
+      "paragraph_tokens": 112,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-02.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-audit",
+      "spec_path": "specs/wiki-audit-trail/spec.md",
+      "line_start": 377,
+      "line_end": 391,
+      "form": "bold-paragraph",
+      "title": "2 — Curator-edit delta capture",
+      "sha256": "5b9ac4f1b8422106d9df1d04668a04452e7b5122dde5ace8712179ff94e132d7",
+      "title_tokens": 4,
+      "paragraph_tokens": 77,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-audit",
+      "spec_path": "specs/wiki-audit-trail/spec.md",
+      "line_start": 393,
+      "line_end": 425,
+      "form": "bold-paragraph",
+      "title": "3 — Ingest-log schema",
+      "sha256": "7606f1dd3d7b08c5bb56401f94d37a4ac2672fcec72ba86bd78d259f04e60ab6",
+      "title_tokens": 3,
+      "paragraph_tokens": 185,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-04.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-audit",
+      "spec_path": "specs/wiki-audit-trail/spec.md",
+      "line_start": 427,
+      "line_end": 441,
+      "form": "bold-paragraph",
+      "title": "4 — Reject vs abandon",
+      "sha256": "7550371755a0c74f4b002e520c1a90d6579afa641f07b8f732c6372bc4b2b660",
+      "title_tokens": 4,
+      "paragraph_tokens": 82,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-05.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-audit",
+      "spec_path": "specs/wiki-audit-trail/spec.md",
+      "line_start": 443,
+      "line_end": 459,
+      "form": "bold-paragraph",
+      "title": "5 — Atomicity boundary",
+      "sha256": "b3d61fd7755db842df05ac86a09a41b1cad4b9fd52823e5ad63d1c7b4ad70c28",
+      "title_tokens": 3,
+      "paragraph_tokens": 81,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-06.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-audit",
+      "spec_path": "specs/wiki-audit-trail/spec.md",
+      "line_start": 461,
+      "line_end": 475,
+      "form": "bold-paragraph",
+      "title": "6 — PII / redaction",
+      "sha256": "64eda8f0e39145b1d56fe31a27f104fba3c67e80e84f86e26bd41bb4fc707967",
+      "title_tokens": 3,
+      "paragraph_tokens": 77,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-07.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-audit",
+      "spec_path": "specs/wiki-audit-trail/spec.md",
+      "line_start": 477,
+      "line_end": 485,
+      "form": "bold-paragraph",
+      "title": "7 — Backfill",
+      "sha256": "89b3026162d2cfe83549c847a3297f088a906f460170d52e0228922db6db18c3",
+      "title_tokens": 2,
+      "paragraph_tokens": 52,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-08.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-audit",
+      "spec_path": "specs/wiki-audit-trail/spec.md",
+      "line_start": 487,
+      "line_end": 503,
+      "form": "bold-paragraph",
+      "title": "8 — Audit append happens at the CLI layer, after materialization",
+      "sha256": "dfdd4dd9d4cb72db1d37ebdfa9adec99d607578b73b974f4f09c0ee9b171aa28",
+      "title_tokens": 8,
+      "paragraph_tokens": 85,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-09.md",
+      "repository": "code-copilot-team",
+      "family": "wiki-audit",
+      "spec_path": "specs/wiki-audit-trail/spec.md",
+      "line_start": 505,
+      "line_end": 524,
+      "form": "bold-paragraph",
+      "title": "9 — Patch-set-oriented record",
+      "sha256": "0e05deccf44a0144c4cc49f2e3bf42e9767e472ad3260faf4e68563d8eb442bf",
+      "title_tokens": 3,
+      "paragraph_tokens": 94,
       "paragraph_empty": false
     },
     {
