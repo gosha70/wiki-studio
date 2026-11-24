@@ -1,8 +1,9 @@
 {
-  "corpus_sha256": "3a4ffff6a620cd2055644f89e27d2e0081187ff890511bb0cbbac1d706597852",
+  "corpus_sha256": "a2cff26d7a35ed29dabc085b6110b59bb2938cf7201346c13588378307fb8baf",
   "families": [
     {"name": "routing", "repository": "code-copilot-team", "pages": 88},
     {"name": "pi", "repository": "code-copilot-team", "pages": 29},
+    {"name": "api", "repository": "code-copilot-team", "pages": 15},
     {"name": "memkernel", "repository": "memkernel", "pages": 101}
   ],
   "groups": [
@@ -303,6 +304,61 @@
         "code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md",
         "code-copilot-team/pi/cct-pi-project-config-spec-01.md",
         "code-copilot-team/pi/cct-pi-project-config-spec-05.md"
+      ]
+    },
+    {
+      "id": "api-01",
+      "family": "api",
+      "question": "Which requests must pass the Origin check?",
+      "pages": [
+        "code-copilot-team/api/cct-api-host-origin-guard-plan-02.md",
+        "code-copilot-team/api/cct-api-host-origin-guard-plan-04.md"
+      ]
+    },
+    {
+      "id": "api-02",
+      "family": "api",
+      "question": "Does a rejection's error response echo the offending text?",
+      "pages": [
+        "code-copilot-team/api/cct-api-host-origin-guard-plan-05.md",
+        "code-copilot-team/api/cct-api-probe-error-hardening-plan-02.md"
+      ]
+    },
+    {
+      "id": "api-03",
+      "family": "api",
+      "question": "Which SQLite DSNs does the connection probe accept?",
+      "pages": [
+        "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-03.md",
+        "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-04.md"
+      ]
+    },
+    {
+      "id": "api-04",
+      "family": "api",
+      "question": "How does the probe's error response name the failure class?",
+      "pages": [
+        "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-01.md",
+        "code-copilot-team/api/cct-api-probe-error-hardening-plan-01.md"
+      ]
+    },
+    {
+      "id": "api-05",
+      "family": "api",
+      "question": "Does the studio change to show the probe's error messages?",
+      "pages": [
+        "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-06.md",
+        "code-copilot-team/api/cct-api-probe-error-hardening-plan-01.md",
+        "code-copilot-team/api/cct-api-probe-error-hardening-plan-03.md"
+      ]
+    },
+    {
+      "id": "api-06",
+      "family": "api",
+      "question": "Does the probe's response change for its existing consumers?",
+      "pages": [
+        "code-copilot-team/api/cct-api-probe-error-hardening-plan-01.md",
+        "code-copilot-team/api/cct-api-probe-error-hardening-plan-04.md"
       ]
     },
     {
@@ -895,6 +951,54 @@
       "reason": "Where project configuration lives: spec-05 puts the companion files beside spec-01's .cct.toml at the repository root."
     },
     {
+      "pair": ["code-copilot-team/api/cct-api-host-origin-guard-plan-02.md", "code-copilot-team/api/cct-api-host-origin-guard-plan-04.md"],
+      "group": "api-01",
+      "disposition": "distinct-by-precondition",
+      "reason": "Which requests must pass the Origin check: every non-GET method, by method not by route list (plan-04); a request with no Origin header passes, for non-browser clients (plan-02)."
+    },
+    {
+      "pair": ["code-copilot-team/api/cct-api-host-origin-guard-plan-05.md", "code-copilot-team/api/cct-api-probe-error-hardening-plan-02.md"],
+      "group": "api-02",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether a rejection echoes the offending text: neither does, each for its own response: the guard's 403 is a constant message, the probe never returns the matched exception text."
+    },
+    {
+      "pair": ["code-copilot-team/api/cct-api-probe-dsn-constraints-plan-03.md", "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-04.md"],
+      "group": "api-03",
+      "disposition": "distinct-by-precondition",
+      "reason": "Which SQLite DSNs the probe accepts: a file DSN whose file is missing is rejected, not created (plan-03); the in-memory form, touching no path, is accepted (plan-04)."
+    },
+    {
+      "pair": ["code-copilot-team/api/cct-api-probe-dsn-constraints-plan-01.md", "code-copilot-team/api/cct-api-probe-error-hardening-plan-01.md"],
+      "group": "api-04",
+      "disposition": "companion",
+      "reason": "How the error response names the failure class: the DSN plan adds three codes to the closed code set rather than folding them into bad_dsn, building on the error_code field the error-hardening plan adds beside error."
+    },
+    {
+      "pair": ["code-copilot-team/api/cct-api-probe-dsn-constraints-plan-06.md", "code-copilot-team/api/cct-api-probe-error-hardening-plan-01.md"],
+      "group": "api-05",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether the studio changes: the DSN plan confirms the settings page renders any string; the error-hardening plan keeps error so no UI change is needed; each for its own slice."
+    },
+    {
+      "pair": ["code-copilot-team/api/cct-api-probe-dsn-constraints-plan-06.md", "code-copilot-team/api/cct-api-probe-error-hardening-plan-03.md"],
+      "group": "api-05",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether the studio changes: the settings page renders any string (DSN plan) and the studio stays untouched since it renders the curated message (error-hardening plan), each for its own slice."
+    },
+    {
+      "pair": ["code-copilot-team/api/cct-api-probe-error-hardening-plan-01.md", "code-copilot-team/api/cct-api-probe-error-hardening-plan-03.md"],
+      "group": "api-05",
+      "disposition": "companion",
+      "reason": "Whether the studio changes: plan-03 leaves the studio untouched because plan-01 keeps error beside the new error_code; plan-01's decision is the response field, plan-03 applies it to the studio."
+    },
+    {
+      "pair": ["code-copilot-team/api/cct-api-probe-error-hardening-plan-01.md", "code-copilot-team/api/cct-api-probe-error-hardening-plan-04.md"],
+      "group": "api-06",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether the response changes for its consumers: the error response keeps error and only adds error_code (plan-01); the success response is unchanged (plan-04); each for its own response."
+    },
+    {
       "pair": ["memkernel/memkernel/mk-memkernel-0-7-spec-01.md", "memkernel/memkernel/mk-memkernel-0-7-spec-03.md"],
       "group": "memkernel-01",
       "disposition": "companion",
@@ -1203,6 +1307,16 @@
     {"kind": "page", "ref": "code-copilot-team/pi/cct-pi-worktree-lifecycle-plan-02.md", "line": "Isolation failure"},
     {"kind": "page", "ref": "code-copilot-team/pi/cct-pi-worktree-lifecycle-plan-03.md", "line": "Path"},
     {"kind": "page", "ref": "code-copilot-team/pi/cct-pi-worktree-lifecycle-plan-04.md", "line": "Reconcile"},
+    {"kind": "group", "ref": "api-01", "line": "Which requests must pass the Origin check?"},
+    {"kind": "group", "ref": "api-02", "line": "Does a rejection's error response echo the offending text?"},
+    {"kind": "group", "ref": "api-03", "line": "Which SQLite DSNs does the connection probe accept?"},
+    {"kind": "group", "ref": "api-04", "line": "How does the probe's error response name the failure class?"},
+    {"kind": "group", "ref": "api-05", "line": "Does the studio change to show the probe's error messages?"},
+    {"kind": "group", "ref": "api-06", "line": "Does the probe's response change for its existing consumers?"},
+    {"kind": "page", "ref": "code-copilot-team/api/cct-api-host-origin-guard-plan-01.md", "line": "Host + Origin only."},
+    {"kind": "page", "ref": "code-copilot-team/api/cct-api-host-origin-guard-plan-03.md", "line": "tests point `TestClient` at `http://127.0.0.1:<port>` rather than adding `testserver` to the production default allowlist."},
+    {"kind": "page", "ref": "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-02.md", "line": "extract the sqlite path rule into db.py and use it from both `connect()` and the validator."},
+    {"kind": "page", "ref": "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-05.md", "line": "the allowlist is loopback + the host parsed from the CONFIGURED DSN only."},
     {"kind": "group", "ref": "memkernel-01", "line": "When is a page's memory withdrawn, and how is it marked?"},
     {"kind": "group", "ref": "memkernel-02", "line": "What happens to the memory of a renamed page?"},
     {"kind": "group", "ref": "memkernel-03", "line": "How does the import find a page's previous memory?"},
@@ -1285,6 +1399,12 @@
     {"kind": "page", "ref": "memkernel/memkernel/mk-memkernel-0-9-mcp2-spec-03.md", "line": "Release"}
   ],
   "cross_pairs": [
+    {
+      "pair": ["code-copilot-team/api/cct-api-probe-error-hardening-plan-02.md", "code-copilot-team/routing/cct-routing-profile-foundation-plan-05.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "How a failure's class is derived from its raw error output: the probe matches substrings of the exception text, type signals first; the routing classifier maps exit code and output to a cause taxonomy; each for its own system."
+    },
     {
       "pair": ["code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md", "code-copilot-team/routing/cct-routing-profile-foundation-plan-04.md"],
       "scope": "cross-family",

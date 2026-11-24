@@ -519,6 +519,12 @@ It read every page of each family (one read of the family's directory) and
 labelled from the pages' content only. The owner reviews the labels at the
 pause after this step, before the freeze.
 
+The `api` family, added by the extension rule's first step (FR-016(a)), was
+labelled by a second session started by hand under the same rules and with no
+candidate code: it read the family's 15 pages, grouped them by question
+(`api-01` to `api-06`), and redid the summary pass over all four families. It
+changed no label of the base families.
+
 ### Grouping by question
 
 Per family, pages that answer **the same question** form a group, and the
@@ -583,11 +589,17 @@ in `labels.json`: the pairs labelled `redundant`, `conflicting` or
 `supersedes` in `pairs` and `cross_pairs`. Every commit that changes a label
 updates `true_pairs` and this count together.
 
+The `api` family added no true pair: its six groups hold seven
+`distinct-by-precondition` pairs and two `companion` pairs, and the redone
+summary pass added one cross pair (`api` and `routing`), labelled
+`distinct-by-precondition`.
+
 **Status: open, below the minimum; main-session and owner action required at
-the pause.** The count is below the minimum, so the study cannot be frozen yet. At the
-pause after this step, the extension rule (FR-016) applies before anything
-else: the main session extracts the next family of FR-003's extension order,
-and a fresh labelling session labels that family and redoes the summary pass.
+the pause.** The count is still below the minimum after the extension
+order's first step, so the study cannot be frozen yet. The extension rule
+(FR-016) applies again before anything else: the main session extracts the
+next family of FR-003's extension order (`llm-catalog`, `--extend 2`), and a
+fresh labelling session labels that family and redoes the summary pass.
 This repeats until the count reaches 8 or the order is used up; if the order
 runs out first, the verdict will be "not testable", never a pass. The
 labelling session runs no script, so it does not extend the corpus itself,
