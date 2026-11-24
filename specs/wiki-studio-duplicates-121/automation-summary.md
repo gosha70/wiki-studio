@@ -52,3 +52,6 @@ To resume: append a line 'approved-by: <name> <date>' below, then run:
 
 <!-- checkpoint-after-phase: 5 -->
 approved-by: gosha70 2026-11-24 ("sign off" in the build session at the pause after US5; the scoring run is committed as 12dac68, Winner: none)
+
+### Phase 6 complete — US6: The report and the evidence PR (S3) (2026-11-24T21:13:11Z)
+Review: PASS (see specs/wiki-studio-duplicates-121/collaboration/build-review-phase-6.md).
