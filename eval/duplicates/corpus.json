@@ -13,7 +13,7 @@
     }
   ],
   "options": {
-    "extend": 4,
+    "extend": 5,
     "cut_1": false
   },
   "families": [
@@ -112,6 +112,16 @@
       "with_decision_sections": [
         "wiki-audit-flush",
         "wiki-audit-trail"
+      ]
+    },
+    {
+      "repository": "code-copilot-team",
+      "family": "memkernel-integration",
+      "directories": [
+        "memkernel-integration"
+      ],
+      "with_decision_sections": [
+        "memkernel-integration"
       ]
     },
     {
@@ -584,6 +594,104 @@
       "sha256": "ea34a733a6fd979fe0af25cb9902e4d956d41024f09c9da1e79fd5620bee4ba3",
       "title_tokens": 2,
       "paragraph_tokens": 17,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-01.md",
+      "repository": "code-copilot-team",
+      "family": "memkernel-integration",
+      "spec_path": "specs/memkernel-integration/plan.md",
+      "line_start": 31,
+      "line_end": 31,
+      "form": "list-item",
+      "title": "Single on-demand rule replaces per-agent GCC sections",
+      "sha256": "d4608ffab8e3a980800975ddd9b0611ba11a92e0ac00ff41464fb397e3e06692",
+      "title_tokens": 7,
+      "paragraph_tokens": 19,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-02.md",
+      "repository": "code-copilot-team",
+      "family": "memkernel-integration",
+      "spec_path": "specs/memkernel-integration/plan.md",
+      "line_start": 32,
+      "line_end": 32,
+      "form": "list-item",
+      "title": "Direct Python hooks with two-layer shell guards",
+      "sha256": "500188c4a2c5d0775f100db771bff0fd174bc650603f429a8b6c1e8854e1ec51",
+      "title_tokens": 6,
+      "paragraph_tokens": 27,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-03.md",
+      "repository": "code-copilot-team",
+      "family": "memkernel-integration",
+      "spec_path": "specs/memkernel-integration/plan.md",
+      "line_start": 33,
+      "line_end": 33,
+      "form": "list-item",
+      "title": "Per-project MCP server registration",
+      "sha256": "48a663d953bd4a4e0b41e9e0e99b65bbacef2c0c7eea685a21ff4ad982c0125b",
+      "title_tokens": 4,
+      "paragraph_tokens": 14,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-04.md",
+      "repository": "code-copilot-team",
+      "family": "memkernel-integration",
+      "spec_path": "specs/memkernel-integration/plan.md",
+      "line_start": 34,
+      "line_end": 34,
+      "form": "list-item",
+      "title": "Pre-publication via `pip install -e`",
+      "sha256": "94ff3f620635051e6fb26ec0cc504c86da42120b46ddb13d362d56c6bd607974",
+      "title_tokens": 5,
+      "paragraph_tokens": 10,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-05.md",
+      "repository": "code-copilot-team",
+      "family": "memkernel-integration",
+      "spec_path": "specs/memkernel-integration/plan.md",
+      "line_start": 35,
+      "line_end": 35,
+      "form": "list-item",
+      "title": "GCC cleanup included",
+      "sha256": "25629cf6529cbd99d1228b19ebaad529764331e59b27010fc62c0d6b10b467ac",
+      "title_tokens": 3,
+      "paragraph_tokens": 10,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-06.md",
+      "repository": "code-copilot-team",
+      "family": "memkernel-integration",
+      "spec_path": "specs/memkernel-integration/plan.md",
+      "line_start": 36,
+      "line_end": 36,
+      "form": "list-item",
+      "title": "Sync path upgraded",
+      "sha256": "a4fd71b5bd4a90c4a320340844ba7be9722ab471e020d14bae8d00e14772eaaf",
+      "title_tokens": 3,
+      "paragraph_tokens": 16,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-07.md",
+      "repository": "code-copilot-team",
+      "family": "memkernel-integration",
+      "spec_path": "specs/memkernel-integration/plan.md",
+      "line_start": 37,
+      "line_end": 37,
+      "form": "list-item",
+      "title": "Existing project migration",
+      "sha256": "5cae1bf5d8b6c6512ff15b9311fc6d54fbc4103cf47f13919260165b7631f82f",
+      "title_tokens": 3,
+      "paragraph_tokens": 13,
       "paragraph_empty": false
     },
     {
