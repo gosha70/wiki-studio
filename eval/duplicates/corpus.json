@@ -13,7 +13,7 @@
     }
   ],
   "options": {
-    "extend": 1,
+    "extend": 2,
     "cut_1": false
   },
   "families": [
@@ -80,6 +80,16 @@
         "api-host-origin-guard",
         "api-probe-dsn-constraints",
         "api-probe-error-hardening"
+      ]
+    },
+    {
+      "repository": "code-copilot-team",
+      "family": "llm-catalog",
+      "directories": [
+        "llm-catalog"
+      ],
+      "with_decision_sections": [
+        "llm-catalog"
       ]
     },
     {
@@ -342,6 +352,216 @@
       "sha256": "7b5229f6c029e887f117b88d9d3d6dbdefd0f3ab74a9a1c4b0904e7b247f1f7f",
       "title_tokens": 6,
       "paragraph_tokens": 10,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-01.md",
+      "repository": "code-copilot-team",
+      "family": "llm-catalog",
+      "spec_path": "specs/llm-catalog/spec.md",
+      "line_start": 856,
+      "line_end": 859,
+      "form": "list-item",
+      "title": "Slicing",
+      "sha256": "beb2350df4cee8b4a32dfecab953af560d0c688a9533e997b3fbf1294fbf5b16",
+      "title_tokens": 1,
+      "paragraph_tokens": 31,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-02.md",
+      "repository": "code-copilot-team",
+      "family": "llm-catalog",
+      "spec_path": "specs/llm-catalog/spec.md",
+      "line_start": 860,
+      "line_end": 865,
+      "form": "list-item",
+      "title": "User home",
+      "sha256": "a1b593ef9c43c2d1746f36cad591695623f511609912baa98df739eddbfa8a49",
+      "title_tokens": 2,
+      "paragraph_tokens": 33,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-03.md",
+      "repository": "code-copilot-team",
+      "family": "llm-catalog",
+      "spec_path": "specs/llm-catalog/spec.md",
+      "line_start": 866,
+      "line_end": 868,
+      "form": "list-item",
+      "title": "Three files",
+      "sha256": "e6addba8a64b590d6b3e62a7f9273a0bd5a3aae08d46a129c19c5350ed7c0d1d",
+      "title_tokens": 2,
+      "paragraph_tokens": 16,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-04.md",
+      "repository": "code-copilot-team",
+      "family": "llm-catalog",
+      "spec_path": "specs/llm-catalog/spec.md",
+      "line_start": 869,
+      "line_end": 873,
+      "form": "list-item",
+      "title": "Parser",
+      "sha256": "9fa076e79bf4e60a4877e1343495f5cccf48b6cd61f2c3bf08b2a0a981724b48",
+      "title_tokens": 1,
+      "paragraph_tokens": 37,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-05.md",
+      "repository": "code-copilot-team",
+      "family": "llm-catalog",
+      "spec_path": "specs/llm-catalog/spec.md",
+      "line_start": 874,
+      "line_end": 878,
+      "form": "list-item",
+      "title": "Bindings",
+      "sha256": "662565ea9f650dd5767ec0114aaa77e496ee417d91b297bada22982e9cc1f8ff",
+      "title_tokens": 1,
+      "paragraph_tokens": 24,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-06.md",
+      "repository": "code-copilot-team",
+      "family": "llm-catalog",
+      "spec_path": "specs/llm-catalog/spec.md",
+      "line_start": 879,
+      "line_end": 881,
+      "form": "list-item",
+      "title": "Probe reuse",
+      "sha256": "c9ac1514cec92fcceb58fd54fb8d98c0ef9daf362f199143a4d2a942f23645c7",
+      "title_tokens": 2,
+      "paragraph_tokens": 21,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-07.md",
+      "repository": "code-copilot-team",
+      "family": "llm-catalog",
+      "spec_path": "specs/llm-catalog/spec.md",
+      "line_start": 882,
+      "line_end": 887,
+      "form": "list-item",
+      "title": "Unverified launches",
+      "sha256": "0c9bd2ffe3ce749c3ca5cb8b4ce27866a116f36966bbc6f296b72a0540417309",
+      "title_tokens": 2,
+      "paragraph_tokens": 33,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-08.md",
+      "repository": "code-copilot-team",
+      "family": "llm-catalog",
+      "spec_path": "specs/llm-catalog/spec.md",
+      "line_start": 888,
+      "line_end": 892,
+      "form": "list-item",
+      "title": "Endpoint quirks",
+      "sha256": "3c79f13618f3f0e7ecf00da26e1403fa48495666137731ebaa251c67aed1ba16",
+      "title_tokens": 2,
+      "paragraph_tokens": 23,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-09.md",
+      "repository": "code-copilot-team",
+      "family": "llm-catalog",
+      "spec_path": "specs/llm-catalog/spec.md",
+      "line_start": 893,
+      "line_end": 898,
+      "form": "list-item",
+      "title": "Session keys",
+      "sha256": "60b866429b2482fa85affaca9ff31737f80c890561e926cb889a3d0a124860c6",
+      "title_tokens": 2,
+      "paragraph_tokens": 34,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-10.md",
+      "repository": "code-copilot-team",
+      "family": "llm-catalog",
+      "spec_path": "specs/llm-catalog/spec.md",
+      "line_start": 899,
+      "line_end": 903,
+      "form": "list-item",
+      "title": "Codex overlay form",
+      "sha256": "541d65b3c357f712f3bdb03f218ba1c2813e1bfb35dc1d6eeeca6c2877269ff1",
+      "title_tokens": 3,
+      "paragraph_tokens": 30,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-11.md",
+      "repository": "code-copilot-team",
+      "family": "llm-catalog",
+      "spec_path": "specs/llm-catalog/spec.md",
+      "line_start": 904,
+      "line_end": 909,
+      "form": "list-item",
+      "title": "Pi overlay form",
+      "sha256": "8a6b9627c4798281b8fab8d3187a84f06e747d38cb25194cc664b2f560b6e9a9",
+      "title_tokens": 3,
+      "paragraph_tokens": 33,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-12.md",
+      "repository": "code-copilot-team",
+      "family": "llm-catalog",
+      "spec_path": "specs/llm-catalog/spec.md",
+      "line_start": 910,
+      "line_end": 915,
+      "form": "list-item",
+      "title": "Kiro",
+      "sha256": "05206a2951e747c5878f7edd188abd0fdf8443836e6776db9e8fd1aa3eae3cbf",
+      "title_tokens": 1,
+      "paragraph_tokens": 40,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-13.md",
+      "repository": "code-copilot-team",
+      "family": "llm-catalog",
+      "spec_path": "specs/llm-catalog/spec.md",
+      "line_start": 916,
+      "line_end": 917,
+      "form": "list-item",
+      "title": "Project policy",
+      "sha256": "e041e3cf3e37e73b76b901b67f0395e629bb5e7df45ae48413b747adc737a529",
+      "title_tokens": 2,
+      "paragraph_tokens": 8,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-14.md",
+      "repository": "code-copilot-team",
+      "family": "llm-catalog",
+      "spec_path": "specs/llm-catalog/spec.md",
+      "line_start": 918,
+      "line_end": 921,
+      "form": "list-item",
+      "title": "Studio",
+      "sha256": "53573cdf8f490574a1bc4907c69c7495de4cd150bfa06e1e1f5333497c1e3fc8",
+      "title_tokens": 1,
+      "paragraph_tokens": 23,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-15.md",
+      "repository": "code-copilot-team",
+      "family": "llm-catalog",
+      "spec_path": "specs/llm-catalog/spec.md",
+      "line_start": 922,
+      "line_end": 925,
+      "form": "list-item",
+      "title": "Unified entry",
+      "sha256": "ea34a733a6fd979fe0af25cb9902e4d956d41024f09c9da1e79fd5620bee4ba3",
+      "title_tokens": 2,
+      "paragraph_tokens": 17,
       "paragraph_empty": false
     },
     {
