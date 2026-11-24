@@ -356,8 +356,9 @@ either, so it ran the third step, `--extend 3`, which adds the
 either, so it ran the fourth step, `--extend 4`, which adds the `wiki-audit`
 family, committed the same way. It added no true pair either, so it ran the
 fifth step, `--extend 5`, which adds the `memkernel-integration` family
-(`extend` 5, `cut_1` false, as `corpus.json` now records), committed the same
-way. Every
+committed the same way. It added no true pair either, so it ran the sixth
+step, `--extend 6`, which adds the `one-harness-home` family (`extend` 6,
+`cut_1` false, as `corpus.json` now records), committed the same way. Every
 number below is read from `corpus.json`, and
 `tests/test_duplicates_corpus.py` recomputes each one from it.
 
@@ -369,7 +370,7 @@ be measured on this corpus.
 
 ### Pages per repository, family and form
 
-The corpus holds **285 pages**: 184 from code-copilot-team and 101 from
+The corpus holds **291 pages**: 190 from code-copilot-team and 101 from
 memkernel.
 
 | Repository | Family | Form | Pages |
@@ -377,6 +378,7 @@ memkernel.
 | code-copilot-team | api | list-item | 15 |
 | code-copilot-team | llm-catalog | list-item | 15 |
 | code-copilot-team | memkernel-integration | list-item | 7 |
+| code-copilot-team | one-harness-home | list-item | 6 |
 | code-copilot-team | pi | h3-adr | 6 |
 | code-copilot-team | pi | list-item | 23 |
 | code-copilot-team | routing | bold-paragraph | 21 |
@@ -404,6 +406,7 @@ tuned to remove them.
 | code-copilot-team | wiki-studio-adoption | 14 | (extension family, not in the base count) |
 | code-copilot-team | wiki-audit | 16 | (extension family, not in the base count) |
 | code-copilot-team | memkernel-integration | 7 | (extension family, not in the base count) |
+| code-copilot-team | one-harness-home | 6 | (extension family, not in the base count) |
 | code-copilot-team | pi | 29 | 29 |
 | code-copilot-team | routing | 88 | 84 |
 | memkernel | memkernel | 101 | 102 |
@@ -413,7 +416,7 @@ tuned to remove them.
 | code-copilot-team | bold-paragraph | 37 | 17 (base families; `wiki-audit` adds 16) |
 | code-copilot-team | h3 | 14 | 0 (only the `wiki-studio-adoption` extension family) |
 | code-copilot-team | h3-adr | 6 | 6 (H3) |
-| code-copilot-team | list-item | 127 | 90 (base families; `api` and `llm-catalog` add 15 each, `memkernel-integration` 7) |
+| code-copilot-team | list-item | 133 | 90 (base families; `api` and `llm-catalog` add 15 each, `memkernel-integration` 7, `one-harness-home` 6) |
 | memkernel | bold-paragraph | 37 | 37 |
 | memkernel | h3-adr | 14 | 14 (H3) |
 | memkernel | list-item | 50 | 51 |
@@ -437,7 +440,9 @@ tuned to remove them.
   `wiki-audit` extension family (`specs/wiki-audit-trail/spec.md` and
   `specs/wiki-audit-flush/spec.md`, all bold paragraphs) and 7 from the
   `memkernel-integration` extension family
-  (`specs/memkernel-integration/plan.md`, all list items): 285 pages.
+  (`specs/memkernel-integration/plan.md`, all list items) and 6 from the
+  `one-harness-home` extension family (`specs/one-harness-home/spec.md`, all
+  list items): 291 pages.
 
 ### Items left out
 
@@ -485,7 +490,7 @@ even number of pages is the mean of the two middle values.
 | code-copilot-team | bold-paragraph | 37 | 2 | 5 | 9 | 0 | 35 | 185 |
 | code-copilot-team | h3 | 14 | 3 | 5 | 7 | 14 | 34.5 | 70 |
 | code-copilot-team | h3-adr | 6 | 3 | 6 | 7 | 19 | 29 | 37 |
-| code-copilot-team | list-item | 127 | 1 | 5 | 18 | 5 | 35 | 285 |
+| code-copilot-team | list-item | 133 | 1 | 4 | 18 | 5 | 34 | 285 |
 | memkernel | bold-paragraph | 37 | 1 | 3 | 10 | 6 | 69 | 221 |
 | memkernel | h3-adr | 14 | 2 | 5 | 10 | 10 | 24.5 | 64 |
 | memkernel | list-item | 50 | 1 | 2.5 | 19 | 3 | 22.5 | 98 |

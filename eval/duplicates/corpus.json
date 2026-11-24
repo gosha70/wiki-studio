@@ -13,7 +13,7 @@
     }
   ],
   "options": {
-    "extend": 5,
+    "extend": 6,
     "cut_1": false
   },
   "families": [
@@ -122,6 +122,16 @@
       ],
       "with_decision_sections": [
         "memkernel-integration"
+      ]
+    },
+    {
+      "repository": "code-copilot-team",
+      "family": "one-harness-home",
+      "directories": [
+        "one-harness-home"
+      ],
+      "with_decision_sections": [
+        "one-harness-home"
       ]
     },
     {
@@ -692,6 +702,90 @@
       "sha256": "5cae1bf5d8b6c6512ff15b9311fc6d54fbc4103cf47f13919260165b7631f82f",
       "title_tokens": 3,
       "paragraph_tokens": 13,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/one-harness-home/cct-one-harness-home-spec-01.md",
+      "repository": "code-copilot-team",
+      "family": "one-harness-home",
+      "spec_path": "specs/one-harness-home/spec.md",
+      "line_start": 207,
+      "line_end": 210,
+      "form": "list-item",
+      "title": "Direction",
+      "sha256": "7ec42d0d90095264e3fa00bf9c4e41554d639428377dd4f5d4d140bc681d25e5",
+      "title_tokens": 1,
+      "paragraph_tokens": 23,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/one-harness-home/cct-one-harness-home-spec-02.md",
+      "repository": "code-copilot-team",
+      "family": "one-harness-home",
+      "spec_path": "specs/one-harness-home/spec.md",
+      "line_start": 211,
+      "line_end": 213,
+      "form": "list-item",
+      "title": "One override",
+      "sha256": "fa2b9aa94636d95c6b4b3ffac7eb9aef65b0cfa5900fb9a3d514a62b5b557163",
+      "title_tokens": 2,
+      "paragraph_tokens": 17,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/one-harness-home/cct-one-harness-home-spec-03.md",
+      "repository": "code-copilot-team",
+      "family": "one-harness-home",
+      "spec_path": "specs/one-harness-home/spec.md",
+      "line_start": 214,
+      "line_end": 219,
+      "form": "list-item",
+      "title": "Migration mechanics",
+      "sha256": "f6c42d19efe42bd278f4629f47d2ee36927ddb215667c1e1ad89ef9028c29983",
+      "title_tokens": 2,
+      "paragraph_tokens": 42,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/one-harness-home/cct-one-harness-home-spec-04.md",
+      "repository": "code-copilot-team",
+      "family": "one-harness-home",
+      "spec_path": "specs/one-harness-home/spec.md",
+      "line_start": 220,
+      "line_end": 223,
+      "form": "list-item",
+      "title": "Delivery",
+      "sha256": "e0bb48c2d071fbad8f77be1e5465f3cdb02e565f9337fb1df2c33879889289cd",
+      "title_tokens": 1,
+      "paragraph_tokens": 31,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md",
+      "repository": "code-copilot-team",
+      "family": "one-harness-home",
+      "spec_path": "specs/one-harness-home/spec.md",
+      "line_start": 224,
+      "line_end": 234,
+      "form": "list-item",
+      "title": "Per-project convention",
+      "sha256": "22051fd1a528ff0505aea7e7a842359cecc94571540acdeb67aed7468dac241d",
+      "title_tokens": 2,
+      "paragraph_tokens": 59,
+      "paragraph_empty": false
+    },
+    {
+      "page": "code-copilot-team/one-harness-home/cct-one-harness-home-spec-06.md",
+      "repository": "code-copilot-team",
+      "family": "one-harness-home",
+      "spec_path": "specs/one-harness-home/spec.md",
+      "line_start": 235,
+      "line_end": 236,
+      "form": "list-item",
+      "title": "#400 coupling",
+      "sha256": "428c920a974a8835e55ae675c42cfdcda46e076fd3ac830790ee77e944ade1e0",
+      "title_tokens": 2,
+      "paragraph_tokens": 16,
       "paragraph_empty": false
     },
     {
