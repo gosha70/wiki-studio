@@ -3,7 +3,7 @@ spec_mode: full
 feature_id: wiki-studio-duplicates-121
 risk_category: feature
 justification: "A measurement whose value rests on a corpus extracted verbatim from two other repositories at pinned commits by a rule fixed before any page is read, labels made by a session with no candidate code and reviewed by the owner, and a bar frozen before any candidate runs; then, only with a winner, a new on-by-default kind in findings, the read surface every host and the nightly pass use, with a body-line convention that needs an ADR, a WikiPaths switch read from the environment, packaged schema text and the knowledge contract. A full spec pins the extraction rule to the character, the scorer's input rules, the bar, the per-phase truth rule, the main-session script runs between phases and the cut path before two unattended runs."
-status: draft
+status: approved
 date: 2026-11-23
 collaboration_mode: single
 origin:
@@ -209,11 +209,12 @@ Each is recorded so the origin-alignment record at approval can cite it.
     2026-11-23, after the external review of this bundle). The pitch's rule
     (6) dropped only `d`, `s`, `a`, `r`, `us`, `fr-`, `nfr-` and `adr-`
     numbers; counted over the base decision sections, it dropped about 170
-    identifier-shaped tokens and kept about 211 others (`e1`-`e7`, `g1`-`g5`,
-    `o1`-`o4`, `t1`-`t7`, `h1`-`h3`, `l1`-`l4` and more) that unrelated specs
-    share. Rule (6) is now one letter and one or two digits, or a `us`, `fr-`,
-    `nfr-` or `adr-` number: about 334 dropped, content words such as
-    `sha256`, `bm25` and `utf-8` kept. Settled before the freeze (FR-018,
+    identifier-shaped tokens and kept about 211 others. About 47 of those are
+    content words (`sha256`, `bm25`, `utf-8`) that the new rule also keeps;
+    the other 164 or so are item labels that unrelated specs share (`e1`-`e7`,
+    `g1`-`g5`, `o1`-`o4`, `t1`-`t7`, `h1`-`h3`, `l1`-`l4` and more). Rule (6)
+    is now one letter and one or two digits, or a `us`, `fr-`, `nfr-` or
+    `adr-` number: about 334 dropped, about 164 more than before. Settled before the freeze (FR-018,
     FR-022).
 
 Close target: issue 121, by run 2's merge (`pr.closes: [121]`) only when the
