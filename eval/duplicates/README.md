@@ -38,8 +38,10 @@ Files written by this directory's scripts:
 | `corpus.json` | `extract.py`, run once by hand | the pins, the options, the families, one entry per page, the left-out items |
 | `review-sample.json` | `sample.py`, run once by hand | the seed, the split, the labels' sha256, 20 false pairs |
 
-The labels, the protocol, the scorer, its results and the report are added
-by later steps of the spec. No driver session runs these scripts. The main
+`labels.json` is written by hand in the labelling session, with no script
+(see "The labels" below). The protocol, the scorer, its results and the
+report are added by later steps of the spec. No driver session runs these
+scripts. The main
 session or the owner runs each one once at a milestone pause and commits its
 output exactly as written.
 
@@ -498,6 +500,85 @@ The script writes `review-sample.json` with the seed, the split, the sha256
 of the `labels.json` it was drawn from, and the 20 pairs with their family and
 label. It is run once, from the labelling commit's labels, before the owner
 changes any label, and it is never re-drawn.
+
+## The labels (FR-013 to FR-016)
+
+`labels.json` was written in one labelling session, with no candidate code in
+the tree: `candidates.py` did not exist, no script was run, and no token set,
+overlap or score was computed. The session did not open
+`eval/patterns/duplicates.py`, `eval/patterns/results/` or `eval/revisions/`.
+It read every page of each family (one read of the family's directory) and
+labelled from the pages' content only. The owner reviews the labels at the
+pause after this step, before the freeze.
+
+### Grouping by question
+
+Per family, pages that answer **the same question** form a group, and the
+group is named by that question, not by a decision. Two pages in a group may
+decide the same thing, decide opposite things, or decide for different cases;
+the disposition of the pair says which. A page may sit in more than one group.
+Grouping by question, not by how alike two pages read, keeps the labels
+independent of the words the candidates compare: a pair is true because of
+what the two decisions settle, never because they share a title.
+
+Every pair inside a group gets one disposition and a one-line reason that
+names the question. A pair that shares two groups is labelled once.
+**A within-family pair outside every group is `unrelated`.**
+
+### The six dispositions
+
+True (a curator should act on the pair):
+
+- `redundant`: the same decision on the same question, in other words.
+  Either page could go without losing the decision.
+- `conflicting`: the same question, opposite choices, and neither page says
+  it replaces the other.
+- `supersedes`: a later decision replaces an earlier one on the same
+  question, which a wiki would mark with `superseded_by`.
+
+False (the pair should stay as it is):
+
+- `companion`: two pages about the same event or rule kept apart on purpose,
+  because one builds on the other: a decision and the incident behind it, a
+  rule and its application to one case, a decision and the later refinement
+  that names it. Merging them would lose why they are apart.
+- `distinct-by-precondition`: two decisions on the same question, each made
+  for its own case (its own increment, component, record kind or setting),
+  neither taking the other as its basis. They may agree or differ.
+- `unrelated`: no shared question; the default for every pair outside a
+  group.
+
+### A decision and its incident record
+
+A decision and the incident record behind it are labelled `companion`, which
+is false. Two examples, named by path only; neither pair is in this corpus:
+
+- the issue 54 pair `decisions/never-bypass-a-git-lock-with-an-alternate-index.md`
+  and `incidents/git-safety-bypasses.md`. It is labelled `redundant` in the
+  issue 54 labels, and that label stays frozen there;
+- code-copilot-team's `infra-verification-as-gate` and
+  `executable-artifacts-shipped-unexecuted`.
+
+### The summary pass and the pairs across families
+
+`labels.json` carries a summary of all families: one line per group (its
+question) and one line per page in no group (its title). The session made one
+pass over it and listed the pairs it found across families and across the two
+repositories under `cross_pairs`, reading both pages before labelling each.
+**An unlisted cross pair is `unrelated`.** Every pair of the corpus is scored
+and counted later, whatever its label.
+
+### The count
+
+**True pairs: 7**, against the minimum of 8 (D4). The count is `true_pairs`
+in `labels.json`: the pairs labelled `redundant`, `conflicting` or
+`supersedes` in `pairs` and `cross_pairs`. Every commit that changes a label
+updates `true_pairs` and this count together.
+
+`tests/test_duplicates_labels.py` checks the labels' structure: the keys, the
+groups, every in-group pair labelled once, the dispositions and reasons, the
+cross pairs' scopes, the summary, the true-pair count here and in the file,
+and `corpus_sha256`.
 
 ## Commands
 
