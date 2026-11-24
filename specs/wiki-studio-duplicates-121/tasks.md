@@ -144,6 +144,8 @@
 
 ---
 
+**Cut by the spec amendment (2026-11-24):** the winner is `none` (FR-027, evidence PR #137), so trigger 3 fired and US7-US9 below are not built. There is no run 2.
+
 ## US7: The winning rule in the package (S4)
 
 | # | [P] | Task | File(s) | Owner | Done |
