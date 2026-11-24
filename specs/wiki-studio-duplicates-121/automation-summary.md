@@ -20,3 +20,16 @@ Review: PASS (see specs/wiki-studio-duplicates-121/collaboration/build-review-ph
 
 ### Phase 3 complete — US3: The labels, for the owner's review (S2) (2026-11-24T16:09:49Z)
 Review: bypassed — human approval via /review-decide approve (escalation esc-1, resolved 2026-11-24T16:07:17Z); the reviewer's findings are in specs/wiki-studio-duplicates-121/collaboration/build-review-phase-3.md.
+
+## Milestone checkpoint — after phase 3 (US3: The labels, for the owner's review (S2))
+
+Paused 2026-11-24T16:09:51Z for batched manual testing + retro.
+
+- [ ] Manual testing of phases up to 3 complete
+- [ ] Retro notes recorded
+
+To resume: append a line 'approved-by: <name> <date>' below, then run:
+`scripts/auto-build-loop.sh wiki-studio-duplicates-121 --resume`
+
+<!-- checkpoint-after-phase: 3 -->
+approved-by: gosha70 2026-11-24 ("sign off" in the build session, after the label review; the owner's label change is 50d27b3, true pairs 8)
