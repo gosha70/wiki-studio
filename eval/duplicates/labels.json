@@ -1,5 +1,5 @@
 {
-  "corpus_sha256": "b85ab28f40cd01fd4488bca4036502b05bf85765ce565e51304ef8307f0ee1d5",
+  "corpus_sha256": "8824a69d1ab5ea61bb608332b69cfc039c0e3c9ea3a72f8c00f0bccd3258de70",
   "families": [
     {"name": "routing", "repository": "code-copilot-team", "pages": 88},
     {"name": "pi", "repository": "code-copilot-team", "pages": 29},
@@ -7,6 +7,7 @@
     {"name": "llm-catalog", "repository": "code-copilot-team", "pages": 15},
     {"name": "wiki-studio-adoption", "repository": "code-copilot-team", "pages": 14},
     {"name": "wiki-audit", "repository": "code-copilot-team", "pages": 16},
+    {"name": "memkernel-integration", "repository": "code-copilot-team", "pages": 7},
     {"name": "memkernel", "repository": "memkernel", "pages": 101}
   ],
   "groups": [
@@ -598,6 +599,33 @@
       "pages": [
         "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md",
         "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-06.md"
+      ]
+    },
+    {
+      "id": "memkernel-integration-01",
+      "family": "memkernel-integration",
+      "question": "How is CCT's GCC memory setup retired?",
+      "pages": [
+        "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-01.md",
+        "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-05.md"
+      ]
+    },
+    {
+      "id": "memkernel-integration-02",
+      "family": "memkernel-integration",
+      "question": "How does a project get memkernel's MCP server registered?",
+      "pages": [
+        "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-03.md",
+        "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-07.md"
+      ]
+    },
+    {
+      "id": "memkernel-integration-03",
+      "family": "memkernel-integration",
+      "question": "How do existing CCT installs and projects pick up memkernel?",
+      "pages": [
+        "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-06.md",
+        "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-07.md"
       ]
     },
     {
@@ -1508,6 +1536,24 @@
       "reason": "How the unreviewed reason is bounded: trail spec-03 truncates it to 240 codepoints and lint checks its length; trail spec-06 leaves it unscrubbed because of that bound."
     },
     {
+      "pair": ["code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-01.md", "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-05.md"],
+      "group": "memkernel-integration-01",
+      "disposition": "companion",
+      "reason": "How the GCC memory setup is retired: plan-01 replaces the per-agent GCC sections with one on-demand memkernel rule; plan-05 removes every remaining GCC remnant from both trees; the cleanup completes the replacement."
+    },
+    {
+      "pair": ["code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-03.md", "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-07.md"],
+      "group": "memkernel-integration-02",
+      "disposition": "companion",
+      "reason": "How a project gets the MCP server registered: plan-03 registers it per project in the uncommitted settings.local.json with its own MEMKERNEL_PROJECT_ID; plan-07 adds that registration step to claude-code sync so existing projects, not just init, get it; it applies plan-03 to one more case."
+    },
+    {
+      "pair": ["code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-06.md", "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-07.md"],
+      "group": "memkernel-integration-03",
+      "disposition": "distinct-by-precondition",
+      "reason": "How existing setups pick up memkernel: setup.sh's --sync path copies the hooks and merges settings for an existing install (plan-06); claude-code sync registers the MCP server for an existing project (plan-07); each for its own target."
+    },
+    {
       "pair": ["memkernel/memkernel/mk-memkernel-0-7-spec-01.md", "memkernel/memkernel/mk-memkernel-0-7-spec-03.md"],
       "group": "memkernel-01",
       "disposition": "companion",
@@ -1862,6 +1908,11 @@
     {"kind": "group", "ref": "wiki-audit-11", "line": "How is the ingest log's unreviewed reason field bounded?"},
     {"kind": "page", "ref": "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-04.md", "line": "4 — No-op is success"},
     {"kind": "page", "ref": "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-07.md", "line": "7 — Backfill"},
+    {"kind": "group", "ref": "memkernel-integration-01", "line": "How is CCT's GCC memory setup retired?"},
+    {"kind": "group", "ref": "memkernel-integration-02", "line": "How does a project get memkernel's MCP server registered?"},
+    {"kind": "group", "ref": "memkernel-integration-03", "line": "How do existing CCT installs and projects pick up memkernel?"},
+    {"kind": "page", "ref": "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-02.md", "line": "Direct Python hooks with two-layer shell guards"},
+    {"kind": "page", "ref": "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-04.md", "line": "Pre-publication via `pip install -e`"},
     {"kind": "group", "ref": "memkernel-01", "line": "When is a page's memory withdrawn, and how is it marked?"},
     {"kind": "group", "ref": "memkernel-02", "line": "What happens to the memory of a renamed page?"},
     {"kind": "group", "ref": "memkernel-03", "line": "How does the import find a page's previous memory?"},
@@ -1973,6 +2024,30 @@
       "scope": "cross-family",
       "disposition": "companion",
       "reason": "How a backend canary is probed and classified: the catalog shares routing-probe.sh's canary primitives and closed tri-state, without its accounting, caps or state runner; it builds on the routing probe engine."
+    },
+    {
+      "pair": ["code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-01.md", "memkernel/memkernel/mk-memkernel-0-13-one-store-across-tools-spec-03.md"],
+      "scope": "cross-repository",
+      "disposition": "distinct-by-precondition",
+      "reason": "Where an agent tool's memkernel memory instructions live: CCT puts all of them in one on-demand rule its agents reference; memkernel's 0.13 spec picks per tool a SessionStart hook or an always-applied rule (Codex, Cursor, Antigravity); each for its own tools."
+    },
+    {
+      "pair": ["code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-02.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-03.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "How CCT checks a sibling package is usable before running it: memkernel's hook guards check the CLI on PATH and that python3 imports the package; the wiki launcher checks the repo venv's distribution metadata for exactly 0.9.0 and never uses a PATH binary or system interpreter; each for its own package."
+    },
+    {
+      "pair": ["code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-04.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-01.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "Which artifact of a sibling package CCT's setup installs: memkernel, before its publication, editable from a local path, with PyPI named for later; wiki-studio as the exact 0.9.0 wheel with its published SHA-256; each for its own package and its publication state."
+    },
+    {
+      "pair": ["code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-05.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-05.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "Whether the in-repo system a package replaces is removed in the same change: every GCC remnant leaves both adapter trees; both duplicate wiki engines are deleted, with a guard against their return; each for its own replaced system."
     },
     {
       "pair": ["code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md", "code-copilot-team/routing/cct-routing-profile-foundation-plan-04.md"],

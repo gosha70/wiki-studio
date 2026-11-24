@@ -572,6 +572,15 @@ reverses or replaces, and redid the summary pass over all seven families,
 reading the routing, wiki-studio-adoption and memkernel pages it found
 beside it. It changed no existing label of any family.
 
+The `memkernel-integration` family, added by the fifth step, was labelled the
+same way by a sixth session: it read the family's 7 pages (code-copilot-team's
+plan for integrating memkernel), grouped them by question
+(`memkernel-integration-01` to `memkernel-integration-03`), and redid the
+summary pass over all eight families, reading memkernel's hook, session-start,
+MCP-server and per-tool pages beside it for a decision the two repositories
+state from both sides, and the wiki-studio-adoption pages for CCT's other
+package adoption. It changed no existing label of any family.
+
 ### Grouping by question
 
 Per family, pages that answer **the same question** form a group, and the
@@ -666,12 +675,26 @@ contract test proving the flush's commit and its no-op), and one
 cross-repository `distinct-by-precondition` with memkernel (who consumes the
 ingest log's hash recipe).
 
+The `memkernel-integration` family added no true pair either: its three
+groups hold two `companion` pairs (the GCC sections' replacement and the
+cleanup of every remnant; the per-project MCP registration and the sync step
+that applies it to existing projects) and one `distinct-by-precondition` pair
+(the sync paths for an existing install and an existing project), and no
+decision restates, reverses or replaces another. memkernel's own specs state
+none of the plan's seven decisions from their side: the closest, its per-tool
+choice of a hook or an always-applied rule, is a different set of tools. The
+redone summary pass added four cross pairs, all `distinct-by-precondition`:
+one cross-repository with that memkernel page (where an agent tool's memory
+instructions live), and three with `wiki-studio-adoption` (how CCT checks a
+sibling package is usable, which artifact its setup installs, and whether the
+replaced in-repo system is removed in the same change).
+
 **Status: open, below the minimum; main-session and owner action required at
 the pause.** The count is still below the minimum after the extension
-order's fourth step, so the study cannot be frozen yet. The extension rule
+order's fifth step, so the study cannot be frozen yet. The extension rule
 (FR-016) applies again before anything else: the main session extracts the
-next family of FR-003's extension order (`memkernel-integration`,
-`--extend 5`), and a fresh labelling session labels that family and redoes
+next family of FR-003's extension order (`one-harness-home`,
+`--extend 6`), and a fresh labelling session labels that family and redoes
 the summary pass.
 This repeats until the count reaches 8 or the order is used up; if the order
 runs out first, the verdict will be "not testable", never a pass. The
