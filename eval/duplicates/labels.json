@@ -1,5 +1,5 @@
 {
-  "corpus_sha256": "c3a815e30bf2f6e5328ba44c9ffa2e6b1cc333bc17d4c4a614f3adfb8c878fb4",
+  "corpus_sha256": "fc0f710ab994dd4a57a9bb23e700bd61b2ffde58f66a54bb30353c6cc5bbc4de",
   "families": [
     {"name": "routing", "repository": "code-copilot-team", "pages": 88},
     {"name": "pi", "repository": "code-copilot-team", "pages": 29},
@@ -10,6 +10,7 @@
     {"name": "memkernel-integration", "repository": "code-copilot-team", "pages": 7},
     {"name": "one-harness-home", "repository": "code-copilot-team", "pages": 6},
     {"name": "plugin-generate-from-sources", "repository": "code-copilot-team", "pages": 5},
+    {"name": "simplest-complete-change", "repository": "code-copilot-team", "pages": 3},
     {"name": "memkernel", "repository": "memkernel", "pages": 101}
   ],
   "groups": [
@@ -1969,6 +1970,9 @@
     {"kind": "page", "ref": "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-01.md", "line": "Decided by the owner, 2026-09-19"},
     {"kind": "page", "ref": "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-03.md", "line": "duplicate hooks when both installs exist"},
     {"kind": "page", "ref": "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-05.md", "line": "version 1.1.0"},
+    {"kind": "page", "ref": "code-copilot-team/simplest-complete-change/cct-simplest-complete-change-plan-01.md", "line": "Native CCT Policy Without a Ponytail Dependency"},
+    {"kind": "page", "ref": "code-copilot-team/simplest-complete-change/cct-simplest-complete-change-plan-02.md", "line": "Single Home for the Reuse Ladder (`copilot-conventions`) vs Config Boundary"},
+    {"kind": "page", "ref": "code-copilot-team/simplest-complete-change/cct-simplest-complete-change-plan-03.md", "line": "Selective Decision Memory via Existing MemKernel Interfaces"},
     {"kind": "group", "ref": "memkernel-01", "line": "When is a page's memory withdrawn, and how is it marked?"},
     {"kind": "group", "ref": "memkernel-02", "line": "What happens to the memory of a renamed page?"},
     {"kind": "group", "ref": "memkernel-03", "line": "How does the import find a page's previous memory?"},
@@ -2206,6 +2210,18 @@
       "scope": "cross-family",
       "disposition": "distinct-by-precondition",
       "reason": "Whether a second immediate run is a no-op: routing tick's second run finds nothing due, a byte-level state no-op; audit-flush's second flush finds nothing to flush and exits 0; each for its own command."
+    },
+    {
+      "pair": ["code-copilot-team/simplest-complete-change/cct-simplest-complete-change-plan-01.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-01.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "How an upstream project's changes may reach what CCT runs: Ponytail's never do, since CCT takes no dependency on it and re-expresses its ideas natively; wiki-studio's only by a CCT commit, since CCT pins the exact wheel rather than a version floor; each for its own upstream."
+    },
+    {
+      "pair": ["code-copilot-team/simplest-complete-change/cct-simplest-complete-change-plan-01.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-13.md"],
+      "scope": "cross-family",
+      "disposition": "distinct-by-precondition",
+      "reason": "How an upstream project's changes may reach what CCT runs: Ponytail's do not flow into CCT automatically, its ideas re-expressed under CCT's requirements; wiki-studio's arrive only through a reviewed, atomic CCT pin bump; each for its own upstream."
     },
     {
       "pair": ["code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-03.md", "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-06.md"],

@@ -617,6 +617,16 @@ memkernel-integration pages on hooks, setup and on-demand rules, pi's
 harness and worktree pages, and memkernel's session-start, hook and release
 pages. It changed no existing label of any family.
 
+The `simplest-complete-change` family, added by the eighth and last step,
+was labelled the same way by a ninth session: it read the family's 3 pages
+(code-copilot-team's plan for the simplest complete change), found that each
+answers its own question and formed no group, and redid the summary pass over
+all eleven families, reading beside it the wiki-studio-adoption pages on the
+pin and the pin bump, the plugin-generate-from-sources page on the always-on
+skills, the memkernel-integration page on the on-demand memory rule, pi's
+harness pages, and memkernel's capture pages on record types. It changed no
+existing label of any family.
+
 ### Grouping by question
 
 Per family, pages that answer **the same question** form a group, and the
@@ -759,17 +769,29 @@ wiki-studio-adoption page that claims no automatic installation parity for
 plugin-only installs (whether a plugin-only installation works as far as a
 `setup.sh` install, each for its own components).
 
-**Status: open, below the minimum; main-session and owner action required at
-the pause.** The count is still below the minimum after the extension
-order's seventh step, so the study cannot be frozen yet. The extension rule
-(FR-016) applies once more before anything else: the main session extracts
-the next and last family of FR-003's extension order
-(`simplest-complete-change`, `--extend 8`), and a fresh labelling session
-labels that family and redoes the summary pass.
-If the count is still below 8 after that step, the order is used up and the
-verdict will be "not testable", never a pass. The
-labelling session runs no script, so it does not extend the corpus itself,
-and no label is changed to reach the minimum.
+The `simplest-complete-change` family added no true pair either: its three
+decisions answer three questions (whether CCT depends on Ponytail, which
+always-loaded rule holds the reuse ladder, and which decisions are recorded
+in memory through memkernel's existing interfaces), so it has no group and
+its three pairs are `unrelated`. The redone summary pass added two cross
+pairs, both `distinct-by-precondition`: the Ponytail decision with the
+wiki-studio-adoption pin and pin-bump pages (how an upstream project's
+changes may reach what CCT runs: Ponytail's never do, since CCT takes no
+dependency on it; wiki-studio's only by a CCT commit). The decision-memory
+page was not labelled against memkernel's capture page that keeps captured
+owner answers out of the `decision` type: that page settles a record type
+for captured text, not which decisions an agent records, so the pair stays
+`unrelated`; the owner reviews this reading with the labels.
+
+**Status: below the minimum, with the extension order used up; the verdict
+will be "not testable".** The count is still below the minimum after the
+extension order's eighth and last step, so the extension rule (FR-016) has
+no step left and the verdict will be "not testable" (D4), never a pass. No
+label is changed to reach the minimum. The next steps are the main
+session's review sample (`python -m eval.duplicates.sample`, committed as
+its own commit) and then the owner's review of every true and `companion`
+label, every listed cross pair and the 20 sampled false pairs, before the
+freeze.
 
 `tests/test_duplicates_labels.py` checks the labels' structure: the keys, the
 groups, every in-group pair labelled once, the dispositions and reasons, the
