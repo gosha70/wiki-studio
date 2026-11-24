@@ -17,3 +17,6 @@ approved-by: gosha70 2026-11-23 (in the build session, replying "cont" to the si
 
 ### Phase 2 complete — US2: The extracted corpus, checked (S1) (2026-11-24T04:23:41Z)
 Review: PASS (see specs/wiki-studio-duplicates-121/collaboration/build-review-phase-2.md).
+
+### Phase 3 complete — US3: The labels, for the owner's review (S2) (2026-11-24T16:09:49Z)
+Review: bypassed — human approval via /review-decide approve (escalation esc-1, resolved 2026-11-24T16:07:17Z); the reviewer's findings are in specs/wiki-studio-duplicates-121/collaboration/build-review-phase-3.md.
