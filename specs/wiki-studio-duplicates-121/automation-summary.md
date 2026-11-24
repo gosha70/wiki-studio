@@ -14,3 +14,6 @@ To resume: append a line 'approved-by: <name> <date>' below, then run:
 
 <!-- checkpoint-after-phase: 1 -->
 approved-by: gosha70 2026-11-23 (in the build session, replying "cont" to the sign-off request at the pause after US1; the extraction is committed as 9101a5a)
+
+### Phase 2 complete — US2: The extracted corpus, checked (S1) (2026-11-24T04:23:41Z)
+Review: PASS (see specs/wiki-studio-duplicates-121/collaboration/build-review-phase-2.md).
