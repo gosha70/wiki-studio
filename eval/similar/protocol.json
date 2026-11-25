@@ -1,0 +1,121 @@
+{
+  "study": "issue 121 similar-pages study: the frozen protocol",
+  "branch_base": "ef1b07ff84de5bb17b234ee0e04bb78927877ac4",
+  "inputs": [
+    {"path": "eval/duplicates/corpus.json", "sha256": "fc0f710ab994dd4a57a9bb23e700bd61b2ffde58f66a54bb30353c6cc5bbc4de"},
+    {"path": "eval/duplicates/labels.json", "sha256": "e1c34ca9533aedb39482d628fd8704752035fba3ca34f132d730f8a555082287"},
+    {"path": "eval/patterns/labels.json", "sha256": "96da1b5a7553096ca38e7f0491692b61018c6735cc70d1dcf5c1afc478f39a7e"},
+    {"path": "eval/patterns/manifest.json", "sha256": "1f1a4bf3b4908ec9549b3717685d772182858486e996f6aaa4250fd994360b29"},
+    {"path": "eval/patterns/wiki/index.md", "sha256": "e832d71a742a7be65486ccf4864f4322e7b4a9e49966be85944a64fd9164f7e4"},
+    {"path": "eval/patterns/wiki/decisions/trace-archive-reuses-the-ingest-redaction-path.md", "sha256": "ddaefb45551ac8bf08d306def38a26ba016def2c61fb73071f0ef644cf6feaca"},
+    {"path": "eval/patterns/wiki/decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md", "sha256": "99c4bdfb83422ef272a53cce0d8d8f76db51329889add4c1b88973d920b93f22"},
+    {"path": "eval/patterns/wiki/decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md", "sha256": "a9e86de2df7e669538bd1524ddd6cc749bdcbc589bac6b999df82421d286c143"},
+    {"path": "eval/patterns/wiki/decisions/judge-statistics-and-charts-stay-in-the-stdlib.md", "sha256": "c1440cbb40ecd085375d5c3dc606d128d4de85e15b5fe7834ace1eafc55eccbe"},
+    {"path": "eval/patterns/wiki/decisions/never-bypass-a-git-lock-with-an-alternate-index.md", "sha256": "91f63acaddab7b2108306f96cbbd5616927b76c7ff93a2a9134167fd76b25cfb"},
+    {"path": "eval/patterns/wiki/decisions/never-archive-raw-jsonl.md", "sha256": "7bd079d2df67f747e876636f9b3099b67ac6b1017936bfd18fff11e0d92db5f0"},
+    {"path": "eval/patterns/wiki/decisions/benchmark-ui-was-backend-free-one-shot-and-studio-only.md", "sha256": "343f6a3683db4c8cb53ed5c66e116dfc778a2bad133b642b81f3d5b730a295d4"},
+    {"path": "eval/patterns/wiki/decisions/merge-require-green-ci-was-never-read.md", "sha256": "af5f8585d4aee8b7f704ff93bd921491e8cd4f5d1005d113ea130cab37b98d18"},
+    {"path": "eval/patterns/wiki/decisions/the-clusters-view-is-not-an-explorer.md", "sha256": "d1b1aeda581ffed3e6999b50deaf273aa0925baf62c1bf3b5fc1225759482bbd"},
+    {"path": "eval/patterns/wiki/decisions/config-redaction-is-not-free-text-redaction.md", "sha256": "b7cfcc383fe41f6203d62edd63ab6e64ab7d240917cd649b2e8e6dbc3ef81d77"},
+    {"path": "eval/patterns/wiki/decisions/destructive-git-commands-require-confirmation.md", "sha256": "bb13df5d5f5ef30ae90deb8303b34f1c4fa944c8247edb452f01179b2b58dc62"},
+    {"path": "eval/patterns/wiki/decisions/balanced-profile-denies-destructive-git-commands.md", "sha256": "6a81d9c64cdf7cccd725b591f786b15529021aa18738df38f58fab73866ec595"},
+    {"path": "eval/patterns/wiki/decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md", "sha256": "8ca10b35f14e536a0c3e576cd30f5d76a4587f98cd806ace868497918ace325b"},
+    {"path": "eval/patterns/wiki/decisions/merge-require-green-ci-was-never-read-and-was-removed.md", "sha256": "cd993358da4f564b663a82f7deb5e2fea79b84d8fcba3c93d33d565ffe3ab061"},
+    {"path": "eval/patterns/wiki/overview.md", "sha256": "2fe6f999b559032719d94f5a0ee434e59efb6868b0f7ff5c19a0bb363abb154e"},
+    {"path": "eval/patterns/wiki/concepts/cross-session-state-must-be-file-backed.md", "sha256": "fb93ba80c6819da0c8d189178a65db2f0fd925cfacefb74147a4c6726f748270"},
+    {"path": "eval/patterns/wiki/concepts/multi-round-spec-review.md", "sha256": "60304223d94adf1016e5c57d92adab1fe8d2081f5089c71c06808add6472e2c0"},
+    {"path": "eval/patterns/wiki/concepts/phase-scoped-build-prompts.md", "sha256": "6ff11a25bddb547b65a92fbfb1dca9813b4280ebacc21be73bfd739b896225d6"},
+    {"path": "eval/patterns/wiki/concepts/spec-driven-development.md", "sha256": "09385c94d3429d1213b73d4b7d2c16f99046fdb4997fca0dea8201e5c84890f0"},
+    {"path": "eval/patterns/wiki/decisions/infra-verification-as-gate.md", "sha256": "2057acc58de4792e53666ca88cf9af099ef517dd6f9eb434e24187770a395266"},
+    {"path": "eval/patterns/wiki/decisions/use-llm-wiki-as-knowledge-layer.md", "sha256": "038e0613f0efae713d9edef43153d680c4639ffa42f5091eadcc43a2553dc17a"},
+    {"path": "eval/patterns/wiki/glossary/index.md", "sha256": "e1c4bb2c79082b3a61317643f09ba25cc0580da6355b1031e62446121d2ee7bc"},
+    {"path": "eval/patterns/wiki/incidents/executable-artifacts-shipped-unexecuted.md", "sha256": "1ec913f5bc92ef198c40cff1684bd6e4f65e54a81edd8cef3a71e80cb8b37ecc"},
+    {"path": "eval/patterns/wiki/incidents/git-safety-bypasses.md", "sha256": "65d8232fb65c48184e62dd8700eef61e9eef36f80dd53da2f1a57d01234f05f1"},
+    {"path": "eval/patterns/wiki/incidents/plan-agent-contract-contradiction.md", "sha256": "2d24f6ce58e2f19bd91427e67134b3c808b56a40db8dcf0599c10b54f9b2090a"},
+    {"path": "eval/patterns/wiki/incidents/spec-code-coherence-drift.md", "sha256": "bda223c340ec6f8670fe7698e080b3df453117b18f1ff839a44bd42a8eaeb904"},
+    {"path": "eval/patterns/wiki/playbooks/drive-claude-code-with-local-vllm.md", "sha256": "5558b506a4bdceff8ba626e78f4da3e4eb7065645be374fbb655a33b00b70a03"},
+    {"path": "eval/patterns/wiki/playbooks/grep-based-acceptance-criteria.md", "sha256": "533ceed71ff90c9ba0b4715b6019bd373f38f314c773db021ff6d1b9107f2068"},
+    {"path": "eval/patterns/wiki/playbooks/recover-after-bad-ai-git-op.md", "sha256": "8ae69d15d3ac7c691fffc73c838204454b0430cb4962d1841a6fc0d45ea01cc2"},
+    {"path": "eval/patterns/wiki/playbooks/respond-to-production-readiness-review.md", "sha256": "94c5a7cf9de9b0a4046915033b48a5486fb3c27161034e79837626e8a9ac1097"},
+    {"path": "eval/patterns/wiki/workflows/doc-coverage-audit.md", "sha256": "aaa2e65f7aa9f0763d04c07a50c42e0edf1765971f367bcfc173750668da4cb2"},
+    {"path": "eval/patterns/wiki/workflows/origin-alignment.md", "sha256": "6d997bd551293f21ae1668781c6bbd8be45179dfa14144a46b1a984d71cd0c08"},
+    {"path": "eval/patterns/wiki/workflows/promote-lesson-to-wiki.md", "sha256": "e17e4540c75e875457fd4ee9652750fc257f917169589021affac798b39ba5c8"},
+    {"path": "eval/patterns/wiki/workflows/run-wiki-ingest.md", "sha256": "9bdf159696cb57d9dec3f0de55307c52af90523bd9cd3d6a4967615afc7822b8"}
+  ],
+  "corpus_pages": {
+    "root": "eval/duplicates/corpus",
+    "rule": "Every page listed in corpus.json must exist under root and hash to its entry's sha256, as eval/duplicates/candidates.py's check_frozen checks it."
+  },
+  "index": {
+    "path_template": "decisions/<slug>.md",
+    "slug_rule": "The page's title field in corpus.json, lowercased; every run of characters outside [a-z0-9] replaced by one '-'; leading and trailing '-' removed; 'untitled' when nothing is left.",
+    "collision_rule": "Pages are taken in corpus.json order; the first page with a slug keeps it; a later page with the same slug gets '<slug>-2', then '-3', skipping any value another page already holds. A collision between different titles follows the same rule and is reported, never tuned.",
+    "query_page_in_index": false,
+    "order": "corpus.json",
+    "build": "search_index.build_document(<slug path>, <page text>) per page; search_index.build_in_memory(documents, tokenizer=DEFAULT_RANKER_CONFIG.tokenizer); SearchIndex.rank(query, order=<the index's slug paths in corpus.json order>, weights=DEFAULT_RANKER_CONFIG.weights, min_match_tokens=DEFAULT_RANKER_CONFIG.min_match_tokens)."
+  },
+  "ranker": {
+    "config": "discovery.DEFAULT_RANKER_CONFIG",
+    "tokenizer": "porter unicode61",
+    "weights": [4.0, 4.0, 2.0, 1.0],
+    "weight_columns": ["path", "title", "headings", "body"],
+    "min_match_tokens": 1
+  },
+  "query_rule": "With doc = search_index.build_document(path, text): query = doc.title + ' ' + doc.body. doc.title is the frontmatter title as review.frontmatter_value reads it (empty when absent); doc.body is the page's lines after the frontmatter joined with '\\n' (all lines when there is no closed frontmatter block). No other frontmatter key is in the query. The query reaches FTS5 only through search_index.build_query (its _tokenise tokens, sorted, each quoted, joined by OR).",
+  "k": 5,
+  "score_floor": null,
+  "same_page_type": true,
+  "page_type_rule": "The pages compared are the ranked pages whose frontmatter page_type (review.frontmatter_value) equals the query page's; the filter runs after ranking.",
+  "true_dispositions": ["redundant", "conflicting", "supersedes"],
+  "direction_rule": "A redundant pair is tried both ways, each page once as the query with the other as the partner (the frozen labels hold no conflicting pair); a supersedes pair is tried once, the later ruling as the query. Tries are listed with the redundant pairs in labels.json order, each with its sorted-first page as the first query, then the supersedes tries in labels.json order (pairs before cross_pairs). The 13 tries come from 8 pairs and are not independent.",
+  "tries": [
+    {"query": "code-copilot-team/routing/cct-routing-effective-endpoint-plan-01.md", "partner": "code-copilot-team/routing/cct-routing-effective-endpoint-spec-01.md", "disposition": "redundant"},
+    {"query": "code-copilot-team/routing/cct-routing-effective-endpoint-spec-01.md", "partner": "code-copilot-team/routing/cct-routing-effective-endpoint-plan-01.md", "disposition": "redundant"},
+    {"query": "code-copilot-team/routing/cct-routing-effective-endpoint-plan-02.md", "partner": "code-copilot-team/routing/cct-routing-effective-endpoint-spec-02.md", "disposition": "redundant"},
+    {"query": "code-copilot-team/routing/cct-routing-effective-endpoint-spec-02.md", "partner": "code-copilot-team/routing/cct-routing-effective-endpoint-plan-02.md", "disposition": "redundant"},
+    {"query": "code-copilot-team/routing/cct-routing-effective-endpoint-plan-03.md", "partner": "code-copilot-team/routing/cct-routing-effective-endpoint-spec-03.md", "disposition": "redundant"},
+    {"query": "code-copilot-team/routing/cct-routing-effective-endpoint-spec-03.md", "partner": "code-copilot-team/routing/cct-routing-effective-endpoint-plan-03.md", "disposition": "redundant"},
+    {"query": "code-copilot-team/routing/cct-routing-context-limit-plan-07.md", "partner": "code-copilot-team/routing/cct-routing-context-limit-plan-08.md", "disposition": "redundant"},
+    {"query": "code-copilot-team/routing/cct-routing-context-limit-plan-08.md", "partner": "code-copilot-team/routing/cct-routing-context-limit-plan-07.md", "disposition": "redundant"},
+    {"query": "code-copilot-team/routing/cct-routing-shadow-plan-07.md", "partner": "code-copilot-team/routing/cct-routing-shadow-plan-11.md", "disposition": "redundant"},
+    {"query": "code-copilot-team/routing/cct-routing-shadow-plan-11.md", "partner": "code-copilot-team/routing/cct-routing-shadow-plan-07.md", "disposition": "redundant"},
+    {"query": "code-copilot-team/pi/cct-pi-project-config-spec-01.md", "partner": "code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md", "disposition": "supersedes"},
+    {"query": "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-06.md", "partner": "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-05.md", "disposition": "supersedes"},
+    {"query": "code-copilot-team/one-harness-home/cct-one-harness-home-spec-01.md", "partner": "code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md", "disposition": "supersedes"}
+  ],
+  "list_rule": "The list is the first k compared pages for the query, best first, no score floor. Found: the partner's title-slug path is in the list. The partner's rank is its 1-based position among all compared pages that match at least one query token, or null when it matches none.",
+  "bar": {"min_found": 10, "tries": 13, "min_supersedes_found": 1, "supersedes_tries": 3},
+  "verdict_rule": "pass when found >= min_found and supersedes_found >= min_supersedes_found, else fail. Nothing else counts toward the verdict; below either condition the hint is not built.",
+  "verdict_lines": ["Verdict: pass", "Verdict: fail"],
+  "not_binding": {
+    "ranks": "The partner's rank in every try, and how many of the 8 pairs have at least one found try.",
+    "noise": "Every other page in each of the 13 lists by its label against the query (eval/duplicates/labels.json's disposition for that pair, else unrelated), counted by label.",
+    "fixture": {
+      "wiki": "eval/patterns/wiki",
+      "pages": "The pages linked from index.md, each link normalised; index.md and log.md never; a link whose file is missing, is not a regular file or is not UTF-8 skipped, as discovery.select skips it; under their own paths; without the pages that carry superseded_by; without the query page; in index.md link order.",
+      "superseded_pages_left_out": [
+        "decisions/benchmark-ui-was-backend-free-one-shot-and-studio-only.md",
+        "decisions/merge-require-green-ci-was-never-read.md"
+      ],
+      "ranking": "The ranker configuration and the query rule above; then kept only when of the query page's page type; k = 5.",
+      "labels": "eval/patterns/labels.json: the true pairs as recorded are the redundant or conflicting entries of pattern_pairs and background_pairs.",
+      "tries": [
+        {"query": "decisions/balanced-profile-denies-destructive-git-commands.md", "partner": "decisions/destructive-git-commands-require-confirmation.md", "disposition": "conflicting"},
+        {"query": "decisions/destructive-git-commands-require-confirmation.md", "partner": "decisions/balanced-profile-denies-destructive-git-commands.md", "disposition": "conflicting"},
+        {"query": "decisions/never-archive-raw-jsonl.md", "partner": "decisions/trace-archive-reuses-the-ingest-redaction-path.md", "disposition": "redundant"},
+        {"query": "decisions/trace-archive-reuses-the-ingest-redaction-path.md", "partner": "decisions/never-archive-raw-jsonl.md", "disposition": "redundant"}
+      ],
+      "never_listed": {
+        "pair": ["decisions/never-bypass-a-git-lock-with-an-alternate-index.md", "incidents/git-safety-bypasses.md"],
+        "disposition": "redundant",
+        "reason": "The two pages differ in page type (decision, incident), so the same-page-type rule never lists one for the other; reported without ranking."
+      }
+    },
+    "readings": {
+      "whole_page": "The query is the page as written, frontmatter included; the 13 tries, with found counts and ranks.",
+      "body_only": "The query is doc.body only, no title; the 13 tries, with found counts and ranks."
+    },
+    "post_hoc": "Anything found after the run goes into a post_hoc block of results/ranks.json marked \"binding\": false, computed by rank.py from the committed inputs with its rule in one constant, and into a 'Post hoc (not binding)' section of the report. It never changes the query rule, k, the slug rule, the direction rule, the bar or the verdict line."
+  },
+  "caveat": "The 8 pairs are development data; two readings were already run on them (the pitch's finding 6), so a pass is weak evidence; there is no held-out set; the issue 54 fixture, never run through this ranker, is the only curated reading, and it is not binding."
+}
