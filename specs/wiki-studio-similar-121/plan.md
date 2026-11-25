@@ -3,7 +3,7 @@ spec_mode: full
 feature_id: wiki-studio-similar-121
 risk_category: feature
 justification: "A measurement whose value rests on a query rule, a slug rule, a direction rule and a bar frozen and signed off before any ranking code exists, run once on a corpus another cycle froze; then, only with a pass, an on-by-default hint on every create through api.propose, the CLI and the MCP propose tool, a new optional plan.json key archived into the wiki on promote, a WikiPaths switch read from the environment and an additive MCP result key. A full spec pins the protocol to the character, the per-phase truth rule, the main-session script run between phases, the hand-opened PRs that close nothing, and the cut path before two unattended runs."
-status: draft
+status: approved
 date: 2026-11-25
 collaboration_mode: single
 origin:
