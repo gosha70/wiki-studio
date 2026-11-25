@@ -71,7 +71,13 @@ by the shaper.
    the fact on the same 8 frozen true pairs, ranking the partner with each
    page as the query, self excluded:
    - the external reviewer's check: the partner is in the top 5 for 5-6 of
-     the 8 pairs;
+     the 8 pairs. It indexed the pages under their real corpus paths, which
+     carry the spec names, so it is flattered the way finding 7 describes.
+     Counted under S1's 13-try rule, its ranks give exactly 10 of 13, with
+     1 of the 3 `supersedes` tries found: the bar below sits exactly where a
+     flattered reading landed, so a pass is not assured (the external
+     review of this pitch, arithmetic on ranks already published; nothing
+     new was scored);
    - the build session's reproduction (in-memory `build_in_memory`,
      `DEFAULT_RANKER_CONFIG`, the 299 corpus pages): whole page with
      frontmatter as the query, 6 of 8 in the top 5 in at least one
@@ -88,7 +94,8 @@ by the shaper.
    pages extracted from the same spec through words a curated wiki page's
    path would not carry. That is the likely, unverified, reason the
    whole-page reading scores higher, and it is why the protocol below
-   indexes corpus pages under neutral paths.
+   indexes corpus pages under paths made from their titles, as a curated
+   page's path is, never under the corpus paths.
 8. **The labels and their limits are fixed.** 8 true pairs (5 `redundant`,
    3 `supersedes`), 7 within a family, all decision pages; frozen and
    pinned by `tests/test_duplicates_frozen.py`. Every page is a decision
@@ -171,9 +178,15 @@ flag, as cycle 10's D8 chose for the duplicate check.
   read-only, their sha256 checked against `protocol.json` first. Nothing
   under `eval/duplicates/` is edited. The new files live in
   `eval/similar/`.
-- *Index:* every corpus page indexed with `DEFAULT_RANKER_CONFIG` under a
-  neutral path (`decisions/<n>.md`, `n` its position in `corpus.json`), so
-  the path column carries no spec name (finding 7).
+- *Index:* every corpus page indexed with `DEFAULT_RANKER_CONFIG` under
+  `decisions/<slug>.md`, the slug made from the page's title in kebab-case
+  (with `-2`, `-3` added in `corpus.json` order when slugs collide; at
+  least three titles are each shared by two corpus pages). That is how a curated page is
+  named (its `slug` equals the filename stem, `page-types.md` 14, by
+  convention the title in kebab-case), so the path column gives the same
+  title-word weight the shipped hint would get, and it carries no spec
+  name (finding 7). The external review of this pitch found that numbered
+  neutral paths would have measured a different rule from the one shipped.
 - *Query and list:* the D3 rule; the query page itself excluded; top k.
 - *Tries (the direction rule):* the hint runs when the second page of a
   pair is proposed. For a `supersedes` pair that is the later ruling, so
@@ -181,15 +194,24 @@ flag, as cycle 10's D8 chose for the duplicate check.
   either page could come second, so it is tried both ways. 5 x 2 + 3 = 13
   tries.
 - *Bar:* the partner is in the list in at least **10 of the 13 tries**
-  (three quarters, rounded up, cycle 10's share). Below it, the hint is
-  not built.
-- *Reported, not binding:* the partner's rank in every try; the other
+  (three quarters, rounded up, cycle 10's share) **and in at least 1 of the
+  3 `supersedes` tries** (the owner, 2026-11-25), so a pass cannot rest on
+  the near-copy pairs alone. Below either, the hint is not built. The two
+  directions of one `redundant` pair are not independent tries: the 13
+  tries come from 8 pairs, and the report says so.
+- *Reported, not binding:* the partner's rank in every try; the curated
+  issue 54 fixture (`eval/patterns/wiki/`, its 34 pages under their own
+  paths, read-only), each of its 3 true pairs as recorded tried both ways
+  with the same query rule and k, with any pair across page types marked
+  as one D5 never lists (the owner, 2026-11-25; never part of the
+  verdict); the other
   pages in each list by label (`companion`, `distinct-by-precondition`,
   `unrelated`), which is the noise a proposer would read; the whole-page
   and body-only readings for comparison, marked not binding.
 - *Stated plainly:* the 8 pairs are development data. Two readings were
   already run on them (finding 6), so a pass is weak evidence. There is no
-  held-out set in this appetite.
+  held-out set in this appetite; the issue 54 fixture, never run through
+  this ranker, is the only curated reading, and it is not binding.
 
 ## Scopes
 
@@ -199,7 +221,7 @@ S5 only with a pass.
 ### S1: The protocol, frozen before the run, ~1-1.5h plus the owner's review
 
 `eval/similar/README.md` and `protocol.json`: the D3 query rule written
-to the line, k, the neutral paths, the direction rule and its 13 tries,
+to the line, k, the title-slug paths, the direction rule and its 13 tries,
 the bar, the not-binding readings, the development-data caveat. Reviewed
 by the owner in its own commit before any score exists. No scoring code
 in that commit.
@@ -246,7 +268,7 @@ location-only rulings, the switch), and `CHANGELOG.md` under
   known on these pairs. *Workaround:* the rule, k and the bar are fixed in
   S1 and reviewed before the run; other readings are reported as not
   binding; nothing changes after the run.
-- **The corpus flattering the ranker** (finding 7). *Workaround:* neutral
+- **The corpus flattering the ranker** (finding 7). *Workaround:* title-slug
   paths and no frontmatter in the query; the report says the corpus is
   extracted spec decisions, not curated pages, and that 7 of 8 pairs are
   within one family, where shared jargon helps.
@@ -329,7 +351,7 @@ alternatives stay recorded for the spec review.
   pairs already looked at.
 - D2: Measure first, or build straight — default: **measure first** on
   the frozen corpus, with the query rule, k, the 13-try direction rule and
-  the 10-of-13 bar fixed in S1 before the run, and the 8 pairs named as
+  the bar (10 of 13, with 1 of the 3 `supersedes` tries) fixed in S1 before the run, and the 8 pairs named as
   development data; build only with a pass — alternative: build straight,
   since a hint has no false-alarm bar, and report the ranks as
   documentation only — why it matters: measuring first can end the cycle
@@ -384,3 +406,4 @@ alternatives stay recorded for the spec review.
 | 2026-11-24 | shaping | Drafted from issue 121 (open; the owner's comment after cycle 10 invites a new pitch on the frozen corpus), `eval/duplicates/report.md` (winner none), the external reviewer's FTS5 check and the build session's reproduction. wiki-studio read at main 466c87e: `cli.py` (`_do_propose`), `api.propose`, `ingestor_multi.write_patch_set_dir` (`fact_warnings`), `discovery.py`, `search_index.py`, `mcp_adapter/tools.py`, ADR-0003, `docs/patch-set-format.md`. No score computed by the shaper. |
 | 2026-11-24 | shaping → shaped | 5 scopes, 2w, work content 8.5-12h (core S1-S2 3-4.5h). Core: the protocol frozen before the run and the measurement as a hand-opened evidence PR. S3-S5 (the hint in `api.propose` and `plan.json`, CLI and MCP surfaces, documents) only with a pass of 10 of 13 tries at k = 5. D1-D10 open for the owner with defaults, not yet asked (the shaping agent cannot ask). |
 | 2026-11-24 | shaped (owner decisions) | The owner took every default: D1 2w; D2 measure first, building only with a pass; D3 the query is the title plus the body after the frontmatter; D4 k = 5, no floor; D5 same page type, superseded and non-index-linked pages excluded; D6 creates only; D7 `plan.json` key, CLI stderr and an MCP result key; D8 no list without FTS5, one line saying why; D9 on, with `WIKI_STUDIO_SIMILAR_PAGES=off`; D10 issue 121 stays open and the owner decides by hand. bet_status unchanged. |
+| 2026-11-25 | shaped (revised after review) | External review of PR #140 at 47aecae. (1) The measurement indexes corpus pages under title slugs (`decisions/<slug>.md`, collisions numbered), as curated pages are named, instead of numbered neutral paths, so the measured rule is the shipped one (finding 7, Solution shape, S1, rabbit holes). (2) The owner added a bar condition: at least 1 of the 3 `supersedes` tries, besides 10 of 13. (3) Finding 6 corrected: the reviewer's earlier check used the real corpus paths, so it is flattered too; under the 13-try rule its ranks give exactly 10 of 13. (4) The owner added the curated issue 54 fixture as a reading that is not binding. bet_status unchanged. |
