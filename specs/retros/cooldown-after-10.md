@@ -97,4 +97,6 @@ before the betting table.
 - [ ] File the code-copilot-team issue about `--resume` ignoring `--start-phase` (drafted; waits for the owner).
 - [ ] The driver cannot open a PR that closes nothing.
 - [ ] Issue 75: the remaining work is in memkernel.
+- [ ] Stale memkernel CI pin: CI still tests memkernel 0.6.0 (`ci.yml` `MK_VERSION`, carried from cycle 09).
+- [ ] Optional follow-up: code-copilot-team's own copy of the persona (carried from cycle 09; its state is not checked from this repository).
 - [ ] The hill chart has no cut status.
