@@ -180,8 +180,8 @@ flag, as cycle 10's D8 chose for the duplicate check.
   `eval/similar/`.
 - *Index:* every corpus page indexed with `DEFAULT_RANKER_CONFIG` under
   `decisions/<slug>.md`, the slug made from the page's title in kebab-case
-  (with `-2`, `-3` added in `corpus.json` order when slugs collide; at
-  least three titles are each shared by two corpus pages). That is how a curated page is
+  (with `-2`, `-3` added in `corpus.json` order when slugs collide; three
+  titles are each shared by two corpus pages). That is how a curated page is
   named (its `slug` equals the filename stem, `page-types.md` 14, by
   convention the title in kebab-case), so the path column gives the same
   title-word weight the shipped hint would get, and it carries no spec
@@ -200,11 +200,13 @@ flag, as cycle 10's D8 chose for the duplicate check.
   directions of one `redundant` pair are not independent tries: the 13
   tries come from 8 pairs, and the report says so.
 - *Reported, not binding:* the partner's rank in every try; the curated
-  issue 54 fixture (`eval/patterns/wiki/`, its 34 pages under their own
-  paths, read-only), each of its 3 true pairs as recorded tried both ways
-  with the same query rule and k, with any pair across page types marked
-  as one D5 never lists (the owner, 2026-11-25; never part of the
-  verdict); the other
+  issue 54 fixture (`eval/patterns/wiki/`, its pages under their own
+  paths, read-only), ranked exactly as the hint would rank them: its 2
+  superseded pages left out and each query compared only with pages of
+  its own page type (S-4, D5), so the reading tests the rule that would
+  ship; each of its 3 true pairs as recorded tried both ways with the same
+  query rule and k, and a pair across page types reported as one the hint
+  never lists (the owner, 2026-11-25; never part of the verdict); the other
   pages in each list by label (`companion`, `distinct-by-precondition`,
   `unrelated`), which is the noise a proposer would read; the whole-page
   and body-only readings for comparison, marked not binding.
@@ -407,3 +409,4 @@ alternatives stay recorded for the spec review.
 | 2026-11-24 | shaping → shaped | 5 scopes, 2w, work content 8.5-12h (core S1-S2 3-4.5h). Core: the protocol frozen before the run and the measurement as a hand-opened evidence PR. S3-S5 (the hint in `api.propose` and `plan.json`, CLI and MCP surfaces, documents) only with a pass of 10 of 13 tries at k = 5. D1-D10 open for the owner with defaults, not yet asked (the shaping agent cannot ask). |
 | 2026-11-24 | shaped (owner decisions) | The owner took every default: D1 2w; D2 measure first, building only with a pass; D3 the query is the title plus the body after the frontmatter; D4 k = 5, no floor; D5 same page type, superseded and non-index-linked pages excluded; D6 creates only; D7 `plan.json` key, CLI stderr and an MCP result key; D8 no list without FTS5, one line saying why; D9 on, with `WIKI_STUDIO_SIMILAR_PAGES=off`; D10 issue 121 stays open and the owner decides by hand. bet_status unchanged. |
 | 2026-11-25 | shaped (revised after review) | External review of PR #140 at 47aecae. (1) The measurement indexes corpus pages under title slugs (`decisions/<slug>.md`, collisions numbered), as curated pages are named, instead of numbered neutral paths, so the measured rule is the shipped one (finding 7, Solution shape, S1, rabbit holes). (2) The owner added a bar condition: at least 1 of the 3 `supersedes` tries, besides 10 of 13. (3) Finding 6 corrected: the reviewer's earlier check used the real corpus paths, so it is flattered too; under the 13-try rule its ranks give exactly 10 of 13. (4) The owner added the curated issue 54 fixture as a reading that is not binding. bet_status unchanged. |
+| 2026-11-25 | shaped (two points after merge) | The owner's two points on merged PR #140: three titles are shared by two corpus pages each (the exact count); the issue 54 reading ranks as the hint would, its 2 superseded pages left out and each query compared only with its own page type. bet_status unchanged. |
