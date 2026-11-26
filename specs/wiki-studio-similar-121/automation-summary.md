@@ -63,3 +63,6 @@ To resume: append a line 'approved-by: <name> <date>' below, then run:
 
 <!-- checkpoint-after-phase: 4 -->
 approved-by: gosha70 2026-11-26 (at the pause after US4 the owner chose "Keep MCP": no cut 2, step 5 builds both the CLI lines and the MCP key; the main session re-ran the US4 checkpoint and the full gate green)
+
+### Phase 5 complete — US5: The CLI and MCP surfaces (S4) (2026-11-26T03:58:42Z)
+Review: PASS (see specs/wiki-studio-similar-121/collaboration/build-review-phase-5.md).
