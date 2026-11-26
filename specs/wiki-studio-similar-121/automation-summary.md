@@ -50,3 +50,16 @@ To resume: append a line 'approved-by: <name> <date>' below, then run:
 
 ### Phase 4 complete — US4: The hint in the library and in plan.json (S3) (2026-11-26T03:35:16Z)
 Review: PASS (see specs/wiki-studio-similar-121/collaboration/build-review-phase-4.md).
+
+## Milestone checkpoint — after phase 4 (US4: The hint in the library and in plan.json (S3))
+
+Paused 2026-11-26T03:35:17Z for batched manual testing + retro.
+
+- [ ] Manual testing of phases up to 4 complete
+- [ ] Retro notes recorded
+
+To resume: append a line 'approved-by: <name> <date>' below, then run:
+`scripts/auto-build-loop.sh wiki-studio-similar-121 --resume`
+
+<!-- checkpoint-after-phase: 4 -->
+approved-by: gosha70 2026-11-26 (at the pause after US4 the owner chose "Keep MCP": no cut 2, step 5 builds both the CLI lines and the MCP key; the main session re-ran the US4 checkpoint and the full gate green)
