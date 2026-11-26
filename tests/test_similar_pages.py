@@ -1,18 +1,22 @@
 # Copyright (c) 2026 EGOGE
 # SPDX-License-Identifier: Apache-2.0
-"""US4: the similar-pages hint in the library and in ``plan.json`` (issue 121, FR-019 to FR-022).
+"""US4 and US5: the similar-pages hint in the library, ``plan.json`` and its surfaces (issue 121, FR-019 to FR-025).
 
 The replay binds the hint to the study: on a wiki holding every corpus page at its title-slug path, and on a copy of
 the issue 54 fixture, ``discovery.similar_pages`` lists exactly what ``eval/similar/rank.py`` listed for each try,
 with the query page absent as a proposed page is. The behaviour cases build small wikis in temporary directories:
 which pages are never listed, which edits get a key, the switch, FTS5 missing, an unusable cache, the caught errors,
 the ranking before the lock, the exit codes and promote, and the wiki left untouched. A 500-page wiki computes one
-list within the bound recomputed from ``results/timing.json``. Cases that rank skip, with the reason, without FTS5.
+list within the bound recomputed from ``results/timing.json``. The surface cases check the CLI's ``similar:`` lines,
+the MCP ``propose`` result's ``similar_pages`` (with the ``mcp`` extra) and the trace's known key. Cases that rank
+skip, with the reason, without FTS5.
 """
 
 from __future__ import annotations
 
 import contextlib
+import importlib.util
+import io
 import json
 import math
 import os
@@ -27,8 +31,8 @@ from typing import TYPE_CHECKING, Any, ClassVar, Final
 from unittest import mock
 
 from eval.similar import rank
-from tests.conftest import make_repo_layout, run_cli
-from wiki_studio import api, discovery
+from tests.conftest import chdir, make_repo_layout, run_cli
+from wiki_studio import api, cli, discovery
 from wiki_studio.discovery import (
     SIMILAR_ERROR_NO_FTS5,
     SIMILAR_PAGES_K,
@@ -40,6 +44,9 @@ from wiki_studio.discovery import (
 )
 from wiki_studio.errors import ContractViolationError
 from wiki_studio.ingestor_multi import SIMILAR_PAGES_ERROR_KEY, SIMILAR_PAGES_KEY
+from wiki_studio.mcp_adapter.config import TOOL_PROPOSE, parse_launch
+from wiki_studio.mcp_adapter.tools import WikiTools
+from wiki_studio.mcp_adapter.trace import TOOL_RESULT_KEYS, WireObserver, open_trace
 from wiki_studio.paths import ENV_SIMILAR_PAGES, WikiPaths
 from wiki_studio.proposal import PageEdit
 from wiki_studio.wikilock import WikiLock
@@ -52,6 +59,8 @@ RESULTS_DIR = REPO_ROOT / "eval" / "similar" / "results"
 
 FTS5 = discovery.fts5_available()
 NO_FTS5 = f"this Python's SQLite has no FTS5, so the hint cannot rank: {FTS5.reason}"
+HAS_MCP = importlib.util.find_spec("mcp") is not None
+NO_MCP = "the mcp extra is not installed"
 
 INDEX_MD = "index.md"
 LOG_MD = "log.md"
@@ -642,6 +651,195 @@ class CliExitAndPromoteTest(_WikiCase):
         plan = load_json(self.paths.proposals_dir / "kept" / PLAN_JSON)
         create = self.entry(plan["edits"], JITTER)
         self.assertTrue(SIMILAR_PAGES_KEY in create or SIMILAR_PAGES_ERROR_KEY in create)
+
+
+# ── The CLI lines (FR-023, FR-025) ──────────────────────────────
+
+SIMILAR_PREFIX = "similar: "
+APPLIED_PREFIX = "\napplied "
+URL_SOURCE = "sources:\n  - url: https://example.com\n"
+NOTES_SOURCE = "sources:\n  - path: notes.md\n"
+NEW_CONCEPT = "concepts/retry-backoff-idea.md"
+
+
+def similar_lines(stderr: str) -> list[str]:
+    return [line for line in stderr.splitlines() if line.startswith(SIMILAR_PREFIX)]
+
+
+def expected_lines(entries: list[dict[str, Any]]) -> list[str]:
+    """The lines FR-023 derives from ``plan.json``'s edits, in edit order."""
+    lines: list[str] = []
+    for entry in entries:
+        if SIMILAR_PAGES_ERROR_KEY in entry:
+            lines.append(f"similar: {entry['path']}: not computed ({entry[SIMILAR_PAGES_ERROR_KEY]})")
+        lines.extend(
+            f"similar: {entry['path']}: {page['path']}  {page['title']}" for page in entry.get(SIMILAR_PAGES_KEY, [])
+        )
+    return lines
+
+
+class CliLinesTest(_WikiCase):
+    """``propose`` prints one ``similar:`` line per listed page, or why not, on stderr only (FR-023)."""
+
+    def write_draft(
+        self, name: str, pages: dict[str, str], links: list[str], base: dict[str, str] | None = None
+    ) -> Path:
+        draft = self.root / "drafts" / name
+        for path, text in pages.items():
+            (draft / path).parent.mkdir(parents=True, exist_ok=True)
+            (draft / path).write_text(text, encoding="utf-8")
+        draft.mkdir(parents=True, exist_ok=True)
+        (draft / INDEX_MD).write_text("\n".join(links) + "\n", encoding="utf-8")
+        if base is not None:
+            (draft / api.BASE_MANIFEST_NAME).write_text(json.dumps(base), encoding="utf-8")
+        return draft
+
+    def jitter_draft(self, name: str) -> Path:
+        return self.write_draft(name, {JITTER: JITTER_PAGE}, [index_line(JITTER, "Retry backoff jitter")])
+
+    def plan_entries(self, name: str) -> list[dict[str, Any]]:
+        entries: list[dict[str, Any]] = load_json(self.paths.proposals_dir / name / PLAN_JSON)["edits"]
+        return entries
+
+    def propose_cli(self, draft: Path, name: str) -> tuple[str, str]:
+        result = run_cli("propose", "--from", str(draft), "--name", name, cwd=self.root)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(Path(result.stdout.splitlines()[0]).name, name)
+        self.assertNotIn(SIMILAR_PREFIX, result.stdout)
+        return result.stdout, result.stderr
+
+    @unittest.skipUnless(FTS5.available, NO_FTS5)
+    def test_a_listed_page_prints_its_path_and_title(self) -> None:
+        _stdout, stderr = self.propose_cli(self.jitter_draft("listed"), "listed")
+        lines = similar_lines(stderr)
+        self.assertEqual(lines[0], f"similar: {JITTER}: {BACKOFF}  Retry backoff")
+        self.assertEqual(lines, expected_lines(self.plan_entries("listed")))
+
+    @unittest.skipUnless(FTS5.available, NO_FTS5)
+    def test_two_creates_each_print_their_own_lines(self) -> None:
+        draft = self.write_draft(
+            "two",
+            {JITTER: JITTER_PAGE, WARMUP: WARMUP_PAGE},
+            [index_line(JITTER, "Retry backoff jitter"), index_line(WARMUP, "Cache warmup")],
+        )
+        _stdout, stderr = self.propose_cli(draft, "two")
+        lines = similar_lines(stderr)
+        self.assertEqual(lines, expected_lines(self.plan_entries("two")))
+        self.assertIn(f"similar: {JITTER}: {BACKOFF}  Retry backoff", lines)
+        self.assertIn(f"similar: {WARMUP}: {EVICTION}  Cache eviction", lines)
+
+    def test_not_computed_prints_one_line_with_the_reason(self) -> None:
+        probe = Fts5Probe(available=False, sqlite_version="3.0.0", reason=NO_FTS5_REASON)
+        with mock.patch.object(discovery, "fts5_available", return_value=probe):
+            _stdout, stderr = self.propose_cli(self.jitter_draft("missing"), "missing")
+        self.assertEqual(
+            similar_lines(stderr), [f"similar: {JITTER}: not computed ({SIMILAR_ERROR_NO_FTS5}: {NO_FTS5_REASON})"]
+        )
+
+    @unittest.skipUnless(FTS5.available, NO_FTS5)
+    def test_an_empty_list_prints_nothing(self) -> None:
+        page = concept(NEW_CONCEPT, "Retry backoff idea", BACKOFF_BODY)
+        draft = self.write_draft("empty", {NEW_CONCEPT: page}, [index_line(NEW_CONCEPT, "Retry backoff idea")])
+        _stdout, stderr = self.propose_cli(draft, "empty")
+        self.assertEqual(self.entry(self.plan_entries("empty"), NEW_CONCEPT)[SIMILAR_PAGES_KEY], [])
+        self.assertEqual(similar_lines(stderr), [])
+
+    def test_the_switch_off_prints_nothing(self) -> None:
+        with mock.patch.dict(os.environ, {ENV_SIMILAR_PAGES: "off"}):
+            _stdout, stderr = self.propose_cli(self.jitter_draft("off"), "off")
+        self.assertEqual(similar_lines(stderr), [])
+
+    @unittest.skipUnless(FTS5.available, NO_FTS5)
+    def test_the_lines_come_after_fact_check_and_before_applied(self) -> None:
+        base = api.read_page(BUDGET, self.paths).sha256
+        rewrite = BASE_PAGES[BUDGET].replace(NOTES_SOURCE, URL_SOURCE)
+        draft = self.write_draft(
+            "ordered",
+            {JITTER: JITTER_PAGE, BUDGET: rewrite},
+            [index_line(JITTER, "Retry backoff jitter")],
+            {BUDGET: base},
+        )
+        buffer = io.StringIO()
+        with chdir(self.root), contextlib.redirect_stdout(buffer), contextlib.redirect_stderr(buffer):
+            code = cli.main(["propose", "--from", str(draft), "--name", "ordered", "--promote"])
+        output = buffer.getvalue()
+        self.assertEqual(code, 0, output)
+        self.assertEqual(Path(output.splitlines()[0]).name, "ordered")
+        fact_check = output.index(f"fact-check: {BUDGET}: ")
+        first_similar = output.index(f"{SIMILAR_PREFIX}{JITTER}: ")
+        self.assertLess(fact_check, first_similar)
+        self.assertLess(first_similar, output.index(APPLIED_PREFIX))
+
+    def test_the_help_names_the_lines_and_the_switch(self) -> None:
+        result = run_cli("propose", "--help")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(f"{ENV_SIMILAR_PAGES}=off", result.stdout)
+        self.assertIn("'similar:'", result.stdout)
+
+
+# ── The MCP result key and the trace (FR-024, FR-025) ───────────
+
+
+@unittest.skipUnless(HAS_MCP, NO_MCP)
+class McpSimilarPagesTest(_WikiCase):
+    """The MCP ``propose`` result's ``similar_pages``, read from the written ``plan.json`` (FR-024)."""
+
+    def tools(self, env: dict[str, str] | None = None) -> WikiTools:
+        config = parse_launch(["--root", str(self.root)], env={} if env is None else env, cwd=self.root)
+        return WikiTools(config)
+
+    def jitter(self) -> list[dict[str, Any]]:
+        return [
+            {"path": JITTER, "action": CREATE, "content": JITTER_PAGE},
+            {"path": INDEX_MD, "action": APPEND_INDEX, "content": index_line(JITTER, "Retry backoff jitter")},
+        ]
+
+    @unittest.skipUnless(FTS5.available, NO_FTS5)
+    def test_a_create_carries_its_pages(self) -> None:
+        result = self.tools().propose(self.jitter(), name="mcp-one")
+        self.assertEqual(set(result), set(TOOL_RESULT_KEYS[TOOL_PROPOSE]))
+        plan = self.entry(load_json(self.paths.proposals_dir / "mcp-one" / PLAN_JSON)["edits"], JITTER)
+        self.assertEqual(result["similar_pages"], [{"path": JITTER, "pages": plan[SIMILAR_PAGES_KEY]}])
+        self.assertEqual(result["similar_pages"][0]["pages"][0], {"path": BACKOFF, "title": "Retry backoff"})
+
+    def test_an_update_only_proposal_gives_an_empty_list(self) -> None:
+        updated = BASE_PAGES[BUDGET].replace("per minute", "per hour")
+        base = api.read_page(BUDGET, self.paths).sha256
+        edit = {"path": BUDGET, "action": UPDATE, "content": updated, "base_sha256": base}
+        result = self.tools().propose([edit], name="mcp-update")
+        self.assertEqual(result["similar_pages"], [])
+
+    def test_the_switch_off_gives_an_empty_list(self) -> None:
+        result = self.tools({ENV_SIMILAR_PAGES: "off"}).propose(self.jitter(), name="mcp-off")
+        self.assertEqual(result["similar_pages"], [])
+
+    def test_not_computed_gives_the_error(self) -> None:
+        probe = Fts5Probe(available=False, sqlite_version="3.0.0", reason=NO_FTS5_REASON)
+        with mock.patch.object(discovery, "fts5_available", return_value=probe):
+            result = self.tools().propose(self.jitter(), name="mcp-missing")
+        self.assertEqual(
+            result["similar_pages"], [{"path": JITTER, "error": f"{SIMILAR_ERROR_NO_FTS5}: {NO_FTS5_REASON}"}]
+        )
+
+
+class TraceKnownKeyTest(unittest.TestCase):
+    """The trace records ``similar_pages`` as a known key of a ``propose`` result (FR-024)."""
+
+    def test_the_key_is_known(self) -> None:
+        self.assertIn("similar_pages", TOOL_RESULT_KEYS[TOOL_PROPOSE])
+        with tempfile.TemporaryDirectory(prefix="wiki_studio-similar-trace-") as tmp:
+            root = Path(tmp).resolve()
+            path = root / "trace.jsonl"
+            observer = WireObserver(open_trace(path, WikiPaths.for_root(root)))
+            result = {"name": "p", "proposal_dir": "p", "warnings": [], "similar_pages": []}
+            call = {"name": TOOL_PROPOSE, "arguments": {"edits": [], "name": "p"}}
+            observer.inbound(json.dumps({"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": call}).encode())
+            body = {"content": [{"type": "text", "text": json.dumps(result)}]}
+            observer.outbound(json.dumps({"jsonrpc": "2.0", "id": 1, "result": body}).encode())
+            observer.close()
+            [line] = [json.loads(text) for text in path.read_text(encoding="utf-8").splitlines()]
+        self.assertIn("similar_pages", line["result_keys"])
+        self.assertEqual(line["unknown_result_keys"], 0)
 
 
 # ── The 500-page bound (FR-022) ─────────────────────────────────

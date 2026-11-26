@@ -134,7 +134,7 @@ TOOL_RESULT_KEYS: dict[str, frozenset[str]] = {
         }
     ),
     TOOL_READ_PAGE: frozenset({"path", "sha256", "content"}),
-    TOOL_PROPOSE: frozenset({"name", "proposal_dir", "warnings"}),
+    TOOL_PROPOSE: frozenset({"name", "proposal_dir", "warnings", "similar_pages"}),
     TOOL_PROMOTE: frozenset(
         {"applied_paths", "archived_dir", "dry_run", "unguarded_paths", "warnings", "approved_paths"}
     ),

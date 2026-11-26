@@ -49,6 +49,7 @@ from .errors import (
     PromoteValidationError,
 )
 from .fact_diff import FACT_ERROR_UNREADABLE
+from .ingestor_multi import SIMILAR_PAGES_ERROR_KEY, SIMILAR_PAGES_KEY
 from .paths import (
     DEFAULT_LOCK_TIMEOUT,
     DEFAULT_PROPOSALS_DIR,
@@ -58,6 +59,7 @@ from .paths import (
     ENV_PROPOSALS_DIR,
     ENV_ROOT,
     ENV_SEARCH_CACHE,
+    ENV_SIMILAR_PAGES,
     ENV_SOURCE_ROOTS,
     ENV_WIKI_DIR,
     MANIFEST_NAME,
@@ -549,14 +551,15 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     )
 
     # ── propose ────────────────────────────────────────────────
-    p_propose = sub.add_parser(
-        "propose",
-        parents=[common],
-        help="Write a patch-set from files you wrote yourself, no model involved: --from DIR is laid out "
+    propose_help = (
+        "Write a patch-set from files you wrote yourself, no model involved: --from DIR is laid out "
         "like the wiki (concepts/<slug>.md, decisions/<slug>.md, ...); DIR/index.md and DIR/log.md hold "
         "the lines to append, one per line. Validated like ingest output; --promote applies it at once. "
-        "The first line of output is the proposal directory.",
+        "The first line of output is the proposal directory. Each new page's most similar existing pages "
+        f"of its type are printed to stderr as 'similar:' lines, a hint only ({ENV_SIMILAR_PAGES}=off turns "
+        "them off)."
     )
+    p_propose = sub.add_parser("propose", parents=[common], help=propose_help, description=propose_help)
     p_propose.add_argument("--from", dest="source_dir", type=Path, required=True, help="Directory of files.")
     p_propose.add_argument("--name", help="Proposal directory name (default: <date>-<time>-<from-dir-name>, unique).")
     p_propose.add_argument("--rationale", default="", help="Why, recorded in plan.json and the audit archive.")
@@ -645,6 +648,21 @@ def _print_fact_warnings(patch_dir: Path | None) -> None:
             print(f"fact-check: {edit['path']}: {len(items)} item(s) removed", file=sys.stderr)
             for item in items:
                 print(f"  - {item}", file=sys.stderr)
+
+
+def _print_similar_pages(patch_dir: Path) -> None:
+    """Print each create's ``similar_pages`` (or ``similar_pages_error``) from ``<patch_dir>/plan.json`` to stderr.
+
+    One ``similar: <edit path>: <listed path>  <title>`` line per listed page, one
+    ``similar: <edit path>: not computed (<error>)`` line when the list was not
+    computed, nothing for an empty list. Advisory: never an exit code (FR-023).
+    """
+    for edit in json.loads((patch_dir / "plan.json").read_text(encoding="utf-8")).get("edits", []):
+        error = edit.get(SIMILAR_PAGES_ERROR_KEY)
+        if error:
+            print(f"similar: {edit['path']}: not computed ({error})", file=sys.stderr)
+        for page in edit.get(SIMILAR_PAGES_KEY) or []:
+            print(f"similar: {edit['path']}: {page['path']}  {page['title']}", file=sys.stderr)
 
 
 def _do_ingest(args: argparse.Namespace) -> int:
@@ -1049,6 +1067,7 @@ def _do_propose(args: argparse.Namespace) -> int:
         print(f"  {edit.action} {edit.path}")
     # Before the optional promote, so the curator sees what an update drops before it lands.
     _print_fact_warnings(written)
+    _print_similar_pages(written)
     if not args.promote:
         return 0
     result = api.promote(
