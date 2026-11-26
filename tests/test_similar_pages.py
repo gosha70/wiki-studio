@@ -771,6 +771,21 @@ class CliLinesTest(_WikiCase):
         self.assertLess(fact_check, first_similar)
         self.assertLess(first_similar, output.index(APPLIED_PREFIX))
 
+    @unittest.skipUnless(FTS5.available, NO_FTS5)
+    def test_an_unusable_search_cache_prints_its_warning(self) -> None:
+        cache = self.root / "cache-is-a-directory"
+        cache.mkdir()
+        draft = self.jitter_draft("cache")
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with chdir(self.root), contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            code = cli.main(["propose", "--from", str(draft), "--name", "cache", "--search-cache", str(cache)])
+        self.assertEqual(code, 0, stderr.getvalue())
+        warned = [line for line in stderr.getvalue().splitlines() if line.startswith("warning: ")]
+        self.assertEqual(len(warned), 1, stderr.getvalue())
+        self.assertIn(str(cache), warned[0])
+        self.assertEqual(similar_lines(stderr.getvalue()), expected_lines(self.plan_entries("cache")))
+        self.assertNotIn("warning: ", stdout.getvalue())
+
     def test_the_help_names_the_lines_and_the_switch(self) -> None:
         result = run_cli("propose", "--help")
         self.assertEqual(result.returncode, 0, result.stderr)

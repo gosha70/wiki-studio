@@ -1054,6 +1054,7 @@ def _do_propose(args: argparse.Namespace) -> int:
     name = args.name or _default_proposal_name(args.source_dir, paths.proposals_dir)
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always", DriftWarning)
+        warnings.simplefilter("always", discovery.DiscoveryWarning)
         # Agent-written creates get a fresh page_id in the preview, so the commit carries the same bytes (FR-014).
         written = api.propose(
             edits,
@@ -1068,6 +1069,10 @@ def _do_propose(args: argparse.Namespace) -> int:
     drift = [str(w.message) for w in caught if issubclass(w.category, DriftWarning)]
     for message in drift:
         print(f"warning: {message}", file=sys.stderr)
+    # The similar-pages hint's search-cache warnings (it ranked in memory instead), printed as find prints them.
+    for warning in caught:
+        if issubclass(warning.category, discovery.DiscoveryWarning):
+            print(f"warning: {warning.message}", file=sys.stderr)
     print(str(written))
     for edit in edits:
         print(f"  {edit.action} {edit.path}")
