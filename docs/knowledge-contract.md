@@ -570,8 +570,8 @@ The JSON form, `nightly_version: 1`:
 ```json
 {
   "nightly_version": 1,
-  "package_version": "0.10.0",
-  "run_at": "2026-11-17T03:00:00Z",
+  "package_version": "0.11.0",
+  "run_at": "2026-11-24T03:00:00Z",
   "wiki_dir": "/srv/project/knowledge/wiki",
   "proposals_dir": "/srv/project/doc_internal/proposals",
   "lint": {"passed": true, "violations": [], "audit_errors": []},
@@ -581,12 +581,24 @@ The JSON form, `nightly_version: 1`:
       "stale-claim": 0, "weak-orphan": 1, "missing-cross-link": 0, "avoid-format": 0,
       "unapproved": 2, "approval-stale": 0, "approval-policy-changed": 0,
       "superseded-still-indexed": 0, "no-page-id": 0, "open-conflict": 0,
-      "conflict-one-sided": 0, "conflict-dangling": 0
+      "conflict-one-sided": 0, "conflict-dangling": 0, "source-not-at-revision": 0,
+      "source-revision-changed": 0
     },
     "pages_checked": 7,
     "findings": [
       {"kind": "weak-orphan", "severity": "warning", "pages": ["concepts/b.md"], "description": "..."}
-    ]
+    ],
+    "revision_check": {
+      "state": "on",
+      "reason": null,
+      "repositories": [
+        {"path": "/srv/project", "role": "root", "status": "used", "reason": null,
+         "head": "0123456789abcdef0123456789abcdef01234567"}
+      ],
+      "sources_checked": 5,
+      "sources_not_checked": 0,
+      "not_checked": {}
+    }
   },
   "drafting": {
     "state": "on",
