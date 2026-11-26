@@ -47,6 +47,10 @@ from .wiki_state import load_wiki_state
 from .wikilock import WikiLock, lock_path_for
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    # Under TYPE_CHECKING only: discovery imports querier, which imports this module.
+    from .discovery import SimilarList
     from .ingestor import Backend
     from .paths import WikiPaths
 
@@ -56,6 +60,10 @@ if TYPE_CHECKING:
 CollisionPolicy = Literal["error", "suffix"]
 COLLISION_ERROR: CollisionPolicy = "error"
 COLLISION_SUFFIX: CollisionPolicy = "suffix"
+
+# The advisory plan.json keys of a create's similar pages (FR-020): the list, or why it was not computed.
+SIMILAR_PAGES_KEY = "similar_pages"
+SIMILAR_PAGES_ERROR_KEY = "similar_pages_error"
 
 
 @runtime_checkable
@@ -214,6 +222,7 @@ def write_patch_set_dir(
     on_collision: CollisionPolicy = COLLISION_ERROR,
     lock_timeout: float | None = None,
     lock: WikiLock | None = None,
+    similar: Mapping[int, SimilarList] | None = None,
 ) -> Path:
     """Write a WikiPatchSet to disk under output_dir.
 
@@ -233,6 +242,14 @@ def write_patch_set_dir(
     key is written only when the list is non-empty. When the live page cannot
     be read or decoded, ``fact_check_error`` records why and no comparison
     is claimed. Promote ignores both keys.
+
+    ``similar`` maps an edit's index in ``patch.edits`` to the similar pages
+    ``api.propose`` computed for it (``discovery.similar_pages``): such an
+    edit gets ``similar_pages`` in plan.json (a list of ``{path, title}``,
+    best first, possibly empty), or ``similar_pages_error`` when the list was
+    not computed. Edits without an entry, and every edit when ``similar`` is
+    None (``ingest``, ``query --file-back``), get neither key. Promote ignores
+    both.
 
     The directory is created exclusively (``exist_ok=False``), under the wiki
     lock when ``wiki_dir`` is given, so no writer ever writes into an existing
@@ -259,10 +276,12 @@ def write_patch_set_dir(
         held = WikiLock(wiki_dir, timeout) if wiki_dir is not None else contextlib.nullcontext()
     with held:
         output_dir = _create_patch_set_dir(output_dir, on_collision)
-        return _write_patch_set_files(patch, output_dir, wiki_dir)
+        return _write_patch_set_files(patch, output_dir, wiki_dir, similar)
 
 
-def _write_patch_set_files(patch: WikiPatchSet, output_dir: Path, wiki_dir: Path | None) -> Path:
+def _write_patch_set_files(
+    patch: WikiPatchSet, output_dir: Path, wiki_dir: Path | None, similar: Mapping[int, SimilarList] | None = None
+) -> Path:
     """Fill a freshly created proposal directory (see :func:`write_patch_set_dir`)."""
     preview_dir = output_dir / "preview"
     preview_dir.mkdir(exist_ok=True)
@@ -280,7 +299,7 @@ def _write_patch_set_files(patch: WikiPatchSet, output_dir: Path, wiki_dir: Path
         preview_rels.append(f"preview/{key}" if n == 1 else f"preview/{key}.{n}")
 
     plan_edits: list[dict[str, object]] = []
-    for e, rel in zip(patch.edits, preview_rels, strict=True):
+    for index, (e, rel) in enumerate(zip(patch.edits, preview_rels, strict=True)):
         # new_content is stored in the preview file; the plan.json stays
         # small + grep-friendly. Curator reads the preview to see the full content.
         entry: dict[str, object] = {"path": e.path, "action": e.action, "rationale": e.rationale, "preview": rel}
@@ -305,6 +324,13 @@ def _write_patch_set_files(patch: WikiPatchSet, output_dir: Path, wiki_dir: Path
                     entry["fact_check_error"] = problem
                 if warnings:
                     entry["fact_warnings"] = warnings
+        listed = similar.get(index) if similar is not None else None
+        if listed is not None:
+            # Advisory, as fact_warnings: the error is a fixed reason and a class name, never a machine path.
+            if listed.error is None:
+                entry[SIMILAR_PAGES_KEY] = [{"path": page.path, "title": page.title} for page in listed.pages]
+            else:
+                entry[SIMILAR_PAGES_ERROR_KEY] = listed.error
         plan_edits.append(entry)
     plan: dict[str, object] = {
         "version": 1,

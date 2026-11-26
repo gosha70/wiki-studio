@@ -11,7 +11,9 @@ from unittest.mock import patch
 from tests.test_api import _LayoutCase
 from wiki_studio import api, proposal
 from wiki_studio.api import PageEdit
+from wiki_studio.discovery import fts5_available
 from wiki_studio.errors import ContractViolationError, OutputWriteError
+from wiki_studio.ingestor_multi import SIMILAR_PAGES_ERROR_KEY, SIMILAR_PAGES_KEY
 from wiki_studio.paths import WikiPaths
 
 NAME = "2026-10-15-memkernel-export"
@@ -101,8 +103,11 @@ class TestProposeOutput(_LayoutCase):
         self.assertEqual(plan["version"], 1)
         self.assertEqual((plan["source_path"], plan["backend"], plan["rationale"]), ("memkernel", "mk", "why"))
         self.assertEqual(len(plan["edits"]), 3)
+        # A create also carries its similar pages (on by default), or why they were not computed.
+        similar = {SIMILAR_PAGES_KEY} if fts5_available().available else {SIMILAR_PAGES_ERROR_KEY}
         for entry, edit in zip(plan["edits"], _edits(), strict=True):
-            self.assertEqual(set(entry), {"path", "action", "rationale", "preview"})
+            extra = similar if edit.action == "create" else set()
+            self.assertEqual(set(entry), {"path", "action", "rationale", "preview"} | extra)
             self.assertEqual(entry["path"], edit.path)
             self.assertEqual(entry["action"], edit.action)
             self.assertEqual(entry["rationale"], edit.rationale)

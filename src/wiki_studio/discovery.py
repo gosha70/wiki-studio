@@ -29,10 +29,12 @@ import os
 import posixpath
 import sqlite3
 import stat
+import sys
 import warnings
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from . import review
 from .contract import DiscoveryInfo, read_manifest
 from .errors import ContractViolationError
 from .querier import DEFAULT_MAX_QUERY_PAGES, _extract_index_links, _select_query_candidates
@@ -464,3 +466,78 @@ def warn_selection(selection: Selection) -> None:
     """Pass a selection's warnings on as :class:`DiscoveryWarning` (``query`` has no result field for them)."""
     for message in selection.warnings:
         warnings.warn(message, DiscoveryWarning, stacklevel=2)
+
+
+# ── The similar-pages hint (FR-019) ───────────────────────────
+
+# How many pages the hint lists: the k of the similar-pages study (``eval/similar/protocol.json``); not configurable.
+SIMILAR_PAGES_K = 5
+# The hint ranks every eligible page: ``select`` is called with no page cap and no byte budget.
+SIMILAR_NO_PAGE_CAP = sys.maxsize
+SIMILAR_NO_BYTE_BUDGET = sys.maxsize
+# Why a list was not computed: FTS5 missing (with the probe's reason after a colon), or a caught error's class.
+SIMILAR_ERROR_NO_FTS5 = "FTS5 not available"
+SIMILAR_ERROR_NOT_COMPUTED = "not computed"
+# The frontmatter key the hint compares: only pages of the new page's type are listed.
+PAGE_TYPE_KEY = "page_type"
+# A page's title and body do not depend on the path ``build_document`` is given.
+_QUERY_PATH = ""
+
+
+@dataclass(frozen=True)
+class SimilarPage:
+    """One listed page: its wiki-relative path and its frontmatter title (empty when it has none)."""
+
+    path: str
+    title: str
+
+
+@dataclass(frozen=True)
+class SimilarList:
+    """The pages most like a new page, best first, or ``error`` (and no pages) when the list was not computed."""
+
+    pages: tuple[SimilarPage, ...]
+    error: str | None
+
+
+def similar_query(text: str) -> str:
+    """The hint's query for a page whose text is ``text``: its frontmatter title, one space, its body."""
+    document = build_document(_QUERY_PATH, text)
+    return f"{document.title} {document.body}"
+
+
+def similar_pages(paths: WikiPaths, text: str, *, exclude: frozenset[str]) -> tuple[SimilarList, tuple[str, ...]]:
+    """The existing pages most like the new page ``text``, and the search cache's warnings (FR-019).
+
+    Without FTS5 the list is not computed and says why (no fallback to
+    ``index-first``). Otherwise ``select`` ranks with the ``fts5`` ranker
+    exactly as ``find`` does, with no page cap and no byte budget; the ranked
+    pages of the new page's page type whose path is not in ``exclude`` (the
+    proposal's own normalised paths) are kept, and the first
+    ``SIMILAR_PAGES_K`` are listed. A ``ContractViolationError`` or
+    ``sqlite3.Error`` from the ranking ends in an empty list whose ``error``
+    names the exception class. Takes no lock, calls no model and writes
+    nothing but the search cache.
+    """
+    probe = fts5_available()
+    if not probe.available:
+        return SimilarList((), f"{SIMILAR_ERROR_NO_FTS5}: {probe.reason}"), ()
+    try:
+        selection = select(
+            paths,
+            similar_query(text),
+            max_pages=SIMILAR_NO_PAGE_CAP,
+            max_bytes=SIMILAR_NO_BYTE_BUDGET,
+            ranker=RANKER_FTS5,
+        )
+    except (ContractViolationError, sqlite3.Error) as exc:
+        return SimilarList((), f"{SIMILAR_ERROR_NOT_COMPUTED}: {type(exc).__name__}"), ()
+    page_type = review.frontmatter_value(text, PAGE_TYPE_KEY)
+    listed: list[SimilarPage] = []
+    for page in selection.pages:
+        if len(listed) >= SIMILAR_PAGES_K:
+            break
+        if page.path in exclude or review.frontmatter_value(page.text, PAGE_TYPE_KEY) != page_type:
+            continue
+        listed.append(SimilarPage(page.path, build_document(page.path, page.text).title))
+    return SimilarList(tuple(listed), None), selection.warnings
