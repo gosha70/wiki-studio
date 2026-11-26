@@ -66,3 +66,6 @@ approved-by: gosha70 2026-11-26 (at the pause after US4 the owner chose "Keep MC
 
 ### Phase 5 complete — US5: The CLI and MCP surfaces (S4) (2026-11-26T03:58:42Z)
 Review: PASS (see specs/wiki-studio-similar-121/collaboration/build-review-phase-5.md).
+
+### Phase 6 complete — US6: Documents and CHANGELOG (S5) (2026-11-26T04:05:47Z)
+Review: PASS (see specs/wiki-studio-similar-121/collaboration/build-review-phase-6.md).

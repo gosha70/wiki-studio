@@ -11,7 +11,7 @@ runner_fingerprint: ae8dc147cf1264834bab35d116b6ab96b06618f438763cde3a90621d7803
 verdict: PASS
 blocking_findings_open: 0
 target_ref: feature/wiki-studio-similar-121
-rounds_completed: 2
+rounds_completed: 1
 attempt_count: 1
 bypass: false
 ---
@@ -20,16 +20,17 @@ bypass: false
 
 **Reviewer**: deepseek
 **Scope**: both
-**Rounds**: 2
+**Rounds**: 1
 **Verdict**: PASS
 
 ## Summary
 
-Round 1 findings are addressed: both `plan.json` reads are now guarded, the CLI error branch uses `continue` for mutual exclusivity, and tests cover the unreadable-plan and both-keys cases. The MCP result shape and trace key are updated consistently, and the docstrings document the fallback. I found no blocking issues; a few minor notes remain around defensive access and test coverage of the CLI's `edit['path']` access.
+This round's diff is documentation-only (CHANGELOG, README, MCP adapter doc, patch-set format doc) for the similar-pages feature. The docs are internally consistent with each other and with the described behavior (advisory, `create`-only, `WIKI_STUDIO_SIMILAR_PAGES` switch, `similar_pages`/`similar_pages_error` keys, stderr `similar:` lines, MCP `similar_pages` field). No code correctness, security, or API-design issues are introduced by these changes; a few documentation-accuracy notes are worth addressing.
 
 ## Findings
 
-- [note] f-5e0b3434: The read/parse guard covers a missing or malformed `plan.json`, but a well-formed JSON with an edit missing `path` (or a page missing `title`) still raises `KeyError` on an advisory path, violating the "never fatal" contract for `propose`. (src/wiki_studio/cli.py)
-- [note] f-ae72bd4d: Same as the CLI: a well-formed plan with an edit lacking `path` raises `KeyError`, breaking the documented "empty list on unreadable" contract for a slightly different failure mode. (src/wiki_studio/mcp_adapter/tools.py)
-- [note] f-51399dcb: Tests cover missing/malformed/non-UTF-8 `plan.json`, but not a well-formed JSON with a malformed edit (missing `path` or missing page `title`), which is the remaining crash path noted above. (tests/test_similar_pages.py)
-- [note] f-9dd0fb9a: The docstring says `similar_pages` is empty when `plan.json` "cannot be read", but does not state the behavior for a readable-but-malformed plan (currently raises). Once the defensive access above is added, extend the docstring to say malformed entries are skipped. (src/wiki_studio/mcp_adapter/tools.py)
+- [note] f-30807717: The CHANGELOG entry embeds a long inline URL to `eval/similar/report.md` on `main`, which will drift from the release tag and is inconsistent with the README's relative-path reference; also the phrasing "in 1 of the 3 `supersedes` tries" is ambiguous (1 of 3 supersedes cases, or 1 of 3 total tries?). (CHANGELOG.md)
+- [note] f-c02704b8: README says the hint "lists unrelated pages beside any real match on every create," which overstates the behavior — the list may be empty (per `docs/patch-set-format.md`: "possibly empty") and may be absent entirely when the switch is off or when `similar_pages_error` is written. (README.md)
+- [note] f-97969a29: The MCP doc says `similar_pages` is `[]` "when the server was launched with `WIKI_STUDIO_SIMILAR_PAGES=off`," but the patch-set format doc says with the switch off "`off` writes neither key" — so the adapter must synthesize `[]` from absence. The doc should state this explicitly so implementers don't assume the key is present in `plan.json`. (docs/mcp-adapter.md)
+- [note] f-e47b14f0: The error row lists `FTS5 not available: <reason>` and `not computed: <exception class name>` but does not say whether `similar_pages` and `similar_pages_error` are mutually exclusive per edit (the row says "instead of," which is good) nor whether `similar_pages_error` can appear alongside an empty `similar_pages`. Minor, but worth one clarifying clause for consumers parsing `plan.json`. (docs/patch-set-format.md)
+- [note] f-5e21d708: The env var row says "any other value exits 1," but does not say at what point (startup vs. first `propose`). For a CLI user this matters — e.g., does `find` also fail? The MCP doc implies the switch is read at server launch. Clarify scope (which commands validate it). (README.md)
