@@ -2,14 +2,14 @@
   "schema_version": 2,
   "profile": "pr",
   "branch": {
-    "name": "feature/wiki-studio-similar-121-evidence",
+    "name": "feature/wiki-studio-similar-121",
     "base": "main",
     "remote": "origin"
   },
   "phases": {
     "source": "tasks.md",
     "milestone_every": 0,
-    "max_phases": 3
+    "max_phases": 6
   },
   "build": {
     "max_turns": 120,
@@ -52,7 +52,7 @@
     "command": ""
   },
   "pr": {
-    "title": "research: similar-pages evidence \u2014 eval/similar/ with a frozen protocol and the ranking measurement"
+    "title": "feat: similar pages at propose \u2014 a model-free hint listing the pages most like a proposed page"
   },
   "merge": {
     "enabled": false,

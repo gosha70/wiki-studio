@@ -154,7 +154,8 @@ approval reads the issue itself.
     main-session commit at a pause is reviewed in the PR, not by the phase
     reviewer; `CCT_REVIEW_DIFF_MAX_LINES` in the environment overrides
     `review.diff_max_lines`; the driver falls back to `plan.md`'s origin
-    issue when it opens a PR; `--resume` ignores `--start-phase`; the driver
+    issue when it opens a PR; `--resume` does not remember `--start-phase`, so
+    a run 2 resume repeats `--start-phase 4`; the driver
     never updates `hill.json`.
 
 ## Departures from the pitch
@@ -202,6 +203,25 @@ Each is recorded so the origin-alignment record at approval can cite it.
     FR-022).
 15. **`CLAUDE.md` layout lines land with their code** (US1 for
     `eval/similar/`, US4 for the `discovery.py` line).
+16. **The verdict is pass** (spec amendment, 2026-11-26). The partner was in
+    the top 5 in 11 of 13 tries and in 1 of the 3 `supersedes` tries
+    (`eval/similar/report.md`, evidence PR #146). The two misses are the
+    location-only rulings, at ranks 6 and 35. FR-019 to FR-029 apply, and
+    FR-022's 500-page bound is 10 s. **Run 2's settings** (`automation.json`):
+    branch `feature/wiki-studio-similar-121` from `main` after this amendment
+    merges; `max_phases: 6`, started fresh with `--start-phase 4`, after run
+    1's ledger (`.cct/auto-build/wiki-studio-similar-121/`) is moved aside;
+    the markers pause after US4 (cut 2) and US6; `build.max_turns: 120`;
+    `review.diff_max_lines: 6000`; no `pr.closes`; every start and resume
+    with `env -u CCT_REVIEW_DIFF_MAX_LINES`, and the resume after US4 with
+    `--resume --start-phase 4`, never a plain `--resume`, which would rebuild
+    steps 1-3. Run 2 is not resumed after US6:
+    its PR is opened by hand with `pre-pr-check.sh --closes none` (D10).
+17. **Run 1's first sign-off cited a pasted review** (process). The sign-off
+    after US1 credited "the external review at d3e6d23"; that review was
+    pasted by the owner, not the external reviewer's. A correction line
+    follows it in `automation-summary.md`, and the external reviewer later
+    checked the protocol against this spec and found it matched (PR #146).
 
 Close target: none. Issue 121 stays open whatever the verdict (D10); no PR,
 commit message or artifact names it after a closing keyword, and no other
@@ -315,12 +335,18 @@ Every phase's gate is the full gate of the spec's Constraints.
    <title> --body-file <file> --base main`, and `gh pr view <n> --json
    closingIssuesReferences` must list nothing. Run 2 ends the same way after
    US6 (D10). If the driver opens a PR anyway, the owner closes it unmerged.
-3. **`--resume` ignores `--start-phase`.** Run 2 is a fresh run: run 1's
+3. **`--resume` does not remember `--start-phase`.** Run 2 is a fresh run: run 1's
    ledger (`.cct/auto-build/wiki-studio-similar-121/`) is moved aside first,
    and run 2 starts with `--start-phase 4` on a new branch from `main` after
-   the amendment merges. It is resumed with `--resume` only at its own pause
-   after US4. A stopped run 2 is never resumed with a plain `--resume` from a
-   ledger that lacks steps 1-3: set the ledger aside and start fresh with
+   the amendment merges. At its own pause after US4 it is resumed with
+   `--resume --start-phase 4`, never a plain `--resume`: the driver does not
+   remember `--start-phase` across a resume (`START_AT="${START_PHASE_ARG:-1}"`,
+   `auto-build-loop.sh` 6510 at code-copilot-team 33fa492) and skips only
+   steps its own ledger marks done, so a plain `--resume` would rebuild steps
+   1-3 on the run 2 branch. With `--start-phase 4` it skips steps 1-3, skips
+   step 4 as done, and builds step 5 (the external review of PR #147). A
+   stopped run 2 is likewise resumed with `--resume --start-phase <the
+   stopped step>`, or its ledger set aside and a fresh run started with
    `--start-phase <the stopped step>` on the same branch.
 4. **The owner's shell sets `CCT_REVIEW_DIFF_MAX_LINES=4000`**, which
    overrides `review.diff_max_lines`. Every start and resume begins with
@@ -358,7 +384,9 @@ Every phase's gate is the full gate of the spec's Constraints.
 5. **Run 2** (with a pass): move run 1's ledger aside; start fresh with
    `--start-phase 4` and `env -u CCT_REVIEW_DIFF_MAX_LINES`. At the pause
    after US4, check trigger 2: to take cut 2, commit the cut to FR-024 and
-   US5's MCP task, then resume. After US6, do not resume: re-run the gate on
+   US5's MCP task, then resume with `env -u CCT_REVIEW_DIFF_MAX_LINES …
+   --resume --start-phase 4`, never a plain `--resume` (item 3 of "Runs,
+   pauses and script runs"). After US6, do not resume: re-run the gate on
    the branch head before trusting `landed`, check no phase was bypassed
    without its record, open the build PR by hand with `pre-pr-check.sh
    --closes none`, confirm `closingIssuesReferences` is empty, review and
@@ -383,7 +411,8 @@ per phase, two fix sessions per phase, the gate of the spec's Constraints,
   `--resume`.
 - **Run 2** (written by the amendment, only with a pass): branch
   `feature/wiki-studio-similar-121` from `main`; `max_phases: 6`, started
-  fresh with `--start-phase 4`; markers pause after US4 and US6; no
+  fresh with `--start-phase 4`; markers pause after US4 and US6; resumed
+  after US4 with `--resume --start-phase 4`, never a plain `--resume`; no
   `pr.closes`; `review.diff_max_lines: 6000`.
 
 ## Test strategy
