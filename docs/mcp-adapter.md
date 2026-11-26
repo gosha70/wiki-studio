@@ -107,7 +107,7 @@ structured content. Paths in results are relative to the project root
 |---|---|---|
 | `find` | `question: str`, `max_pages: int = 5` (1..5), `max_bytes: int = 65536`, `ranker: str \| null` (per-call override of the launch default) | The `find --json` object: `question`, `index`, `pages[]` (`path`, `file`, `title`, `sha256`, `bytes`), `ranker`, `fallback_reason`, `bytes_loaded`, `max_bytes`, `ranker_config_hash`, `omitted[]`, `ineligible[]`, `warnings` |
 | `read_page` | `path: str` (wiki-relative) | `{path, sha256, content}`, as `read --json` |
-| `propose` | `edits: [{path, action, content, base_sha256?}]`, `name: str \| null`, `rationale: str = ""` | `{name, proposal_dir, warnings}` |
+| `propose` | `edits: [{path, action, content, base_sha256?}]`, `name: str \| null`, `rationale: str = ""` | `{name, proposal_dir, warnings, similar_pages}` |
 | `promote` | `name: str`, `dry_run: bool = false` | `{applied_paths, archived_dir, dry_run, unguarded_paths, warnings, approved_paths}` |
 | `lint` | `health: bool = false`, `prose: bool = false`, `strict: bool = false` | `{violations, pages_checked, audit_errors, health: {pages_checked, findings[]} \| null, prose: {pages_checked, findings[]} \| null, passed}` |
 | `info` | (none) | `info --json`'s contract keys (`package_version`, `schema_contract`, `formats`, `capabilities`, `manifest`, `discovery`) plus `adapter` |
@@ -126,6 +126,12 @@ Details:
   - `plan.json` records `source: "mcp"` and `backend: "mcp"`.
   - Every `create` gets a `page_id`, as with `propose --from`.
   - Schema drift on a managed wiki is reported in `warnings`.
+  - `similar_pages` is read from the written `plan.json`: one object per
+    `create` in edit order, `{"path", "pages": [{"path", "title"}, ...]}` or
+    `{"path", "error"}` when the list was not computed; `[]` when the
+    proposal has no create or the server was launched with
+    `WIKI_STUDIO_SIMILAR_PAGES=off`. It is advisory (see
+    `docs/patch-set-format.md`, `edits[].similar_pages`).
   - The proposal is written under the proposals directory; the wiki is not
     touched.
 - **`promote`**: `name` must be one path component of ASCII letters,
