@@ -47,3 +47,6 @@ To resume: append a line 'approved-by: <name> <date>' below, then run:
 `scripts/auto-build-loop.sh wiki-studio-similar-121 --resume`
 
 <!-- checkpoint-after-phase: 3 -->
+
+### Phase 4 complete — US4: The hint in the library and in plan.json (S3) (2026-11-26T03:35:16Z)
+Review: PASS (see specs/wiki-studio-similar-121/collaboration/build-review-phase-4.md).
