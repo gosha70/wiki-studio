@@ -35,3 +35,15 @@ Correction (2026-11-26) to the sign-off after US1 above: the review it cites at 
 
 ### Phase 3 complete — US3: The report and the evidence PR (S2) (2026-11-26T01:18:01Z)
 Review: PASS (see specs/wiki-studio-similar-121/collaboration/build-review-phase-3.md).
+
+## Milestone checkpoint — after phase 3 (US3: The report and the evidence PR (S2))
+
+Paused 2026-11-26T01:18:03Z for batched manual testing + retro.
+
+- [ ] Manual testing of phases up to 3 complete
+- [ ] Retro notes recorded
+
+To resume: append a line 'approved-by: <name> <date>' below, then run:
+`scripts/auto-build-loop.sh wiki-studio-similar-121 --resume`
+
+<!-- checkpoint-after-phase: 3 -->
