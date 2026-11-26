@@ -85,6 +85,8 @@
 
 ---
 
+**Set by the spec amendment (2026-11-26):** the verdict is `pass` (FR-018, evidence PR #146), so US4-US6 below are built by run 2, a fresh run started with `--start-phase 4` (plan, departure 16).
+
 ## US4: The hint in the library and in plan.json (S3)
 
 <!-- milestone -->

@@ -202,6 +202,23 @@ Each is recorded so the origin-alignment record at approval can cite it.
     FR-022).
 15. **`CLAUDE.md` layout lines land with their code** (US1 for
     `eval/similar/`, US4 for the `discovery.py` line).
+16. **The verdict is pass** (spec amendment, 2026-11-26). The partner was in
+    the top 5 in 11 of 13 tries and in 1 of the 3 `supersedes` tries
+    (`eval/similar/report.md`, evidence PR #146). The two misses are the
+    location-only rulings, at ranks 6 and 35. FR-019 to FR-029 apply, and
+    FR-022's 500-page bound is 10 s. **Run 2's settings** (`automation.json`):
+    branch `feature/wiki-studio-similar-121` from `main` after this amendment
+    merges; `max_phases: 6`, started fresh with `--start-phase 4`, after run
+    1's ledger (`.cct/auto-build/wiki-studio-similar-121/`) is moved aside;
+    the markers pause after US4 (cut 2) and US6; `build.max_turns: 120`;
+    `review.diff_max_lines: 6000`; no `pr.closes`; every start and resume
+    with `env -u CCT_REVIEW_DIFF_MAX_LINES`. Run 2 is not resumed after US6:
+    its PR is opened by hand with `pre-pr-check.sh --closes none` (D10).
+17. **Run 1's first sign-off cited a pasted review** (process). The sign-off
+    after US1 credited "the external review at d3e6d23"; that review was
+    pasted by the owner, not the external reviewer's. A correction line
+    follows it in `automation-summary.md`, and the external reviewer later
+    checked the protocol against this spec and found it matched (PR #146).
 
 Close target: none. Issue 121 stays open whatever the verdict (D10); no PR,
 commit message or artifact names it after a closing keyword, and no other
