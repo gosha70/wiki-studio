@@ -547,6 +547,20 @@ class CacheAndErrorsTest(_WikiCase):
         self.assertNotIn(str(self.root), plan_text)
         self.assertNotIn(str(cache), plan_text)
 
+    def test_a_warning_filtered_as_an_error_never_blocks_the_proposal(self) -> None:
+        usable = self.entry(self.propose(jitter_edits(), "usable-error"), JITTER)[SIMILAR_PAGES_KEY]
+        cache = self.root / "no-such-directory" / "search.sqlite"
+        unusable = WikiPaths.for_root(self.root, search_cache=cache)
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("error", DiscoveryWarning)
+            written = api.propose(jitter_edits(), unusable, name="filtered-as-error")
+        self.assertTrue((written / PLAN_JSON).is_file())
+        messages = [str(w.message) for w in caught if issubclass(w.category, DiscoveryWarning)]
+        self.assertEqual(len(messages), 1, messages)
+        self.assertIn(str(cache), messages[0])
+        plan = json.loads((written / PLAN_JSON).read_text(encoding="utf-8"))
+        self.assertEqual(self.entry(plan["edits"], JITTER)[SIMILAR_PAGES_KEY], usable)
+
     def test_caught_errors_are_recorded_and_the_proposal_is_written(self) -> None:
         for number, error in enumerate((ContractViolationError("cache inside"), sqlite3.OperationalError("locked"))):
             name = f"error-{number}"
@@ -840,6 +854,19 @@ class McpSimilarPagesTest(_WikiCase):
         plan = self.entry(load_json(self.paths.proposals_dir / "mcp-one" / PLAN_JSON)["edits"], JITTER)
         self.assertEqual(result["similar_pages"], [{"path": JITTER, "pages": plan[SIMILAR_PAGES_KEY]}])
         self.assertEqual(result["similar_pages"][0]["pages"][0], {"path": BACKOFF, "title": "Retry backoff"})
+
+    def test_a_warning_filtered_as_an_error_never_blocks_the_tool(self) -> None:
+        cache = self.root / "no-such-directory" / "search.sqlite"
+        tools = self.tools({"WIKI_STUDIO_SEARCH_CACHE": str(cache)})
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("error", DiscoveryWarning)
+            result = tools.propose(self.jitter(), name="mcp-filtered-as-error")
+        self.assertEqual(set(result), set(TOOL_RESULT_KEYS[TOOL_PROPOSE]))
+        self.assertEqual([entry["path"] for entry in result["similar_pages"]], [JITTER])
+        self.assertTrue((self.paths.proposals_dir / "mcp-filtered-as-error" / PLAN_JSON).is_file())
+        messages = [str(w.message) for w in caught if issubclass(w.category, DiscoveryWarning)]
+        self.assertEqual(len(messages), 1, messages)
+        self.assertIn(str(cache), messages[0])
 
     def test_an_update_only_proposal_gives_an_empty_list(self) -> None:
         updated = BASE_PAGES[BUDGET].replace("per minute", "per hour")

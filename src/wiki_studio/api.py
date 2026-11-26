@@ -725,9 +725,25 @@ def _similar_for_creates(patch: WikiPatchSet, paths: WikiPaths) -> dict[int, Sim
             continue
         listed, notes = similar_pages(paths, edit.new_content, exclude=exclude)
         for message in notes:
-            warnings.warn(message, DiscoveryWarning, stacklevel=3)
+            _warn_advisory(message)
         similar[index] = listed
     return similar
+
+
+def _warn_advisory(message: str) -> None:
+    """Emit a similar-pages note as a ``DiscoveryWarning`` that a caller's filter can never turn into a failure.
+
+    The hint never raises or blocks a proposal (FR-020). When a caller's filter
+    makes ``DiscoveryWarning`` an error, the note is shown instead of raised:
+    re-emitted once with the ``always`` action, so it still reaches the
+    caller's ``showwarning`` (or a recording ``catch_warnings``).
+    """
+    try:
+        warnings.warn(message, DiscoveryWarning, stacklevel=4)
+    except DiscoveryWarning:
+        with warnings.catch_warnings():
+            warnings.simplefilter("always", DiscoveryWarning)
+            warnings.warn(message, DiscoveryWarning, stacklevel=4)
 
 
 def _discard_partial_proposal(output_dir: Path, paths: WikiPaths, proposals_dir_existed: bool) -> None:
