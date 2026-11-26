@@ -44,6 +44,7 @@ from wiki_studio.discovery import (
 )
 from wiki_studio.errors import ContractViolationError
 from wiki_studio.ingestor_multi import SIMILAR_PAGES_ERROR_KEY, SIMILAR_PAGES_KEY
+from wiki_studio.mcp_adapter import tools as tools_module
 from wiki_studio.mcp_adapter.config import TOOL_PROPOSE, parse_launch
 from wiki_studio.mcp_adapter.tools import WikiTools
 from wiki_studio.mcp_adapter.trace import TOOL_RESULT_KEYS, WireObserver, open_trace
@@ -776,6 +777,29 @@ class CliLinesTest(_WikiCase):
         self.assertIn(f"{ENV_SIMILAR_PAGES}=off", result.stdout)
         self.assertIn("'similar:'", result.stdout)
 
+    def test_an_unreadable_plan_json_prints_nothing(self) -> None:
+        proposal = self.root / "unreadable"
+        proposal.mkdir()
+        for content in (None, "{not json", b"\xff\xfe"):
+            if isinstance(content, str):
+                (proposal / PLAN_JSON).write_text(content, encoding="utf-8")
+            elif isinstance(content, bytes):
+                (proposal / PLAN_JSON).write_bytes(content)
+            stderr = io.StringIO()
+            with contextlib.redirect_stderr(stderr):
+                cli._print_similar_pages(proposal)
+            self.assertEqual(stderr.getvalue(), "", content)
+
+    def test_an_error_entry_prints_no_page_lines(self) -> None:
+        proposal = self.root / "both"
+        proposal.mkdir()
+        entry = {"path": JITTER, SIMILAR_PAGES_ERROR_KEY: "boom", SIMILAR_PAGES_KEY: [{"path": BACKOFF, "title": "x"}]}
+        (proposal / PLAN_JSON).write_text(json.dumps({"edits": [entry]}), encoding="utf-8")
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            cli._print_similar_pages(proposal)
+        self.assertEqual(similar_lines(stderr.getvalue()), [f"similar: {JITTER}: not computed (boom)"])
+
 
 # ── The MCP result key and the trace (FR-024, FR-025) ───────────
 
@@ -820,6 +844,20 @@ class McpSimilarPagesTest(_WikiCase):
         self.assertEqual(
             result["similar_pages"], [{"path": JITTER, "error": f"{SIMILAR_ERROR_NO_FTS5}: {NO_FTS5_REASON}"}]
         )
+
+    def test_an_unreadable_plan_json_gives_an_empty_list(self) -> None:
+        read_plan = tools_module._similar_pages
+
+        def corrupt(proposal_dir: Path) -> list[dict[str, Any]]:
+            (proposal_dir / PLAN_JSON).write_text("{not json", encoding="utf-8")
+            return read_plan(proposal_dir)
+
+        with mock.patch.object(tools_module, "_similar_pages", side_effect=corrupt):
+            result = self.tools().propose(self.jitter(), name="mcp-corrupt")
+        self.assertEqual(set(result), set(TOOL_RESULT_KEYS[TOOL_PROPOSE]))
+        self.assertEqual(result["similar_pages"], [])
+        (self.paths.proposals_dir / "mcp-corrupt" / PLAN_JSON).unlink()
+        self.assertEqual(tools_module._similar_pages(self.paths.proposals_dir / "mcp-corrupt"), [])
 
 
 class TraceKnownKeyTest(unittest.TestCase):

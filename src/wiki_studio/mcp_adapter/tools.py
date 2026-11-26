@@ -118,9 +118,13 @@ def _similar_pages(proposal_dir: Path) -> list[dict[str, Any]]:
     """Each create's similar pages from ``<proposal_dir>/plan.json``, in edit order (FR-024).
 
     ``{"path", "pages"}`` or ``{"path", "error"}`` per create that carries
-    either key; none when the switch is off, so the list is then empty.
+    either key; none when the switch is off, so the list is then empty. A hint,
+    never a failure: an unreadable ``plan.json`` gives an empty list.
     """
-    plan = json.loads((proposal_dir / "plan.json").read_text(encoding="utf-8"))
+    try:
+        plan = json.loads((proposal_dir / "plan.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
     similar: list[dict[str, Any]] = []
     for edit in plan.get("edits", []):
         if SIMILAR_PAGES_ERROR_KEY in edit:
@@ -196,7 +200,8 @@ class WikiTools:
         is a hint, never a check: one {path, pages} per create, pages the
         existing pages of its type most like it ({path, title}, best first,
         at most 5), or {path, error} when they could not be ranked; empty
-        when WIKI_STUDIO_SIMILAR_PAGES=off or there is no create.
+        when WIKI_STUDIO_SIMILAR_PAGES=off, there is no create, or the
+        written plan.json cannot be read.
         """
         if not isinstance(edits, list):
             raise ValueError("edits must be a list of objects")

@@ -655,12 +655,18 @@ def _print_similar_pages(patch_dir: Path) -> None:
 
     One ``similar: <edit path>: <listed path>  <title>`` line per listed page, one
     ``similar: <edit path>: not computed (<error>)`` line when the list was not
-    computed, nothing for an empty list. Advisory: never an exit code (FR-023).
+    computed, nothing for an empty list. Advisory: never an exit code (FR-023), so
+    an unreadable ``plan.json`` prints nothing.
     """
-    for edit in json.loads((patch_dir / "plan.json").read_text(encoding="utf-8")).get("edits", []):
+    try:
+        plan = json.loads((patch_dir / "plan.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return
+    for edit in plan.get("edits", []):
         error = edit.get(SIMILAR_PAGES_ERROR_KEY)
         if error:
             print(f"similar: {edit['path']}: not computed ({error})", file=sys.stderr)
+            continue
         for page in edit.get(SIMILAR_PAGES_KEY) or []:
             print(f"similar: {edit['path']}: {page['path']}  {page['title']}", file=sys.stderr)
 
