@@ -33,6 +33,13 @@ This amendment commit does these things:
   diffs, DeepSeek gating, the gate command, two fix sessions per phase, the
   $150 / 12 h caps.
 - **The pitch's hill chart:** S1 and S2 set to done.
+- **The resume after US4 (a follow-up commit after the external review of
+  PR #147):** plan.md (item 3 of "Runs, pauses and script runs", the run 2
+  settings, owner step 5, departure 16) and tasks.md (the pause after US4)
+  now say `--resume --start-phase 4`, never a plain `--resume`. The driver
+  does not remember `--start-phase` across a resume and skips only steps its
+  own ledger marks done, so a plain `--resume` would rebuild steps 1-3 on the
+  run 2 branch. A process fix; the working claim is unchanged.
 - **This record.**
 
 Origin: wiki-studio issue #121, as in the earlier record. Issue 121 stays

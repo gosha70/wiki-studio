@@ -107,7 +107,7 @@
 - [ ] Milestone: the run pauses for trigger 2 below
 
 **At the pause after US4 — owner (FR-024; plan, owner step 5):**
-- Middle of week 2 (trigger 2): to take cut 2, commit the cut to FR-024 and US5's task 17 (marked cut), then resume. Otherwise resume as is, with `env -u CCT_REVIEW_DIFF_MAX_LINES … --resume`.
+- Middle of week 2 (trigger 2): to take cut 2, commit the cut to FR-024 and US5's task 17 (marked cut), then resume. Otherwise resume as is. Either way the resume is `env -u CCT_REVIEW_DIFF_MAX_LINES … --resume --start-phase 4`, never a plain `--resume`: the driver does not remember `--start-phase` across a resume and would rebuild steps 1-3 (plan, "Runs, pauses and script runs" item 3).
 
 ---
 
