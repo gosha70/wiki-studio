@@ -1,0 +1,1289 @@
+{
+  "collisions": {
+    "adds-no-runtime-authority": [
+      "code-copilot-team/routing/cct-routing-eval-plan-10.md",
+      "code-copilot-team/routing/cct-routing-shadow-plan-11.md"
+    ],
+    "scope": [
+      "code-copilot-team/pi/cct-pi-team-controller-plan-01.md",
+      "memkernel/memkernel/mk-memkernel-0-7-release-b-exit-plan-03.md"
+    ],
+    "stays-opportunistic": [
+      "code-copilot-team/routing/cct-routing-effective-endpoint-plan-03.md",
+      "code-copilot-team/routing/cct-routing-effective-endpoint-spec-03.md"
+    ]
+  },
+  "fixture": {
+    "binding": false,
+    "never_listed": [
+      {
+        "disposition": "redundant",
+        "page_types": [
+          "decision",
+          "incident"
+        ],
+        "pair": [
+          "decisions/never-bypass-a-git-lock-with-an-alternate-index.md",
+          "incidents/git-safety-bypasses.md"
+        ]
+      }
+    ],
+    "summary": {
+      "found": 4,
+      "pairs": 2,
+      "pairs_with_a_found_try": 2,
+      "supersedes_found": 0,
+      "supersedes_tries": 0,
+      "tries": 4
+    },
+    "superseded_left_out": [
+      "decisions/benchmark-ui-was-backend-free-one-shot-and-studio-only.md",
+      "decisions/merge-require-green-ci-was-never-read.md"
+    ],
+    "tries": [
+      {
+        "disposition": "conflicting",
+        "found": true,
+        "list": [
+          "decisions/destructive-git-commands-require-confirmation.md",
+          "decisions/merge-require-green-ci-was-never-read-and-was-removed.md",
+          "decisions/use-llm-wiki-as-knowledge-layer.md",
+          "decisions/never-bypass-a-git-lock-with-an-alternate-index.md",
+          "decisions/config-redaction-is-not-free-text-redaction.md"
+        ],
+        "partner": "decisions/destructive-git-commands-require-confirmation.md",
+        "partner_rank": 1,
+        "query": "decisions/balanced-profile-denies-destructive-git-commands.md"
+      },
+      {
+        "disposition": "conflicting",
+        "found": true,
+        "list": [
+          "decisions/balanced-profile-denies-destructive-git-commands.md",
+          "decisions/never-bypass-a-git-lock-with-an-alternate-index.md",
+          "decisions/use-llm-wiki-as-knowledge-layer.md",
+          "decisions/infra-verification-as-gate.md",
+          "decisions/merge-require-green-ci-was-never-read-and-was-removed.md"
+        ],
+        "partner": "decisions/balanced-profile-denies-destructive-git-commands.md",
+        "partner_rank": 1,
+        "query": "decisions/destructive-git-commands-require-confirmation.md"
+      },
+      {
+        "disposition": "redundant",
+        "found": true,
+        "list": [
+          "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+          "decisions/config-redaction-is-not-free-text-redaction.md",
+          "decisions/use-llm-wiki-as-knowledge-layer.md",
+          "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md",
+          "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md"
+        ],
+        "partner": "decisions/trace-archive-reuses-the-ingest-redaction-path.md",
+        "partner_rank": 1,
+        "query": "decisions/never-archive-raw-jsonl.md"
+      },
+      {
+        "disposition": "redundant",
+        "found": true,
+        "list": [
+          "decisions/never-archive-raw-jsonl.md",
+          "decisions/config-redaction-is-not-free-text-redaction.md",
+          "decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md",
+          "decisions/use-llm-wiki-as-knowledge-layer.md",
+          "decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md"
+        ],
+        "partner": "decisions/never-archive-raw-jsonl.md",
+        "partner_rank": 1,
+        "query": "decisions/trace-archive-reuses-the-ingest-redaction-path.md"
+      }
+    ]
+  },
+  "inputs": {
+    "eval/duplicates/corpus.json": "fc0f710ab994dd4a57a9bb23e700bd61b2ffde58f66a54bb30353c6cc5bbc4de",
+    "eval/duplicates/labels.json": "e1c34ca9533aedb39482d628fd8704752035fba3ca34f132d730f8a555082287",
+    "eval/patterns/labels.json": "96da1b5a7553096ca38e7f0491692b61018c6735cc70d1dcf5c1afc478f39a7e",
+    "eval/patterns/manifest.json": "1f1a4bf3b4908ec9549b3717685d772182858486e996f6aaa4250fd994360b29",
+    "eval/patterns/wiki/concepts/cross-session-state-must-be-file-backed.md": "fb93ba80c6819da0c8d189178a65db2f0fd925cfacefb74147a4c6726f748270",
+    "eval/patterns/wiki/concepts/multi-round-spec-review.md": "60304223d94adf1016e5c57d92adab1fe8d2081f5089c71c06808add6472e2c0",
+    "eval/patterns/wiki/concepts/phase-scoped-build-prompts.md": "6ff11a25bddb547b65a92fbfb1dca9813b4280ebacc21be73bfd739b896225d6",
+    "eval/patterns/wiki/concepts/spec-driven-development.md": "09385c94d3429d1213b73d4b7d2c16f99046fdb4997fca0dea8201e5c84890f0",
+    "eval/patterns/wiki/decisions/balanced-profile-denies-destructive-git-commands.md": "6a81d9c64cdf7cccd725b591f786b15529021aa18738df38f58fab73866ec595",
+    "eval/patterns/wiki/decisions/benchmark-explains-itself-linking-runs-is-a-pipeline-step.md": "8ca10b35f14e536a0c3e576cd30f5d76a4587f98cd806ace868497918ace325b",
+    "eval/patterns/wiki/decisions/benchmark-step-reuses-the-one-correlate-scan-seam.md": "99c4bdfb83422ef272a53cce0d8d8f76db51329889add4c1b88973d920b93f22",
+    "eval/patterns/wiki/decisions/benchmark-ui-was-backend-free-one-shot-and-studio-only.md": "343f6a3683db4c8cb53ed5c66e116dfc778a2bad133b642b81f3d5b730a295d4",
+    "eval/patterns/wiki/decisions/config-redaction-is-not-free-text-redaction.md": "b7cfcc383fe41f6203d62edd63ab6e64ab7d240917cd649b2e8e6dbc3ef81d77",
+    "eval/patterns/wiki/decisions/destructive-git-commands-require-confirmation.md": "bb13df5d5f5ef30ae90deb8303b34f1c4fa944c8247edb452f01179b2b58dc62",
+    "eval/patterns/wiki/decisions/infra-verification-as-gate.md": "2057acc58de4792e53666ca88cf9af099ef517dd6f9eb434e24187770a395266",
+    "eval/patterns/wiki/decisions/judge-statistics-and-charts-stay-in-the-stdlib.md": "c1440cbb40ecd085375d5c3dc606d128d4de85e15b5fe7834ace1eafc55eccbe",
+    "eval/patterns/wiki/decisions/merge-require-green-ci-was-never-read-and-was-removed.md": "cd993358da4f564b663a82f7deb5e2fea79b84d8fcba3c93d33d565ffe3ab061",
+    "eval/patterns/wiki/decisions/merge-require-green-ci-was-never-read.md": "af5f8585d4aee8b7f704ff93bd921491e8cd4f5d1005d113ea130cab37b98d18",
+    "eval/patterns/wiki/decisions/never-archive-raw-jsonl.md": "7bd079d2df67f747e876636f9b3099b67ac6b1017936bfd18fff11e0d92db5f0",
+    "eval/patterns/wiki/decisions/never-bypass-a-git-lock-with-an-alternate-index.md": "91f63acaddab7b2108306f96cbbd5616927b76c7ff93a2a9134167fd76b25cfb",
+    "eval/patterns/wiki/decisions/swe-bench-fetch-uses-the-stdlib-rows-api-not-parquet.md": "a9e86de2df7e669538bd1524ddd6cc749bdcbc589bac6b999df82421d286c143",
+    "eval/patterns/wiki/decisions/the-clusters-view-is-not-an-explorer.md": "d1b1aeda581ffed3e6999b50deaf273aa0925baf62c1bf3b5fc1225759482bbd",
+    "eval/patterns/wiki/decisions/trace-archive-reuses-the-ingest-redaction-path.md": "ddaefb45551ac8bf08d306def38a26ba016def2c61fb73071f0ef644cf6feaca",
+    "eval/patterns/wiki/decisions/use-llm-wiki-as-knowledge-layer.md": "038e0613f0efae713d9edef43153d680c4639ffa42f5091eadcc43a2553dc17a",
+    "eval/patterns/wiki/glossary/index.md": "e1c4bb2c79082b3a61317643f09ba25cc0580da6355b1031e62446121d2ee7bc",
+    "eval/patterns/wiki/incidents/executable-artifacts-shipped-unexecuted.md": "1ec913f5bc92ef198c40cff1684bd6e4f65e54a81edd8cef3a71e80cb8b37ecc",
+    "eval/patterns/wiki/incidents/git-safety-bypasses.md": "65d8232fb65c48184e62dd8700eef61e9eef36f80dd53da2f1a57d01234f05f1",
+    "eval/patterns/wiki/incidents/plan-agent-contract-contradiction.md": "2d24f6ce58e2f19bd91427e67134b3c808b56a40db8dcf0599c10b54f9b2090a",
+    "eval/patterns/wiki/incidents/spec-code-coherence-drift.md": "bda223c340ec6f8670fe7698e080b3df453117b18f1ff839a44bd42a8eaeb904",
+    "eval/patterns/wiki/index.md": "e832d71a742a7be65486ccf4864f4322e7b4a9e49966be85944a64fd9164f7e4",
+    "eval/patterns/wiki/overview.md": "2fe6f999b559032719d94f5a0ee434e59efb6868b0f7ff5c19a0bb363abb154e",
+    "eval/patterns/wiki/playbooks/drive-claude-code-with-local-vllm.md": "5558b506a4bdceff8ba626e78f4da3e4eb7065645be374fbb655a33b00b70a03",
+    "eval/patterns/wiki/playbooks/grep-based-acceptance-criteria.md": "533ceed71ff90c9ba0b4715b6019bd373f38f314c773db021ff6d1b9107f2068",
+    "eval/patterns/wiki/playbooks/recover-after-bad-ai-git-op.md": "8ae69d15d3ac7c691fffc73c838204454b0430cb4962d1841a6fc0d45ea01cc2",
+    "eval/patterns/wiki/playbooks/respond-to-production-readiness-review.md": "94c5a7cf9de9b0a4046915033b48a5486fb3c27161034e79837626e8a9ac1097",
+    "eval/patterns/wiki/workflows/doc-coverage-audit.md": "aaa2e65f7aa9f0763d04c07a50c42e0edf1765971f367bcfc173750668da4cb2",
+    "eval/patterns/wiki/workflows/origin-alignment.md": "6d997bd551293f21ae1668781c6bbd8be45179dfa14144a46b1a984d71cd0c08",
+    "eval/patterns/wiki/workflows/promote-lesson-to-wiki.md": "e17e4540c75e875457fd4ee9652750fc257f917169589021affac798b39ba5c8",
+    "eval/patterns/wiki/workflows/run-wiki-ingest.md": "9bdf159696cb57d9dec3f0de55307c52af90523bd9cd3d6a4967615afc7822b8",
+    "eval/similar/protocol.json": "6807822a5d66a6f03254ee557ad47089ba6690b5b0839aba39422608e7c7ac89"
+  },
+  "k": 5,
+  "noise": {
+    "companion": 7,
+    "unrelated": 47
+  },
+  "paths": {
+    "code-copilot-team/api/cct-api-host-origin-guard-plan-01.md": "decisions/host-origin-only.md",
+    "code-copilot-team/api/cct-api-host-origin-guard-plan-02.md": "decisions/a-request-with-no-origin-header-is-allowed-even-on-state-changing-routes.md",
+    "code-copilot-team/api/cct-api-host-origin-guard-plan-03.md": "decisions/tests-point-testclient-at-http-127-0-0-1-port-rather-than-adding-testserver-to-the-production-default-allowlist.md",
+    "code-copilot-team/api/cct-api-host-origin-guard-plan-04.md": "decisions/the-origin-check-applies-to-all-non-get-methods-post-put-patch-delete-not-a-hand-maintained-route-list.md",
+    "code-copilot-team/api/cct-api-host-origin-guard-plan-05.md": "decisions/host-mismatch-400-starlette-s-built-in-disallowed-origin-403-with-a-short-constant-message-no-echo-of-the-offending-value.md",
+    "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-01.md": "decisions/add-scheme-not-allowed-host-not-allowed-sqlite-file-missing-to-the-100-closed-set-rather-than-folding-them-into-bad-dsn.md",
+    "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-02.md": "decisions/extract-the-sqlite-path-rule-into-db-py-and-use-it-from-both-connect-and-the-validator.md",
+    "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-03.md": "decisions/a-missing-sqlite-file-is-rejected-with-database-file-does-not-exist-yet-save-the-configuration-and-run-ingest-to-create-it-not-created.md",
+    "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-04.md": "decisions/sqlite-sqlite-in-memory-is-accepted-it-touches-no-filesystem-path-and-is-what-the-test-suite-uses.md",
+    "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-05.md": "decisions/the-allowlist-is-loopback-the-host-parsed-from-the-configured-dsn-only.md",
+    "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-06.md": "decisions/confirmed-by-reading-settings-page-tsx-71-the-display-renders-arbitrary-strings.md",
+    "code-copilot-team/api/cct-api-probe-error-hardening-plan-01.md": "decisions/add-error-code-alongside-error-rather-than-replacing-it-the-studio-keeps-rendering-error-no-ui-change-needed.md",
+    "code-copilot-team/api/cct-api-probe-error-hardening-plan-02.md": "decisions/classify-on-lowercase-substring-matching-of-str-exc-the-matched-text-is-never-returned.md",
+    "code-copilot-team/api/cct-api-probe-error-hardening-plan-03.md": "decisions/studio-untouched-this-slice-r-error-renders-the-curated-message-fine.md",
+    "code-copilot-team/api/cct-api-probe-error-hardening-plan-04.md": "decisions/success-response-unchanged-ok-dialect-sessions.md",
+    "code-copilot-team/llm-catalog/cct-llm-catalog-spec-01.md": "decisions/slicing.md",
+    "code-copilot-team/llm-catalog/cct-llm-catalog-spec-02.md": "decisions/user-home.md",
+    "code-copilot-team/llm-catalog/cct-llm-catalog-spec-03.md": "decisions/three-files.md",
+    "code-copilot-team/llm-catalog/cct-llm-catalog-spec-04.md": "decisions/parser.md",
+    "code-copilot-team/llm-catalog/cct-llm-catalog-spec-05.md": "decisions/bindings.md",
+    "code-copilot-team/llm-catalog/cct-llm-catalog-spec-06.md": "decisions/probe-reuse.md",
+    "code-copilot-team/llm-catalog/cct-llm-catalog-spec-07.md": "decisions/unverified-launches.md",
+    "code-copilot-team/llm-catalog/cct-llm-catalog-spec-08.md": "decisions/endpoint-quirks.md",
+    "code-copilot-team/llm-catalog/cct-llm-catalog-spec-09.md": "decisions/session-keys.md",
+    "code-copilot-team/llm-catalog/cct-llm-catalog-spec-10.md": "decisions/codex-overlay-form.md",
+    "code-copilot-team/llm-catalog/cct-llm-catalog-spec-11.md": "decisions/pi-overlay-form.md",
+    "code-copilot-team/llm-catalog/cct-llm-catalog-spec-12.md": "decisions/kiro.md",
+    "code-copilot-team/llm-catalog/cct-llm-catalog-spec-13.md": "decisions/project-policy.md",
+    "code-copilot-team/llm-catalog/cct-llm-catalog-spec-14.md": "decisions/studio.md",
+    "code-copilot-team/llm-catalog/cct-llm-catalog-spec-15.md": "decisions/unified-entry.md",
+    "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-01.md": "decisions/single-on-demand-rule-replaces-per-agent-gcc-sections.md",
+    "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-02.md": "decisions/direct-python-hooks-with-two-layer-shell-guards.md",
+    "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-03.md": "decisions/per-project-mcp-server-registration.md",
+    "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-04.md": "decisions/pre-publication-via-pip-install-e.md",
+    "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-05.md": "decisions/gcc-cleanup-included.md",
+    "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-06.md": "decisions/sync-path-upgraded.md",
+    "code-copilot-team/memkernel-integration/cct-memkernel-integration-plan-07.md": "decisions/existing-project-migration.md",
+    "code-copilot-team/one-harness-home/cct-one-harness-home-spec-01.md": "decisions/direction.md",
+    "code-copilot-team/one-harness-home/cct-one-harness-home-spec-02.md": "decisions/one-override.md",
+    "code-copilot-team/one-harness-home/cct-one-harness-home-spec-03.md": "decisions/migration-mechanics.md",
+    "code-copilot-team/one-harness-home/cct-one-harness-home-spec-04.md": "decisions/delivery.md",
+    "code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md": "decisions/per-project-convention.md",
+    "code-copilot-team/one-harness-home/cct-one-harness-home-spec-06.md": "decisions/400-coupling.md",
+    "code-copilot-team/pi/cct-pi-harness-adoption-plan-01.md": "decisions/advisory-package-enforced-runtime-split.md",
+    "code-copilot-team/pi/cct-pi-harness-adoption-plan-02.md": "decisions/in-process-trust-gating-launcher-stays-trust-ignorant.md",
+    "code-copilot-team/pi/cct-pi-harness-adoption-plan-03.md": "decisions/dedicated-non-recursive-peer-reviewer-profile-adapter-script.md",
+    "code-copilot-team/pi/cct-pi-harness-adoption-plan-04.md": "decisions/launcher-symmetry-with-claude-code.md",
+    "code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md": "decisions/cct-owned-toml-config-pi-settings-minimal.md",
+    "code-copilot-team/pi/cct-pi-harness-adoption-plan-06.md": "decisions/behavioral-parity-via-neutral-schemas-contract-tests.md",
+    "code-copilot-team/pi/cct-pi-project-config-spec-01.md": "decisions/location.md",
+    "code-copilot-team/pi/cct-pi-project-config-spec-02.md": "decisions/gitignore.md",
+    "code-copilot-team/pi/cct-pi-project-config-spec-03.md": "decisions/migration.md",
+    "code-copilot-team/pi/cct-pi-project-config-spec-04.md": "decisions/fallback.md",
+    "code-copilot-team/pi/cct-pi-project-config-spec-05.md": "decisions/companion-files.md",
+    "code-copilot-team/pi/cct-pi-sandbox-hardening-plan-01.md": "decisions/default-on.md",
+    "code-copilot-team/pi/cct-pi-sandbox-hardening-plan-02.md": "decisions/keep-list-defaults.md",
+    "code-copilot-team/pi/cct-pi-sandbox-hardening-plan-03.md": "decisions/capability-status.md",
+    "code-copilot-team/pi/cct-pi-sandbox-hardening-plan-04.md": "decisions/handoff-mechanism.md",
+    "code-copilot-team/pi/cct-pi-sandbox-hardening-plan-05.md": "decisions/trust-asymmetry-for-scrub-config.md",
+    "code-copilot-team/pi/cct-pi-team-controller-plan-01.md": "decisions/scope.md",
+    "code-copilot-team/pi/cct-pi-team-controller-plan-02.md": "decisions/canonical-root.md",
+    "code-copilot-team/pi/cct-pi-team-controller-plan-03.md": "decisions/identity.md",
+    "code-copilot-team/pi/cct-pi-team-controller-plan-04.md": "decisions/authz.md",
+    "code-copilot-team/pi/cct-pi-team-controller-plan-05.md": "decisions/create-safety-bootstrap.md",
+    "code-copilot-team/pi/cct-pi-team-controller-plan-06.md": "decisions/lock.md",
+    "code-copilot-team/pi/cct-pi-team-controller-plan-07.md": "decisions/cli-gate.md",
+    "code-copilot-team/pi/cct-pi-team-controller-plan-08.md": "decisions/authenticated-identity.md",
+    "code-copilot-team/pi/cct-pi-worktree-lifecycle-plan-01.md": "decisions/lifecycle-model.md",
+    "code-copilot-team/pi/cct-pi-worktree-lifecycle-plan-02.md": "decisions/isolation-failure.md",
+    "code-copilot-team/pi/cct-pi-worktree-lifecycle-plan-03.md": "decisions/path.md",
+    "code-copilot-team/pi/cct-pi-worktree-lifecycle-plan-04.md": "decisions/reconcile.md",
+    "code-copilot-team/pi/cct-pi-worktree-lifecycle-plan-05.md": "decisions/concurrency.md",
+    "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-01.md": "decisions/decided-by-the-owner-2026-09-19.md",
+    "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-02.md": "decisions/the-six-always-on-skills.md",
+    "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-03.md": "decisions/duplicate-hooks-when-both-installs-exist.md",
+    "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-04.md": "decisions/commands-and-agents-that-need-templates-or-a-helper-script.md",
+    "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-05.md": "decisions/version-1-1-0.md",
+    "code-copilot-team/routing/cct-routing-calibration-plan-01.md": "decisions/placement-session-analytics-read-only-over-e1-sets-via-the-e2-loader-plus-two-labeled-e1-evidence-additions.md",
+    "code-copilot-team/routing/cct-routing-calibration-plan-02.md": "decisions/the-gate-contract-five-12-conditions-executable-versioned.md",
+    "code-copilot-team/routing/cct-routing-calibration-plan-03.md": "decisions/reports-bind-to-corpus-and-policy.md",
+    "code-copilot-team/routing/cct-routing-calibration-plan-04.md": "decisions/features-are-pre-routing-only-the-label-s-ingredients-never-enter-the-query-vector.md",
+    "code-copilot-team/routing/cct-routing-calibration-plan-05.md": "decisions/the-classifier-is-fully-specified-two-conforming-implementations-cannot-disagree.md",
+    "code-copilot-team/routing/cct-routing-calibration-plan-06.md": "decisions/held-out-evaluation-leave-one-task-out-leakage-free-durable.md",
+    "code-copilot-team/routing/cct-routing-calibration-plan-07.md": "decisions/false-downgrade-exactly-against-the-safety-baseline-tier.md",
+    "code-copilot-team/routing/cct-routing-calibration-plan-08.md": "decisions/configuration-not-constants-including-the-policy-source.md",
+    "code-copilot-team/routing/cct-routing-calibration-plan-09.md": "decisions/no-execution-authority-proven-not-asserted.md",
+    "code-copilot-team/routing/cct-routing-calibration-plan-10.md": "decisions/api-studio-surface.md",
+    "code-copilot-team/routing/cct-routing-calibration-plan-11.md": "decisions/the-two-labeled-e1-evidence-additions.md",
+    "code-copilot-team/routing/cct-routing-context-limit-plan-01.md": "decisions/the-executable-identity-tuple-is-a-key-not-a-carrier.md",
+    "code-copilot-team/routing/cct-routing-context-limit-plan-02.md": "decisions/an-observation-is-an-upper-bound-never-a-capacity-proof.md",
+    "code-copilot-team/routing/cct-routing-context-limit-plan-03.md": "decisions/fail-closed-only-where-a-requirement-exists.md",
+    "code-copilot-team/routing/cct-routing-context-limit-plan-04.md": "decisions/one-numeric-extraction-pattern-named-and-separate.md",
+    "code-copilot-team/routing/cct-routing-context-limit-plan-05.md": "decisions/observations-are-additive-state.md",
+    "code-copilot-team/routing/cct-routing-context-limit-plan-06.md": "decisions/the-requirement-is-read-from-routing-tasks-yaml-not-the-packet-envelope.md",
+    "code-copilot-team/routing/cct-routing-context-limit-plan-07.md": "decisions/the-filter-is-wired-to-both-the-delegate-and-reconcile-paths.md",
+    "code-copilot-team/routing/cct-routing-context-limit-plan-08.md": "decisions/that-evidence-was-invalid.md",
+    "code-copilot-team/routing/cct-routing-effective-endpoint-plan-01.md": "decisions/o4-o4-governs-o1-is-telemetry-completion.md",
+    "code-copilot-team/routing/cct-routing-effective-endpoint-plan-02.md": "decisions/is-rejected-as-architecturally-insufficient-not-merely-disproportionate.md",
+    "code-copilot-team/routing/cct-routing-effective-endpoint-plan-03.md": "decisions/stays-opportunistic.md",
+    "code-copilot-team/routing/cct-routing-effective-endpoint-plan-04.md": "decisions/is-not-configured-is-good-enough.md",
+    "code-copilot-team/routing/cct-routing-effective-endpoint-spec-01.md": "decisions/governs-o1-is-telemetry-completion-not-the-thing-that-makes-c30-effective.md",
+    "code-copilot-team/routing/cct-routing-effective-endpoint-spec-02.md": "decisions/is-rejected-as-architecturally-insufficient-not-merely-expensive.md",
+    "code-copilot-team/routing/cct-routing-effective-endpoint-spec-03.md": "decisions/stays-opportunistic-2.md",
+    "code-copilot-team/routing/cct-routing-eval-plan-01.md": "decisions/the-comparison-unit-is-a-routing-policy-and-it-is-a-new-preset-kind-not-a-new-candidate-shape.md",
+    "code-copilot-team/routing/cct-routing-eval-plan-02.md": "decisions/injection-drives-the-existing-test-only-seams-production-routing-code-is-untouched.md",
+    "code-copilot-team/routing/cct-routing-eval-plan-03.md": "decisions/the-matrix-is-task-profile-trial-and-its-reuse-is-fingerprint-gated.md",
+    "code-copilot-team/routing/cct-routing-eval-plan-04.md": "decisions/owns-its-telemetry-record-because-the-evidence-does-not-exist-upstream.md",
+    "code-copilot-team/routing/cct-routing-eval-plan-05.md": "decisions/quality-fn-v1-orders-arms-it-does-not-redefine-the-metrics.md",
+    "code-copilot-team/routing/cct-routing-eval-plan-06.md": "decisions/a-router-score-without-a-complete-control-set-is-a-hard-error.md",
+    "code-copilot-team/routing/cct-routing-eval-plan-07.md": "decisions/new-artifact-routing-run-schema-json-versioned-from-day-one.md",
+    "code-copilot-team/routing/cct-routing-eval-plan-08.md": "decisions/redaction-is-a-property-of-the-writer-not-the-reader.md",
+    "code-copilot-team/routing/cct-routing-eval-plan-09.md": "decisions/insufficiency-is-a-first-class-outcome.md",
+    "code-copilot-team/routing/cct-routing-eval-plan-10.md": "decisions/adds-no-runtime-authority.md",
+    "code-copilot-team/routing/cct-routing-profile-foundation-plan-01.md": "decisions/registry-location-and-format-a-constrained-toml-dialect.md",
+    "code-copilot-team/routing/cct-routing-profile-foundation-plan-02.md": "decisions/closed-profile-shape.md",
+    "code-copilot-team/routing/cct-routing-profile-foundation-plan-03.md": "decisions/credential-and-endpoint-hygiene-structural-first.md",
+    "code-copilot-team/routing/cct-routing-profile-foundation-plan-04.md": "decisions/trust-asymmetric-repo-block.md",
+    "code-copilot-team/routing/cct-routing-profile-foundation-plan-05.md": "decisions/normalized-backend-result-cause-oriented-action-free.md",
+    "code-copilot-team/routing/cct-routing-profile-foundation-plan-06.md": "decisions/cct-integration-three-narrowly-pinned-read-only-commands.md",
+    "code-copilot-team/routing/cct-routing-profile-foundation-plan-07.md": "decisions/inertness-proof.md",
+    "code-copilot-team/routing/cct-routing-recovery-plan-01.md": "decisions/state-store-extension-same-schema-closed-vocabulary.md",
+    "code-copilot-team/routing/cct-routing-recovery-plan-02.md": "decisions/the-probe-engine-is-a-lib-with-honest-per-backend-canaries.md",
+    "code-copilot-team/routing/cct-routing-recovery-plan-03.md": "decisions/timing-precedence-named-backoff-defaults.md",
+    "code-copilot-team/routing/cct-routing-recovery-plan-04.md": "decisions/cct-routing-tick-due-once-the-scheduled-impure-command.md",
+    "code-copilot-team/routing/cct-routing-recovery-plan-05.md": "decisions/failback-lives-in-the-supervisor-loop-boundary-only.md",
+    "code-copilot-team/routing/cct-routing-recovery-plan-06.md": "decisions/operator-re-enable.md",
+    "code-copilot-team/routing/cct-routing-recovery-plan-07.md": "decisions/reconcile-on-recovery.md",
+    "code-copilot-team/routing/cct-routing-recovery-plan-08.md": "decisions/promotions-both-config-layers-the-established-path.md",
+    "code-copilot-team/routing/cct-routing-recovery-plan-09.md": "decisions/scope-honesty.md",
+    "code-copilot-team/routing/cct-routing-shadow-plan-01.md": "decisions/placement-consumption-and-derivation-live-in-session-analytics.md",
+    "code-copilot-team/routing/cct-routing-shadow-plan-02.md": "decisions/gains-one-production-orchestration-entrypoint-that-publishes-the-complete-evidence-set-the-labeled-e1-change.md",
+    "code-copilot-team/routing/cct-routing-shadow-plan-03.md": "decisions/report-contract-v1-versioned-schema-d-task-resolved-source-bound.md",
+    "code-copilot-team/routing/cct-routing-shadow-plan-04.md": "decisions/evidence-set-identity-discovery-and-binding-validation.md",
+    "code-copilot-team/routing/cct-routing-shadow-plan-05.md": "decisions/recommendation-derivation-v1-positive-observed-evidence-dominance-per.md",
+    "code-copilot-team/routing/cct-routing-shadow-plan-06.md": "decisions/versioned-recommendation-record.md",
+    "code-copilot-team/routing/cct-routing-shadow-plan-07.md": "decisions/no-execution-authority-enforced-not-asserted.md",
+    "code-copilot-team/routing/cct-routing-shadow-plan-08.md": "decisions/redaction-consume-verbatim-prove-the-chain.md",
+    "code-copilot-team/routing/cct-routing-shadow-plan-09.md": "decisions/the-figure-provenance-gate.md",
+    "code-copilot-team/routing/cct-routing-shadow-plan-10.md": "decisions/studio-slice-follows-the-benchmark-ui-conventions-verified-in-a-browser-not-only-by-the-compiler.md",
+    "code-copilot-team/routing/cct-routing-shadow-plan-11.md": "decisions/adds-no-runtime-authority-2.md",
+    "code-copilot-team/routing/cct-routing-tier1-failover-plan-01.md": "decisions/the-seam-is-the-supervisor-opt-in-by-flag.md",
+    "code-copilot-team/routing/cct-routing-tier1-failover-plan-02.md": "decisions/b-s-bounded-unit-is-the-supervised-attempt.md",
+    "code-copilot-team/routing/cct-routing-tier1-failover-plan-03.md": "decisions/class-action-mapping-total-exactly-one-place.md",
+    "code-copilot-team/routing/cct-routing-tier1-failover-plan-04.md": "decisions/circuit-state-store.md",
+    "code-copilot-team/routing/cct-routing-tier1-failover-plan-05.md": "decisions/checkpoint-the-frozen-crash-ordering-contract.md",
+    "code-copilot-team/routing/cct-routing-tier1-failover-plan-06.md": "decisions/launch-wiring.md",
+    "code-copilot-team/routing/cct-routing-tier1-failover-plan-07.md": "decisions/codex-is-not-in-this-increment-b-makes-no-codex-support-claim.md",
+    "code-copilot-team/routing/cct-routing-tier1-failover-plan-08.md": "decisions/identity-independence.md",
+    "code-copilot-team/routing/cct-routing-tier1-failover-plan-09.md": "decisions/exhaustion-caps.md",
+    "code-copilot-team/routing/cct-routing-tier2-delegation-plan-01.md": "decisions/task-route-metadata-is-a-constrained-artifact-validated-like-everything-else.md",
+    "code-copilot-team/routing/cct-routing-tier2-delegation-plan-02.md": "decisions/the-safety-floor-is-structural-evaluated-twice-and-cannot-be-annotated-away.md",
+    "code-copilot-team/routing/cct-routing-tier2-delegation-plan-03.md": "decisions/packet-envelope-versioned-closed-driver-generated-provenance-bound-immutable.md",
+    "code-copilot-team/routing/cct-routing-tier2-delegation-plan-04.md": "decisions/packet-execution-rides-b-s-supervisor-machinery-one-new-bounded-mode-legacy-and-b-byte-identical-without-it.md",
+    "code-copilot-team/routing/cct-routing-tier2-delegation-plan-05.md": "decisions/scope-enforcement-is-driver-owned-post-hoc-cumulative-and-phase-universal.md",
+    "code-copilot-team/routing/cct-routing-tier2-delegation-plan-06.md": "decisions/verifier-decided-success-bounded-repair-thrash-detection.md",
+    "code-copilot-team/routing/cct-routing-tier2-delegation-plan-07.md": "decisions/verified-provisional-is-a-ledger-state-that-satisfies-nothing.md",
+    "code-copilot-team/routing/cct-routing-tier2-delegation-plan-08.md": "decisions/selection-legality-the-tier-requirement-is-never-weakened.md",
+    "code-copilot-team/routing/cct-routing-tier2-delegation-plan-09.md": "decisions/tier-1-reconciliation-is-a-fresh-gated-session-not-a-rubber-stamp-and-independence-must-be-positively-established.md",
+    "code-copilot-team/routing/cct-routing-tier2-delegation-plan-10.md": "decisions/task-addressed-explain-closes-a-s-recorded-deviation.md",
+    "code-copilot-team/routing/cct-routing-usage-evidence-plan-01.md": "decisions/one-price-table-read-not-copied.md",
+    "code-copilot-team/routing/cct-routing-usage-evidence-plan-02.md": "decisions/the-four-state-basis-is-the-whole-point.md",
+    "code-copilot-team/routing/cct-routing-usage-evidence-plan-03.md": "decisions/the-cost-cap-is-not-a-usage-source.md",
+    "code-copilot-team/routing/cct-routing-usage-evidence-plan-04.md": "decisions/aliases-are-fixed-by-observation.md",
+    "code-copilot-team/routing/cct-routing-usage-evidence-plan-05.md": "decisions/unavailable-means-nothing-was-reported-not-subscription.md",
+    "code-copilot-team/routing/cct-routing-usage-evidence-plan-06.md": "decisions/schema-compatibility-follows-increment-f.md",
+    "code-copilot-team/simplest-complete-change/cct-simplest-complete-change-plan-01.md": "decisions/native-cct-policy-without-a-ponytail-dependency.md",
+    "code-copilot-team/simplest-complete-change/cct-simplest-complete-change-plan-02.md": "decisions/single-home-for-the-reuse-ladder-copilot-conventions-vs-config-boundary.md",
+    "code-copilot-team/simplest-complete-change/cct-simplest-complete-change-plan-03.md": "decisions/selective-decision-memory-via-existing-memkernel-interfaces.md",
+    "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-01.md": "decisions/1-verb-not-a-flag.md",
+    "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-02.md": "decisions/2-prefix-based-pending-detection.md",
+    "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-03.md": "decisions/3-pathspec-commit-never-git-add-a.md",
+    "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-04.md": "decisions/4-no-op-is-success.md",
+    "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-05.md": "decisions/5-independent-of-promote-still-git-free-elsewhere.md",
+    "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-06.md": "decisions/6-detached-head-dirty-tree-tolerated.md",
+    "code-copilot-team/wiki-audit/cct-wiki-audit-flush-spec-07.md": "decisions/7-fail-closed-on-a-malformed-working-log.md",
+    "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-01.md": "decisions/1-audit-path-layout.md",
+    "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-02.md": "decisions/2-curator-edit-delta-capture.md",
+    "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md": "decisions/3-ingest-log-schema.md",
+    "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-04.md": "decisions/4-reject-vs-abandon.md",
+    "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-05.md": "decisions/5-atomicity-boundary.md",
+    "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-06.md": "decisions/6-pii-redaction.md",
+    "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-07.md": "decisions/7-backfill.md",
+    "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-08.md": "decisions/8-audit-append-happens-at-the-cli-layer-after-materialization.md",
+    "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-09.md": "decisions/9-patch-set-oriented-record.md",
+    "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-01.md": "decisions/pin-the-artifact-not-only-the-version.md",
+    "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-02.md": "decisions/share-the-venv-physically-separate-dependency-ownership-logically.md",
+    "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-03.md": "decisions/the-launcher-chooses-the-bytes.md",
+    "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-04.md": "decisions/installation-coverage-is-explicit-not-implied-by-adapter-support.md",
+    "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-05.md": "decisions/delete-both-duplicate-engines.md",
+    "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-06.md": "decisions/cct-proves-its-contract-not-upstream-internals.md",
+    "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-07.md": "decisions/reconcile-the-schema-by-category-then-pin-it.md",
+    "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-08.md": "decisions/the-package-swap-is-not-a-governance-migration.md",
+    "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-09.md": "decisions/preserve-the-assistant-workflows-semantics.md",
+    "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-10.md": "decisions/doctor-reports-the-actual-execution-boundary.md",
+    "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-11.md": "decisions/ci-installs-what-production-runs.md",
+    "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-12.md": "decisions/catalogue-and-docs-state-reach-not-aspiration.md",
+    "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-13.md": "decisions/a-pin-bump-is-a-reviewed-cct-feature-maintenance-change.md",
+    "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-14.md": "decisions/land-one-coherent-boundary-in-green-internal-stages.md",
+    "memkernel/memkernel/mk-copilot-memory-mvp-plan-01.md": "decisions/mcp-first-fastapi-secondary.md",
+    "memkernel/memkernel/mk-copilot-memory-mvp-plan-02.md": "decisions/chromadb-for-mvp-with-application-level-bm25.md",
+    "memkernel/memkernel/mk-copilot-memory-mvp-plan-03.md": "decisions/embedding-model-selection.md",
+    "memkernel/memkernel/mk-copilot-memory-mvp-plan-04.md": "decisions/reference-based-returns.md",
+    "memkernel/memkernel/mk-copilot-memory-mvp-plan-05.md": "decisions/deduplication-semantics-content-hash-vs-ref-id-identity.md",
+    "memkernel/memkernel/mk-copilot-memory-mvp-plan-06.md": "decisions/session-scoping-in-tool-contract.md",
+    "memkernel/memkernel/mk-memkernel-0-10-recall-log-spec-01.md": "decisions/on-post-compact-session-id-claude-code-s-hooks-do-not-call-it-a-harness-that-does-can-pass-a-session-id-and-only-then-is-its-block-logged.md",
+    "memkernel/memkernel/mk-memkernel-0-10-recall-log-spec-02.md": "decisions/where-to-log.md",
+    "memkernel/memkernel/mk-memkernel-0-10-recall-log-spec-03.md": "decisions/a-normal-session-start-shows-memories-without-recall-so-logging-only-recall-calls-would-report-them-as-missed.md",
+    "memkernel/memkernel/mk-memkernel-0-10-recall-log-spec-04.md": "decisions/which-session-a-recall-belongs-to.md",
+    "memkernel/memkernel/mk-memkernel-0-10-recall-log-spec-05.md": "decisions/size-limit.md",
+    "memkernel/memkernel/mk-memkernel-0-10-recall-log-spec-06.md": "decisions/query-text.md",
+    "memkernel/memkernel/mk-memkernel-0-10-recall-log-spec-07.md": "decisions/what-counts-as-a-stored-error-and-as-a-repeat.md",
+    "memkernel/memkernel/mk-memkernel-0-10-recall-log-spec-08.md": "decisions/what-the-report-says-about-each-repeat.md",
+    "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-01.md": "decisions/key.md",
+    "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-02.md": "decisions/default.md",
+    "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-03.md": "decisions/where-it-runs.md",
+    "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-04.md": "decisions/redaction.md",
+    "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-05.md": "decisions/promotion-candidates.md",
+    "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-06.md": "decisions/values.md",
+    "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-07.md": "decisions/rerun-and-pass.md",
+    "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-08.md": "decisions/yield.md",
+    "memkernel/memkernel/mk-memkernel-0-13-one-store-across-tools-spec-01.md": "decisions/several-stdio-servers-support-them.md",
+    "memkernel/memkernel/mk-memkernel-0-13-one-store-across-tools-spec-02.md": "decisions/a-session-start-subcommand-on-memkernel.md",
+    "memkernel/memkernel/mk-memkernel-0-13-one-store-across-tools-spec-03.md": "decisions/where-a-hook-replaces-the-instruction.md",
+    "memkernel/memkernel/mk-memkernel-0-13-one-store-across-tools-spec-04.md": "decisions/the-tools.md",
+    "memkernel/memkernel/mk-memkernel-0-13-one-store-across-tools-spec-05.md": "decisions/codex-s-cap-max-chars-6000.md",
+    "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-01.md": "decisions/first-s3-extractors-owner-answers-and-session-outcomes.md",
+    "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-02.md": "decisions/the-owner-s-own-text-in-an-answer.md",
+    "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-03.md": "decisions/record-type-for-an-owner-answer-episode.md",
+    "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-04.md": "decisions/session-outcome-contents.md",
+    "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-05.md": "decisions/caps.md",
+    "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-06.md": "decisions/promotion-at-most-2-owner-answers-among-the-promotion-candidates.md",
+    "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-07.md": "decisions/a-recall-limit-per-origin-session.md",
+    "memkernel/memkernel/mk-memkernel-0-15-harness-foundations-spec-01.md": "decisions/scope-as-a-metadata-field.md",
+    "memkernel/memkernel/mk-memkernel-0-15-harness-foundations-spec-02.md": "decisions/correlation-per-call-and-per-process.md",
+    "memkernel/memkernel/mk-memkernel-0-15-harness-foundations-spec-03.md": "decisions/receipts-in-the-recall-log.md",
+    "memkernel/memkernel/mk-memkernel-0-15-harness-foundations-spec-04.md": "decisions/no-opentelemetry-now.md",
+    "memkernel/memkernel/mk-memkernel-0-15-harness-foundations-spec-05.md": "decisions/three-slices.md",
+    "memkernel/memkernel/mk-memkernel-0-15-harness-foundations-spec-06.md": "decisions/who-decides-an-agent-or-task-id.md",
+    "memkernel/memkernel/mk-memkernel-0-16-lifecycle-corrections-spec-01.md": "decisions/adopt-90-s-requirements-and-its-eight-chains.md",
+    "memkernel/memkernel/mk-memkernel-0-16-lifecycle-corrections-spec-02.md": "decisions/arms-for-this-comparison.md",
+    "memkernel/memkernel/mk-memkernel-0-16-lifecycle-corrections-spec-03.md": "decisions/the-scripted-curator.md",
+    "memkernel/memkernel/mk-memkernel-0-16-lifecycle-corrections-spec-04.md": "decisions/both-correction-kinds.md",
+    "memkernel/memkernel/mk-memkernel-0-16-lifecycle-corrections-spec-05.md": "decisions/two-steps.md",
+    "memkernel/memkernel/mk-memkernel-0-16-lifecycle-corrections-spec-07.md": "decisions/the-chain-count-plan-on-12-chains.md",
+    "memkernel/memkernel/mk-memkernel-0-3-plan-01.md": "decisions/two-ports-both-with-llm-free-defaults.md",
+    "memkernel/memkernel/mk-memkernel-0-3-plan-02.md": "decisions/documents-reuse-the-canonical-plus-chunks-pattern.md",
+    "memkernel/memkernel/mk-memkernel-0-3-plan-03.md": "decisions/forget-expired-leaves-the-mcp-surface.md",
+    "memkernel/memkernel/mk-memkernel-0-3-plan-04.md": "decisions/memorylifecycle-returns-text-performs-no-i-o-beyond-the-service.md",
+    "memkernel/memkernel/mk-memkernel-0-4-plan-01.md": "decisions/revalidate-by-content-hash-not-by-git.md",
+    "memkernel/memkernel/mk-memkernel-0-4-plan-02.md": "decisions/needs-review-is-a-flag-not-a-tier.md",
+    "memkernel/memkernel/mk-memkernel-0-4-plan-03.md": "decisions/sourced-code-identity-is-source-hash-chunk-records-are-owner-specific-supersession-is-durable.md",
+    "memkernel/memkernel/mk-memkernel-0-4-plan-04.md": "decisions/health-is-read-only-and-split-into-quick-and-full.md",
+    "memkernel/memkernel/mk-memkernel-0-7-governed-spec-01.md": "decisions/one-setting-picks-the-wiki-mode-memkernel-wiki-mode-auto-default-governed-ungated.md",
+    "memkernel/memkernel/mk-memkernel-0-7-governed-spec-02.md": "decisions/curation-debt-at-session-start.md",
+    "memkernel/memkernel/mk-memkernel-0-7-governed-spec-03.md": "decisions/bounded-export-batches.md",
+    "memkernel/memkernel/mk-memkernel-0-7-governed-spec-04.md": "decisions/source-revision-and-content-hash-on-exported-pages.md",
+    "memkernel/memkernel/mk-memkernel-0-7-governed-spec-05.md": "decisions/page-id-on-created-pages.md",
+    "memkernel/memkernel/mk-memkernel-0-7-governed-spec-06.md": "decisions/the-gate-checklist-items-only-the-bridge-can-tick.md",
+    "memkernel/memkernel/mk-memkernel-0-7-hooks-spec-01.md": "decisions/what-context-to-inject.md",
+    "memkernel/memkernel/mk-memkernel-0-7-hooks-spec-02.md": "decisions/the-latest-checkpoint-for-agents.md",
+    "memkernel/memkernel/mk-memkernel-0-7-hooks-spec-03.md": "decisions/the-pinned-minimal-setup-block.md",
+    "memkernel/memkernel/mk-memkernel-0-7-hooks-spec-04.md": "decisions/sessionend.md",
+    "memkernel/memkernel/mk-memkernel-0-7-release-b-exit-plan-01.md": "decisions/order.md",
+    "memkernel/memkernel/mk-memkernel-0-7-release-b-exit-plan-02.md": "decisions/where-it-lives.md",
+    "memkernel/memkernel/mk-memkernel-0-7-release-b-exit-plan-03.md": "decisions/scope-2.md",
+    "memkernel/memkernel/mk-memkernel-0-7-release-b-exit-plan-04.md": "decisions/retries-r1-r4.md",
+    "memkernel/memkernel/mk-memkernel-0-7-release-b-exit-plan-05.md": "decisions/ci.md",
+    "memkernel/memkernel/mk-memkernel-0-7-release-b-exit-plan-06.md": "decisions/closing.md",
+    "memkernel/memkernel/mk-memkernel-0-7-release-b-exit-plan-07.md": "decisions/the-upgrade-run.md",
+    "memkernel/memkernel/mk-memkernel-0-7-spec-01.md": "decisions/how-a-memory-is-withdrawn.md",
+    "memkernel/memkernel/mk-memkernel-0-7-spec-02.md": "decisions/where-the-sync-state-lives.md",
+    "memkernel/memkernel/mk-memkernel-0-7-spec-03.md": "decisions/how-deletion-is-detected.md",
+    "memkernel/memkernel/mk-memkernel-0-7-spec-04.md": "decisions/supersession.md",
+    "memkernel/memkernel/mk-memkernel-0-7-spec-05.md": "decisions/deprecation.md",
+    "memkernel/memkernel/mk-memkernel-0-7-store-locks-spec-01.md": "decisions/lock-identity-is-the-store-s-own-never-a-setting.md",
+    "memkernel/memkernel/mk-memkernel-0-7-store-locks-spec-02.md": "decisions/a-named-exclusive-lock-on-the-store.md",
+    "memkernel/memkernel/mk-memkernel-0-7-store-locks-spec-03.md": "decisions/tags-have-one-writer.md",
+    "memkernel/memkernel/mk-memkernel-0-7-store-locks-spec-04.md": "decisions/platforms.md",
+    "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-01.md": "decisions/terms.md",
+    "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-02.md": "decisions/a-wiki-s-identity-two-tags.md",
+    "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-03.md": "decisions/dedup-uses-membership.md",
+    "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-04.md": "decisions/a-page-s-previous-memory-its-corrections-its-deprecation-and-supersession-are-this-wiki-s-only.md",
+    "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-05.md": "decisions/legacy-memories-are-adopted-only-on-the-owner-s-word.md",
+    "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-06.md": "decisions/memoryservice-set-wiki-identity-not-a-general-retag.md",
+    "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-07.md": "decisions/when-a-wiki-s-identity-changes.md",
+    "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-08.md": "decisions/the-ledger-s-rebuild-follows-the-scope.md",
+    "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-09.md": "decisions/concurrency-for-wiki-identity.md",
+    "memkernel/memkernel/mk-memkernel-0-7-wiring-spool-spec-01.md": "decisions/the-wiring-check-runs-both-paths.md",
+    "memkernel/memkernel/mk-memkernel-0-7-wiring-spool-spec-02.md": "decisions/spool-pruning.md",
+    "memkernel/memkernel/mk-memkernel-0-8-untrusted-memory-spec-01.md": "decisions/what-is-data.md",
+    "memkernel/memkernel/mk-memkernel-0-8-untrusted-memory-spec-02.md": "decisions/the-delimiter-named-tags.md",
+    "memkernel/memkernel/mk-memkernel-0-8-untrusted-memory-spec-03.md": "decisions/one-notice-line-once-per-block.md",
+    "memkernel/memkernel/mk-memkernel-0-8-untrusted-memory-spec-04.md": "decisions/budget-and-truncation.md",
+    "memkernel/memkernel/mk-memkernel-0-8-untrusted-memory-spec-05.md": "decisions/where-it-applies.md",
+    "memkernel/memkernel/mk-memkernel-0-8-untrusted-memory-spec-06.md": "decisions/the-permissions-example.md",
+    "memkernel/memkernel/mk-memkernel-0-8-untrusted-memory-spec-07.md": "decisions/not-in-this-spec.md",
+    "memkernel/memkernel/mk-memkernel-0-9-mcp2-spec-01.md": "decisions/range.md",
+    "memkernel/memkernel/mk-memkernel-0-9-mcp2-spec-02.md": "decisions/transport-tests-both.md",
+    "memkernel/memkernel/mk-memkernel-0-9-mcp2-spec-03.md": "decisions/release.md"
+  },
+  "ranker": {
+    "min_match_tokens": 1,
+    "ranker_config_hash": "c4b6576a6bc57e3c1b8c7f70ef6bb19b5dcf44d0ea0c30ab7dc0192965a43521",
+    "tokenizer": "porter unicode61",
+    "weights": [
+      4.0,
+      4.0,
+      2.0,
+      1.0
+    ]
+  },
+  "readings": {
+    "body_only": {
+      "binding": false,
+      "summary": {
+        "found": 8,
+        "pairs": 8,
+        "pairs_with_a_found_try": 5,
+        "supersedes_found": 1,
+        "supersedes_tries": 3,
+        "tries": 13
+      },
+      "tries": [
+        {
+          "disposition": "redundant",
+          "found": false,
+          "list": [
+            "code-copilot-team/pi/cct-pi-team-controller-plan-06.md",
+            "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-02.md",
+            "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-05.md",
+            "code-copilot-team/simplest-complete-change/cct-simplest-complete-change-plan-03.md",
+            "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-05.md"
+          ],
+          "partner": "code-copilot-team/routing/cct-routing-effective-endpoint-spec-01.md",
+          "partner_rank": 32,
+          "query": "code-copilot-team/routing/cct-routing-effective-endpoint-plan-01.md"
+        },
+        {
+          "disposition": "redundant",
+          "found": false,
+          "list": [
+            "code-copilot-team/pi/cct-pi-team-controller-plan-06.md",
+            "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-02.md",
+            "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-05.md",
+            "code-copilot-team/simplest-complete-change/cct-simplest-complete-change-plan-03.md",
+            "code-copilot-team/plugin-generate-from-sources/cct-plugin-generate-from-sources-plan-05.md"
+          ],
+          "partner": "code-copilot-team/routing/cct-routing-effective-endpoint-plan-01.md",
+          "partner_rank": 6,
+          "query": "code-copilot-team/routing/cct-routing-effective-endpoint-spec-01.md"
+        },
+        {
+          "disposition": "redundant",
+          "found": true,
+          "list": [
+            "code-copilot-team/routing/cct-routing-effective-endpoint-spec-02.md",
+            "code-copilot-team/routing/cct-routing-eval-plan-04.md",
+            "memkernel/memkernel/mk-copilot-memory-mvp-plan-03.md",
+            "code-copilot-team/routing/cct-routing-tier1-failover-plan-07.md",
+            "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-05.md"
+          ],
+          "partner": "code-copilot-team/routing/cct-routing-effective-endpoint-spec-02.md",
+          "partner_rank": 1,
+          "query": "code-copilot-team/routing/cct-routing-effective-endpoint-plan-02.md"
+        },
+        {
+          "disposition": "redundant",
+          "found": true,
+          "list": [
+            "code-copilot-team/routing/cct-routing-effective-endpoint-plan-02.md",
+            "code-copilot-team/routing/cct-routing-tier1-failover-plan-07.md",
+            "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-02.md",
+            "memkernel/memkernel/mk-copilot-memory-mvp-plan-03.md",
+            "code-copilot-team/pi/cct-pi-sandbox-hardening-plan-02.md"
+          ],
+          "partner": "code-copilot-team/routing/cct-routing-effective-endpoint-plan-02.md",
+          "partner_rank": 1,
+          "query": "code-copilot-team/routing/cct-routing-effective-endpoint-spec-02.md"
+        },
+        {
+          "disposition": "redundant",
+          "found": true,
+          "list": [
+            "code-copilot-team/routing/cct-routing-effective-endpoint-spec-03.md",
+            "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-06.md",
+            "code-copilot-team/routing/cct-routing-eval-plan-04.md",
+            "code-copilot-team/simplest-complete-change/cct-simplest-complete-change-plan-01.md",
+            "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-02.md"
+          ],
+          "partner": "code-copilot-team/routing/cct-routing-effective-endpoint-spec-03.md",
+          "partner_rank": 1,
+          "query": "code-copilot-team/routing/cct-routing-effective-endpoint-plan-03.md"
+        },
+        {
+          "disposition": "redundant",
+          "found": true,
+          "list": [
+            "code-copilot-team/routing/cct-routing-effective-endpoint-plan-03.md",
+            "code-copilot-team/simplest-complete-change/cct-simplest-complete-change-plan-01.md",
+            "code-copilot-team/api/cct-api-probe-error-hardening-plan-02.md",
+            "memkernel/memkernel/mk-memkernel-0-7-spec-03.md",
+            "code-copilot-team/routing/cct-routing-shadow-plan-03.md"
+          ],
+          "partner": "code-copilot-team/routing/cct-routing-effective-endpoint-plan-03.md",
+          "partner_rank": 1,
+          "query": "code-copilot-team/routing/cct-routing-effective-endpoint-spec-03.md"
+        },
+        {
+          "disposition": "redundant",
+          "found": true,
+          "list": [
+            "code-copilot-team/routing/cct-routing-context-limit-plan-08.md",
+            "code-copilot-team/pi/cct-pi-harness-adoption-plan-03.md",
+            "code-copilot-team/routing/cct-routing-shadow-plan-02.md",
+            "code-copilot-team/routing/cct-routing-tier2-delegation-plan-05.md",
+            "code-copilot-team/routing/cct-routing-shadow-plan-03.md"
+          ],
+          "partner": "code-copilot-team/routing/cct-routing-context-limit-plan-08.md",
+          "partner_rank": 1,
+          "query": "code-copilot-team/routing/cct-routing-context-limit-plan-07.md"
+        },
+        {
+          "disposition": "redundant",
+          "found": true,
+          "list": [
+            "code-copilot-team/routing/cct-routing-context-limit-plan-07.md",
+            "code-copilot-team/routing/cct-routing-shadow-plan-02.md",
+            "code-copilot-team/routing/cct-routing-shadow-plan-03.md",
+            "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-07.md",
+            "code-copilot-team/routing/cct-routing-tier2-delegation-plan-09.md"
+          ],
+          "partner": "code-copilot-team/routing/cct-routing-context-limit-plan-07.md",
+          "partner_rank": 1,
+          "query": "code-copilot-team/routing/cct-routing-context-limit-plan-08.md"
+        },
+        {
+          "disposition": "redundant",
+          "found": false,
+          "list": [
+            "code-copilot-team/routing/cct-routing-calibration-plan-09.md",
+            "code-copilot-team/routing/cct-routing-shadow-plan-01.md",
+            "code-copilot-team/routing/cct-routing-calibration-plan-01.md",
+            "code-copilot-team/routing/cct-routing-eval-plan-02.md",
+            "code-copilot-team/routing/cct-routing-tier1-failover-plan-04.md"
+          ],
+          "partner": "code-copilot-team/routing/cct-routing-shadow-plan-11.md",
+          "partner_rank": 9,
+          "query": "code-copilot-team/routing/cct-routing-shadow-plan-07.md"
+        },
+        {
+          "disposition": "redundant",
+          "found": true,
+          "list": [
+            "code-copilot-team/routing/cct-routing-eval-plan-10.md",
+            "code-copilot-team/routing/cct-routing-calibration-plan-09.md",
+            "code-copilot-team/routing/cct-routing-calibration-plan-10.md",
+            "code-copilot-team/routing/cct-routing-calibration-plan-01.md",
+            "code-copilot-team/routing/cct-routing-shadow-plan-07.md"
+          ],
+          "partner": "code-copilot-team/routing/cct-routing-shadow-plan-07.md",
+          "partner_rank": 5,
+          "query": "code-copilot-team/routing/cct-routing-shadow-plan-11.md"
+        },
+        {
+          "disposition": "supersedes",
+          "found": true,
+          "list": [
+            "code-copilot-team/pi/cct-pi-project-config-spec-02.md",
+            "code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md",
+            "code-copilot-team/pi/cct-pi-project-config-spec-05.md",
+            "code-copilot-team/pi/cct-pi-sandbox-hardening-plan-05.md",
+            "code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md"
+          ],
+          "partner": "code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md",
+          "partner_rank": 5,
+          "query": "code-copilot-team/pi/cct-pi-project-config-spec-01.md"
+        },
+        {
+          "disposition": "supersedes",
+          "found": false,
+          "list": [
+            "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-03.md",
+            "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-05.md",
+            "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-12.md",
+            "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-04.md",
+            "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-08.md"
+          ],
+          "partner": "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-05.md",
+          "partner_rank": 7,
+          "query": "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-06.md"
+        },
+        {
+          "disposition": "supersedes",
+          "found": false,
+          "list": [
+            "code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md",
+            "code-copilot-team/one-harness-home/cct-one-harness-home-spec-04.md",
+            "code-copilot-team/llm-catalog/cct-llm-catalog-spec-02.md",
+            "code-copilot-team/one-harness-home/cct-one-harness-home-spec-03.md",
+            "code-copilot-team/one-harness-home/cct-one-harness-home-spec-02.md"
+          ],
+          "partner": "code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md",
+          "partner_rank": 33,
+          "query": "code-copilot-team/one-harness-home/cct-one-harness-home-spec-01.md"
+        }
+      ]
+    },
+    "whole_page": {
+      "binding": false,
+      "summary": {
+        "found": 10,
+        "pairs": 8,
+        "pairs_with_a_found_try": 5,
+        "supersedes_found": 0,
+        "supersedes_tries": 3,
+        "tries": 13
+      },
+      "tries": [
+        {
+          "disposition": "redundant",
+          "found": true,
+          "list": [
+            "code-copilot-team/routing/cct-routing-effective-endpoint-spec-01.md",
+            "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-09.md",
+            "memkernel/memkernel/mk-memkernel-0-7-wiring-spool-spec-01.md",
+            "memkernel/memkernel/mk-memkernel-0-7-governed-spec-04.md",
+            "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-01.md"
+          ],
+          "partner": "code-copilot-team/routing/cct-routing-effective-endpoint-spec-01.md",
+          "partner_rank": 1,
+          "query": "code-copilot-team/routing/cct-routing-effective-endpoint-plan-01.md"
+        },
+        {
+          "disposition": "redundant",
+          "found": true,
+          "list": [
+            "code-copilot-team/routing/cct-routing-effective-endpoint-plan-01.md",
+            "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-09.md",
+            "memkernel/memkernel/mk-memkernel-0-7-wiring-spool-spec-01.md",
+            "memkernel/memkernel/mk-memkernel-0-7-governed-spec-04.md",
+            "memkernel/memkernel/mk-memkernel-0-7-spec-05.md"
+          ],
+          "partner": "code-copilot-team/routing/cct-routing-effective-endpoint-plan-01.md",
+          "partner_rank": 1,
+          "query": "code-copilot-team/routing/cct-routing-effective-endpoint-spec-01.md"
+        },
+        {
+          "disposition": "redundant",
+          "found": true,
+          "list": [
+            "code-copilot-team/routing/cct-routing-effective-endpoint-spec-02.md",
+            "code-copilot-team/routing/cct-routing-eval-plan-04.md",
+            "code-copilot-team/routing/cct-routing-tier1-failover-plan-07.md",
+            "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-09.md",
+            "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-05.md"
+          ],
+          "partner": "code-copilot-team/routing/cct-routing-effective-endpoint-spec-02.md",
+          "partner_rank": 1,
+          "query": "code-copilot-team/routing/cct-routing-effective-endpoint-plan-02.md"
+        },
+        {
+          "disposition": "redundant",
+          "found": true,
+          "list": [
+            "code-copilot-team/routing/cct-routing-effective-endpoint-plan-02.md",
+            "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-09.md",
+            "code-copilot-team/routing/cct-routing-tier1-failover-plan-07.md",
+            "memkernel/memkernel/mk-memkernel-0-7-governed-spec-04.md",
+            "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-09.md"
+          ],
+          "partner": "code-copilot-team/routing/cct-routing-effective-endpoint-plan-02.md",
+          "partner_rank": 1,
+          "query": "code-copilot-team/routing/cct-routing-effective-endpoint-spec-02.md"
+        },
+        {
+          "disposition": "redundant",
+          "found": true,
+          "list": [
+            "code-copilot-team/routing/cct-routing-effective-endpoint-spec-03.md",
+            "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-09.md",
+            "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-01.md",
+            "memkernel/memkernel/mk-memkernel-0-7-governed-spec-04.md",
+            "code-copilot-team/routing/cct-routing-eval-plan-04.md"
+          ],
+          "partner": "code-copilot-team/routing/cct-routing-effective-endpoint-spec-03.md",
+          "partner_rank": 1,
+          "query": "code-copilot-team/routing/cct-routing-effective-endpoint-plan-03.md"
+        },
+        {
+          "disposition": "redundant",
+          "found": true,
+          "list": [
+            "code-copilot-team/routing/cct-routing-effective-endpoint-plan-03.md",
+            "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-09.md",
+            "memkernel/memkernel/mk-memkernel-0-7-governed-spec-04.md",
+            "memkernel/memkernel/mk-memkernel-0-7-spec-05.md",
+            "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-01.md"
+          ],
+          "partner": "code-copilot-team/routing/cct-routing-effective-endpoint-plan-03.md",
+          "partner_rank": 1,
+          "query": "code-copilot-team/routing/cct-routing-effective-endpoint-spec-03.md"
+        },
+        {
+          "disposition": "redundant",
+          "found": true,
+          "list": [
+            "code-copilot-team/routing/cct-routing-context-limit-plan-08.md",
+            "code-copilot-team/pi/cct-pi-harness-adoption-plan-03.md",
+            "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md",
+            "memkernel/memkernel/mk-memkernel-0-7-wiring-spool-spec-01.md",
+            "code-copilot-team/routing/cct-routing-shadow-plan-03.md"
+          ],
+          "partner": "code-copilot-team/routing/cct-routing-context-limit-plan-08.md",
+          "partner_rank": 1,
+          "query": "code-copilot-team/routing/cct-routing-context-limit-plan-07.md"
+        },
+        {
+          "disposition": "redundant",
+          "found": true,
+          "list": [
+            "code-copilot-team/routing/cct-routing-context-limit-plan-07.md",
+            "code-copilot-team/routing/cct-routing-shadow-plan-02.md",
+            "code-copilot-team/routing/cct-routing-shadow-plan-03.md",
+            "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-07.md",
+            "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-09.md"
+          ],
+          "partner": "code-copilot-team/routing/cct-routing-context-limit-plan-07.md",
+          "partner_rank": 1,
+          "query": "code-copilot-team/routing/cct-routing-context-limit-plan-08.md"
+        },
+        {
+          "disposition": "redundant",
+          "found": true,
+          "list": [
+            "code-copilot-team/routing/cct-routing-calibration-plan-09.md",
+            "code-copilot-team/routing/cct-routing-shadow-plan-01.md",
+            "code-copilot-team/routing/cct-routing-calibration-plan-01.md",
+            "code-copilot-team/routing/cct-routing-shadow-plan-11.md",
+            "code-copilot-team/routing/cct-routing-shadow-plan-02.md"
+          ],
+          "partner": "code-copilot-team/routing/cct-routing-shadow-plan-11.md",
+          "partner_rank": 4,
+          "query": "code-copilot-team/routing/cct-routing-shadow-plan-07.md"
+        },
+        {
+          "disposition": "redundant",
+          "found": true,
+          "list": [
+            "code-copilot-team/routing/cct-routing-eval-plan-10.md",
+            "code-copilot-team/routing/cct-routing-calibration-plan-09.md",
+            "code-copilot-team/routing/cct-routing-shadow-plan-07.md",
+            "code-copilot-team/routing/cct-routing-calibration-plan-10.md",
+            "code-copilot-team/routing/cct-routing-calibration-plan-01.md"
+          ],
+          "partner": "code-copilot-team/routing/cct-routing-shadow-plan-07.md",
+          "partner_rank": 3,
+          "query": "code-copilot-team/routing/cct-routing-shadow-plan-11.md"
+        },
+        {
+          "disposition": "supersedes",
+          "found": false,
+          "list": [
+            "code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md",
+            "code-copilot-team/pi/cct-pi-project-config-spec-02.md",
+            "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-09.md",
+            "memkernel/memkernel/mk-memkernel-0-7-governed-spec-04.md",
+            "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-03.md"
+          ],
+          "partner": "code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md",
+          "partner_rank": 20,
+          "query": "code-copilot-team/pi/cct-pi-project-config-spec-01.md"
+        },
+        {
+          "disposition": "supersedes",
+          "found": false,
+          "list": [
+            "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-03.md",
+            "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-05.md",
+            "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-09.md",
+            "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-09.md",
+            "memkernel/memkernel/mk-memkernel-0-7-governed-spec-05.md"
+          ],
+          "partner": "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-05.md",
+          "partner_rank": 11,
+          "query": "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-06.md"
+        },
+        {
+          "disposition": "supersedes",
+          "found": false,
+          "list": [
+            "code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md",
+            "code-copilot-team/one-harness-home/cct-one-harness-home-spec-04.md",
+            "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-09.md",
+            "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-09.md",
+            "memkernel/memkernel/mk-memkernel-0-7-wiring-spool-spec-01.md"
+          ],
+          "partner": "code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md",
+          "partner_rank": 85,
+          "query": "code-copilot-team/one-harness-home/cct-one-harness-home-spec-01.md"
+        }
+      ]
+    }
+  },
+  "study": "issue 121 similar-pages study: every try ranked",
+  "summary": {
+    "found": 11,
+    "pairs": 8,
+    "pairs_with_a_found_try": 6,
+    "supersedes_found": 1,
+    "supersedes_tries": 3,
+    "tries": 13,
+    "verdict": "pass"
+  },
+  "tries": [
+    {
+      "disposition": "redundant",
+      "found": true,
+      "list": [
+        "code-copilot-team/routing/cct-routing-effective-endpoint-spec-01.md",
+        "code-copilot-team/routing/cct-routing-eval-plan-04.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-08.md",
+        "code-copilot-team/routing/cct-routing-eval-plan-06.md",
+        "memkernel/memkernel/mk-memkernel-0-7-governed-spec-01.md"
+      ],
+      "others": [
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/routing/cct-routing-eval-plan-04.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-08.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/routing/cct-routing-eval-plan-06.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "memkernel/memkernel/mk-memkernel-0-7-governed-spec-01.md"
+        }
+      ],
+      "partner": "code-copilot-team/routing/cct-routing-effective-endpoint-spec-01.md",
+      "partner_rank": 1,
+      "query": "code-copilot-team/routing/cct-routing-effective-endpoint-plan-01.md"
+    },
+    {
+      "disposition": "redundant",
+      "found": true,
+      "list": [
+        "code-copilot-team/routing/cct-routing-effective-endpoint-plan-01.md",
+        "code-copilot-team/routing/cct-routing-eval-plan-04.md",
+        "code-copilot-team/routing/cct-routing-context-limit-plan-01.md",
+        "code-copilot-team/routing/cct-routing-usage-evidence-plan-02.md",
+        "code-copilot-team/routing/cct-routing-calibration-plan-02.md"
+      ],
+      "others": [
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/routing/cct-routing-eval-plan-04.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/routing/cct-routing-context-limit-plan-01.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/routing/cct-routing-usage-evidence-plan-02.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/routing/cct-routing-calibration-plan-02.md"
+        }
+      ],
+      "partner": "code-copilot-team/routing/cct-routing-effective-endpoint-plan-01.md",
+      "partner_rank": 1,
+      "query": "code-copilot-team/routing/cct-routing-effective-endpoint-spec-01.md"
+    },
+    {
+      "disposition": "redundant",
+      "found": true,
+      "list": [
+        "code-copilot-team/routing/cct-routing-effective-endpoint-spec-02.md",
+        "code-copilot-team/routing/cct-routing-tier1-failover-plan-07.md",
+        "code-copilot-team/routing/cct-routing-eval-plan-04.md",
+        "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-05.md",
+        "memkernel/memkernel/mk-copilot-memory-mvp-plan-03.md"
+      ],
+      "others": [
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/routing/cct-routing-tier1-failover-plan-07.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/routing/cct-routing-eval-plan-04.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/wiki-audit/cct-wiki-audit-trail-spec-05.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "memkernel/memkernel/mk-copilot-memory-mvp-plan-03.md"
+        }
+      ],
+      "partner": "code-copilot-team/routing/cct-routing-effective-endpoint-spec-02.md",
+      "partner_rank": 1,
+      "query": "code-copilot-team/routing/cct-routing-effective-endpoint-plan-02.md"
+    },
+    {
+      "disposition": "redundant",
+      "found": true,
+      "list": [
+        "code-copilot-team/routing/cct-routing-effective-endpoint-plan-02.md",
+        "code-copilot-team/routing/cct-routing-tier1-failover-plan-07.md",
+        "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-02.md",
+        "memkernel/memkernel/mk-copilot-memory-mvp-plan-03.md",
+        "code-copilot-team/pi/cct-pi-sandbox-hardening-plan-02.md"
+      ],
+      "others": [
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/routing/cct-routing-tier1-failover-plan-07.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/api/cct-api-probe-dsn-constraints-plan-02.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "memkernel/memkernel/mk-copilot-memory-mvp-plan-03.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/pi/cct-pi-sandbox-hardening-plan-02.md"
+        }
+      ],
+      "partner": "code-copilot-team/routing/cct-routing-effective-endpoint-plan-02.md",
+      "partner_rank": 1,
+      "query": "code-copilot-team/routing/cct-routing-effective-endpoint-spec-02.md"
+    },
+    {
+      "disposition": "redundant",
+      "found": true,
+      "list": [
+        "code-copilot-team/routing/cct-routing-effective-endpoint-spec-03.md",
+        "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-06.md",
+        "code-copilot-team/routing/cct-routing-eval-plan-04.md",
+        "code-copilot-team/simplest-complete-change/cct-simplest-complete-change-plan-01.md",
+        "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-02.md"
+      ],
+      "others": [
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/wiki-studio-adoption/cct-wiki-studio-adoption-plan-06.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/routing/cct-routing-eval-plan-04.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/simplest-complete-change/cct-simplest-complete-change-plan-01.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "memkernel/memkernel/mk-memkernel-0-7-wiki-scope-spec-02.md"
+        }
+      ],
+      "partner": "code-copilot-team/routing/cct-routing-effective-endpoint-spec-03.md",
+      "partner_rank": 1,
+      "query": "code-copilot-team/routing/cct-routing-effective-endpoint-plan-03.md"
+    },
+    {
+      "disposition": "redundant",
+      "found": true,
+      "list": [
+        "code-copilot-team/routing/cct-routing-effective-endpoint-plan-03.md",
+        "code-copilot-team/simplest-complete-change/cct-simplest-complete-change-plan-01.md",
+        "code-copilot-team/pi/cct-pi-harness-adoption-plan-02.md",
+        "code-copilot-team/api/cct-api-probe-error-hardening-plan-02.md",
+        "code-copilot-team/routing/cct-routing-tier2-delegation-plan-07.md"
+      ],
+      "others": [
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/simplest-complete-change/cct-simplest-complete-change-plan-01.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/pi/cct-pi-harness-adoption-plan-02.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/api/cct-api-probe-error-hardening-plan-02.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/routing/cct-routing-tier2-delegation-plan-07.md"
+        }
+      ],
+      "partner": "code-copilot-team/routing/cct-routing-effective-endpoint-plan-03.md",
+      "partner_rank": 1,
+      "query": "code-copilot-team/routing/cct-routing-effective-endpoint-spec-03.md"
+    },
+    {
+      "disposition": "redundant",
+      "found": true,
+      "list": [
+        "code-copilot-team/routing/cct-routing-context-limit-plan-08.md",
+        "code-copilot-team/routing/cct-routing-shadow-plan-02.md",
+        "code-copilot-team/routing/cct-routing-tier2-delegation-plan-05.md",
+        "code-copilot-team/pi/cct-pi-harness-adoption-plan-03.md",
+        "code-copilot-team/routing/cct-routing-tier1-failover-plan-07.md"
+      ],
+      "others": [
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/routing/cct-routing-shadow-plan-02.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/routing/cct-routing-tier2-delegation-plan-05.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/pi/cct-pi-harness-adoption-plan-03.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/routing/cct-routing-tier1-failover-plan-07.md"
+        }
+      ],
+      "partner": "code-copilot-team/routing/cct-routing-context-limit-plan-08.md",
+      "partner_rank": 1,
+      "query": "code-copilot-team/routing/cct-routing-context-limit-plan-07.md"
+    },
+    {
+      "disposition": "redundant",
+      "found": true,
+      "list": [
+        "code-copilot-team/routing/cct-routing-context-limit-plan-07.md",
+        "code-copilot-team/routing/cct-routing-shadow-plan-02.md",
+        "code-copilot-team/routing/cct-routing-shadow-plan-03.md",
+        "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-07.md",
+        "code-copilot-team/routing/cct-routing-context-limit-plan-02.md"
+      ],
+      "others": [
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/routing/cct-routing-shadow-plan-02.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/routing/cct-routing-shadow-plan-03.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-07.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/routing/cct-routing-context-limit-plan-02.md"
+        }
+      ],
+      "partner": "code-copilot-team/routing/cct-routing-context-limit-plan-07.md",
+      "partner_rank": 1,
+      "query": "code-copilot-team/routing/cct-routing-context-limit-plan-08.md"
+    },
+    {
+      "disposition": "redundant",
+      "found": true,
+      "list": [
+        "code-copilot-team/routing/cct-routing-calibration-plan-09.md",
+        "code-copilot-team/routing/cct-routing-shadow-plan-01.md",
+        "code-copilot-team/routing/cct-routing-calibration-plan-01.md",
+        "code-copilot-team/routing/cct-routing-shadow-plan-11.md",
+        "code-copilot-team/routing/cct-routing-shadow-plan-02.md"
+      ],
+      "others": [
+        {
+          "label": "companion",
+          "page": "code-copilot-team/routing/cct-routing-calibration-plan-09.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/routing/cct-routing-shadow-plan-01.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/routing/cct-routing-calibration-plan-01.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/routing/cct-routing-shadow-plan-02.md"
+        }
+      ],
+      "partner": "code-copilot-team/routing/cct-routing-shadow-plan-11.md",
+      "partner_rank": 4,
+      "query": "code-copilot-team/routing/cct-routing-shadow-plan-07.md"
+    },
+    {
+      "disposition": "redundant",
+      "found": true,
+      "list": [
+        "code-copilot-team/routing/cct-routing-eval-plan-10.md",
+        "code-copilot-team/routing/cct-routing-calibration-plan-09.md",
+        "code-copilot-team/routing/cct-routing-shadow-plan-07.md",
+        "code-copilot-team/routing/cct-routing-calibration-plan-10.md",
+        "code-copilot-team/routing/cct-routing-calibration-plan-01.md"
+      ],
+      "others": [
+        {
+          "label": "companion",
+          "page": "code-copilot-team/routing/cct-routing-eval-plan-10.md"
+        },
+        {
+          "label": "companion",
+          "page": "code-copilot-team/routing/cct-routing-calibration-plan-09.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/routing/cct-routing-calibration-plan-10.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/routing/cct-routing-calibration-plan-01.md"
+        }
+      ],
+      "partner": "code-copilot-team/routing/cct-routing-shadow-plan-07.md",
+      "partner_rank": 3,
+      "query": "code-copilot-team/routing/cct-routing-shadow-plan-11.md"
+    },
+    {
+      "disposition": "supersedes",
+      "found": false,
+      "list": [
+        "code-copilot-team/pi/cct-pi-project-config-spec-02.md",
+        "code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md",
+        "code-copilot-team/pi/cct-pi-project-config-spec-05.md",
+        "code-copilot-team/routing/cct-routing-profile-foundation-plan-01.md",
+        "code-copilot-team/pi/cct-pi-sandbox-hardening-plan-05.md"
+      ],
+      "others": [
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/pi/cct-pi-project-config-spec-02.md"
+        },
+        {
+          "label": "companion",
+          "page": "code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md"
+        },
+        {
+          "label": "companion",
+          "page": "code-copilot-team/pi/cct-pi-project-config-spec-05.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/routing/cct-routing-profile-foundation-plan-01.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/pi/cct-pi-sandbox-hardening-plan-05.md"
+        }
+      ],
+      "partner": "code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md",
+      "partner_rank": 6,
+      "query": "code-copilot-team/pi/cct-pi-project-config-spec-01.md"
+    },
+    {
+      "disposition": "supersedes",
+      "found": true,
+      "list": [
+        "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-03.md",
+        "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-05.md",
+        "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-05.md",
+        "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-02.md",
+        "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-01.md"
+      ],
+      "others": [
+        {
+          "label": "unrelated",
+          "page": "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-03.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-05.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-02.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-01.md"
+        }
+      ],
+      "partner": "memkernel/memkernel/mk-memkernel-0-12-capture-core-spec-05.md",
+      "partner_rank": 3,
+      "query": "memkernel/memkernel/mk-memkernel-0-14-capture-signals-spec-06.md"
+    },
+    {
+      "disposition": "supersedes",
+      "found": false,
+      "list": [
+        "code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md",
+        "code-copilot-team/one-harness-home/cct-one-harness-home-spec-04.md",
+        "code-copilot-team/llm-catalog/cct-llm-catalog-spec-02.md",
+        "code-copilot-team/one-harness-home/cct-one-harness-home-spec-03.md",
+        "code-copilot-team/one-harness-home/cct-one-harness-home-spec-02.md"
+      ],
+      "others": [
+        {
+          "label": "companion",
+          "page": "code-copilot-team/one-harness-home/cct-one-harness-home-spec-05.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/one-harness-home/cct-one-harness-home-spec-04.md"
+        },
+        {
+          "label": "companion",
+          "page": "code-copilot-team/llm-catalog/cct-llm-catalog-spec-02.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/one-harness-home/cct-one-harness-home-spec-03.md"
+        },
+        {
+          "label": "unrelated",
+          "page": "code-copilot-team/one-harness-home/cct-one-harness-home-spec-02.md"
+        }
+      ],
+      "partner": "code-copilot-team/pi/cct-pi-harness-adoption-plan-05.md",
+      "partner_rank": 35,
+      "query": "code-copilot-team/one-harness-home/cct-one-harness-home-spec-01.md"
+    }
+  ]
+}

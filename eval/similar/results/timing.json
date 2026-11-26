@@ -1,0 +1,14 @@
+{
+  "clock": "time.perf_counter",
+  "fixture_pages": 32,
+  "fixture_tries": 4,
+  "pages": 299,
+  "seconds": {
+    "binding": 0.099036,
+    "body_only": 0.098084,
+    "fixture": 0.013769,
+    "whole_page": 0.105373
+  },
+  "study": "issue 121 similar-pages study: the wall seconds of each pass",
+  "tries": 13
+}
