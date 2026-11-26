@@ -69,3 +69,15 @@ Review: PASS (see specs/wiki-studio-similar-121/collaboration/build-review-phase
 
 ### Phase 6 complete — US6: Documents and CHANGELOG (S5) (2026-11-26T04:05:47Z)
 Review: PASS (see specs/wiki-studio-similar-121/collaboration/build-review-phase-6.md).
+
+## Milestone checkpoint — after phase 6 (US6: Documents and CHANGELOG (S5))
+
+Paused 2026-11-26T04:05:49Z for batched manual testing + retro.
+
+- [ ] Manual testing of phases up to 6 complete
+- [ ] Retro notes recorded
+
+To resume: append a line 'approved-by: <name> <date>' below, then run:
+`scripts/auto-build-loop.sh wiki-studio-similar-121 --resume`
+
+<!-- checkpoint-after-phase: 6 -->
