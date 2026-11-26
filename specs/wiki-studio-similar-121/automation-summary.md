@@ -32,3 +32,6 @@ To resume: append a line 'approved-by: <name> <date>' below, then run:
 approved-by: gosha70 2026-11-26 ("sign off" in the build session at the pause after US2; the ranking run is committed as 693647d, found 11 of 13, supersedes 1 of 3, Verdict: pass)
 
 Correction (2026-11-26) to the sign-off after US1 above: the review it cites at d3e6d23 was a review the owner pasted into the build session, not the external reviewer's; d3e6d23 was not sent to the external reviewer. The external reviewer later checked the protocol against the approved spec at 693647d and found it matched.
+
+### Phase 3 complete — US3: The report and the evidence PR (S2) (2026-11-26T01:18:01Z)
+Review: PASS (see specs/wiki-studio-similar-121/collaboration/build-review-phase-3.md).
