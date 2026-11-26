@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import datetime
 import importlib.metadata
+import json
 import secrets
 import threading
 import warnings
@@ -22,6 +23,7 @@ from .. import __version__, api
 from ..contract import POLICY_AUTO_APPROVE_ON_PROMOTE
 from ..discovery import DEFAULT_MAX_CONTEXT_BYTES, MIN_FIND_PAGES, RANKER_SOURCE_FLAG, resolve_ranker
 from ..errors import DriftWarning, IngestError
+from ..ingestor_multi import SIMILAR_PAGES_ERROR_KEY, SIMILAR_PAGES_KEY
 from ..promoter import PROMOTE_ENTRY_POINT_MCP
 from ..querier import DEFAULT_MAX_QUERY_PAGES
 from .config import (
@@ -112,6 +114,26 @@ def _page_edit(index: int, edit: object, rationale: str) -> api.PageEdit:
     )
 
 
+def _similar_pages(proposal_dir: Path) -> list[dict[str, Any]]:
+    """Each create's similar pages from ``<proposal_dir>/plan.json``, in edit order (FR-024).
+
+    ``{"path", "pages"}`` or ``{"path", "error"}`` per create that carries
+    either key; none when the switch is off, so the list is then empty. A hint,
+    never a failure: an unreadable ``plan.json`` gives an empty list.
+    """
+    try:
+        plan = json.loads((proposal_dir / "plan.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    similar: list[dict[str, Any]] = []
+    for edit in plan.get("edits", []):
+        if SIMILAR_PAGES_ERROR_KEY in edit:
+            similar.append({"path": edit["path"], "error": edit[SIMILAR_PAGES_ERROR_KEY]})
+        elif SIMILAR_PAGES_KEY in edit:
+            similar.append({"path": edit["path"], "pages": edit[SIMILAR_PAGES_KEY]})
+    return similar
+
+
 class WikiTools:
     """The tool implementations over one launch configuration.
 
@@ -174,7 +196,12 @@ class WikiTools:
         sha256. Every create gets a page_id. `name` defaults to
         mcp-<utc>-<hex>. `proposal_dir` is always root-relative (the
         proposals directory lies inside the root, checked at launch). Promote
-        it with the promote tool, or leave it for a person.
+        it with the promote tool, or leave it for a person. `similar_pages`
+        is a hint, never a check: one {path, pages} per create, pages the
+        existing pages of its type most like it ({path, title}, best first,
+        at most 5), or {path, error} when they could not be ranked; empty
+        when WIKI_STUDIO_SIMILAR_PAGES=off, there is no create, or the
+        written plan.json cannot be read.
         """
         if not isinstance(edits, list):
             raise ValueError("edits must be a list of objects")
@@ -198,7 +225,12 @@ class WikiTools:
                 drift.append(str(warning.message))
             else:
                 warnings.showwarning(warning.message, warning.category, warning.filename, warning.lineno)
-        return {"name": chosen, "proposal_dir": self._relative(written), "warnings": drift}
+        return {
+            "name": chosen,
+            "proposal_dir": self._relative(written),
+            "warnings": drift,
+            "similar_pages": _similar_pages(written),
+        }
 
     def promote(self, name: str, dry_run: bool = False) -> dict[str, Any]:
         """Apply the proposal `name` (one path component under the proposals directory) to the wiki.

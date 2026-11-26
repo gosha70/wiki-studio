@@ -54,12 +54,14 @@ from .contract import InfoResult, check_write_contract, describe
 from .discovery import (
     DEFAULT_MAX_CONTEXT_BYTES,
     DEFAULT_RANKER,
+    DiscoveryWarning,
     IneligiblePage,
     OmittedPage,
     RankerConfig,
     describe_discovery,
     resolve_ranker,
     select,
+    similar_pages,
     validate_max_pages,
 )
 from .errors import ContractViolationError, DriftWarning, OutputWriteError, PathOutsideRootError, SourceMissingError
@@ -108,6 +110,7 @@ from .wiki_state import read_page_content
 from .wikilock import WikiLock
 
 if TYPE_CHECKING:
+    from .discovery import SimilarList
     from .health_lint import HealthLintResult
     from .ingestor import Backend
     from .paths import WikiPaths
@@ -649,6 +652,15 @@ def propose(
     overrides) and a ``create`` or ``update`` whose frontmatter carries a key
     reserved for the approval record (``approved``, ``approved_by``,
     ``approval``, ``review_state``).
+
+    When ``paths.similar_pages`` is on (the default; ``WIKI_STUDIO_SIMILAR_PAGES``),
+    each ``create`` is compared with the live wiki after validation and
+    before the lock (:func:`~wiki_studio.discovery.similar_pages`, never a
+    page of this proposal): its ``plan.json`` entry lists up to five pages of
+    its page type, best first, as ``similar_pages``, or says why not as
+    ``similar_pages_error``. A search cache that could not be used is emitted
+    as a :class:`~wiki_studio.discovery.DiscoveryWarning`. The hint is
+    advisory: it never blocks the proposal.
     """
     check_proposal_name(name)
     # The knowledge contract (FR-009, FR-011): refused on a newer or malformed
@@ -670,6 +682,7 @@ def propose(
         raise ContractViolationError(
             "patch-set failed per-edit semantic validation:\n  - " + "\n  - ".join(per_edit_errors)
         )
+    similar = _similar_for_creates(patch, paths) if paths.similar_pages else None
     output_dir = paths.proposals_dir / name
     proposals_dir_existed = paths.proposals_dir.is_dir()
     # Creating the directory (exclusively, under the wiki lock) is the
@@ -680,7 +693,7 @@ def propose(
     with WikiLock(paths.wiki_dir, paths.lock_timeout) as lock:
         try:
             written = write_patch_set_dir(
-                patch, output_dir, wiki_dir=paths.wiki_dir, on_collision=COLLISION_ERROR, lock=lock
+                patch, output_dir, wiki_dir=paths.wiki_dir, on_collision=COLLISION_ERROR, lock=lock, similar=similar
             )
         except FileExistsError as exc:
             raise OutputWriteError(f"proposal dir already exists: {output_dir}") from exc
@@ -701,6 +714,36 @@ def propose(
                 raise OutputWriteError(f"could not write patch-set dir at {output_dir}: {exc}") from exc
             raise
     return written
+
+
+def _similar_for_creates(patch: WikiPatchSet, paths: WikiPaths) -> dict[int, SimilarList]:
+    """The similar pages of each ``create`` by its index in ``patch.edits``; emits the cache's warnings (FR-020)."""
+    exclude = frozenset(posixpath.normpath(edit.path) for edit in patch.edits)
+    similar: dict[int, SimilarList] = {}
+    for index, edit in enumerate(patch.edits):
+        if edit.action != "create":
+            continue
+        listed, notes = similar_pages(paths, edit.new_content, exclude=exclude)
+        for message in notes:
+            _warn_advisory(message)
+        similar[index] = listed
+    return similar
+
+
+def _warn_advisory(message: str) -> None:
+    """Emit a similar-pages note as a ``DiscoveryWarning`` that a caller's filter can never turn into a failure.
+
+    The hint never raises or blocks a proposal (FR-020). When a caller's filter
+    makes ``DiscoveryWarning`` an error, the note is shown instead of raised:
+    re-emitted once with the ``always`` action, so it still reaches the
+    caller's ``showwarning`` (or a recording ``catch_warnings``).
+    """
+    try:
+        warnings.warn(message, DiscoveryWarning, stacklevel=4)
+    except DiscoveryWarning:
+        with warnings.catch_warnings():
+            warnings.simplefilter("always", DiscoveryWarning)
+            warnings.warn(message, DiscoveryWarning, stacklevel=4)
 
 
 def _discard_partial_proposal(output_dir: Path, paths: WikiPaths, proposals_dir_existed: bool) -> None:

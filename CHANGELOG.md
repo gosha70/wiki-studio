@@ -6,6 +6,22 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Similar pages at propose (issue 121): each `create` in a proposal's
+  `plan.json` lists up to 5 existing pages of its page type, ranked by the
+  `fts5` ranker `find` uses with the new page's title and body as the query,
+  as `edits[].similar_pages` (or `edits[].similar_pages_error` saying why the
+  list was not computed). `propose` prints them to stderr as `similar:`
+  lines after the `fact-check:` lines, and the MCP `propose` tool returns
+  them as `similar_pages`. It is advisory: it never blocks, never changes an
+  exit code and calls no model, and `promote` ignores both keys.
+  `WIKI_STUDIO_SIMILAR_PAGES=off` turns it off. Measured on development data
+  in `eval/similar/` ([report](https://github.com/gosha70/wiki-studio/blob/main/eval/similar/report.md)), the partner page was in the top 5 in 11
+  of 13 tries and in 1 of the 3 `supersedes` tries; a ruling that only moves
+  where something lives shares few words with the page it replaces and is
+  likely missed.
+
 ## [0.11.0]
 
 A feature release: `findings` checks a page's cited sources against git,

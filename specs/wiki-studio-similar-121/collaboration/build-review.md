@@ -10,7 +10,7 @@ peer_profile: deepseek
 runner_fingerprint: ae8dc147cf1264834bab35d116b6ab96b06618f438763cde3a90621d78036dba
 verdict: PASS
 blocking_findings_open: 0
-target_ref: feature/wiki-studio-similar-121-evidence
+target_ref: feature/wiki-studio-similar-121
 rounds_completed: 1
 attempt_count: 1
 bypass: false
@@ -25,15 +25,12 @@ bypass: false
 
 ## Summary
 
-The change adds a report (`eval/similar/report.md`) and a test module (`tests/test_similar_results.py`) that verify the committed results are reproducible and that the report faithfully states the recorded figures. The tests are well-structured and the report is thorough, but there are a few correctness concerns around the report's self-consistency checks and the test's coverage of the report's claims.
+This round's diff is documentation-only (CHANGELOG, README, MCP adapter doc, patch-set format doc) for the similar-pages feature. The docs are internally consistent with each other and with the described behavior (advisory, `create`-only, `WIKI_STUDIO_SIMILAR_PAGES` switch, `similar_pages`/`similar_pages_error` keys, stderr `similar:` lines, MCP `similar_pages` field). No code correctness, security, or API-design issues are introduced by these changes; a few documentation-accuracy notes are worth addressing.
 
 ## Findings
 
-- [warning] f-ab3e50f7: The noise test asserts `row(label, count)` appears in the report, but the report's noise table has a header row ` (tests/test_similar_results.py)
-- [warning] f-2fd9399d: The report states "at least 1 of the 3 `supersedes` tries found (1, holds, at the limit)". This is a binding verdict condition, but the test suite only checks the verdict line matches `ranks.json`'s verdict — it does not independently recompute the bar conditions from the try records. If `ranks.json`'s verdict were wrong relative to its own tries, the test would still pass. (eval/similar/report.md)
-- [warning] f-1e007983: The report claims "The whole-page reading matches the query rule on every `redundant` try and loses the memkernel `supersedes` try." The test `test_the_report_states_each_readings_ranks_as_recorded` checks each row's cells appear, but does not verify the prose claim (that whole-page matches binding on all redundant tries). A transcription error in the prose would go undetected. (eval/similar/report.md)
-- [note] f-5b8313e4: The fixture test checks `superseded_left_out` and `never_listed` pages appear as code spans, but does not verify the fixture's stated page count (32 pages, 2 superseded left out) or that the "third true pair" prose matches `never_listed`. The prose claim "It was not ranked" is unverified. (tests/test_similar_results.py)
-- [note] f-165805b0: The test checks each `SECONDS_FORMAT.format(seconds)` appears somewhere in the report, but does not tie each formatted time to its named reading. A swap of two times (e.g., binding 0.099 s vs whole-page 0.105 s) would still pass since both strings appear. (tests/test_similar_results.py)
-- [note] f-419218ae: The command regex `python -m (eval\.similar\.\w+)([^`\n]*)` will match the command inside the fenced code block, but `shlex.split(rest)` on `--out-dir DIR` will succeed even if `DIR` is a placeholder that the parser would reject at runtime. This is acceptable for a parse-only check, but the test name "every shown command parses" slightly overstates what is verified (it parses, not that it runs). (tests/test_similar_results.py)
-- [note] f-255e5272: The report's limits are honest and well-stated, but the "Development data" limit notes two readings were run before the protocol was written. This is a material caveat for a "pass" verdict; consider whether the verdict line itself should carry a qualifier, or whether the protocol's `verdict_lines` already encodes this. (eval/similar/report.md)
-- [note] f-3e7a3e82: The snapshot excludes `__pycache__` by name, which is correct, but does not exclude other transient artifacts (e.g., `.pytest_cache`, editor swap files) that could appear under `eval/` during a run. In practice `rank.py` writes only to `--out-dir`, so this is low risk. (tests/test_similar_results.py)
+- [note] f-30807717: The CHANGELOG entry embeds a long inline URL to `eval/similar/report.md` on `main`, which will drift from the release tag and is inconsistent with the README's relative-path reference; also the phrasing "in 1 of the 3 `supersedes` tries" is ambiguous (1 of 3 supersedes cases, or 1 of 3 total tries?). (CHANGELOG.md)
+- [note] f-c02704b8: README says the hint "lists unrelated pages beside any real match on every create," which overstates the behavior — the list may be empty (per `docs/patch-set-format.md`: "possibly empty") and may be absent entirely when the switch is off or when `similar_pages_error` is written. (README.md)
+- [note] f-97969a29: The MCP doc says `similar_pages` is `[]` "when the server was launched with `WIKI_STUDIO_SIMILAR_PAGES=off`," but the patch-set format doc says with the switch off "`off` writes neither key" — so the adapter must synthesize `[]` from absence. The doc should state this explicitly so implementers don't assume the key is present in `plan.json`. (docs/mcp-adapter.md)
+- [note] f-e47b14f0: The error row lists `FTS5 not available: <reason>` and `not computed: <exception class name>` but does not say whether `similar_pages` and `similar_pages_error` are mutually exclusive per edit (the row says "instead of," which is good) nor whether `similar_pages_error` can appear alongside an empty `similar_pages`. Minor, but worth one clarifying clause for consumers parsing `plan.json`. (docs/patch-set-format.md)
+- [note] f-5e21d708: The env var row says "any other value exits 1," but does not say at what point (startup vs. first `propose`). For a CLI user this matters — e.g., does `find` also fail? The MCP doc implies the switch is read at server launch. Clarify scope (which commands validate it). (README.md)

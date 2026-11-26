@@ -42,7 +42,7 @@ src/wiki_studio/ingestor*.py    single-source and multi-page ingest (proposal ge
 src/wiki_studio/promoter.py     THE ONLY MODULE THAT WRITES INTO THE WIKI DIRECTORY (lint-gated, scoped commit, receipt protocol)
 src/wiki_studio/wikilock.py     WikiLock: the OS advisory lock beside the resolved wiki that serialises cooperating writers
 src/wiki_studio/querier.py      index-first question answering over wiki pages
-src/wiki_studio/discovery.py    rankers (index-first, fts5), eligibility, the byte budget, the FTS5 probe, RankerConfig
+src/wiki_studio/discovery.py    rankers (index-first, fts5), eligibility, the byte budget, the FTS5 probe, RankerConfig, the similar-pages hint
 src/wiki_studio/search_index.py the FTS5 index in memory and the on-disk search cache beside the lock (its only writer)
 src/wiki_studio/mcp_adapter/    wiki-studio-mcp: the optional MCP server (the only place `mcp` is imported, behind the extra)
 src/wiki_studio/lint.py         structural linter (frontmatter, page_type, slug, placement, links, reachability)

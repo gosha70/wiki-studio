@@ -407,6 +407,21 @@ Invalid pages exit 4 with every problem listed and nothing written. An
 `update` prints the fact warnings described under `ingest` after the
 patch-set is written and before the optional `--promote` step.
 
+Each `create` also lists up to 5 existing pages of its page type that are
+most like it, ranked by the `fts5` ranker `find` uses with the new page's
+title and body as the query, so you can read them and decide whether the new
+page repeats one. They are recorded as `edits[].similar_pages` in
+`plan.json` and printed to stderr after the fact warnings as
+`similar: <path>: <listed path>  <title>` (or
+`similar: <path>: not computed (<reason>)`). It is a hint, not a check: it
+never blocks, never changes an exit code, and lists unrelated pages beside
+any real match on every create. A ruling that only moves where something lives
+shares few words with the page it replaces and is likely missed. It was
+measured on development data, not a held-out set: the partner page was in
+the top 5 in 11 of 13 tries and in 1 of the 3 tries where the new page
+supersedes an old one (`eval/similar/report.md`).
+`WIKI_STUDIO_SIMILAR_PAGES=off` turns it off.
+
 An `update` carries the base revision recorded in `<dir>/.base.json`, a
 JSON object mapping each replaced wiki path to the `sha256` that
 `wiki-studio read <path> --json` printed for the page the draft was made
@@ -515,6 +530,7 @@ redacted fingerprint of it unless `--debug-unsafe-output` is given.
 | `WIKI_STUDIO_SOURCE_ROOTS` | `os.pathsep`-separated directories outside the root that local links in pages may reference (see Layout); each is also a repository `findings` searches for cited commits (`docs/knowledge-contract.md`, Findings) |
 | `WIKI_STUDIO_RANKER` | the ranker `find` and `query` use when `--ranker` is not given: `fts5` or `index-first` (default `fts5`) |
 | `WIKI_STUDIO_SEARCH_CACHE` | where the `fts5` ranker keeps its search cache when `--search-cache` is not given (default beside the lock file; never inside the wiki; see Layout) |
+| `WIKI_STUDIO_SIMILAR_PAGES` | `on` (default when unset or empty) or `off`, in any case: whether `propose` lists similar pages for each `create` (see `propose --from`); any other value exits 1 |
 | `WIKI_STUDIO_ACTOR` | who proposes or promotes when `--by` is not given, recorded with source `env` (attribution, not authentication) |
 | `WIKI_STUDIO_BACKEND` | default backend name |
 | `WIKI_STUDIO_ENABLE_PI` | `1` adds `pi` to the auto-detect order |

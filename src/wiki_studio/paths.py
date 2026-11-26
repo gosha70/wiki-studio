@@ -36,6 +36,10 @@ ENV_PROPOSALS_DIR = "WIKI_STUDIO_PROPOSALS_DIR"
 ENV_LOCK_TIMEOUT = "WIKI_STUDIO_LOCK_TIMEOUT"
 # The most git processes one revision check may start (FR-022).
 ENV_GIT_CALL_LIMIT = "WIKI_STUDIO_GIT_CALL_LIMIT"
+# Whether ``propose`` lists similar pages for each create: unset or empty is on, else ``on`` or ``off`` (FR-021).
+ENV_SIMILAR_PAGES = "WIKI_STUDIO_SIMILAR_PAGES"
+SIMILAR_PAGES_ON = "on"
+SIMILAR_PAGES_OFF = "off"
 # ``os.pathsep``-separated directories outside the root that page links may reference (``--source-root``);
 # each is also a repository ``findings`` searches for cited commits (``docs/knowledge-contract.md``, Findings).
 ENV_SOURCE_ROOTS = "WIKI_STUDIO_SOURCE_ROOTS"
@@ -278,6 +282,9 @@ class WikiPaths:
         The most git processes one revision check may start
         (``WIKI_STUDIO_GIT_CALL_LIMIT``); sources left when it is reached are
         not checked (FR-022).
+    similar_pages : bool
+        Whether ``propose`` lists, for each ``create``, the existing pages most
+        like it in ``plan.json`` (``WIKI_STUDIO_SIMILAR_PAGES``; on by default).
     """
 
     root: Path
@@ -290,6 +297,7 @@ class WikiPaths:
     source_roots: tuple[Path, ...] = ()
     search_cache: Path | None = None
     git_call_limit: int = DEFAULT_GIT_CALL_LIMIT
+    similar_pages: bool = True
 
     @classmethod
     def for_root(
@@ -302,6 +310,7 @@ class WikiPaths:
         source_roots: Sequence[Path | str] | None = None,
         search_cache: Path | str | None = None,
         git_call_limit: int | None = None,
+        similar_pages: bool | None = None,
     ) -> WikiPaths:
         """Build the layout under ``root`` with the defaults, optionally overriding the two directories.
 
@@ -326,6 +335,7 @@ class WikiPaths:
             source_roots=tuple(Path(p).absolute() for p in (source_roots or ())),
             search_cache=cache,
             git_call_limit=DEFAULT_GIT_CALL_LIMIT if git_call_limit is None else git_call_limit,
+            similar_pages=True if similar_pages is None else similar_pages,
         )
 
     @classmethod
@@ -339,6 +349,7 @@ class WikiPaths:
         source_roots: Sequence[str | os.PathLike[str]] | None = None,
         search_cache: str | os.PathLike[str] | None = None,
         git_call_limit: int | None = None,
+        similar_pages: bool | None = None,
         env: Mapping[str, str] | None = None,
         cwd: Path | None = None,
     ) -> WikiPaths:
@@ -348,7 +359,10 @@ class WikiPaths:
         to ``cwd``; defaults are relative to the resolved root. A lock timeout
         that is not a non-negative number raises ``ValueError``, and so does a
         git call limit (``WIKI_STUDIO_GIT_CALL_LIMIT``) that is not a
-        non-negative integer. ``source_roots``
+        non-negative integer. ``similar_pages`` defaults to
+        ``WIKI_STUDIO_SIMILAR_PAGES``: unset or empty is on, else ``on`` or
+        ``off`` in any case after stripping; any other value raises
+        ``ValueError``. ``source_roots``
         (the repeatable ``--source-root``) replaces the ``os.pathsep``-separated
         list in ``WIKI_STUDIO_SOURCE_ROOTS``; both default to none. A search
         cache (``--search-cache``, ``WIKI_STUDIO_SEARCH_CACHE``) inside the wiki
@@ -395,6 +409,16 @@ class WikiPaths:
         if limit is not None and limit < 0:
             raise ValueError(f"git call limit must be a non-negative integer, got {limit!r}")
 
+        similar = similar_pages
+        if similar is None:
+            similar_value = environ.get(ENV_SIMILAR_PAGES, "")
+            choice = similar_value.strip().lower()
+            if similar_value and choice not in (SIMILAR_PAGES_ON, SIMILAR_PAGES_OFF):
+                raise ValueError(
+                    f"{ENV_SIMILAR_PAGES} must be {SIMILAR_PAGES_ON!r} or {SIMILAR_PAGES_OFF!r}, got {similar_value!r}"
+                )
+            similar = choice != SIMILAR_PAGES_OFF
+
         return cls.for_root(
             root_path,
             wiki_dir=wiki_path,
@@ -403,6 +427,7 @@ class WikiPaths:
             source_roots=roots,
             search_cache=cache_path,
             git_call_limit=limit,
+            similar_pages=similar,
         )
 
     def with_wiki_dir(self, wiki_dir: Path) -> WikiPaths:
