@@ -1,0 +1,43 @@
+{
+  "pitch_id": "121-duplicate-audit",
+  "cycle": "12",
+  "updated_at": "2026-11-27T15:26:57Z",
+  "scopes": [
+    {
+      "id": "S1",
+      "name": "The protocol, frozen before any score, ~1.5-2h plus the owner's review",
+      "status": "uphill",
+      "last_updated": "2026-11-27T15:26:57Z"
+    },
+    {
+      "id": "S2",
+      "name": "The held-out set, extracted, labelled, frozen, ~5-7h plus the owner's review",
+      "status": "uphill",
+      "last_updated": "2026-11-27T15:26:57Z"
+    },
+    {
+      "id": "S3",
+      "name": "The measurement and the evidence PR, ~2.5-3.5h",
+      "status": "uphill",
+      "last_updated": "2026-11-27T15:26:57Z"
+    },
+    {
+      "id": "S4",
+      "name": "The `possible-duplicate` kind, ~4-5h (only with a pass)",
+      "status": "uphill",
+      "last_updated": "2026-11-27T15:26:57Z"
+    },
+    {
+      "id": "S5",
+      "name": "ADR-0006 and the documents, ~1.5-2.5h (only with a pass)",
+      "status": "uphill",
+      "last_updated": "2026-11-27T15:26:57Z"
+    },
+    {
+      "id": "S6",
+      "name": "Both off switches read by `for_root`, ~0.5-1h (independent, cut first)",
+      "status": "uphill",
+      "last_updated": "2026-11-27T15:26:57Z"
+    }
+  ]
+}
