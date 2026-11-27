@@ -3,7 +3,7 @@ spec_mode: full
 feature_id: wiki-studio-duplicate-audit-121
 risk_category: feature
 justification: "A measurement whose value rests on a protocol, a stop rule, a restatement rule and a bar frozen and signed off before any score, a development stage that can end the bet, a fresh held-out set extracted at pinned commits and labelled by an isolated session, and four main-session script runs between phases; then, only with a pass, an on-by-default findings kind run at session start and over MCP, a new findings object, two additive SearchIndex methods, a body-line convention needing ADR-0006, and a change to WikiPaths.for_root that makes a mistyped switch fail every library caller, memkernel included. A full spec pins each rule, the per-phase truth rule, the hand-opened PRs that close nothing and the cut path before two unattended runs."
-status: draft
+status: approved
 date: 2026-11-27
 collaboration_mode: single
 origin:
