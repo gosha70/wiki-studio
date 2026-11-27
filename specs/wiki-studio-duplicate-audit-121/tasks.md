@@ -23,7 +23,7 @@
 | 5 | | `tests/test_duplicate_audit_frozen.py` (EGOGE header, unittest style): constants with the sha256 (shell) of the README and `protocol.json` as committed in this phase; each asserted; every `development.inputs` entry equals its file's sha256; `candidates` is k = 1, 3, 5 in order; `bar` holds 8, 3/4, `false <= true`, 2 (FR-013) | `tests/test_duplicate_audit_frozen.py` | build | [ ] |
 
 **Checkpoint US1** — verify before continuing:
-- [ ] `git status --porcelain` (this phase's changes) lists only `eval/duplicate_audit/__init__.py`, `README.md`, `protocol.json`, `tests/test_duplicate_audit_frozen.py` and `CLAUDE.md`; no other `.py` file under `eval/duplicate_audit/`; no `results/` or `held-out/` directory
+- [ ] `git status --porcelain` (this phase's changes) lists only `eval/duplicate_audit/__init__.py`, `README.md`, `protocol.json`, `tests/test_duplicate_audit_frozen.py` and `CLAUDE.md` (besides `specs/wiki-studio-duplicate-audit-121/hill.json`, which the driver changes when the phase starts, O10); no other `.py` file under `eval/duplicate_audit/`; no `results/` or `held-out/` directory
 - [ ] `git diff -- eval/duplicates eval/similar eval/patterns src` is empty; `git -C ../memkernel status --porcelain` as before
 - [ ] `git grep -n -i -E '(close[sd]?|fix(e[sd])?|resolve[sd]?):? +([[:alnum:]_.-]+/[[:alnum:]_.-]+)?#[0-9]' -- eval/duplicate_audit` finds nothing
 - [ ] `poetry run pytest -q tests/test_duplicate_audit_frozen.py tests/test_duplicates_frozen.py tests/test_similar_frozen.py` passes (the driver's gate is the frozen test's first run)
@@ -47,7 +47,7 @@
 | 7 | | `tests/test_duplicate_audit_script.py` (EGOGE header): FR-017 in full on synthetic inputs in a temporary directory (remove-and-insert equal to a fresh index on 12 pages; the page-type filter; mutual flags at k = 1, 3, 5 and both ranks; every restatement case; the bar edges; selection and the tie; the stop rule both ways; refusals writing nothing; the same bytes twice; an `eval/` snapshot equal before and after; `--help`); FTS5 cases skipped when it is missing (FR-017) | `tests/test_duplicate_audit_script.py` | build | [ ] |
 
 **Checkpoint US2** — verify before continuing:
-- [ ] `git status --porcelain` (this phase's changes) lists only `eval/duplicate_audit/audit.py` and `tests/test_duplicate_audit_script.py`; no file under `eval/duplicate_audit/results/` exists yet
+- [ ] `git status --porcelain` (this phase's changes) lists only `eval/duplicate_audit/audit.py` and `tests/test_duplicate_audit_script.py` (besides `specs/wiki-studio-duplicate-audit-121/hill.json`, which the driver changes when the phase starts, O10); no file under `eval/duplicate_audit/results/` exists yet
 - [ ] `git diff <US1 commit or the owner's protocol commit> -- eval/duplicate_audit/README.md eval/duplicate_audit/protocol.json tests/test_duplicate_audit_frozen.py` is empty
 - [ ] `grep -n "subprocess\|urllib\|socket\|_INSERT_PAGE\|_connection" eval/duplicate_audit/audit.py` finds nothing
 - [ ] `poetry run pytest -q tests/test_duplicate_audit_script.py tests/test_duplicate_audit_frozen.py` passes
@@ -91,11 +91,11 @@
 |---|-----|------|---------|-------|------|
 | 11 | | Read `results/development.json`'s `stop_rule.outcome`: if it is not `go`, stop and report: this phase does not run (FR-021) | — | build | [ ] |
 | 12 | | `eval/duplicate_audit/extract.py` (EGOGE header; `main(argv)`; `--wiki-studio`, `--memkernel`, `--wiki-studio-only`, `--out`, default `eval/duplicate_audit/held-out/`): pins and the two memkernel directories as constants equal to `protocol.json`'s; cycle 10's functions imported read-only as FR-022 lists; the source lists (spec bundles, `specs/pitches/<id>/pitch.md`, memkernel's two directories), the slug rule, `origin_issue` from each bundle's `plan.md` at the pin, `source_kind`, `corpus.json` with `left_out` by id only (FR-008, FR-022) | `eval/duplicate_audit/extract.py` | build | [ ] |
-| 13 | | `eval/duplicate_audit/sample.py` (EGOGE header; `main(argv)`, `--out`, default `held-out/review-sample.json`): the within-family false pairs, 20 by the largest-remainder split, `random.Random(121)`, the labels' sha256 in the output (FR-023) | `eval/duplicate_audit/sample.py` | build | [ ] |
+| 13 | | `eval/duplicate_audit/sample.py` (EGOGE header; `main(argv)`, `--out`, default `held-out/review-sample.json`): the within-family false pairs, 20 as a fixed 16 from `wiki-studio` and 4 from `memkernel` (a family short of its share gives all it has, the rest from the other; O11), `random.Random(121)`, the labels' sha256 in the output (FR-023) | `eval/duplicate_audit/sample.py` | build | [ ] |
 | 14 | | `tests/test_duplicate_audit_extract.py` (EGOGE header): FR-024 in full (slugs; `origin_issue` cases; `source_kind`; pitch paths; `--wiki-studio-only`; the closing-keyword item listed by id only; git reading on a temporary repository, git-gated, nothing written there; the imported functions are cycle 10's objects, or any reimplemented one rebuilds the six fixed pages of `tests/test_duplicates_extract.py` byte for byte; `sample.py` on synthetic labels; `--help` for both) (FR-024) | `tests/test_duplicate_audit_extract.py` | build | [ ] |
 
 **Checkpoint US4** — verify before continuing:
-- [ ] `git status --porcelain` (this phase's changes) lists only `extract.py`, `sample.py` and `tests/test_duplicate_audit_extract.py`; no `held-out/` data file exists yet
+- [ ] `git status --porcelain` (this phase's changes) lists only `extract.py`, `sample.py` and `tests/test_duplicate_audit_extract.py` (besides `specs/wiki-studio-duplicate-audit-121/hill.json`, which the driver changes when the phase starts, O10); no `held-out/` data file exists yet
 - [ ] `git diff -- eval/duplicates` is empty; `git -C ../memkernel status --porcelain` as before
 - [ ] `grep -n "shell=True" eval/duplicate_audit/extract.py` finds nothing
 - [ ] `poetry run pytest -q tests/test_duplicate_audit_extract.py tests/test_duplicates_extract.py` passes
@@ -122,7 +122,7 @@
 | 18 | | `tests/test_duplicate_audit_labels.py` (EGOGE header): FR-027 in full (keys; groups within one family; in-group pairs labelled exactly once; no pair without a common group; dispositions and reasons; cross pairs across repositories; one summary line per group and per ungrouped page; `true_pairs` recomputed and equal to the README; `corpus_sha256`; the review sample's shape when it exists; the closing-keyword scan) (FR-027) | `tests/test_duplicate_audit_labels.py` | build | [ ] |
 
 **Checkpoint US5** — verify before continuing:
-- [ ] `git status --porcelain` (this phase's changes) lists only `held-out/labels.json`, `held-out/README.md` and `tests/test_duplicate_audit_labels.py`
+- [ ] `git status --porcelain` (this phase's changes) lists only `held-out/labels.json`, `held-out/README.md` and `tests/test_duplicate_audit_labels.py` (besides `specs/wiki-studio-duplicate-audit-121/hill.json`, which the driver changes when the phase starts, O10)
 - [ ] No file under `eval/duplicate_audit/` other than those three changed; `audit.py` unchanged since US2
 - [ ] `poetry run pytest -q tests/test_duplicate_audit_labels.py` passes
 - [ ] Full gate green
@@ -146,7 +146,7 @@
 | 20 | | `tests/test_duplicate_audit_corpus.py` and `tests/test_duplicate_audit_heldout_frozen.py` (EGOGE headers): FR-030 in full (files equal entries; page hashes; `source_kind` and `origin_issue` agree with `spec_path`; README counts; structural lint on a temporary wiki with only listed violations; constants with the sha256 of `freeze.json`, `corpus.json`, `labels.json`, `review-sample.json`, `held-out/README.md` from a shell; `freeze.json`'s hashes and `protocol_sha256` match). The frozen test is written once, never edited after this phase (FR-030) | `tests/test_duplicate_audit_corpus.py`, `tests/test_duplicate_audit_heldout_frozen.py` | build | [ ] |
 
 **Checkpoint US6** — verify before continuing:
-- [ ] `git status --porcelain` (this phase's changes) lists only `held-out/freeze.json`, `held-out/README.md` and the two tests
+- [ ] `git status --porcelain` (this phase's changes) lists only `held-out/freeze.json`, `held-out/README.md` and the two tests (besides `specs/wiki-studio-duplicate-audit-121/hill.json`, which the driver changes when the phase starts, O10)
 - [ ] `git diff <the last label commit> -- eval/duplicate_audit/held-out/labels.json` is empty
 - [ ] `poetry run pytest -q tests/test_duplicate_audit_corpus.py tests/test_duplicate_audit_heldout_frozen.py tests/test_duplicate_audit_labels.py` passes
 - [ ] Full gate green

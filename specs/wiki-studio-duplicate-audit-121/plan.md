@@ -223,6 +223,15 @@ Each is recorded so the origin-alignment record at approval can cite it.
 16. **The development stage line and the winner line** have fixed spellings
     (`Development stage: go|stop`, `Winner: mutual-top-1|3|5|none`) so tests
     can check them.
+17. **Cut order with a winner (the owner, 2026-11-27, after the review of
+    PR #153).** The pitch's trigger 1 cuts S6 first whenever the work is
+    late. Here US8 (S6) can be cut only without a winner: once FR-035 records
+    one, US8 ships with the kind, because memkernel's session-start hook
+    (`curation_findings` in `studio.py`) calls `api.findings` with `for_root`
+    paths and could not turn a 10 s scan off otherwise.
+18. **An SQLite error in the scan is caught** (the owner, O8's alternative):
+    `duplicate_check` gains a `not-computed` state, and the other kinds still
+    report.
 
 Close target: none. Issue 121 stays open whatever the verdict; no PR, commit
 message or artifact names it after a closing keyword, and no other issue is
@@ -303,7 +312,7 @@ class DuplicatePair:
 
 @dataclass(frozen=True)
 class DuplicateCheck:
-    state: str                        # "ran" | "off" | "fts5-missing"
+    state: str                        # "ran" | "off" | "fts5-missing" | "not-computed"
     reason: str | None
     pages_compared: int
     def as_dict(self) -> dict[str, Any]: ...
@@ -540,8 +549,9 @@ phase, two fix sessions per phase, the gate of the spec's Constraints,
 ## Open items for the spec review
 
 Draft defaults; the spec is written on them. **The owner decided on
-2026-11-27 (asked by the build session before the spec PR):** O1-O9 and O12
-take their defaults (O3 as written: a pitch paired with `wiki-studio-0-1-0`
+2026-11-27 (asked by the build session before the spec PR):** O1-O7, O9 and O12
+take their defaults (O8 too at first; after the review of PR #153 the owner
+chose O8's alternative, `not-computed`, departure 18) (O3 as written: a pitch paired with `wiki-studio-0-1-0`
 or `wiki-studio-0-6-0` is not a restatement, and the report lists such found
 pairs separately; O6: one labelling session per repository, never opening
 the audit code or any results); **O10 takes the alternative** (this bundle
