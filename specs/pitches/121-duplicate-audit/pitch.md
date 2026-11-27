@@ -4,7 +4,7 @@ title: "A duplicate audit in findings: for pages already in the wiki, flag two s
 appetite: 4w
 bet_status: shaped
 cycle: ""
-circuit_breaker: "Core is S1 (the protocol: candidates, index rule, bar, held-out extraction and labelling rules, written down and reviewed by the owner before any score exists), S2 (the held-out set: extracted verbatim at pinned commits, labelled by a session with no candidate code, reviewed by the owner and frozen) and S3 (the measurement on the held-out set, binding, and on cycle 10's frozen corpus, reported only, published whatever it shows as an evidence PR opened by hand). S4 (the possible-duplicate kind) and S5 (ADR-0006 and the documents) are built only if a candidate clears the bar frozen in S1. S6 (both off switches read by WikiPaths.for_root) is independent of the verdict and is cut first. Cut order, first to last, each with its trigger: (1) whenever S3 or S4 is late, S6 is cut and the gap returns to the carryover list; (2) end of week 1, if S2's extraction has not landed: the held-out base narrows to wiki-studio's own spec and pitch decisions, and the later memkernel and code-copilot-team specs are dropped; (3) end of week 2, if S2's freeze has not landed: the labels freeze as reviewed by then, and with fewer than 8 true pairs the verdict is not testable; (4) start of week 3, if no candidate clears the bar, the verdict is not testable, or S3 has not run: S4-S5 are cut, the cycle ends early, and issue 121 stays open with three measurements as its evidence; (5) middle of week 4, if S4 is not downhill or the frozen rule misses the time bound frozen in S1: S4-S5 are cut, and the kind becomes a follow-up bet that starts from the frozen winner. End of week 4: what has merged waits under [Unreleased]. Never, to save time: compute a score on the frozen corpus or the held-out set before S1's protocol is reviewed; run a candidate on the held-out set before its labels are frozen; change a candidate, k, the index rule or the bar after the run, or count a second reading toward the verdict; make the scan faster with a rule that was not measured; edit eval/duplicates', eval/similar's or eval/patterns' frozen files; let the kind block promote or approve, join lint --health, or change an exit code; put a model on any path from findings, approve or review_state; write from findings (the on-disk search cache included); bump findings_version; add a frontmatter key, a page type, an exit code, a runtime dependency or an MCP tool; ship the kind without ADR-0006; quote closing-keyword text anywhere; weaken or skip a test."
+circuit_breaker: "A development stage comes first (D7): after S1 is reviewed, the three candidates run once on cycle 10's frozen corpus, and unless at least one candidate's false pairs there do not outnumber its true pairs, the bet stops before S2 with the result recorded. Core is S1 (the protocol: candidates, index rule, bar, held-out extraction and labelling rules, written down and reviewed by the owner before any score exists), S2 (the held-out set: extracted verbatim at pinned commits, labelled by a session with no candidate code, reviewed by the owner and frozen) and S3 (the measurement on the held-out set, binding, and on cycle 10's frozen corpus, reported only, published whatever it shows as an evidence PR opened by hand). S4 (the possible-duplicate kind) and S5 (ADR-0006 and the documents) are built only if a candidate clears the bar frozen in S1. S6 (both off switches read by WikiPaths.for_root) is independent of the verdict and is cut first. Cut order, first to last, each with its trigger: (1) whenever S3 or S4 is late, S6 is cut and the gap returns to the carryover list; (2) end of week 1, if S2's extraction has not landed: the held-out base narrows to wiki-studio's own spec and pitch decisions, and the later memkernel and code-copilot-team specs are dropped; (3) end of week 2, if S2's freeze has not landed: the labels freeze as reviewed by then, and with fewer than 8 true pairs the verdict is not testable; (4) start of week 3, if no candidate clears the bar, the verdict is not testable, or S3 has not run: S4-S5 are cut, the cycle ends early, and issue 121 stays open with three measurements as its evidence; (5) middle of week 4, if S4 is not downhill or the frozen rule misses the time bound frozen in S1: S4-S5 are cut, and the kind becomes a follow-up bet that starts from the frozen winner. End of week 4: what has merged waits under [Unreleased]. Never, to save time: compute a score on the frozen corpus or the held-out set before S1's protocol is reviewed; run a candidate on the held-out set before its labels are frozen; change a candidate, k, the index rule or the bar after the run, or count a second reading toward the verdict; make the scan faster with a rule that was not measured; edit eval/duplicates', eval/similar's or eval/patterns' frozen files; let the kind block promote or approve, join lint --health, or change an exit code; put a model on any path from findings, approve or review_state; write from findings (the on-disk search cache included); bump findings_version; add a frontmatter key, a page type, an exit code, a runtime dependency or an MCP tool; ship the kind without ADR-0006; quote closing-keyword text anywhere; weaken or skip a test."
 shaped_by: "pitch-shaper (Claude Code) for gosha70"
 shaped_date: 2026-11-26
 ---
@@ -79,8 +79,8 @@ the shaper; the figures below are arithmetic on ranks already published.
    reach were tried one way only. So a rule "each page has the other in its
    top k" finds, on these pairs: **k = 1: 4 of 8; k = 3: 4 or 5 of 8; k = 5:
    5 or 6 of 8** (the "or" is the memkernel pair's unknown reverse rank).
-   False pairs are **not known for any k**: cycle 11 ranked 13 queries, an
-   audit queries every page. These 8 pairs have now been read by three
+   False pairs were first called unknown; the external review of PR #151
+   showed they can be predicted (finding 10). These 8 pairs have now been read by three
    cycles, so they are development data, and any further score on them
    while shaping would weaken the evidence (the cycle 11 lesson).
 8. **Held-out sources, counted by heading only.** Not used by any study so
@@ -88,7 +88,14 @@ the shaper; the figures below are arithmetic on ranks already published.
    items by a rough heading count) and its pitches' `## Decisions` sections
    (11 pitches; count in S2); the specs added since cycle 10's pins in
    memkernel (2 directories, about 20 items) and code-copilot-team (3
-   directories, about 7 items). Rejected: code-copilot-team's
+   directories, about 7 items). The external review of PR #151 counted with
+   cycle 10's extraction rule (counting only, no comparison): 109 items from
+   wiki-studio's specs and 162 from its pitches, so about 300 pages with the
+   other two repositories, more than half of them pitch decisions. The three
+   new code-copilot-team directories (`analysis-recorded-mode`,
+   `archive-floor-row-mode`, `export-privacy-floor`) are session-analytics
+   work, a family cycle 10 excluded; their names miss the name rule, so they
+   are excluded by name. Rejected: code-copilot-team's
    `knowledge/wiki` (19 typed pages, 18 of them the issue 54 background, so
    not independent, cycle 10 finding 7) and the families cycle 10 excluded
    (the issue 54 fixture was drawn from them and ranked in cycle 11).
@@ -96,6 +103,24 @@ the shaper; the figures below are arithmetic on ranks already published.
    pages, about 7.6 ms per try, each try building its own 298-page index. A
    500-page wiki means 500 queries per `findings` run, which hosts run at
    session start and the MCP `findings` tool serves.
+
+10. **Mutual rank without a floor flags about half of any wiki** (the
+    external review of PR #151, on 292 neutral pages: Python standard-library
+    docstrings with identical ones removed; no frozen or held-out page read).
+    Every page has a nearest neighbour, and about half the time that
+    neighbour's nearest is the page itself. Mutual top-1 flagged 79 pairs
+    (54 percent of pages in a flagged pair), top-3 243 (84 percent), top-5
+    400 (92 percent). Cycle 10's 299 pages held 8 true pairs, so every k is
+    very likely to fail the bar's false-pair condition. Docstrings are not
+    spec decisions, but that does not account for 79 pairs. This is why the
+    measurement now starts with a development stage (D7).
+11. **Groups cap recall.** Three pages saying the same thing make 3 true
+    pairs, but mutual top-1 can flag at most 1 of them; five make 10 and it
+    can flag at most 2. Pitch decisions repeat across pitches, so groups are
+    likely in the held-out set.
+12. **"Remove, rank, insert back" gives the same ranks as a fresh index**
+    (the review confirmed it on 42 of 42 sampled pages), but `SearchIndex`
+    has no remove or insert method today.
 
 ## Appetite
 
@@ -116,8 +141,9 @@ alternative).
 | S5 ADR-0006 and the documents (only with a pass) | 1.5-2.5h |
 | S6 Both off switches read by `for_root` (independent, cut first) | 0.5-1h |
 
-Planned order: week 1, S1 in the spec bundle, the owner's review, S2's
-extraction; week 2, labelling, the owner's review, the freeze; start of week
+Planned order: week 1, S1 in the spec bundle, the owner's review, then the
+development stage (D7, about an hour at a main-session pause), which can end
+the bet here; only if it passes, S2's extraction; week 2, labelling, the owner's review, the freeze; start of week
 3, S3's run at a main-session pause and the evidence PR opened by hand, the
 spec amendment records the verdict; weeks 3-4, S4 and S5 with a pass. S6 can
 land in any week.
@@ -153,6 +179,17 @@ Mutual rank needs no score floor, so nothing depends on bm25 scores, which
 are not comparable across queries. Among candidates that pass the bar, the
 fewest false pairs per true pair wins; a tie goes to the smaller k.
 
+**The development stage (D7), before any held-out page is extracted.** The
+three candidates run once on cycle 10's frozen corpus and labels (read-only),
+under a stop rule frozen in S1: the held-out stage goes ahead only if at
+least one candidate's false pairs on the frozen corpus do not outnumber its
+true pairs there (the bar's own false-pair condition). Otherwise the bet
+stops: the result is recorded, no held-out set is built, S4-S5 are cut, and
+issue 121 stays open with the evidence. The frozen corpus's recall is
+already roughly known (finding 7); this stage measures what is not known,
+the false pairs, and spares 5-7 hours of labelling when the rule cannot
+survive them. Its counts never decide a pass: only the held-out set does.
+
 **The held-out set (D2).** Extracted verbatim by cycle 10's extraction rule
 (H2 sections containing "decision", three item forms, the body built in its
 four steps), imported read-only from `eval/duplicates/extract.py` where its
@@ -171,14 +208,22 @@ reviews every true and `companion` label and 20 seeded false pairs.
 **The bar (D4), on the held-out set only.** The labels hold at least 8 true
 pairs, else "not testable"; the winner finds at least three quarters of
 them, rounded up; its false pairs do not outnumber its true ones. Cycle 10's
-bar, so the verdicts compare. Reported, not binding: every count per 100
+bar, so the verdicts compare. **Recall is counted per true pair**, as in
+cycle 10; with groups (finding 11) the report also gives, not binding, how
+many groups have at least one flagged pair. **A proposed fourth condition,
+for the review:** at least one found true pair is not a pitch-and-spec
+restatement of the same feature, so a pass cannot rest on near-copies alone
+(cycle 11 added a `supersedes` condition for the same reason). Reported, not binding: every count per 100
 pages, split by pair scope (pitch and spec of one feature, within a
 repository, across repositories), and the same three candidates on cycle
 10's frozen corpus with its labels, which gives the first false-pair counts
 on it.
 
 **The time bound (D5).** Frozen in S1: on a 500-page synthetic wiki the
-kind adds at most **10 s** to `findings` on the CI runner (the owner, D5). S3 times the
+kind adds at most **10 s** to `findings` on the CI runner (the owner, D5).
+The synthetic wiki is the held-out pages cycled to 500, so page sizes follow
+real decision pages; the review measured 3.4-3.9 ms per page on pages of
+about 110 words, roughly 2 s for 500, and cost grows with page length. S3 times the
 winner on both sets; S4 tests the bound. If the frozen rule misses it, the
 kind is cut (trigger 5), never replaced by a faster rule nobody measured.
 
@@ -227,9 +272,13 @@ S5 only with a pass. S6 at any point.
 `eval/duplicate-audit/README.md` and `protocol.json`: the three candidates,
 the index rule (one index, query page removed for its own query), the query
 rule, the same-type filter, the held-out sources and pins, the extraction
-and labelling rules, the bar, the time bound, the readings that are not
-binding, the development-data caveat. Its own commit, no scoring code,
-reviewed by the owner before anything is scored on either set.
+and labelling rules, the bar (how recall is counted with groups), the
+development stage's stop rule, the time bound with its synthetic wiki, the
+readings that are not binding, the development-data caveat. Its own commit,
+no scoring code, reviewed by the owner before anything is scored on either
+set. Then, at a main-session pause, the development stage (D7): the
+candidates on cycle 10's frozen corpus, counts committed as written; the
+stop rule decides whether S2 starts.
 
 ### S2: The held-out set, extracted, labelled, frozen, ~5-7h plus the owner's review
 
@@ -241,9 +290,12 @@ testable", stated before any candidate runs.
 
 ### S3: The measurement and the evidence PR, ~2.5-3.5h
 
-`audit.py` uses only shipped pieces (`similar_query`, `build_document`,
-`build_in_memory`, `SearchIndex.rank`, `DEFAULT_RANKER_CONFIG`) and checks
-every frozen hash first. Run once by hand; `results/` committed as written,
+`audit.py` uses shipped pieces (`similar_query`, `build_document`,
+`build_in_memory`, `SearchIndex.rank`, `DEFAULT_RANKER_CONFIG`) plus its own
+remove-and-insert helper on the in-memory index's SQLite connection (finding
+12; no change under `src/` in the evidence PR), and checks every frozen hash
+first. S4 adds the same as additive `SearchIndex` methods, and its replay
+test proves the kind gives the same pairs. Run once by hand; `results/` committed as written,
 rerun by a CI test byte for byte (timing in a separate file CI does not
 compare). `report.md`: the held-out table and verdict (a winner, none, or
 not testable), the frozen-corpus counts (not binding), the limits. Evidence
@@ -277,7 +329,12 @@ check.
 
 `WikiPaths.for_root` reads `WIKI_STUDIO_SIMILAR_PAGES` (and, with S4,
 `WIKI_STUDIO_DUPLICATE_CHECK`) when the caller passes no value, with the
-same validation as `resolve`; an explicit argument still wins. Tests for
+same validation as `resolve`; an explicit argument still wins. **A bad value
+raises in library calls too** (the owner, D8, 2026-11-26), as on the CLI.
+This changes what `for_root` is: today it reads no environment variable, and
+afterwards a mistyped switch fails every library call that builds paths this
+way, including memkernel's lint, info and findings calls, not only propose.
+The README, CHANGELOG and `docs/consumers.md` say so. Tests for
 both constructors; README and CHANGELOG lines. Without a pass it covers the
 similar-pages switch alone (D6).
 
@@ -286,7 +343,7 @@ similar-pages switch alone (D6).
 - **Choosing k from the published ranks.** Finding 7 already shows recall
   on the development pairs. *Workaround:* all three values of k are frozen
   in S1; the binding run is on the held-out set; nothing changes after it.
-- **The held-out set holds too few true pairs.** About 150-250 pages may
+- **The held-out set holds too few true pairs.** About 300 pages may
   hold fewer than 8 duplicates (cycle 10 needed 299 for 8). *Workaround:*
   the pitch decisions join the base because pitch and spec restate
   decisions, a real way duplicates arise; "not testable" is a stated
@@ -330,6 +387,10 @@ Core is S1-S3: the protocol frozen first, the held-out labels frozen before
 any candidate touches them, and the measurement published whatever it shows.
 S4 and S5 are built only with a pass. S6 is independent and cut first.
 
+0. **After the development stage (D7), if every candidate's false pairs on
+   the frozen corpus outnumber its true pairs:** S2-S5 are cut, the result
+   is recorded in an evidence PR and the amendment, the cycle ends early,
+   and issue 121 stays open. S6 may still land.
 1. **Whenever S3 or S4 is late:** S6 is cut; the switch gap returns to the
    carryover list.
 2. **End of week 1, if S2's extraction has not landed:** the base narrows
@@ -353,8 +414,21 @@ never-list is in the frontmatter.
 Asked by the build session and decided by the owner on 2026-11-26: **D1,
 D2, D3, D4 and D6 take their defaults; D5 takes the alternative of 10 s**
 (the bound is at most 10 s added to `findings` on a 500-page synthetic
-wiki, the kind cut if the frozen rule misses it). The alternatives stay
+wiki, the kind cut if the frozen rule misses it). After the external review
+of PR #151, the owner added **D7** and **D8** (below). The alternatives stay
 recorded for the review.
+
+- D7: The development stage — decided: **count the candidates' false pairs
+  on cycle 10's frozen corpus first**, under a stop rule frozen in S1, and
+  build the held-out set only if at least one candidate's false pairs there
+  do not outnumber its true pairs — alternatives: add candidates with a
+  similarity floor (an unmeasured threshold); or accept the likely fail
+  after the full held-out set — why it matters: mutual rank flags about half
+  of any wiki (finding 10), so the full bet would likely end "no candidate"
+  after 5-7 hours of labelling.
+- D8: A bad switch value in library calls — decided: **raises, as on the
+  CLI** — alternative: a warning, with the feature left on — why it matters:
+  after S6 a typo fails every `for_root` caller, memkernel included.
 
 - D1: Appetite and data — default: **4w, with a fresh held-out labelled
   set that gives the verdict**; cycle 10's frozen corpus is development
@@ -401,3 +475,4 @@ recorded for the review.
 | 2026-11-26 | shaping | Drafted from issue 121 (open; the owner's call on 2026-11-26: it stays open for an after-the-fact audit) and its body's preferred shape (2026-11-19), `eval/duplicates/report.md`, `eval/similar/report.md` and `results/`, `specs/retros/cooldown-after-11.md`. wiki-studio read at main 587c6fb: `findings.py`, `conflicts.py`, `discovery.py` (`similar_pages`), `search_index.py`, `paths.py`, ADR-0004, `docs/knowledge-contract.md`, `eval/similar/rank.py`. No score computed by the shaper; held-out sources counted by heading only. |
 | 2026-11-26 | shaping → shaped | 6 scopes, 4w, work content 15-21h (core S1-S3 9-12.5h). Core: protocol frozen first, held-out set labelled and frozen, measurement as a hand-opened evidence PR. S4-S5 (`possible-duplicate`, ADR-0006, documents) only with a pass; S6 (`for_root` reads both switches) independent, cut first. D1-D6 open for the owner with defaults (the shaping agent cannot ask). |
 | 2026-11-26 | shaped (owner decisions) | The owner took D1 4w with a fresh held-out labelled set that alone decides; D2 wiki-studio's own spec and pitch decisions plus the specs memkernel and code-copilot-team added since cycle 10's pins; D3 mutual top-k at k = 1, 3, 5; D4 cycle 10's bar on the held-out set; D5 **10 s** (the alternative, not the 5 s default); D6 the `for_root` switch gap fixed in this bet for both switches (S6, cut first). bet_status unchanged. |
+| 2026-11-26 | shaped (revised after review) | External review of PR #151 at 4b2709b. (1) Mutual rank without a floor flags about half of any wiki (finding 10, measured by the reviewer on 292 neutral pages); the owner chose D7, a development stage on cycle 10's frozen corpus under a stop rule frozen in S1, before any held-out page is extracted (trigger 0). (2) Groups cap recall: recall counted per true pair, groups reported (finding 11). (3) The held-out set is about 300 pages, more than half pitch decisions; a fourth bar condition is proposed for the review (a found pair outside pitch-and-spec restatements). (4) The three new code-copilot-team directories are session-analytics work and excluded. (5) Remove-and-insert needs new code: `audit.py`'s own helper, then additive `SearchIndex` methods in S4 (finding 12). (6) The time bound's synthetic wiki is the held-out pages cycled to 500. (7) S6: the owner chose D8, a bad switch value raises in library calls too, documented. bet_status unchanged. |
