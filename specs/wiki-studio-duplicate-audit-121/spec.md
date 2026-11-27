@@ -2,7 +2,7 @@
 spec_mode: full
 feature_id: wiki-studio-duplicate-audit-121
 risk_category: feature
-status: draft
+status: approved
 date: 2026-11-27
 ---
 
