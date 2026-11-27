@@ -14,3 +14,6 @@ To resume: append a line 'approved-by: <name> <date>' below, then run:
 
 <!-- checkpoint-after-phase: 1 -->
 approved-by: gosha70 2026-11-27 ("sign off" in the build session at the pause after US1; the external reviewer checked the protocol at cc2d0de against FR-001 to FR-012 and found nothing to hold it up)
+
+### Phase 2 complete — US2: The audit script (S3) (2026-11-27T23:15:07Z)
+Review: PASS (see specs/wiki-studio-duplicate-audit-121/collaboration/build-review-phase-2.md).
