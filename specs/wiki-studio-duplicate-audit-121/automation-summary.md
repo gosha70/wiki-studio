@@ -33,3 +33,15 @@ approved-by: gosha70 2026-11-27 ("sign off" in the build session at the pause af
 
 ### Phase 3 complete — US3: The development stage, recorded (S1) (2026-11-28T01:27:42Z)
 Review: PASS (see specs/wiki-studio-duplicate-audit-121/collaboration/build-review-phase-3.md).
+
+## Milestone checkpoint — after phase 3 (US3: The development stage, recorded (S1))
+
+Paused 2026-11-28T01:27:44Z for batched manual testing + retro.
+
+- [ ] Manual testing of phases up to 3 complete
+- [ ] Retro notes recorded
+
+To resume: append a line 'approved-by: <name> <date>' below, then run:
+`scripts/auto-build-loop.sh wiki-studio-duplicate-audit-121 --resume`
+
+<!-- checkpoint-after-phase: 3 -->
