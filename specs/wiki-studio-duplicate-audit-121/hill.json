@@ -1,7 +1,7 @@
 {
   "pitch_id": "121-duplicate-audit",
   "cycle": "12",
-  "updated_at": "2026-11-28T13:34:02Z",
+  "updated_at": "2026-11-28T13:41:14Z",
   "scopes": [
     {
       "id": "S1",
@@ -37,9 +37,9 @@
     {
       "id": "S6",
       "name": "Both off switches read by `for_root`, ~0.5-1h (independent, cut first)",
-      "status": "downhill",
-      "last_updated": "2026-11-28T13:34:02Z",
-      "note": "auto-build: phase 8 started"
+      "status": "done",
+      "last_updated": "2026-11-28T13:41:14Z",
+      "note": "auto-build: phase 8 landed 5096daa"
     }
   ]
 }
