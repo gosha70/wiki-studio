@@ -45,3 +45,18 @@ To resume: append a line 'approved-by: <name> <date>' below, then run:
 `scripts/auto-build-loop.sh wiki-studio-duplicate-audit-121 --resume`
 
 <!-- checkpoint-after-phase: 3 -->
+
+### Phase 8 complete — US8: Both constructors read the off switches (S6) (2026-11-28T13:41:14Z)
+Review: PASS (see specs/wiki-studio-duplicate-audit-121/collaboration/build-review-phase-8.md).
+
+## Milestone checkpoint — after phase 8 (US8: Both constructors read the off switches (S6))
+
+Paused 2026-11-28T13:41:16Z for batched manual testing + retro.
+
+- [ ] Manual testing of phases up to 8 complete
+- [ ] Retro notes recorded
+
+To resume: append a line 'approved-by: <name> <date>' below, then run:
+`scripts/auto-build-loop.sh wiki-studio-duplicate-audit-121 --resume`
+
+<!-- checkpoint-after-phase: 8 -->

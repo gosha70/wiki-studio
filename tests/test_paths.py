@@ -9,6 +9,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from wiki_studio.paths import (
     CONTAIN_ABSOLUTE,
@@ -19,6 +20,7 @@ from wiki_studio.paths import (
     DEFAULT_WIKI_DIR,
     ENV_PROPOSALS_DIR,
     ENV_ROOT,
+    ENV_SIMILAR_PAGES,
     ENV_SOURCE_ROOTS,
     ENV_WIKI_DIR,
     ContainmentError,
@@ -169,6 +171,42 @@ class TestSourceRoots(unittest.TestCase):
     def test_with_wiki_dir_keeps_the_source_roots(self) -> None:
         paths = WikiPaths.for_root("/proj", source_roots=["/a"]).with_wiki_dir(Path("/stage"))
         self.assertEqual(paths.source_roots, (Path("/a"),))
+
+
+class TestForRootSimilarPagesSwitch(unittest.TestCase):
+    """``for_root`` reads ``WIKI_STUDIO_SIMILAR_PAGES`` as ``resolve`` does when no value is passed (FR-036, FR-038)."""
+
+    def test_the_values_from_os_environ(self) -> None:
+        cases = {None: True, "": True, "off": False, "OFF": False, " on ": True}
+        for value, expected in cases.items():
+            env = dict(os.environ)
+            env.pop(ENV_SIMILAR_PAGES, None)
+            if value is not None:
+                env[ENV_SIMILAR_PAGES] = value
+            with self.subTest(value=value), mock.patch.dict(os.environ, env, clear=True):
+                self.assertIs(WikiPaths.for_root(Path("/proj")).similar_pages, expected)
+
+    def test_an_invalid_value_raises_naming_the_variable(self) -> None:
+        with mock.patch.dict(os.environ, {ENV_SIMILAR_PAGES: "bogus"}), self.assertRaises(ValueError) as caught:
+            WikiPaths.for_root(Path("/proj"))
+        self.assertIn(ENV_SIMILAR_PAGES, str(caught.exception))
+        self.assertIn(repr("bogus"), str(caught.exception))
+
+    def test_an_explicit_value_wins_and_the_variable_is_not_read(self) -> None:
+        with mock.patch.dict(os.environ, {ENV_SIMILAR_PAGES: "bogus"}):
+            self.assertIs(WikiPaths.for_root(Path("/proj"), similar_pages=True).similar_pages, True)
+            self.assertIs(WikiPaths.for_root(Path("/proj"), similar_pages=False).similar_pages, False)
+
+    def test_the_env_mapping_is_used_instead_of_os_environ(self) -> None:
+        with mock.patch.dict(os.environ, {ENV_SIMILAR_PAGES: "bogus"}):
+            self.assertIs(WikiPaths.for_root(Path("/proj"), env={ENV_SIMILAR_PAGES: "off"}).similar_pages, False)
+            self.assertIs(WikiPaths.for_root(Path("/proj"), env={}).similar_pages, True)
+        with mock.patch.dict(os.environ, {ENV_SIMILAR_PAGES: "off"}), self.assertRaises(ValueError):
+            WikiPaths.for_root(Path("/proj"), env={ENV_SIMILAR_PAGES: "maybe"})
+
+    def test_with_wiki_dir_carries_the_field(self) -> None:
+        paths = WikiPaths.for_root(Path("/proj"), env={ENV_SIMILAR_PAGES: "off"}).with_wiki_dir(Path("/stage"))
+        self.assertIs(paths.similar_pages, False)
 
 
 class TestContain(unittest.TestCase):

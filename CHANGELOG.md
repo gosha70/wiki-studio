@@ -22,6 +22,17 @@ uses [Semantic Versioning](https://semver.org/).
   where something lives shares few words with the page it replaces and is
   likely missed.
 
+### Changed
+
+- `WikiPaths.for_root` reads `WIKI_STUDIO_SIMILAR_PAGES` when no
+  `similar_pages` value is passed, as `WikiPaths.resolve` does, and takes an
+  optional `env` mapping (default `os.environ`). An explicit value still wins
+  and the variable is then not read. A value other than `on` or `off` now
+  raises `ValueError` in every library call that builds paths with
+  `for_root`, memkernel's lint, info, findings and export calls included,
+  as it already exits 1 on the CLI; pass `similar_pages=` explicitly to keep
+  the environment out of it.
+
 ## [0.11.0]
 
 A feature release: `findings` checks a page's cited sources against git,
