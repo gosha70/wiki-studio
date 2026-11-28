@@ -232,6 +232,22 @@ Each is recorded so the origin-alignment record at approval can cite it.
 18. **An SQLite error in the scan is caught** (the owner, O8's alternative):
     `duplicate_check` gains a `not-computed` state, and the other kinds still
     report.
+19. **The verdict is stop** (spec amendment, 2026-11-27). The development
+    stage (evidence PR #157) found every candidate's false pairs far above
+    its true pairs on cycle 10's frozen corpus (top-1 47 against 4, top-3 164
+    against 5, top-5 278 against 6), confirming the pitch's finding 10.
+    Trigger 0 fired: S2, S4 and S5 are cut (US4-US7, US9-US11). **Run 2's
+    settings** (`automation.json`): branch `feature/wiki-studio-duplicate-audit-121`
+    from `main` after this amendment merges; `max_phases: 8`, started fresh
+    with `--start-phase 8` after run 1's ledger
+    (`.cct/auto-build/wiki-studio-duplicate-audit-121/`) is moved aside; the
+    marker pauses after US8, where run 2 ends (not resumed; its PR opened by
+    hand with `pre-pr-check.sh --closes none`); a resume before that, if
+    ever needed, is `--resume --start-phase 8`; `build.max_turns: 120`;
+    `review.diff_max_lines: 6000`; no `pr.closes`; every start with
+    `env -u CCT_REVIEW_DIFF_MAX_LINES`. The hill charts: S1 and S3 done (the
+    measurement ran and its evidence PR merged), S2, S4 and S5 cut and left
+    uphill (no cut status), S6 for run 2.
 
 Close target: none. Issue 121 stays open whatever the verdict; no PR, commit
 message or artifact names it after a closing keyword, and no other issue is

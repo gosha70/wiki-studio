@@ -183,7 +183,7 @@
 
 ---
 
-**Set by the spec amendment:** _pending (FR-035)._
+**Set by the spec amendment (2026-11-27):** the verdict is `stop` (FR-035, evidence PR #157; trigger 0). US4-US7 above and US9-US11 below are cut. Run 2 is US8 alone: a fresh run started with `--start-phase 8`, `max_phases: 8`, ending at the pause after US8; it is not resumed there, and its PR is opened by hand.
 
 ## US8: Both constructors read the off switches (S6)
 
