@@ -1,14 +1,14 @@
 {
   "pitch_id": "121-duplicate-audit",
   "cycle": "12",
-  "updated_at": "2026-11-27T22:58:15Z",
+  "updated_at": "2026-11-28T01:27:42Z",
   "scopes": [
     {
       "id": "S1",
       "name": "The protocol, frozen before any score, ~1.5-2h plus the owner's review",
-      "status": "downhill",
-      "last_updated": "2026-11-27T20:58:03Z",
-      "note": "auto-build: phase 1 started"
+      "status": "done",
+      "last_updated": "2026-11-28T01:27:42Z",
+      "note": "auto-build: phase 3 landed 7717b5c"
     },
     {
       "id": "S2",
