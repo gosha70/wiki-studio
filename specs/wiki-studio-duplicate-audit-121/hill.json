@@ -1,13 +1,14 @@
 {
   "pitch_id": "121-duplicate-audit",
   "cycle": "12",
-  "updated_at": "2026-11-27T15:26:57Z",
+  "updated_at": "2026-11-28T01:27:42Z",
   "scopes": [
     {
       "id": "S1",
       "name": "The protocol, frozen before any score, ~1.5-2h plus the owner's review",
-      "status": "uphill",
-      "last_updated": "2026-11-27T15:26:57Z"
+      "status": "done",
+      "last_updated": "2026-11-28T01:27:42Z",
+      "note": "auto-build: phase 3 landed 7717b5c"
     },
     {
       "id": "S2",
@@ -18,8 +19,9 @@
     {
       "id": "S3",
       "name": "The measurement and the evidence PR, ~2.5-3.5h",
-      "status": "uphill",
-      "last_updated": "2026-11-27T15:26:57Z"
+      "status": "downhill",
+      "last_updated": "2026-11-27T22:58:15Z",
+      "note": "auto-build: phase 2 started"
     },
     {
       "id": "S4",

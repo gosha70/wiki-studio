@@ -1,0 +1,7 @@
+{
+  "clock": "time.perf_counter",
+  "pages": 299,
+  "seconds": 1.012292,
+  "set": "development",
+  "study": "issue 121 duplicate-audit study: the wall seconds of each pass"
+}
