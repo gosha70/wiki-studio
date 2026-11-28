@@ -530,7 +530,7 @@ redacted fingerprint of it unless `--debug-unsafe-output` is given.
 | `WIKI_STUDIO_SOURCE_ROOTS` | `os.pathsep`-separated directories outside the root that local links in pages may reference (see Layout); each is also a repository `findings` searches for cited commits (`docs/knowledge-contract.md`, Findings) |
 | `WIKI_STUDIO_RANKER` | the ranker `find` and `query` use when `--ranker` is not given: `fts5` or `index-first` (default `fts5`) |
 | `WIKI_STUDIO_SEARCH_CACHE` | where the `fts5` ranker keeps its search cache when `--search-cache` is not given (default beside the lock file; never inside the wiki; see Layout) |
-| `WIKI_STUDIO_SIMILAR_PAGES` | `on` (default when unset or empty) or `off`, in any case: whether `propose` lists similar pages for each `create` (see `propose --from`); any other value exits 1 |
+| `WIKI_STUDIO_SIMILAR_PAGES` | `on` (default when unset or empty) or `off`, in any case: whether `propose` lists similar pages for each `create` (see `propose --from`); read by both `WikiPaths.resolve` and `WikiPaths.for_root` when no value is passed; any other value exits 1 on the CLI and raises `ValueError` in library calls |
 | `WIKI_STUDIO_ACTOR` | who proposes or promotes when `--by` is not given, recorded with source `env` (attribution, not authentication) |
 | `WIKI_STUDIO_BACKEND` | default backend name |
 | `WIKI_STUDIO_ENABLE_PI` | `1` adds `pi` to the auto-detect order |
@@ -602,6 +602,11 @@ print(debt.counts)
 
 api.audit_flush(paths, dry_run=True)                   # AuditFlushResult
 ```
+
+Both constructors read `WIKI_STUDIO_SIMILAR_PAGES` when `similar_pages` is
+not passed, so a value other than `on` or `off` raises `ValueError` here as
+it exits 1 on the CLI; pass `similar_pages=True` or `False` (or an `env`
+mapping) to decide it in code.
 
 A caller that composes pages itself (memkernel's exporter, a migration
 script) hands them to `propose` and gets a proposal directory `promote`

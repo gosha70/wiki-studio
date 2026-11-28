@@ -154,6 +154,19 @@ def path_inside_dir(path: Path, directory: Path) -> bool:
     return location == real_dir or location.is_relative_to(real_dir)
 
 
+def _read_switch(environ: Mapping[str, str], name: str) -> bool:
+    """The on/off switch ``name`` in ``environ``: unset or empty is on, else ``on`` or ``off`` in any case.
+
+    The value is stripped before it is compared; any other value raises
+    ``ValueError`` naming the variable and the value.
+    """
+    value = environ.get(name, "")
+    choice = value.strip().lower()
+    if value and choice not in (SIMILAR_PAGES_ON, SIMILAR_PAGES_OFF):
+        raise ValueError(f"{name} must be {SIMILAR_PAGES_ON!r} or {SIMILAR_PAGES_OFF!r}, got {value!r}")
+    return choice != SIMILAR_PAGES_OFF
+
+
 def _refuse_cache_inside_wiki(search_cache: Path, wiki_dir: Path) -> None:
     if path_inside_dir(search_cache, wiki_dir):
         raise ValueError(f"search cache {search_cache} is inside the wiki directory {wiki_dir}; it must lie outside it")
@@ -311,12 +324,18 @@ class WikiPaths:
         search_cache: Path | str | None = None,
         git_call_limit: int | None = None,
         similar_pages: bool | None = None,
+        env: Mapping[str, str] | None = None,
     ) -> WikiPaths:
         """Build the layout under ``root`` with the defaults, optionally overriding the two directories.
 
         Relative inputs are made absolute against the current working directory (symlinks are
         not resolved), so a layout never depends on a later working directory. A
-        ``search_cache`` inside the wiki directory raises ``ValueError``.
+        ``search_cache`` inside the wiki directory raises ``ValueError``. When
+        ``similar_pages`` is None it is read from ``WIKI_STUDIO_SIMILAR_PAGES`` in
+        ``env`` (default ``os.environ``) as :meth:`resolve` reads it: unset or
+        empty is on, else ``on`` or ``off`` in any case after stripping; any
+        other value raises ``ValueError``, in library calls as on the CLI. An
+        explicit ``similar_pages`` wins and the variable is then not read.
         """
         root_path = Path(root).absolute()
         wiki = Path(wiki_dir).absolute() if wiki_dir is not None else root_path / DEFAULT_WIKI_DIR
@@ -324,6 +343,8 @@ class WikiPaths:
         cache = Path(search_cache).absolute() if search_cache is not None else None
         if cache is not None:
             _refuse_cache_inside_wiki(cache, wiki)
+        if similar_pages is None:
+            similar_pages = _read_switch(os.environ if env is None else env, ENV_SIMILAR_PAGES)
         return cls(
             root=root_path,
             wiki_dir=wiki,
@@ -335,7 +356,7 @@ class WikiPaths:
             source_roots=tuple(Path(p).absolute() for p in (source_roots or ())),
             search_cache=cache,
             git_call_limit=DEFAULT_GIT_CALL_LIMIT if git_call_limit is None else git_call_limit,
-            similar_pages=True if similar_pages is None else similar_pages,
+            similar_pages=similar_pages,
         )
 
     @classmethod
@@ -362,7 +383,8 @@ class WikiPaths:
         non-negative integer. ``similar_pages`` defaults to
         ``WIKI_STUDIO_SIMILAR_PAGES``: unset or empty is on, else ``on`` or
         ``off`` in any case after stripping; any other value raises
-        ``ValueError``. ``source_roots``
+        ``ValueError``, in library calls as on the CLI (where it exits 1), as
+        :meth:`for_root` reads it. ``source_roots``
         (the repeatable ``--source-root``) replaces the ``os.pathsep``-separated
         list in ``WIKI_STUDIO_SOURCE_ROOTS``; both default to none. A search
         cache (``--search-cache``, ``WIKI_STUDIO_SEARCH_CACHE``) inside the wiki
@@ -409,15 +431,7 @@ class WikiPaths:
         if limit is not None and limit < 0:
             raise ValueError(f"git call limit must be a non-negative integer, got {limit!r}")
 
-        similar = similar_pages
-        if similar is None:
-            similar_value = environ.get(ENV_SIMILAR_PAGES, "")
-            choice = similar_value.strip().lower()
-            if similar_value and choice not in (SIMILAR_PAGES_ON, SIMILAR_PAGES_OFF):
-                raise ValueError(
-                    f"{ENV_SIMILAR_PAGES} must be {SIMILAR_PAGES_ON!r} or {SIMILAR_PAGES_OFF!r}, got {similar_value!r}"
-                )
-            similar = choice != SIMILAR_PAGES_OFF
+        similar = _read_switch(environ, ENV_SIMILAR_PAGES) if similar_pages is None else similar_pages
 
         return cls.for_root(
             root_path,

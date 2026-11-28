@@ -101,6 +101,14 @@ for violation in result.violations:
     print(violation)
 ```
 
+`WikiPaths.for_root` now reads `WIKI_STUDIO_SIMILAR_PAGES` when it is given
+no `similar_pages` value, as `WikiPaths.resolve` and the CLI do: unset or
+empty is on, `on` or `off` in any case. A mistyped value (`WIKI_STUDIO_SIMILAR_PAGES=of`)
+raises `ValueError` in every call that builds paths this way, memkernel's
+lint, info, findings and export calls included. To keep the environment out
+of it, pass the switch explicitly, `WikiPaths.for_root(root, similar_pages=True)`,
+or pass `env={}` (or your own mapping) instead of `os.environ`.
+
 ### Through the promote gate (memkernel ≥ 0.5, wiki-studio ≥ 0.2)
 
 With the `memkernel[wiki]` extra installed, the exporter no longer writes
@@ -123,6 +131,11 @@ edits = [
 proposal = api.propose(edits, paths, name="2026-10-15-memkernel-export", source="memkernel")
 api.promote(proposal, paths)        # PromoteResult; PromoteValidationError leaves the wiki untouched
 ```
+
+This `for_root` call reads `WIKI_STUDIO_SIMILAR_PAGES` too (see the lint
+example above): a mistyped value makes it raise `ValueError` before
+`propose` runs; `similar_pages=False` there turns the similar-pages list off
+for these edits without reading the variable.
 
 `propose` validates the edits before writing anything (the same checks
 `ingest` and `promote` run) and raises `ContractViolationError` listing every
