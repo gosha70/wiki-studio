@@ -1,7 +1,7 @@
 {
   "pitch_id": "121-duplicate-audit",
   "cycle": "12",
-  "updated_at": "2026-11-28T01:27:42Z",
+  "updated_at": "2026-11-28T03:54:47Z",
   "scopes": [
     {
       "id": "S1",
@@ -19,9 +19,8 @@
     {
       "id": "S3",
       "name": "The measurement and the evidence PR, ~2.5-3.5h",
-      "status": "downhill",
-      "last_updated": "2026-11-27T22:58:15Z",
-      "note": "auto-build: phase 2 started"
+      "status": "done",
+      "last_updated": "2026-11-28T03:54:47Z"
     },
     {
       "id": "S4",

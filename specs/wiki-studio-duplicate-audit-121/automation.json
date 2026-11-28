@@ -2,14 +2,14 @@
   "schema_version": 2,
   "profile": "pr",
   "branch": {
-    "name": "feature/wiki-studio-duplicate-audit-121-evidence",
+    "name": "feature/wiki-studio-duplicate-audit-121",
     "base": "main",
     "remote": "origin"
   },
   "phases": {
     "source": "tasks.md",
     "milestone_every": 0,
-    "max_phases": 7
+    "max_phases": 8
   },
   "build": {
     "max_turns": 120,
@@ -52,7 +52,7 @@
     "command": ""
   },
   "pr": {
-    "title": "research: duplicate-audit evidence \u2014 eval/duplicate_audit/ with a frozen protocol, a development stage and a held-out measurement"
+    "title": "feat: WikiPaths.for_root reads the similar-pages switch (a bad value raises)"
   },
   "merge": {
     "enabled": false,
